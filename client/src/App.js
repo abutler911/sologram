@@ -15,6 +15,13 @@ import EditPost from './pages/EditPost';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 
+// Collection Pages
+import CollectionsList from './pages/CollectionsList';
+import CollectionDetail from './pages/CollectionDetail';
+import CreateCollection from './pages/CreateCollection';
+import EditCollection from './pages/EditCollection';
+import AddPostsToCollection from './pages/AddPostsToCollection';
+
 // Context Provider
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
@@ -32,7 +39,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/post/:id" element={<PostDetail />} />
-              
+             
               {/* Protected Routes */}
               <Route path="/create" element={
                 <PrivateRoute>
@@ -49,7 +56,27 @@ function App() {
                   <Profile />
                 </PrivateRoute>
               } />
-              
+             
+              {/* Collection routes */}
+              <Route path="/collections" element={<CollectionsList />} />
+              <Route path="/collections/:id" element={<CollectionDetail />} />
+             
+              <Route path="/collections/create" element={
+                <PrivateRoute>
+                  <CreateCollection />
+                </PrivateRoute>
+              } />
+              <Route path="/collections/:id/edit" element={
+                <PrivateRoute>
+                  <EditCollection />
+                </PrivateRoute>
+              } />
+              <Route path="/collections/:id/add-posts" element={
+                <PrivateRoute>
+                  <AddPostsToCollection />
+                </PrivateRoute>
+              } />
+             
               {/* 404 Route */}
               <Route path="*" element={<NotFound />} />
             </Routes>

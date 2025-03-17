@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaCamera, FaUser, FaSignOutAlt, FaSignInAlt, FaBars, FaTimes } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
+import { FaFolder } from 'react-icons/fa';
 
 const Header = () => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
@@ -33,6 +34,12 @@ const Header = () => {
         <Navigation className={isMenuOpen ? 'active' : ''}>
           {isAuthenticated ? (
             <>
+            <NavItem>
+  <NavLink to="/collections">
+    <FaFolder />
+    <span>Collections</span>
+  </NavLink>
+</NavItem>
               <NavItem>
                 <NavLink to="/create">Create Post</NavLink>
               </NavItem>

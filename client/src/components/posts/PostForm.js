@@ -35,10 +35,10 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
   const onDrop = useCallback(acceptedFiles => {
     if (acceptedFiles.length === 0) return;
     
-    // Check if adding these files would exceed the 10 file limit
+    // Check if adding these files would exceed the 20 file limit
     const totalFiles = mediaFiles.length + existingMedia.length + acceptedFiles.length;
-    if (totalFiles > 10) {
-      toast.error('Maximum 10 media files allowed per post');
+    if (totalFiles > 20) {
+      toast.error('Maximum 20 media files allowed per post');
       return;
     }
     
@@ -189,11 +189,11 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
       </FormGroup>
       
       <FormGroup>
-        <Label>Media (Max 10 files)</Label>
+        <Label>Media (Max 20 files)</Label>
         
         {/* Display count of selected media */}
         <MediaCounter>
-          {mediaPreviews.length + existingMedia.length} / 10 media files selected
+          {mediaPreviews.length + existingMedia.length} / 20 media files selected
         </MediaCounter>
         
         {/* Display existing media previews */}
@@ -232,8 +232,8 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
           </MediaPreviewGrid>
         )}
         
-        {/* Only show dropzone if less than 10 total media files */}
-        {mediaPreviews.length + existingMedia.length < 10 && (
+        {/* Only show dropzone if less than 20 total media files */}
+        {mediaPreviews.length + existingMedia.length < 20 && (
           <DropzoneContainer {...getRootProps()} isDragActive={isDragActive}>
             <input {...getInputProps()} />
             <DropzoneIcon>
