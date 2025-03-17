@@ -25,7 +25,7 @@ const upload = multer({ storage: storage });
 // Create multer upload for multiple files
 const uploadMultiple = multer({ 
   storage: storage,
-  limits: { files: 10 } // Limit to 10 files
+  limits: { files: 20 } // Limit to 20 files
 });
 
 module.exports = {

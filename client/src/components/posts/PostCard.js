@@ -236,4 +236,16 @@ const DeleteButton = styled.button`
   }
 `;
 
+
+const handleLike = async () => {
+  try {
+    await axios.put(`/api/posts/${post._id}/like`);
+    post.likes += 1;
+    setPost({...post}); 
+  } catch (err) {
+    console.error('Error liking post:', err);
+    toast.error('Failed to like post');
+  }
+};
+
 export default PostCard;

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { likeLimiter } = require('../middleware/rateLimiter');
 const { upload, uploadMultiple } = require('../config/cloudinary');
 const { 
   getPosts, 
@@ -39,5 +40,7 @@ router.put('/:id', uploadMultiple.array('media', 10), updatePost);
 // @desc    Delete a post
 // @access  Private (will add auth middleware later)
 router.delete('/:id', deletePost);
+
+router.put('/:id/like', likeLimiter, likePost);
 
 module.exports = router;

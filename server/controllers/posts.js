@@ -307,3 +307,32 @@ exports.searchPosts = async (req, res) => {
     });
   }
 };
+
+// Like a post
+exports.likePost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: 'Post not found'
+      });
+    }
+    
+    // Increment likes count
+    post.likes += 1;
+    await post.save();
+    
+    res.status(200).json({
+      success: true,
+      data: post
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: 'Server Error'
+    });
+  }
+};
