@@ -8,7 +8,8 @@ const {
   createPost, 
   updatePost, 
   deletePost,
-  searchPosts 
+  searchPosts,
+  likePost
 } = require('../controllers/posts');
 
 // @route   GET /api/posts
