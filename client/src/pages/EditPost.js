@@ -13,7 +13,7 @@ const EditPost = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   
   // Fetch post data
   useEffect(() => {

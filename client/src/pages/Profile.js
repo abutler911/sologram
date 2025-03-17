@@ -2,7 +2,6 @@ import React, { useState, useContext, useEffect } from 'react';
 import styled from 'styled-components';
 import { useDropzone } from 'react-dropzone';
 import { FaCamera, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
-import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
 

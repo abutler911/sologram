@@ -9,7 +9,6 @@ import Footer from './components/layout/Footer';
 // Page Components
 import Home from './pages/Home';
 import Login from './pages/Login';
-import Register from './pages/Register';
 import PostDetail from './pages/PostDetail';
 import CreatePost from './pages/CreatePost';
 import EditPost from './pages/EditPost';

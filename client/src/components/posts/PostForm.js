@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useDropzone } from 'react-dropzone';
-import { FaCloudUploadAlt, FaTimes, FaImage, FaVideo, FaTrash } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaTimes, FaImage, FaVideo } from 'react-icons/fa';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
