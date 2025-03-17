@@ -4,12 +4,18 @@ SoloGram is a personal Instagram-like platform where only you can post content (
 
 ## Features
 
-- **User Authentication**: Only you can log in and create/edit posts
-- **Media Uploads**: Support for image and video uploads
+- **Admin-Only Platform**: SoloGram is designed to be a personal platform where only you (the admin) can create and manage content
+- **Secure Authentication**: The registration is disabled - only the admin account created via script can log in
+- **Rich Media Support**: Upload up to 10 images or videos per post
+- **Media Carousel**: Navigate through multiple images in posts
 - **Responsive Design**: Looks great on all devices
 - **Rich Content**: Create posts with media, captions, content, and tags
 - **Search Functionality**: Search through your posts
 - **Profile Management**: Edit your profile and bio
+
+## Demo
+
+[Live Demo](Coming soon)
 
 ## Tech Stack
 
@@ -39,7 +45,7 @@ SoloGram is a personal Instagram-like platform where only you can post content (
 
 1. Clone the repository
    ```
-   git clone <repository-url>
+   git clone https://github.com/abutler911/sologram.git
    cd sologram
    ```
 
@@ -58,9 +64,19 @@ SoloGram is a personal Instagram-like platform where only you can post content (
    CLOUDINARY_CLOUD_NAME=<your-cloudinary-cloud-name>
    CLOUDINARY_API_KEY=<your-cloudinary-api-key>
    CLOUDINARY_API_SECRET=<your-cloudinary-api-secret>
+   
+   # Admin account credentials
+   ADMIN_USERNAME=<your-admin-username>
+   ADMIN_EMAIL=<your-admin-email>
+   ADMIN_PASSWORD=<your-secure-password>
    ```
 
-4. Start the backend server
+4. Create your admin account
+   ```
+   npm run create-admin
+   ```
+
+5. Start the backend server
    ```
    npm run dev
    ```
@@ -85,6 +101,63 @@ SoloGram is a personal Instagram-like platform where only you can post content (
 
 4. Access the application at `http://localhost:3000`
 
+## Project Structure
+
+```
+sologram/
+├── client/                     # Frontend
+│   ├── public/                 # Public assets
+│   └── src/                    # Source code
+│       ├── components/         # React components
+│       ├── context/            # React context providers
+│       ├── pages/              # Page components
+│       └── styles/             # CSS/SCSS files
+└── server/                     # Backend
+    ├── config/                 # Configuration files
+    ├── controllers/            # Route controllers
+    ├── middleware/             # Custom middleware
+    ├── models/                 # Database models
+    └── routes/                 # API routes
+```
+
+## Development Workflow
+
+This project follows a standard Git workflow:
+
+- `main` branch contains production-ready code
+- `development` branch is the primary branch for development
+- Feature branches are created from `development` with the naming convention `feature/feature-name`
+- Bug fixes are created with the naming convention `fix/bug-name`
+
+### Contributing
+
+1. Create a new branch from `development`
+   ```
+   git checkout -b feature/your-feature-name development
+   ```
+
+2. Make your changes and commit them
+   ```
+   git add .
+   git commit -m "Description of changes"
+   ```
+
+3. Push to GitHub
+   ```
+   git push -u origin feature/your-feature-name
+   ```
+
+4. Create a Pull Request against the `development` branch
+
+## Using Multiple Media Feature
+
+SoloGram supports uploading multiple images and videos per post:
+
+1. When creating a post, drag and drop or select up to 10 files
+2. Preview all uploaded files before submitting
+3. Remove individual files if needed
+4. When viewing a post with multiple media, use the carousel navigation to browse through the files
+
 ## Deployment
 
 ### Backend Deployment
@@ -99,14 +172,15 @@ SoloGram is a personal Instagram-like platform where only you can post content (
    ```
 2. Deploy the built files from the `build` directory to a static hosting service (e.g., Netlify, Vercel, Firebase Hosting)
 
-## Roadmap for Future Development
+## Roadmap
 
-- Like/comment functionality for visitors
-- Analytics dashboard
-- Custom themes
-- Multiple image uploads per post
-- Collections/albums feature
-- Social sharing options
+- [ ] Like/comment functionality for visitors
+- [ ] Analytics dashboard
+- [ ] Custom themes
+- [ ] Collections/albums feature
+- [ ] Social sharing options
+- [ ] Automated deployment pipeline
+
 
 ## License
 

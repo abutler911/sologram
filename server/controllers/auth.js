@@ -71,9 +71,13 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
     
+    console.log('Login attempt for email: ', email);
+
     // Check if user exists
     const user = await User.findOne({ email }).select('+password');
     
+    console.log('User found:', user ? 'Yes' : 'No');
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -83,6 +87,8 @@ exports.login = async (req, res) => {
     
     // Check if password matches
     const isMatch = await user.matchPassword(password);
+    
+    console.log('Password match:', isMatch ? 'Yes' : 'No');
     
     if (!isMatch) {
       return res.status(401).json({

@@ -74,10 +74,9 @@ const Login = () => {
           </SubmitButton>
         </Form>
         
-        <RegisterLink>
-          Don't have an account?{' '}
-          <Link to="/register">Register</Link>
-        </RegisterLink>
+        <AdminNoteText>
+          This login is for site administration only
+        </AdminNoteText>
       </FormContainer>
     </LoginContainer>
   );
@@ -179,20 +178,11 @@ const SubmitButton = styled.button`
   }
 `;
 
-const RegisterLink = styled.p`
+const AdminNoteText = styled.p`
   text-align: center;
   font-size: 0.875rem;
   color: #666666;
-  
-  a {
-    color: #ff7e5f;
-    font-weight: 600;
-    text-decoration: none;
-    
-    &:hover {
-      text-decoration: underline;
-    }
-  }
+  font-style: italic;
 `;
 
 export default Login;
