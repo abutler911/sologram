@@ -4,6 +4,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const path = require('path');
+const collectionRoutes = require('./routes/collections');
 require('dotenv').config();
 
 // Initialize Express app
@@ -29,6 +30,7 @@ const authRoutes = require('./routes/auth');
 // Use routes
 app.use('/api/posts', postRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/collections', collectionRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
