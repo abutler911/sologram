@@ -1,11 +1,14 @@
-import React, { useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaHeart, FaEdit, FaTrash, FaClock } from 'react-icons/fa';
 import { formatDistance } from 'date-fns';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import { AuthContext } from '../../context/AuthContext';
 
-const PostCard = ({ post, onDelete }) => {
+const PostCard = ({ post: initialPost, onDelete }) => {
+  const [post, setPost] = useState(initialPost);
   const { isAuthenticated } = useContext(AuthContext);
   
   const formattedDate = formatDistance(
@@ -13,6 +16,18 @@ const PostCard = ({ post, onDelete }) => {
     new Date(),
     { addSuffix: true }
   );
+  
+  const handleLike = async () => {
+    try {
+      const response = await axios.put(`/api/posts/${post._id}/like`);
+      if (response.data.success) {
+        setPost({...post, likes: post.likes + 1});
+      }
+    } catch (err) {
+      console.error('Error liking post:', err);
+      toast.error('Failed to like post');
+    }
+  };
   
   return (
     <Card>
@@ -58,7 +73,7 @@ const PostCard = ({ post, onDelete }) => {
               <span>{formattedDate}</span>
             </TimeStamp>
             
-            <LikesCount>
+            <LikesCount onClick={handleLike}>
               <FaHeart />
               <span>{post.likes}</span>
             </LikesCount>
@@ -203,6 +218,12 @@ const LikesCount = styled.div`
   align-items: center;
   color: #ff7e5f;
   font-size: 0.875rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  
+  &:hover {
+    color: #ff5e3a;
+  }
   
   svg {
     margin-right: 0.25rem;
@@ -235,17 +256,5 @@ const DeleteButton = styled.button`
     color: #c0392b;
   }
 `;
-
-
-const handleLike = async () => {
-  try {
-    await axios.put(`/api/posts/${post._id}/like`);
-    post.likes += 1;
-    setPost({...post}); 
-  } catch (err) {
-    console.error('Error liking post:', err);
-    toast.error('Failed to like post');
-  }
-};
 
 export default PostCard;
