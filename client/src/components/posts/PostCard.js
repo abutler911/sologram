@@ -177,6 +177,14 @@ const Card = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Take full height of grid cell */
+
+  /* Fixed card width for desktop and tablet */
+  @media (min-width: 768px) {
+    width: 100%;
+  }
 
   &:hover {
     transform: translateY(-5px);
@@ -187,17 +195,15 @@ const Card = styled.div`
 const MediaContainer = styled(Link)`
   display: block;
   width: 100%;
-  height: 0;
-  padding-bottom: 75%; /* 4:3 aspect ratio */
   position: relative;
   overflow: hidden;
+  aspect-ratio: 1 / 1; /* Square aspect ratio like Instagram */
+  flex-shrink: 0; /* Prevent the media container from shrinking */
 `;
 
 // Carousel Components
 const MediaCarousel = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -214,6 +220,7 @@ const MediaItem = styled.div`
   flex: 0 0 100%;
   width: 100%;
   height: 100%;
+  position: relative;
 `;
 
 const NavigationArrow = styled.button`
@@ -280,17 +287,26 @@ const Dot = styled.button`
 const PostImage = styled.img`
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: cover; /* This crops the image to fill the container */
+  position: absolute;
+  top: 0;
+  left: 0;
 `;
 
 const PostVideo = styled.video`
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: cover; /* This crops the video to fill the container */
+  position: absolute;
+  top: 0;
+  left: 0;
 `;
 
 const CardContent = styled.div`
   padding: 1.25rem;
+  flex-grow: 1; /* Allow content to grow but maintain consistent card heights */
+  display: flex;
+  flex-direction: column;
 `;
 
 const Caption = styled(Link)`
@@ -304,18 +320,34 @@ const Caption = styled(Link)`
   &:hover {
     color: #ff7e5f;
   }
+
+  /* Set max-height and handle overflow for consistent height */
+  max-height: 3.75rem; /* Approximately 2 lines */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 `;
 
 const Content = styled.p`
   color: #666666;
   margin-bottom: 1rem;
   line-height: 1.5;
+
+  /* Set max-height and handle overflow for consistent height */
+  max-height: 4.5rem; /* Approximately 3 lines */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 `;
 
 const TagsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
   margin-bottom: 1rem;
+  overflow: hidden;
+  max-height: 2.5rem; /* Limit the visible tags */
 `;
 
 const Tag = styled.span`
@@ -334,6 +366,7 @@ const CardFooter = styled.div`
   align-items: center;
   border-top: 1px solid #eeeeee;
   padding-top: 1rem;
+  margin-top: auto; /* Push the footer to the bottom of the card */
 `;
 
 const MetaData = styled.div`
