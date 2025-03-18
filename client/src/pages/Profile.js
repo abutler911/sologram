@@ -1,43 +1,43 @@
-import React, { useState, useContext, useEffect } from 'react';
-import styled from 'styled-components';
-import { useDropzone } from 'react-dropzone';
-import { FaCamera, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
-import { toast } from 'react-hot-toast';
-import { AuthContext } from '../context/AuthContext';
+import React, { useState, useContext, useEffect } from "react";
+import styled from "styled-components";
+import { useDropzone } from "react-dropzone";
+import { FaCamera, FaEdit, FaCheck, FaTimes } from "react-icons/fa";
+import { toast } from "react-hot-toast";
+import { AuthContext } from "../context/AuthContext";
 
 const Profile = () => {
-  const { user, updateProfile } = useContext(AuthContext);
-  
+  const { user, updateProfile, updateBio } = useContext(AuthContext);
+
   const [formData, setFormData] = useState({
-    username: user?.username || '',
-    email: user?.email || '',
-    bio: user?.bio || ''
+    username: user?.username || "",
+    email: user?.email || "",
+    bio: user?.bio || "",
   });
-  
+
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(user?.profileImage || null);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  
+
   // Update form when user data changes
   useEffect(() => {
     if (user) {
       setFormData({
-        username: user.username || '',
-        email: user.email || '',
-        bio: user.bio || ''
+        username: user.username || "",
+        email: user.email || "",
+        bio: user.bio || "",
       });
       setImagePreview(user.profileImage || null);
     }
   }, [user]);
-  
+
   // Handle profile image upload
   const onDrop = (acceptedFiles) => {
     const file = acceptedFiles[0];
     if (!file) return;
-    
+
     setProfileImage(file);
-    
+
     // Create image preview
     const reader = new FileReader();
     reader.onload = () => {
@@ -45,59 +45,73 @@ const Profile = () => {
     };
     reader.readAsDataURL(file);
   };
-  
+
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png']
+      "image/*": [".jpeg", ".jpg", ".png"],
     },
     maxSize: 5 * 1024 * 1024, // 5MB
-    multiple: false
+    multiple: false,
   });
-  
+
   // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-  
+
   // Cancel editing
   const handleCancel = () => {
     setFormData({
-      username: user?.username || '',
-      email: user?.email || '',
-      bio: user?.bio || ''
+      username: user?.username || "",
+      email: user?.email || "",
+      bio: user?.bio || "",
     });
     setImagePreview(user?.profileImage || null);
     setProfileImage(null);
     setIsEditing(false);
   };
-  
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Create form data for submission
-    const profileFormData = new FormData();
-    profileFormData.append('username', formData.username);
-    profileFormData.append('email', formData.email);
-    profileFormData.append('bio', formData.bio || '');
-    
-    if (profileImage) {
-      profileFormData.append('profileImage', profileImage);
+
+    // Check if only the bio has changed
+    const onlyBioChanged =
+      formData.username === user.username &&
+      formData.email === user.email &&
+      !profileImage &&
+      formData.bio !== user.bio;
+
+    let success = false;
+
+    if (onlyBioChanged) {
+      // Use the dedicated bio update endpoint
+      success = await updateBio(formData.bio);
+    } else {
+      // Create form data for full profile update
+      const profileFormData = new FormData();
+      profileFormData.append("username", formData.username);
+      profileFormData.append("email", formData.email);
+      profileFormData.append("bio", formData.bio || "");
+
+      if (profileImage) {
+        profileFormData.append("profileImage", profileImage);
+      }
+
+      success = await updateProfile(profileFormData);
     }
-    
-    const success = await updateProfile(profileFormData);
-    
+
     if (success) {
       setIsEditing(false);
-      toast.success('Profile updated successfully');
+      toast.success("Profile updated successfully");
     }
-    
+
     setLoading(false);
   };
-  
+
   if (!user) {
     return (
       <Container>
@@ -105,7 +119,7 @@ const Profile = () => {
       </Container>
     );
   }
-  
+
   return (
     <Container>
       <ProfileHeader>
@@ -125,21 +139,19 @@ const Profile = () => {
                 <span>Change Photo</span>
               </UploadOverlay>
             </DropzoneContainer>
+          ) : imagePreview ? (
+            <ProfileImage src={imagePreview} alt={user.username} />
           ) : (
-            imagePreview ? (
-              <ProfileImage src={imagePreview} alt={user.username} />
-            ) : (
-              <ProfilePlaceholder>
-                <FaCamera />
-              </ProfilePlaceholder>
-            )
+            <ProfilePlaceholder>
+              <FaCamera />
+            </ProfilePlaceholder>
           )}
         </ProfileImageContainer>
-        
+
         <ProfileInfo>
           <ProfileName>{user.username}</ProfileName>
           <ProfileEmail>{user.email}</ProfileEmail>
-          
+
           {!isEditing && (
             <EditButton onClick={() => setIsEditing(true)}>
               <FaEdit />
@@ -148,7 +160,7 @@ const Profile = () => {
           )}
         </ProfileInfo>
       </ProfileHeader>
-      
+
       {isEditing ? (
         <ProfileForm onSubmit={handleSubmit}>
           <FormGroup>
@@ -162,7 +174,7 @@ const Profile = () => {
               required
             />
           </FormGroup>
-          
+
           <FormGroup>
             <Label htmlFor="email">Email</Label>
             <Input
@@ -174,7 +186,7 @@ const Profile = () => {
               required
             />
           </FormGroup>
-          
+
           <FormGroup>
             <Label htmlFor="bio">Bio</Label>
             <Textarea
@@ -184,27 +196,33 @@ const Profile = () => {
               onChange={handleChange}
               rows={4}
               placeholder="Tell us about yourself..."
+              maxLength={500}
             />
+            <CharacterCount>
+              {formData.bio ? formData.bio.length : 0}/500 characters
+            </CharacterCount>
           </FormGroup>
-          
+
           <ButtonGroup>
-            <CancelButton type="button" onClick={handleCancel} disabled={loading}>
+            <CancelButton
+              type="button"
+              onClick={handleCancel}
+              disabled={loading}
+            >
               <FaTimes />
               <span>Cancel</span>
             </CancelButton>
-            
+
             <SaveButton type="submit" disabled={loading}>
               <FaCheck />
-              <span>{loading ? 'Saving...' : 'Save Changes'}</span>
+              <span>{loading ? "Saving..." : "Save Changes"}</span>
             </SaveButton>
           </ButtonGroup>
         </ProfileForm>
       ) : (
         <ProfileBio>
           <BioLabel>Bio</BioLabel>
-          <BioContent>
-            {user.bio ? user.bio : 'No bio added yet.'}
-          </BioContent>
+          <BioContent>{user.bio ? user.bio : "No bio added yet."}</BioContent>
         </ProfileBio>
       )}
     </Container>
@@ -216,7 +234,7 @@ const Container = styled.div`
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
-  
+
   @media (max-width: 768px) {
     padding: 1.5rem;
   }
@@ -226,7 +244,7 @@ const ProfileHeader = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 2.5rem;
-  
+
   @media (max-width: 640px) {
     flex-direction: column;
     text-align: center;
@@ -236,7 +254,7 @@ const ProfileHeader = styled.div`
 const ProfileImageContainer = styled.div`
   position: relative;
   margin-right: 2.5rem;
-  
+
   @media (max-width: 640px) {
     margin-right: 0;
     margin-bottom: 1.5rem;
@@ -269,7 +287,7 @@ const ProfilePlaceholder = styled.div`
 const DropzoneContainer = styled.div`
   position: relative;
   cursor: pointer;
-  
+
   &:hover > div {
     opacity: 1;
   }
@@ -290,12 +308,12 @@ const UploadOverlay = styled.div`
   color: white;
   opacity: 0;
   transition: opacity 0.3s;
-  
+
   svg {
     font-size: 2rem;
     margin-bottom: 0.5rem;
   }
-  
+
   span {
     font-size: 0.875rem;
   }
@@ -327,11 +345,11 @@ const EditButton = styled.button`
   font-size: 0.875rem;
   cursor: pointer;
   transition: background-color 0.3s;
-  
+
   &:hover {
     background-color: #e0e0e0;
   }
-  
+
   svg {
     margin-right: 0.5rem;
   }
@@ -381,7 +399,7 @@ const Input = styled.input`
   border-radius: 4px;
   font-size: 1rem;
   transition: border-color 0.3s;
-  
+
   &:focus {
     outline: none;
     border-color: #ff7e5f;
@@ -396,18 +414,25 @@ const Textarea = styled.textarea`
   font-size: 1rem;
   resize: vertical;
   transition: border-color 0.3s;
-  
+
   &:focus {
     outline: none;
     border-color: #ff7e5f;
   }
 `;
 
+const CharacterCount = styled.div`
+  text-align: right;
+  font-size: 0.75rem;
+  color: #666666;
+  margin-top: 0.25rem;
+`;
+
 const ButtonGroup = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  
+
   @media (max-width: 480px) {
     flex-direction: column;
   }
@@ -422,11 +447,11 @@ const Button = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   svg {
     margin-right: 0.5rem;
   }
-  
+
   @media (max-width: 480px) {
     width: 100%;
   }
@@ -436,11 +461,11 @@ const CancelButton = styled(Button)`
   background-color: transparent;
   color: #666666;
   border: 1px solid #dddddd;
-  
+
   &:hover {
     background-color: #f2f2f2;
   }
-  
+
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
@@ -451,11 +476,11 @@ const SaveButton = styled(Button)`
   background-color: #ff7e5f;
   color: white;
   border: none;
-  
+
   &:hover {
     background-color: #ff6347;
   }
-  
+
   &:disabled {
     background-color: #cccccc;
     cursor: not-allowed;
