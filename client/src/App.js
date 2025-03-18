@@ -18,8 +18,10 @@ import CollectionDetail from "./pages/CollectionDetail";
 import CreateCollection from "./pages/CreateCollection";
 import EditCollection from "./pages/EditCollection";
 import AddPostsToCollection from "./pages/AddPostsToCollection";
-// Story Pages - Add this new import
+// Story Pages
 import CreateStory from "./pages/CreateStory";
+import StoryArchive from "./pages/StoryArchive";
+import ArchivedStoryView from "./pages/ArchivedStoryView";
 // Context Provider
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
@@ -64,7 +66,7 @@ function App() {
                 }
               />
 
-              {/* Add Story Route */}
+              {/* Story Routes */}
               <Route
                 path="/create-story"
                 element={
@@ -73,11 +75,26 @@ function App() {
                   </PrivateRoute>
                 }
               />
+              <Route
+                path="/story-archive"
+                element={
+                  <PrivateRoute>
+                    <StoryArchive />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/story-archive/:id"
+                element={
+                  <PrivateRoute>
+                    <ArchivedStoryView />
+                  </PrivateRoute>
+                }
+              />
 
               {/* Collection routes */}
               <Route path="/collections" element={<CollectionsList />} />
               <Route path="/collections/:id" element={<CollectionDetail />} />
-
               <Route
                 path="/collections/create"
                 element={
@@ -113,4 +130,5 @@ function App() {
     </AuthProvider>
   );
 }
+
 export default App;

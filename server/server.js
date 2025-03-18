@@ -4,6 +4,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const path = require("path");
+const { scheduleArchiving } = require("./services/storyArchiver");
 const collectionRoutes = require("./routes/collections");
 const storyRoutes = require("./routes/stories");
 require("dotenv").config();
@@ -43,5 +44,6 @@ app.use((err, req, res, next) => {
 
 // Start the server
 app.listen(PORT, () => {
+  scheduleArchiving();
   console.log(`Server running on port ${PORT}`);
 });

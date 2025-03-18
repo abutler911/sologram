@@ -10,6 +10,7 @@ import {
   FaTimes,
   FaFolder,
   FaPlus,
+  FaArchive,
 } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 
@@ -60,6 +61,13 @@ const Header = () => {
                   <span>Collections</span>
                 </NavLink>
               </NavItem>
+              <NavItem>
+                <NavLink to="/story-archive">
+                  <FaArchive />
+                  <span>Story Archive</span>
+                </NavLink>
+              </NavItem>
+
               <NavItem>
                 <NavLink to="/profile">
                   <FaUser />
