@@ -1,7 +1,8 @@
 import React, { useState, useContext, useEffect } from "react";
+import { Link } from "react-router-dom";
 import styled from "styled-components";
 import { useDropzone } from "react-dropzone";
-import { FaCamera, FaEdit, FaCheck, FaTimes } from "react-icons/fa";
+import { FaCamera, FaEdit, FaCheck, FaTimes, FaBell } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import { AuthContext } from "../context/AuthContext";
 
@@ -18,6 +19,9 @@ const Profile = () => {
   const [imagePreview, setImagePreview] = useState(user?.profileImage || null);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Check if user is admin
+  const isAdmin = user?.role === "admin";
 
   // Update form when user data changes
   useEffect(() => {
@@ -220,10 +224,27 @@ const Profile = () => {
           </ButtonGroup>
         </ProfileForm>
       ) : (
-        <ProfileBio>
-          <BioLabel>Bio</BioLabel>
-          <BioContent>{user.bio ? user.bio : "No bio added yet."}</BioContent>
-        </ProfileBio>
+        <>
+          <ProfileBio>
+            <BioLabel>Bio</BioLabel>
+            <BioContent>{user.bio ? user.bio : "No bio added yet."}</BioContent>
+          </ProfileBio>
+
+          {/* Add admin dashboard links if user is admin */}
+          {isAdmin && (
+            <AdminDashboard>
+              <DashboardTitle>Admin Dashboard</DashboardTitle>
+              <DashboardLinks>
+                <DashboardLink to="/subscribers">
+                  <FaBell />
+                  <span>Manage Subscribers</span>
+                </DashboardLink>
+
+                {/* Add other admin links here if needed */}
+              </DashboardLinks>
+            </AdminDashboard>
+          )}
+        </>
       )}
     </Container>
   );
@@ -492,6 +513,54 @@ const LoadingMessage = styled.div`
   padding: 4rem 0;
   font-size: 1.125rem;
   color: #666666;
+`;
+
+// New styled components for admin dashboard
+const AdminDashboard = styled.div`
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-top: 2rem;
+`;
+
+const DashboardTitle = styled.h2`
+  font-size: 1.25rem;
+  color: #333333;
+  margin: 0 0 1rem;
+`;
+
+const DashboardLinks = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+`;
+
+const DashboardLink = styled(Link)`
+  display: flex;
+  align-items: center;
+  background-color: #f9f9f9;
+  padding: 1rem;
+  border-radius: 4px;
+  color: #333333;
+  text-decoration: none;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: #ff7e5f;
+    color: white;
+    transform: translateY(-2px);
+  }
+
+  svg {
+    font-size: 1.25rem;
+    margin-right: 0.75rem;
+    color: #ff7e5f;
+  }
+
+  &:hover svg {
+    color: white;
+  }
 `;
 
 export default Profile;

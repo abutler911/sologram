@@ -22,6 +22,8 @@ import AddPostsToCollection from "./pages/AddPostsToCollection";
 import CreateStory from "./pages/CreateStory";
 import StoryArchive from "./pages/StoryArchive";
 import ArchivedStoryView from "./pages/ArchivedStoryView";
+// Subscriber Pages
+import SubscriberAdmin from "./pages/SubscriberAdmin";
 // Context Provider
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
@@ -116,6 +118,16 @@ function App() {
                 element={
                   <PrivateRoute>
                     <AddPostsToCollection />
+                  </PrivateRoute>
+                }
+              />
+
+              {/* Subscriber Admin Route */}
+              <Route
+                path="/subscribers"
+                element={
+                  <PrivateRoute>
+                    <SubscriberAdmin />
                   </PrivateRoute>
                 }
               />

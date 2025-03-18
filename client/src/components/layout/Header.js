@@ -11,6 +11,7 @@ import {
   FaFolder,
   FaPlus,
   FaArchive,
+  FaBell,
 } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 
@@ -68,6 +69,16 @@ const Header = () => {
                 </NavLink>
               </NavItem>
 
+              {/* Add Subscriber Management Link for Admins */}
+              {isAdmin && (
+                <NavItem>
+                  <NavLink to="/subscribers">
+                    <FaBell />
+                    <span>Subscribers</span>
+                  </NavLink>
+                </NavItem>
+              )}
+
               <NavItem>
                 <NavLink to="/profile">
                   <FaUser />
@@ -113,10 +124,16 @@ const Header = () => {
                 <span>New Post</span>
               </ActionOption>
               {isAdmin && (
-                <ActionOption to="/collections/create">
-                  <FaFolder />
-                  <span>New Collection</span>
-                </ActionOption>
+                <>
+                  <ActionOption to="/collections/create">
+                    <FaFolder />
+                    <span>New Collection</span>
+                  </ActionOption>
+                  <ActionOption to="/subscribers">
+                    <FaBell />
+                    <span>Manage Subscribers</span>
+                  </ActionOption>
+                </>
               )}
               <ActionOption to="/create-story">
                 <FaCamera />

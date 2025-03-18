@@ -4,8 +4,8 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import { FaSearch, FaCamera } from "react-icons/fa";
 import Stories from "../components/stories/Stories";
-
 import PostCard from "../components/posts/PostCard";
+import SubscribeBanner from "../components/notifications/SubscribeBanner";
 
 const Home = () => {
   const [posts, setPosts] = useState([]);
@@ -158,6 +158,9 @@ const Home = () => {
   return (
     <PageWrapper>
       <HomeContainer>
+        {/* Added Subscription Banner */}
+        <SubscribeBanner />
+
         {showAboutBanner && (
           <AboutBanner>
             <BannerContent>

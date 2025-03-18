@@ -1,5 +1,8 @@
 // controllers/stories.js
 const Story = require("../models/Story");
+const {
+  notifySubscribersOfNewContent,
+} = require("../services/notificationService");
 
 // Get all stories (non-archived only)
 exports.getStories = async (req, res) => {
@@ -54,10 +57,21 @@ exports.createStory = async (req, res) => {
       mediaType: file.mimetype.startsWith("image") ? "image" : "video",
       mediaUrl: file.path,
     }));
+
     const story = await Story.create({
       title,
       media,
     });
+
+    // Send notification about new story (async, don't wait for completion)
+    notifySubscribersOfNewContent({
+      title,
+      type: "story",
+    }).catch((error) => {
+      console.error("Error sending story notifications:", error);
+      // Don't let notification failures affect story creation response
+    });
+
     res.status(201).json({
       success: true,
       data: story,
