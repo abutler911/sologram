@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaCamera } from "react-icons/fa";
 
 import PostCard from "../components/posts/PostCard";
 
@@ -14,6 +14,7 @@ const Home = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [searching, setSearching] = useState(false);
+  const [showAboutBanner, setShowAboutBanner] = useState(true);
 
   const observer = useRef();
 
@@ -81,6 +82,19 @@ const Home = () => {
     };
   }, [page]);
 
+  // Check local storage for banner visibility
+  useEffect(() => {
+    const hasBannerBeenClosed = localStorage.getItem("aboutBannerClosed");
+    if (hasBannerBeenClosed) {
+      setShowAboutBanner(false);
+    }
+  }, []);
+
+  const closeBanner = () => {
+    setShowAboutBanner(false);
+    localStorage.setItem("aboutBannerClosed", "true");
+  };
+
   // Handle search
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -141,69 +155,101 @@ const Home = () => {
   };
 
   return (
-    <HomeContainer>
-      <SearchContainer>
-        <SearchForm onSubmit={handleSearch}>
-          <SearchInput
-            type="text"
-            placeholder="Search posts..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <SearchButton type="submit">
-            <FaSearch />
-          </SearchButton>
-        </SearchForm>
+    <PageWrapper>
+      <HomeContainer>
+        {showAboutBanner && (
+          <AboutBanner>
+            <BannerContent>
+              <LogoContainer>
+                <FaCamera />
+              </LogoContainer>
+              <BannerTextContainer>
+                <BannerTitle>Welcome to Sologram</BannerTitle>
+                <BannerDescription>
+                  My personal photography journal where I share moments and
+                  create collections. Feel free to explore and enjoy the visual
+                  storytelling.
+                </BannerDescription>
+              </BannerTextContainer>
+            </BannerContent>
+            <CloseButton onClick={closeBanner}>×</CloseButton>
+          </AboutBanner>
+        )}
+
+        <SearchContainer>
+          <SearchForm onSubmit={handleSearch}>
+            <SearchInput
+              type="text"
+              placeholder="Search posts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <SearchButton type="submit">
+              <FaSearch />
+            </SearchButton>
+          </SearchForm>
+
+          {searching && (
+            <ClearSearchButton onClick={clearSearch}>
+              Clear Search
+            </ClearSearchButton>
+          )}
+        </SearchContainer>
 
         {searching && (
-          <ClearSearchButton onClick={clearSearch}>
-            Clear Search
-          </ClearSearchButton>
+          <SearchResults>
+            Showing results for "{searchQuery}" ({posts.length}{" "}
+            {posts.length === 1 ? "post" : "posts"})
+          </SearchResults>
         )}
-      </SearchContainer>
 
-      {searching && (
-        <SearchResults>
-          Showing results for "{searchQuery}" ({posts.length}{" "}
-          {posts.length === 1 ? "post" : "posts"})
-        </SearchResults>
-      )}
+        {error ? (
+          <ErrorMessage>{error}</ErrorMessage>
+        ) : posts.length > 0 ? (
+          <PostGrid>
+            {posts.map((post, index) => {
+              if (posts.length === index + 1) {
+                // Add ref to last element for infinite scrolling
+                return (
+                  <GridItem ref={lastPostElementRef} key={post._id}>
+                    <PostCard post={post} onDelete={handleDeletePost} />
+                  </GridItem>
+                );
+              } else {
+                return (
+                  <GridItem key={post._id}>
+                    <PostCard post={post} onDelete={handleDeletePost} />
+                  </GridItem>
+                );
+              }
+            })}
+          </PostGrid>
+        ) : loading ? (
+          <LoadingMessage>Loading posts...</LoadingMessage>
+        ) : (
+          <NoPostsMessage>
+            No posts available. Start creating your own content!
+          </NoPostsMessage>
+        )}
 
-      {error ? (
-        <ErrorMessage>{error}</ErrorMessage>
-      ) : posts.length > 0 ? (
-        <PostGrid>
-          {posts.map((post, index) => {
-            if (posts.length === index + 1) {
-              // Add ref to last element for infinite scrolling
-              return (
-                <GridItem ref={lastPostElementRef} key={post._id}>
-                  <PostCard post={post} onDelete={handleDeletePost} />
-                </GridItem>
-              );
-            } else {
-              return (
-                <GridItem key={post._id}>
-                  <PostCard post={post} onDelete={handleDeletePost} />
-                </GridItem>
-              );
-            }
-          })}
-        </PostGrid>
-      ) : loading ? (
-        <LoadingMessage>Loading posts...</LoadingMessage>
-      ) : (
-        <NoPostsMessage>
-          No posts available. Start creating your own content!
-        </NoPostsMessage>
-      )}
-
-      {loading && posts.length > 0 && (
-        <LoadingMore>Loading more posts...</LoadingMore>
-      )}
-    </HomeContainer>
+        {loading && posts.length > 0 && (
+          <LoadingMore>Loading more posts...</LoadingMore>
+        )}
+      </HomeContainer>
+    </PageWrapper>
   );
 };
+
+// New wrapper for dark background
+const PageWrapper = styled.div`
+  background-color: #121212; /* Dark background color */
+  min-height: 100vh;
+  padding: 1rem 0;
+
+  @media (max-width: 768px) {
+    padding: 0;
+  }
+`;
 
 // Styled Components
 const HomeContainer = styled.div`
@@ -213,6 +259,74 @@ const HomeContainer = styled.div`
 
   @media (max-width: 768px) {
     padding: 1rem;
+  }
+`;
+
+// About Banner Styles
+const AboutBanner = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  position: relative;
+`;
+
+const BannerContent = styled.div`
+  display: flex;
+  align-items: center;
+  flex: 1;
+`;
+
+const LogoContainer = styled.div`
+  width: 50px;
+  height: 50px;
+  background-color: #ff7e5f;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1.5rem;
+  flex-shrink: 0;
+
+  svg {
+    font-size: 1.5rem;
+    color: white;
+  }
+`;
+
+const BannerTextContainer = styled.div`
+  flex: 1;
+`;
+
+const BannerTitle = styled.h2`
+  font-size: 1.25rem;
+  color: #333;
+  margin: 0 0 0.5rem;
+`;
+
+const BannerDescription = styled.p`
+  font-size: 0.95rem;
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  margin-left: 1rem;
+
+  &:hover {
+    color: #555;
   }
 `;
 
@@ -232,10 +346,16 @@ const SearchForm = styled.form`
 const SearchInput = styled.input`
   flex: 1;
   padding: 0.75rem;
-  border: 1px solid #dddddd;
+  border: 1px solid #333;
   border-right: none;
   border-radius: 4px 0 0 4px;
   font-size: 1rem;
+  background-color: #1e1e1e;
+  color: #fff;
+
+  &::placeholder {
+    color: #aaa;
+  }
 
   &:focus {
     outline: none;
@@ -258,23 +378,23 @@ const SearchButton = styled.button`
 `;
 
 const ClearSearchButton = styled.button`
-  background-color: transparent;
-  color: #666666;
-  border: 1px solid #dddddd;
+  background-color: #2a2a2a;
+  color: #ddd;
+  border: 1px solid #444;
   border-radius: 4px;
   padding: 0.75rem 1rem;
   cursor: pointer;
   transition: all 0.3s;
 
   &:hover {
-    background-color: #f2f2f2;
+    background-color: #333;
   }
 `;
 
 const SearchResults = styled.div`
   margin-bottom: 1.5rem;
   font-size: 1rem;
-  color: #666666;
+  color: #ddd;
 `;
 
 const PostGrid = styled.div`
@@ -297,7 +417,7 @@ const GridItem = styled.div`
 `;
 
 const ErrorMessage = styled.div`
-  background-color: #f8d7da;
+  background-color: rgba(248, 215, 218, 0.9);
   color: #721c24;
   padding: 1rem;
   border-radius: 4px;
@@ -308,21 +428,21 @@ const ErrorMessage = styled.div`
 const LoadingMessage = styled.div`
   text-align: center;
   margin: 4rem 0;
-  color: #666666;
+  color: #ddd;
   font-size: 1.125rem;
 `;
 
 const NoPostsMessage = styled.div`
   text-align: center;
   margin: 4rem 0;
-  color: #666666;
+  color: #ddd;
   font-size: 1.125rem;
 `;
 
 const LoadingMore = styled.div`
   text-align: center;
   margin: 2rem 0;
-  color: #666666;
+  color: #aaa;
   font-style: italic;
 `;
 
