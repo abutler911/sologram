@@ -3,6 +3,7 @@ import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { FaSearch, FaCamera } from "react-icons/fa";
+import Stories from "../components/stories/Stories";
 
 import PostCard from "../components/posts/PostCard";
 
@@ -175,7 +176,7 @@ const Home = () => {
             <CloseButton onClick={closeBanner}>×</CloseButton>
           </AboutBanner>
         )}
-
+        <Stories />
         <SearchContainer>
           <SearchForm onSubmit={handleSearch}>
             <SearchInput
