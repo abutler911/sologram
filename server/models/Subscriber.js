@@ -42,7 +42,4 @@ const SubscriberSchema = new mongoose.Schema({
   },
 });
 
-// Index for faster queries on phone field
-SubscriberSchema.index({ phone: 1 });
-
 module.exports = mongoose.model("Subscriber", SubscriberSchema);

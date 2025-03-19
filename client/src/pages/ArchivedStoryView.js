@@ -1,4 +1,3 @@
-// pages/ArchivedStoryView.js
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import styled from "styled-components";
@@ -20,18 +19,43 @@ const ArchivedStoryView = () => {
   const [error, setError] = useState(null);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
 
-  // Fetch story data
   useEffect(() => {
     const fetchStory = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`/api/stories/archived/${id}`);
-        setStory(response.data.data);
+        console.log("Fetching archived story with ID:", id);
+
+        const token = localStorage.getItem("token");
+        const response = await axios.get(`/api/archived-stories/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        console.log("Archived story response:", response.data);
+
+        if (!response.data.success) {
+          throw new Error(response.data.message || "Failed to load story");
+        }
+
+        const fetchedStory = response.data.data;
+
+        if (!fetchedStory) {
+          throw new Error("Story data is missing");
+        }
+
+        if (!fetchedStory.media || fetchedStory.media.length === 0) {
+          throw new Error("No media found in this archived story");
+        }
+
+        setStory(fetchedStory);
         setError(null);
       } catch (err) {
         console.error("Error fetching archived story:", err);
-        setError("Story not found or could not be loaded");
-        toast.error("Failed to load story");
+        const errorMessage =
+          err.response?.data?.message || err.message || "Failed to load story";
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -40,7 +64,6 @@ const ArchivedStoryView = () => {
     fetchStory();
   }, [id]);
 
-  // Handle navigation
   const nextMedia = () => {
     if (story && activeMediaIndex < story.media.length - 1) {
       setActiveMediaIndex((prev) => prev + 1);
@@ -53,7 +76,6 @@ const ArchivedStoryView = () => {
     }
   };
 
-  // Swipe handlers
   const swipeHandlers = useSwipeable({
     onSwipedLeft: nextMedia,
     onSwipedRight: prevMedia,
@@ -61,23 +83,39 @@ const ArchivedStoryView = () => {
     trackMouse: true,
   });
 
-  // Handle deletion
   const handleDelete = async () => {
     if (
-      !window.confirm(
-        "Are you sure you want to permanently delete this archived story?"
-      )
+      !window.confirm("Are you sure you want to permanently delete this story?")
     ) {
       return;
     }
 
     try {
-      await axios.delete(`/api/stories/archived/${id}`);
-      toast.success("Story deleted permanently");
-      navigate("/story-archive");
+      setLoading(true);
+      console.log("Deleting archived story with ID:", id);
+
+      const token = localStorage.getItem("token");
+      const response = await axios.delete(`/api/archived-stories/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("Delete response:", response.data);
+
+      if (response.data.success) {
+        toast.success("Story deleted successfully");
+        navigate("/story-archive");
+      } else {
+        throw new Error(response.data.message || "Failed to delete story");
+      }
     } catch (err) {
       console.error("Error deleting story:", err);
-      toast.error("Failed to delete story");
+      const errorMessage =
+        err.response?.data?.message || err.message || "Failed to delete story";
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -117,7 +155,15 @@ const ArchivedStoryView = () => {
         </Header>
 
         <StoryTitle>{story.title}</StoryTitle>
-        <StoryDate>{new Date(story.createdAt).toLocaleDateString()}</StoryDate>
+        <StoryDate>
+          Created: {new Date(story.createdAt).toLocaleDateString()}
+          {story.archivedAt && (
+            <span>
+              {" "}
+              • Archived: {new Date(story.archivedAt).toLocaleDateString()}
+            </span>
+          )}
+        </StoryDate>
 
         <MediaContainer {...swipeHandlers}>
           <MediaTrack
@@ -125,10 +171,14 @@ const ArchivedStoryView = () => {
           >
             {story.media.map((media, index) => (
               <MediaItem key={index}>
-                <MediaImage
-                  src={media.mediaUrl}
-                  alt={`${story.title} - Image ${index + 1}`}
-                />
+                {media.mediaType === "image" ? (
+                  <MediaImage
+                    src={media.mediaUrl}
+                    alt={`${story.title} - Image ${index + 1}`}
+                  />
+                ) : (
+                  <MediaVideo src={media.mediaUrl} controls />
+                )}
               </MediaItem>
             ))}
           </MediaTrack>
@@ -153,6 +203,16 @@ const ArchivedStoryView = () => {
               <MediaCounter>
                 {activeMediaIndex + 1} / {story.media.length}
               </MediaCounter>
+
+              <DotIndicators>
+                {story.media.map((_, index) => (
+                  <Dot
+                    key={index}
+                    active={index === activeMediaIndex}
+                    onClick={() => setActiveMediaIndex(index)}
+                  />
+                ))}
+              </DotIndicators>
             </>
           )}
         </MediaContainer>
@@ -161,7 +221,6 @@ const ArchivedStoryView = () => {
   );
 };
 
-// Styled components (similar to your other dark theme components)
 const PageWrapper = styled.div`
   background-color: #121212;
   min-height: 100vh;
@@ -253,7 +312,7 @@ const MediaContainer = styled.div`
   overflow: hidden;
   border-radius: 8px;
   background-color: #000;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 16 / 9;
 
   @media (max-width: 768px) {
     aspect-ratio: 1 / 1;
@@ -277,6 +336,12 @@ const MediaItem = styled.div`
 `;
 
 const MediaImage = styled.img`
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+`;
+
+const MediaVideo = styled.video`
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
@@ -325,6 +390,33 @@ const MediaCounter = styled.div`
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.75rem;
+`;
+
+const DotIndicators = styled.div`
+  position: absolute;
+  bottom: 1rem;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+`;
+
+const Dot = styled.button`
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background-color: ${(props) =>
+    props.active ? "#ff7e5f" : "rgba(255, 255, 255, 0.5)"};
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: ${(props) =>
+      props.active ? "#ff7e5f" : "rgba(255, 255, 255, 0.8)"};
+  }
 `;
 
 export default ArchivedStoryView;

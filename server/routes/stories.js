@@ -5,30 +5,16 @@ const {
   getStories,
   getStory,
   createStory,
-  getArchivedStories,
-  getArchivedStory,
   archiveStory,
   deleteStory,
 } = require("../controllers/stories");
 const { protect } = require("../middleware/auth");
 
-// ✅ Archive routes must be ABOVE the :id route
-router.get("/archived", protect, getArchivedStories);
-router.get("/archived/:id", protect, getArchivedStory);
-
-// Get all active stories
-router.get("/", getStories);
-
-// Get a single story (Must be below `/archived`)
-router.get("/:id", getStory);
-
-// Create a new story (protected)
-router.post("/", protect, upload.array("media", 10), createStory);
-
-// Archive a story
-router.put("/:id/archive", protect, archiveStory);
-
-// Delete a story (protected)
-router.delete("/:id", protect, deleteStory);
+// Regular story routes only
+router.get("/", getStories); // List all active stories
+router.get("/:id", getStory); // Get a specific story by ID
+router.post("/", protect, upload.array("media", 10), createStory); // Create a new story
+router.put("/:id/archive", protect, archiveStory); // Archive a story
+router.delete("/:id", protect, deleteStory); // Delete a story
 
 module.exports = router;
