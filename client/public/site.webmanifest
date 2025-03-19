@@ -1,6 +1,6 @@
 {
-  "name": "MyWebSite",
-  "short_name": "MySite",
+  "name": "SoloGram - One Voice. Infinite Moments.",
+  "short_name": "SoloGram",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
