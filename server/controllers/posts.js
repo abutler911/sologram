@@ -1,10 +1,10 @@
 const Post = require("../models/Post");
+const Like = require("../models/Like");
 const { cloudinary } = require("../config/cloudinary");
 const {
   notifySubscribersOfNewContent,
 } = require("../services/notificationService");
 
-// Get all posts
 exports.getPosts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -35,7 +35,6 @@ exports.getPosts = async (req, res) => {
   }
 };
 
-// Get a single post
 exports.getPost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -68,12 +67,10 @@ exports.getPost = async (req, res) => {
   }
 };
 
-// Create a post
 exports.createPost = async (req, res) => {
   try {
     const { caption, content, tags } = req.body;
 
-    // Create new post without media
     let newPost = {
       caption,
       content,
@@ -81,11 +78,8 @@ exports.createPost = async (req, res) => {
       media: [],
     };
 
-    // Add media files if uploaded
     if (req.files && req.files.length > 0) {
-      // Process each uploaded file
       newPost.media = req.files.map((file) => {
-        // Determine media type based on file
         let mediaType = "none";
         if (file.mimetype.startsWith("image")) {
           mediaType = "image";
@@ -103,13 +97,11 @@ exports.createPost = async (req, res) => {
 
     const post = await Post.create(newPost);
 
-    // Send notification about new post (async, don't wait for completion)
     notifySubscribersOfNewContent({
       title: caption,
       type: "post",
     }).catch((error) => {
       console.error("Error sending notifications:", error);
-      // Don't let notification failures affect post creation response
     });
 
     res.status(201).json({
@@ -125,7 +117,6 @@ exports.createPost = async (req, res) => {
   }
 };
 
-// Update a post
 exports.updatePost = async (req, res) => {
   try {
     let post = await Post.findById(req.params.id);
@@ -140,29 +131,22 @@ exports.updatePost = async (req, res) => {
     const { caption, content, tags, keepMedia } = req.body;
     const keepMediaIds = keepMedia ? keepMedia.split(",") : [];
 
-    // Update text fields
     post.caption = caption || post.caption;
     post.content = content || post.content;
     post.tags = tags ? tags.split(",").map((tag) => tag.trim()) : post.tags;
     post.updatedAt = Date.now();
 
-    // Handle media updates
     if (req.files && req.files.length > 0) {
-      // If we're keeping some existing media
       let updatedMedia = [];
 
-      // Keep the selected existing media
       if (post.media && post.media.length > 0 && keepMediaIds.length > 0) {
-        // Filter media items to keep
         const mediaToKeep = post.media.filter((media) =>
           keepMediaIds.includes(media._id.toString())
         );
         updatedMedia = [...mediaToKeep];
       }
 
-      // Add new media files
       const newMedia = req.files.map((file) => {
-        // Determine media type
         let mediaType = "none";
         if (file.mimetype.startsWith("image")) {
           mediaType = "image";
@@ -177,10 +161,8 @@ exports.updatePost = async (req, res) => {
         };
       });
 
-      // Combine kept media with new media
       post.media = [...updatedMedia, ...newMedia];
 
-      // Delete removed media from Cloudinary
       if (post.media && post.media.length > 0) {
         const mediaToDelete = post.media.filter(
           (media) => !keepMediaIds.includes(media._id.toString())
@@ -193,18 +175,14 @@ exports.updatePost = async (req, res) => {
         }
       }
     } else if (keepMediaIds.length > 0 && post.media && post.media.length > 0) {
-      // If no new files but keeping some existing ones
-      // Filter media items to keep
       const mediaToKeep = post.media.filter((media) =>
         keepMediaIds.includes(media._id.toString())
       );
 
-      // Find media items to delete
       const mediaToDelete = post.media.filter(
         (media) => !keepMediaIds.includes(media._id.toString())
       );
 
-      // Delete removed media from Cloudinary
       for (const media of mediaToDelete) {
         if (media.cloudinaryId) {
           await cloudinary.uploader.destroy(media.cloudinaryId);
@@ -217,7 +195,6 @@ exports.updatePost = async (req, res) => {
       post.media &&
       post.media.length > 0
     ) {
-      // If keepMediaIds is empty, delete all existing media
       for (const media of post.media) {
         if (media.cloudinaryId) {
           await cloudinary.uploader.destroy(media.cloudinaryId);
@@ -226,7 +203,6 @@ exports.updatePost = async (req, res) => {
       post.media = [];
     }
 
-    // Save updated post
     await post.save();
 
     res.status(200).json({
@@ -250,7 +226,6 @@ exports.updatePost = async (req, res) => {
   }
 };
 
-// Delete a post
 exports.deletePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -262,7 +237,6 @@ exports.deletePost = async (req, res) => {
       });
     }
 
-    // Delete all media files from Cloudinary
     if (post.media && post.media.length > 0) {
       for (const media of post.media) {
         if (media.cloudinaryId) {
@@ -271,7 +245,6 @@ exports.deletePost = async (req, res) => {
       }
     }
 
-    // Delete post from database
     await post.deleteOne();
 
     res.status(200).json({
@@ -295,7 +268,6 @@ exports.deletePost = async (req, res) => {
   }
 };
 
-// Search posts
 exports.searchPosts = async (req, res) => {
   try {
     const { query } = req.query;
@@ -325,10 +297,12 @@ exports.searchPosts = async (req, res) => {
   }
 };
 
-// Like a post
 exports.likePost = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const postId = req.params.id;
+    const userIp = req.ip;
+
+    const post = await Post.findById(postId);
 
     if (!post) {
       return res.status(404).json({
@@ -337,7 +311,20 @@ exports.likePost = async (req, res) => {
       });
     }
 
-    // Increment likes count
+    const existingLike = await Like.findOne({ post: postId, ip: userIp });
+
+    if (existingLike) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already liked this post",
+      });
+    }
+
+    await Like.create({
+      post: postId,
+      ip: userIp,
+    });
+
     post.likes += 1;
     await post.save();
 
@@ -346,6 +333,13 @@ exports.likePost = async (req, res) => {
       data: post,
     });
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already liked this post",
+      });
+    }
+
     console.error(err);
     res.status(500).json({
       success: false,
