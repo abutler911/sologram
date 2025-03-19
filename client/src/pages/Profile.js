@@ -118,139 +118,156 @@ const Profile = () => {
 
   if (!user) {
     return (
-      <Container>
-        <LoadingMessage>Loading profile...</LoadingMessage>
-      </Container>
+      <PageWrapper>
+        <Container>
+          <LoadingMessage>Loading profile...</LoadingMessage>
+        </Container>
+      </PageWrapper>
     );
   }
 
   return (
-    <Container>
-      <ProfileHeader>
-        <ProfileImageContainer>
-          {isEditing ? (
-            <DropzoneContainer {...getRootProps()}>
-              <input {...getInputProps()} />
-              {imagePreview ? (
-                <ProfileImage src={imagePreview} alt={user.username} />
-              ) : (
-                <ProfilePlaceholder>
+    <PageWrapper>
+      <Container>
+        <ProfileHeader>
+          <ProfileImageContainer>
+            {isEditing ? (
+              <DropzoneContainer {...getRootProps()}>
+                <input {...getInputProps()} />
+                {imagePreview ? (
+                  <ProfileImage src={imagePreview} alt={user.username} />
+                ) : (
+                  <ProfilePlaceholder>
+                    <FaCamera />
+                  </ProfilePlaceholder>
+                )}
+                <UploadOverlay>
                   <FaCamera />
-                </ProfilePlaceholder>
-              )}
-              <UploadOverlay>
+                  <span>Change Photo</span>
+                </UploadOverlay>
+              </DropzoneContainer>
+            ) : imagePreview ? (
+              <ProfileImage src={imagePreview} alt={user.username} />
+            ) : (
+              <ProfilePlaceholder>
                 <FaCamera />
-                <span>Change Photo</span>
-              </UploadOverlay>
-            </DropzoneContainer>
-          ) : imagePreview ? (
-            <ProfileImage src={imagePreview} alt={user.username} />
-          ) : (
-            <ProfilePlaceholder>
-              <FaCamera />
-            </ProfilePlaceholder>
-          )}
-        </ProfileImageContainer>
+              </ProfilePlaceholder>
+            )}
+          </ProfileImageContainer>
 
-        <ProfileInfo>
-          <ProfileName>{user.username}</ProfileName>
-          <ProfileEmail>{user.email}</ProfileEmail>
+          <ProfileInfo>
+            <ProfileName>{user.username}</ProfileName>
+            <ProfileEmail>{user.email}</ProfileEmail>
 
-          {!isEditing && (
-            <EditButton onClick={() => setIsEditing(true)}>
-              <FaEdit />
-              <span>Edit Profile</span>
-            </EditButton>
-          )}
-        </ProfileInfo>
-      </ProfileHeader>
+            {!isEditing && (
+              <EditButton onClick={() => setIsEditing(true)}>
+                <FaEdit />
+                <span>Edit Profile</span>
+              </EditButton>
+            )}
+          </ProfileInfo>
+        </ProfileHeader>
 
-      {isEditing ? (
-        <ProfileForm onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="username">Username</Label>
-            <Input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-            />
-          </FormGroup>
+        {isEditing ? (
+          <ProfileForm onSubmit={handleSubmit}>
+            <FormGroup>
+              <Label htmlFor="username">Username</Label>
+              <Input
+                type="text"
+                id="username"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                required
+              />
+            </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </FormGroup>
+            <FormGroup>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea
-              id="bio"
-              name="bio"
-              value={formData.bio}
-              onChange={handleChange}
-              rows={4}
-              placeholder="Tell us about yourself..."
-              maxLength={500}
-            />
-            <CharacterCount>
-              {formData.bio ? formData.bio.length : 0}/500 characters
-            </CharacterCount>
-          </FormGroup>
+            <FormGroup>
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                name="bio"
+                value={formData.bio}
+                onChange={handleChange}
+                rows={4}
+                placeholder="Tell us about yourself..."
+                maxLength={500}
+              />
+              <CharacterCount>
+                {formData.bio ? formData.bio.length : 0}/500 characters
+              </CharacterCount>
+            </FormGroup>
 
-          <ButtonGroup>
-            <CancelButton
-              type="button"
-              onClick={handleCancel}
-              disabled={loading}
-            >
-              <FaTimes />
-              <span>Cancel</span>
-            </CancelButton>
+            <ButtonGroup>
+              <CancelButton
+                type="button"
+                onClick={handleCancel}
+                disabled={loading}
+              >
+                <FaTimes />
+                <span>Cancel</span>
+              </CancelButton>
 
-            <SaveButton type="submit" disabled={loading}>
-              <FaCheck />
-              <span>{loading ? "Saving..." : "Save Changes"}</span>
-            </SaveButton>
-          </ButtonGroup>
-        </ProfileForm>
-      ) : (
-        <>
-          <ProfileBio>
-            <BioLabel>Bio</BioLabel>
-            <BioContent>{user.bio ? user.bio : "No bio added yet."}</BioContent>
-          </ProfileBio>
+              <SaveButton type="submit" disabled={loading}>
+                <FaCheck />
+                <span>{loading ? "Saving..." : "Save Changes"}</span>
+              </SaveButton>
+            </ButtonGroup>
+          </ProfileForm>
+        ) : (
+          <>
+            <ProfileBio>
+              <BioLabel>Bio</BioLabel>
+              <BioContent>
+                {user.bio ? user.bio : "No bio added yet."}
+              </BioContent>
+            </ProfileBio>
 
-          {/* Add admin dashboard links if user is admin */}
-          {isAdmin && (
-            <AdminDashboard>
-              <DashboardTitle>Admin Dashboard</DashboardTitle>
-              <DashboardLinks>
-                <DashboardLink to="/subscribers">
-                  <FaBell />
-                  <span>Manage Subscribers</span>
-                </DashboardLink>
+            {/* Add admin dashboard links if user is admin */}
+            {isAdmin && (
+              <AdminDashboard>
+                <DashboardTitle>Admin Dashboard</DashboardTitle>
+                <DashboardLinks>
+                  <DashboardLink to="/subscribers">
+                    <FaBell />
+                    <span>Manage Subscribers</span>
+                  </DashboardLink>
 
-                {/* Add other admin links here if needed */}
-              </DashboardLinks>
-            </AdminDashboard>
-          )}
-        </>
-      )}
-    </Container>
+                  {/* Add other admin links here if needed */}
+                </DashboardLinks>
+              </AdminDashboard>
+            )}
+          </>
+        )}
+      </Container>
+    </PageWrapper>
   );
 };
 
 // Styled Components
+// New dark theme wrapper
+const PageWrapper = styled.div`
+  background-color: #121212;
+  min-height: 100vh;
+  padding: 1rem 0;
+
+  @media (max-width: 768px) {
+    padding: 0;
+  }
+`;
+
 const Container = styled.div`
   max-width: 800px;
   margin: 0 auto;
@@ -265,6 +282,10 @@ const ProfileHeader = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 2.5rem;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
   @media (max-width: 640px) {
     flex-direction: column;
@@ -287,22 +308,22 @@ const ProfileImage = styled.img`
   height: 150px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 3px solid #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 `;
 
 const ProfilePlaceholder = styled.div`
   width: 150px;
   height: 150px;
   border-radius: 50%;
-  background-color: #f0f0f0;
+  background-color: #2a2a2a;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 3rem;
-  color: #999999;
-  border: 3px solid #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: #666;
+  border: 3px solid #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 `;
 
 const DropzoneContainer = styled.div`
@@ -321,7 +342,7 @@ const UploadOverlay = styled.div`
   right: 0;
   bottom: 0;
   border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -346,20 +367,20 @@ const ProfileInfo = styled.div`
 
 const ProfileName = styled.h1`
   font-size: 2rem;
-  color: #333333;
+  color: #fff;
   margin: 0 0 0.5rem;
 `;
 
 const ProfileEmail = styled.p`
-  color: #666666;
+  color: #aaa;
   margin: 0 0 1.5rem;
 `;
 
 const EditButton = styled.button`
   display: inline-flex;
   align-items: center;
-  background-color: #f0f0f0;
-  color: #333333;
+  background-color: #333;
+  color: #ddd;
   border: none;
   border-radius: 4px;
   padding: 0.5rem 1rem;
@@ -368,7 +389,7 @@ const EditButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #e0e0e0;
+    background-color: #444;
   }
 
   svg {
@@ -377,28 +398,28 @@ const EditButton = styled.button`
 `;
 
 const ProfileBio = styled.div`
-  background-color: #ffffff;
+  background-color: #1e1e1e;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   padding: 1.5rem;
 `;
 
 const BioLabel = styled.h2`
   font-size: 1.25rem;
-  color: #333333;
+  color: #fff;
   margin: 0 0 1rem;
 `;
 
 const BioContent = styled.p`
-  color: #666666;
+  color: #ddd;
   line-height: 1.6;
   white-space: pre-line;
 `;
 
 const ProfileForm = styled.form`
-  background-color: #ffffff;
+  background-color: #1e1e1e;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   padding: 1.5rem;
 `;
 
@@ -410,15 +431,17 @@ const Label = styled.label`
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: #333333;
+  color: #ddd;
 `;
 
 const Input = styled.input`
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #dddddd;
+  background-color: #333;
+  border: 1px solid #444;
   border-radius: 4px;
   font-size: 1rem;
+  color: #fff;
   transition: border-color 0.3s;
 
   &:focus {
@@ -430,9 +453,11 @@ const Input = styled.input`
 const Textarea = styled.textarea`
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #dddddd;
+  background-color: #333;
+  border: 1px solid #444;
   border-radius: 4px;
   font-size: 1rem;
+  color: #fff;
   resize: vertical;
   transition: border-color 0.3s;
 
@@ -440,12 +465,16 @@ const Textarea = styled.textarea`
     outline: none;
     border-color: #ff7e5f;
   }
+
+  &::placeholder {
+    color: #888;
+  }
 `;
 
 const CharacterCount = styled.div`
   text-align: right;
   font-size: 0.75rem;
-  color: #666666;
+  color: #aaa;
   margin-top: 0.25rem;
 `;
 
@@ -480,11 +509,11 @@ const Button = styled.button`
 
 const CancelButton = styled(Button)`
   background-color: transparent;
-  color: #666666;
-  border: 1px solid #dddddd;
+  color: #ddd;
+  border: 1px solid #444;
 
   &:hover {
-    background-color: #f2f2f2;
+    background-color: #333;
   }
 
   &:disabled {
@@ -503,7 +532,7 @@ const SaveButton = styled(Button)`
   }
 
   &:disabled {
-    background-color: #cccccc;
+    background-color: #666;
     cursor: not-allowed;
   }
 `;
@@ -512,21 +541,21 @@ const LoadingMessage = styled.div`
   text-align: center;
   padding: 4rem 0;
   font-size: 1.125rem;
-  color: #666666;
+  color: #ddd;
 `;
 
-// New styled components for admin dashboard
+// Admin dashboard styled components (dark theme)
 const AdminDashboard = styled.div`
-  background-color: #ffffff;
+  background-color: #1e1e1e;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   padding: 1.5rem;
   margin-top: 2rem;
 `;
 
 const DashboardTitle = styled.h2`
   font-size: 1.25rem;
-  color: #333333;
+  color: #fff;
   margin: 0 0 1rem;
 `;
 
@@ -539,10 +568,10 @@ const DashboardLinks = styled.div`
 const DashboardLink = styled(Link)`
   display: flex;
   align-items: center;
-  background-color: #f9f9f9;
+  background-color: #252525;
   padding: 1rem;
   border-radius: 4px;
-  color: #333333;
+  color: #ddd;
   text-decoration: none;
   transition: all 0.3s ease;
 

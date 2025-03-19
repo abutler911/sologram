@@ -9,7 +9,7 @@ import {
   FaChevronLeft,
   FaChevronRight,
 } from "react-icons/fa";
-import { format } from "date-fns";
+import { formatDistance } from "date-fns";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
@@ -19,9 +19,12 @@ const PostCard = ({ post: initialPost, onDelete }) => {
   const [post, setPost] = useState(initialPost);
   const { isAuthenticated } = useContext(AuthContext);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const hasMultipleMedia = post.media && post.media.length > 1;
 
-  const formattedDate = format(new Date(post.createdAt), "MMMM d, yyyy");
+  const formattedDate = formatDistance(new Date(post.createdAt), new Date(), {
+    addSuffix: true,
+  });
 
   const handleLike = async () => {
     try {
@@ -32,6 +35,25 @@ const PostCard = ({ post: initialPost, onDelete }) => {
     } catch (err) {
       console.error("Error liking post:", err);
       toast.error("Failed to like post");
+    }
+  };
+
+  const confirmDelete = () => {
+    setShowDeleteModal(true);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await onDelete(post._id);
+      setShowDeleteModal(false);
+    } catch (err) {
+      console.error("Error deleting post:", err);
+      toast.error("Failed to delete post");
+      setShowDeleteModal(false);
     }
   };
 
@@ -67,127 +89,151 @@ const PostCard = ({ post: initialPost, onDelete }) => {
   };
 
   return (
-    <Card>
-      {post.media && post.media.length > 0 && (
-        <MediaContainer to={`/post/${post._id}`} onClick={handleMediaClick}>
-          <MediaCarousel {...swipeHandlers}>
-            <MediaTrack
-              style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
-            >
-              {post.media.map((media, index) => (
-                <MediaItem key={index}>
-                  {media.mediaType === "image" ? (
-                    <PostImage src={media.mediaUrl} alt={post.caption} />
-                  ) : (
-                    <PostVideo src={media.mediaUrl} controls />
-                  )}
-                </MediaItem>
-              ))}
-            </MediaTrack>
-          </MediaCarousel>
-
-          {hasMultipleMedia && (
-            <>
-              <NavigationArrow
-                className="prev"
-                onClick={handlePrev}
-                disabled={currentMediaIndex === 0}
+    <>
+      <Card>
+        {post.media && post.media.length > 0 && (
+          <MediaContainer to={`/post/${post._id}`} onClick={handleMediaClick}>
+            <MediaCarousel {...swipeHandlers}>
+              <MediaTrack
+                style={{
+                  transform: `translateX(-${currentMediaIndex * 100}%)`,
+                }}
               >
-                <FaChevronLeft />
-              </NavigationArrow>
-              <NavigationArrow
-                className="next"
-                onClick={handleNext}
-                disabled={currentMediaIndex === post.media.length - 1}
-              >
-                <FaChevronRight />
-              </NavigationArrow>
-              <IndicatorDots>
-                {post.media.map((_, index) => (
-                  <Dot
-                    key={index}
-                    active={index === currentMediaIndex}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setCurrentMediaIndex(index);
-                    }}
-                  />
+                {post.media.map((media, index) => (
+                  <MediaItem key={index}>
+                    {media.mediaType === "image" ? (
+                      <PostImage src={media.mediaUrl} alt={post.caption} />
+                    ) : (
+                      <PostVideo src={media.mediaUrl} controls />
+                    )}
+                  </MediaItem>
                 ))}
-              </IndicatorDots>
-            </>
+              </MediaTrack>
+            </MediaCarousel>
+
+            {hasMultipleMedia && (
+              <>
+                <NavigationArrow
+                  className="prev"
+                  onClick={handlePrev}
+                  disabled={currentMediaIndex === 0}
+                >
+                  <FaChevronLeft />
+                </NavigationArrow>
+                <NavigationArrow
+                  className="next"
+                  onClick={handleNext}
+                  disabled={currentMediaIndex === post.media.length - 1}
+                >
+                  <FaChevronRight />
+                </NavigationArrow>
+                <IndicatorDots>
+                  {post.media.map((_, index) => (
+                    <Dot
+                      key={index}
+                      active={index === currentMediaIndex}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentMediaIndex(index);
+                      }}
+                    />
+                  ))}
+                </IndicatorDots>
+              </>
+            )}
+          </MediaContainer>
+        )}
+
+        <CardContent>
+          <Caption to={`/post/${post._id}`}>{post.caption}</Caption>
+
+          {post.content && (
+            <Content>
+              {post.content.length > 150
+                ? `${post.content.substring(0, 150)}...`
+                : post.content}
+            </Content>
           )}
-        </MediaContainer>
+
+          {post.tags && post.tags.length > 0 && (
+            <TagsContainer>
+              {post.tags.map((tag, index) => (
+                <Tag key={index}>#{tag}</Tag>
+              ))}
+            </TagsContainer>
+          )}
+
+          <CardFooter>
+            <MetaData>
+              <TimeStamp>
+                <FaClock />
+                <span>{formattedDate}</span>
+              </TimeStamp>
+
+              <LikesCount onClick={handleLike}>
+                <FaHeart />
+                <span>{post.likes}</span>
+              </LikesCount>
+            </MetaData>
+
+            {isAuthenticated && (
+              <Actions>
+                <EditButton to={`/edit/${post._id}`}>
+                  <FaEdit />
+                </EditButton>
+
+                <DeleteButton onClick={confirmDelete}>
+                  <FaTrash />
+                </DeleteButton>
+              </Actions>
+            )}
+          </CardFooter>
+        </CardContent>
+      </Card>
+
+      {/* Delete confirmation modal */}
+      {showDeleteModal && (
+        <DeleteModal>
+          <DeleteModalContent>
+            <h3>Delete Post</h3>
+            <p>
+              Are you sure you want to delete this post? This action cannot be
+              undone.
+            </p>
+            <DeleteModalButtons>
+              <CancelButton onClick={cancelDelete}>Cancel</CancelButton>
+              <ConfirmDeleteButton onClick={handleDelete}>
+                Delete Post
+              </ConfirmDeleteButton>
+            </DeleteModalButtons>
+          </DeleteModalContent>
+          <Backdrop onClick={cancelDelete} />
+        </DeleteModal>
       )}
-
-      <CardContent>
-        <Caption to={`/post/${post._id}`}>{post.caption}</Caption>
-
-        {post.content && (
-          <Content>
-            {post.content.length > 150
-              ? `${post.content.substring(0, 150)}...`
-              : post.content}
-          </Content>
-        )}
-
-        {post.tags && post.tags.length > 0 && (
-          <TagsContainer>
-            {post.tags.map((tag, index) => (
-              <Tag key={index}>#{tag}</Tag>
-            ))}
-          </TagsContainer>
-        )}
-
-        <CardFooter>
-          <MetaData>
-            <TimeStamp>
-              <FaClock />
-              <span>{formattedDate}</span>
-            </TimeStamp>
-
-            <LikesCount onClick={handleLike}>
-              <FaHeart />
-              <span>{post.likes}</span>
-            </LikesCount>
-          </MetaData>
-
-          {isAuthenticated && (
-            <Actions>
-              <EditButton to={`/edit/${post._id}`}>
-                <FaEdit />
-              </EditButton>
-
-              <DeleteButton onClick={() => onDelete(post._id)}>
-                <FaTrash />
-              </DeleteButton>
-            </Actions>
-          )}
-        </CardFooter>
-      </CardContent>
-    </Card>
+    </>
   );
 };
 
 // Styled Components
 const Card = styled.div`
-  background-color: #ffffff;
+  background-color: #1e1e1e;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  width: 100%;
+  height: 100%; /* Take full height of grid cell */
+  width: 100%; /* Ensure it takes full width */
 
   /* Fixed card width for desktop and tablet */
   @media (min-width: 768px) {
-    width: 100%;
+    width: 100%; /* Ensure it takes full width */
   }
 
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   }
 `;
 
@@ -313,7 +359,7 @@ const Caption = styled(Link)`
   font-weight: 700;
   font-size: 1.25rem;
   margin-bottom: 0.75rem;
-  color: #333333;
+  color: #ffffff;
   text-decoration: none;
 
   &:hover {
@@ -329,7 +375,7 @@ const Caption = styled(Link)`
 `;
 
 const Content = styled.p`
-  color: #666666;
+  color: #aaaaaa;
   margin-bottom: 1rem;
   line-height: 1.5;
 
@@ -350,8 +396,8 @@ const TagsContainer = styled.div`
 `;
 
 const Tag = styled.span`
-  background-color: #f2f2f2;
-  color: #666666;
+  background-color: #333333;
+  color: #aaaaaa;
   padding: 0.25rem 0.5rem;
   border-radius: 16px;
   font-size: 0.875rem;
@@ -363,7 +409,7 @@ const CardFooter = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid #eeeeee;
+  border-top: 1px solid #333333;
   padding-top: 1rem;
   margin-top: auto; /* Push the footer to the bottom of the card */
 `;
@@ -376,7 +422,7 @@ const MetaData = styled.div`
 const TimeStamp = styled.div`
   display: flex;
   align-items: center;
-  color: #6c757d;
+  color: #888888;
   font-size: 0.875rem;
   margin-right: 1rem;
 
@@ -427,6 +473,96 @@ const DeleteButton = styled.button`
   &:hover {
     color: #c0392b;
   }
+`;
+
+const DeleteModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const DeleteModalContent = styled.div`
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 500px;
+  z-index: 1001;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+  h3 {
+    color: #ffffff;
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    color: #dddddd;
+    margin-bottom: 1.5rem;
+  }
+`;
+
+const DeleteModalButtons = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
+`;
+
+const CancelButton = styled.button`
+  background-color: #333333;
+  color: #dddddd;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #444444;
+  }
+
+  @media (max-width: 480px) {
+    order: 2;
+  }
+`;
+
+const ConfirmDeleteButton = styled.button`
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #c0392b;
+  }
+
+  @media (max-width: 480px) {
+    order: 1;
+    margin-bottom: 0.5rem;
+  }
+`;
+
+const Backdrop = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
 `;
 
 export default PostCard;

@@ -21,6 +21,8 @@ const CollectionDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showRemovePostModal, setShowRemovePostModal] = useState(false);
+  const [postToRemove, setPostToRemove] = useState(null);
 
   const { isAuthenticated } = useContext(AuthContext);
 
@@ -47,27 +49,28 @@ const CollectionDetail = () => {
   }, [id]);
 
   const handleDeletePost = async (postId) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to remove this post from the collection?"
-      )
-    ) {
-      return;
-    }
+    setPostToRemove(postId);
+    setShowRemovePostModal(true);
+  };
 
+  const confirmRemovePost = async () => {
     try {
-      await axios.delete(`/api/collections/${id}/posts/${postId}`);
+      await axios.delete(`/api/collections/${id}/posts/${postToRemove}`);
 
       // Update state to remove the post
       setCollection({
         ...collection,
-        posts: collection.posts.filter((post) => post._id !== postId),
+        posts: collection.posts.filter((post) => post._id !== postToRemove),
       });
 
       toast.success("Post removed from collection");
+      setShowRemovePostModal(false);
+      setPostToRemove(null);
     } catch (err) {
       console.error("Error removing post from collection:", err);
       toast.error("Failed to remove post from collection");
+      setShowRemovePostModal(false);
+      setPostToRemove(null);
     }
   };
 
@@ -175,6 +178,7 @@ const CollectionDetail = () => {
           </PostsGrid>
         )}
 
+        {/* Collection Delete Confirmation Modal */}
         {showDeleteModal && (
           <DeleteModal>
             <DeleteModalContent>
@@ -193,6 +197,29 @@ const CollectionDetail = () => {
               </DeleteModalButtons>
             </DeleteModalContent>
             <Backdrop onClick={() => setShowDeleteModal(false)} />
+          </DeleteModal>
+        )}
+
+        {/* Post Removal Confirmation Modal */}
+        {showRemovePostModal && (
+          <DeleteModal>
+            <DeleteModalContent>
+              <h3>Remove Post</h3>
+              <p>
+                Are you sure you want to remove this post from the collection?
+              </p>
+              <DeleteModalButtons>
+                <CancelModalButton
+                  onClick={() => setShowRemovePostModal(false)}
+                >
+                  Cancel
+                </CancelModalButton>
+                <ConfirmDeleteButton onClick={confirmRemovePost}>
+                  Remove Post
+                </ConfirmDeleteButton>
+              </DeleteModalButtons>
+            </DeleteModalContent>
+            <Backdrop onClick={() => setShowRemovePostModal(false)} />
           </DeleteModal>
         )}
       </Container>
