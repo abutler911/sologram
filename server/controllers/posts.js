@@ -300,39 +300,73 @@ exports.searchPosts = async (req, res) => {
 exports.likePost = async (req, res) => {
   try {
     const postId = req.params.id;
-    const userIp = req.ip;
 
-    const post = await Post.findById(postId);
+    // More robust IP detection
+    const userIp =
+      req.headers["x-forwarded-for"] ||
+      req.connection.remoteAddress ||
+      req.socket.remoteAddress ||
+      req.ip;
 
-    if (!post) {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found",
+    console.log(`Like attempt - Post: ${postId}, IP: ${userIp}`);
+
+    const mongoose = require("mongoose"); // Add this if not already at the top
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Use the session for all database operations
+      const post = await Post.findById(postId).session(session);
+
+      if (!post) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(404).json({
+          success: false,
+          message: "Post not found",
+        });
+      }
+
+      // Explicit query with session
+      const existingLike = await Like.findOne({
+        post: postId,
+        ip: userIp,
+      }).session(session);
+
+      console.log(`Existing like found: ${!!existingLike}`);
+
+      if (existingLike) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({
+          success: false,
+          message: "You have already liked this post",
+        });
+      }
+
+      // Create like with session
+      await Like.create([{ post: postId, ip: userIp }], { session });
+
+      // Update post with session
+      post.likes += 1;
+      await post.save({ session });
+
+      await session.commitTransaction();
+      session.endSession();
+
+      res.status(200).json({
+        success: true,
+        data: post,
       });
+    } catch (err) {
+      // If any error occurs, abort the transaction
+      await session.abortTransaction();
+      session.endSession();
+      throw err; // rethrow to outer catch
     }
-
-    const existingLike = await Like.findOne({ post: postId, ip: userIp });
-
-    if (existingLike) {
-      return res.status(400).json({
-        success: false,
-        message: "You have already liked this post",
-      });
-    }
-
-    await Like.create({
-      post: postId,
-      ip: userIp,
-    });
-
-    post.likes += 1;
-    await post.save();
-
-    res.status(200).json({
-      success: true,
-      data: post,
-    });
   } catch (err) {
+    console.error("Like error:", err);
+
     if (err.code === 11000) {
       return res.status(400).json({
         success: false,
@@ -340,7 +374,6 @@ exports.likePost = async (req, res) => {
       });
     }
 
-    console.error(err);
     res.status(500).json({
       success: false,
       message: "Server Error",

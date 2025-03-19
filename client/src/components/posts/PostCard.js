@@ -21,20 +21,41 @@ const PostCard = ({ post: initialPost, onDelete }) => {
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const hasMultipleMedia = post.media && post.media.length > 1;
+  const [isLiking, setIsLiking] = useState(false);
+  const [hasLiked, setHasLiked] = useState(false);
 
   const formattedDate = formatDistance(new Date(post.createdAt), new Date(), {
     addSuffix: true,
   });
 
   const handleLike = async () => {
+    // Prevent multiple clicks or if already liked
+    if (isLiking || hasLiked) return;
+
+    setIsLiking(true);
+
     try {
       const response = await axios.put(`/api/posts/${post._id}/like`);
       if (response.data.success) {
         setPost({ ...post, likes: post.likes + 1 });
+        setHasLiked(true); // Mark as liked to prevent further clicks
+        // We don't need to reset isLiking since hasLiked will keep it disabled
       }
     } catch (err) {
       console.error("Error liking post:", err);
-      toast.error("Failed to like post");
+
+      // Check if the error is because they already liked the post
+      if (
+        err.response?.status === 400 &&
+        err.response?.data?.message?.includes("already liked")
+      ) {
+        setHasLiked(true); // Prevent further clicks
+        toast.error(err.response.data.message);
+      } else {
+        toast.error("Failed to like post");
+        // Only reset isLiking after a delay to prevent rapid retries
+        setTimeout(() => setIsLiking(false), 2000);
+      }
     }
   };
 
@@ -170,7 +191,11 @@ const PostCard = ({ post: initialPost, onDelete }) => {
                 <span>{formattedDate}</span>
               </TimeStamp>
 
-              <LikesCount onClick={handleLike}>
+              <LikesCount
+                onClick={handleLike}
+                disabled={isLiking || hasLiked}
+                liked={hasLiked}
+              >
                 <FaHeart />
                 <span>{post.likes}</span>
               </LikesCount>
@@ -431,20 +456,25 @@ const TimeStamp = styled.div`
   }
 `;
 
-const LikesCount = styled.div`
+const LikesCount = styled.button`
   display: flex;
   align-items: center;
-  color: #ff7e5f;
+  background: none;
+  border: none;
+  color: ${(props) => (props.liked ? "#ff5e3a" : "#ff7e5f")};
   font-size: 0.875rem;
-  cursor: pointer;
+  cursor: ${(props) => (props.disabled ? "default" : "pointer")};
   transition: color 0.2s ease;
+  padding: 0;
+  opacity: ${(props) => (props.disabled && !props.liked ? 0.7 : 1)};
 
   &:hover {
-    color: #ff5e3a;
+    color: ${(props) => (!props.disabled ? "#ff5e3a" : "")};
   }
 
   svg {
     margin-right: 0.25rem;
+    ${(props) => (props.liked ? "fill: #ff5e3a;" : "")}
   }
 `;
 

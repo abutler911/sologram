@@ -24,6 +24,8 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
+app.set("trust proxy", true);
+
 // Import routes
 const postRoutes = require("./routes/posts");
 const authRoutes = require("./routes/auth");
