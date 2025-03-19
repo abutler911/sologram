@@ -16,6 +16,14 @@ import EditPost from "./pages/EditPost";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
+// Static Pages
+import About from "./pages/About";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+
+// Admin Pages
+import SubscriberAdmin from "./pages/SubscriberAdmin";
+
 // Collection Pages
 import CollectionsList from "./pages/CollectionsList";
 import CollectionDetail from "./pages/CollectionDetail";
@@ -80,6 +88,21 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/post/:id" element={<PostDetail />} />
+
+              {/* Static Pages */}
+              <Route path="/about" element={<About />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+
+              {/* Admin Routes */}
+              <Route
+                path="/subscribers"
+                element={
+                  <PrivateRoute>
+                    <SubscriberAdmin />
+                  </PrivateRoute>
+                }
+              />
 
               {/* Protected Routes */}
               <Route
