@@ -63,6 +63,40 @@ const GlobalStyle = createGlobalStyle`
     margin-bottom: 1rem;
   }
   
+  .filter-warm {
+  filter: saturate(1.5) sepia(0.2) contrast(1.1);
+}
+
+.filter-cool {
+  filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
+}
+
+.filter-grayscale {
+  filter: grayscale(1);
+}
+
+.filter-vintage {
+  filter: sepia(0.4) saturate(1.3) contrast(1.2);
+}
+
+.post-grid-item {
+    width: 100%;
+  }
+  
+  .post-card {
+    width: 100%;
+  }
+  
+  @media (max-width: 640px) {
+    .post-grid-item {
+      width: 100% !important;
+    }
+    
+    .post-card {
+      width: 100% !important;
+    }
+  }
+  
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

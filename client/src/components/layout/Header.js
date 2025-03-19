@@ -72,7 +72,6 @@ const Header = () => {
                 </NavLink>
               </NavItem>
 
-              {/* Add Subscriber Management Link for Admins */}
               {isAdmin && (
                 <NavItem>
                   <NavLink to="/subscribers">
@@ -122,23 +121,35 @@ const Header = () => {
 
           {showCreateOptions && (
             <ActionOptions>
-              <ActionOption to="/create">
+              <ActionOption
+                to="/create"
+                onClick={() => setShowCreateOptions(false)}
+              >
                 <FaCamera />
                 <span>New Post</span>
               </ActionOption>
               {isAdmin && (
                 <>
-                  <ActionOption to="/collections/create">
+                  <ActionOption
+                    to="/collections/create"
+                    onClick={() => setShowCreateOptions(false)}
+                  >
                     <FaFolder />
                     <span>New Collection</span>
                   </ActionOption>
-                  <ActionOption to="/subscribers">
+                  <ActionOption
+                    to="/subscribers"
+                    onClick={() => setShowCreateOptions(false)}
+                  >
                     <FaBell />
                     <span>Manage Subscribers</span>
                   </ActionOption>
                 </>
               )}
-              <ActionOption to="/create-story">
+              <ActionOption
+                to="/create-story"
+                onClick={() => setShowCreateOptions(false)}
+              >
                 <FaCamera />
                 <span>New Story</span>
               </ActionOption>
@@ -150,7 +161,6 @@ const Header = () => {
   );
 };
 
-// Styled Components
 const HeaderContainer = styled.header`
   background-color: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -190,7 +200,7 @@ const Logo = styled(Link)`
     font-style: italic;
     font-weight: 400;
     color: #666;
-    margin-left: 0; /* Start at the same position as the icon */
+    margin-left: 0;
   }
 
   span {
@@ -292,7 +302,6 @@ const LogoutButton = styled.button`
   }
 `;
 
-// New styled components
 const CreatePostButton = styled(Link)`
   display: flex;
   align-items: center;

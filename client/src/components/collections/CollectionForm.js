@@ -1,37 +1,39 @@
-import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import { useDropzone } from 'react-dropzone';
-import { 
-  FaCloudUploadAlt, 
-  FaTimes, 
-  FaImage, 
-  FaCheck, 
-  FaFolder 
-} from 'react-icons/fa';
-import axios from 'axios';
-import { toast } from 'react-hot-toast';
+import React, { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import styled from "styled-components";
+import { useDropzone } from "react-dropzone";
+import {
+  FaCloudUploadAlt,
+  FaTimes,
+  FaImage,
+  FaCheck,
+  FaFolder,
+} from "react-icons/fa";
+import axios from "axios";
+import { toast } from "react-hot-toast";
 
 const CollectionForm = ({ initialData = null, isEditing = false }) => {
   const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    description: initialData?.description || '',
-    isPublic: initialData?.isPublic !== undefined ? initialData.isPublic : true
+    name: initialData?.name || "",
+    description: initialData?.description || "",
+    isPublic: initialData?.isPublic !== undefined ? initialData.isPublic : true,
   });
-  
+
   const [coverImage, setCoverImage] = useState(null);
-  const [coverPreview, setCoverPreview] = useState(initialData?.coverImage || null);
+  const [coverPreview, setCoverPreview] = useState(
+    initialData?.coverImage || null
+  );
   const [loading, setLoading] = useState(false);
-  
+
   const navigate = useNavigate();
-  
-  const onDrop = useCallback(acceptedFiles => {
+
+  const onDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
     if (!file) return;
-    
+
     // Set cover image file
     setCoverImage(file);
-    
+
     // Create preview
     const reader = new FileReader();
     reader.onload = () => {
@@ -39,77 +41,82 @@ const CollectionForm = ({ initialData = null, isEditing = false }) => {
     };
     reader.readAsDataURL(file);
   }, []);
-  
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif']
+      "image/*": [".jpeg", ".jpg", ".png", ".gif"],
     },
     maxSize: 5 * 1024 * 1024, // 5MB
-    multiple: false
+    multiple: false,
   });
-  
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({ 
-      ...formData, 
-      [name]: type === 'checkbox' ? checked : value 
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
-  
+
   const removeCoverImage = () => {
     setCoverPreview(null);
     setCoverImage(null);
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       // Create form data for submission
       const collectionFormData = new FormData();
-      collectionFormData.append('name', formData.name);
-      collectionFormData.append('description', formData.description);
-      collectionFormData.append('isPublic', formData.isPublic);
-      
+      collectionFormData.append("name", formData.name);
+      collectionFormData.append("description", formData.description);
+      collectionFormData.append("isPublic", formData.isPublic);
+
       if (coverImage) {
-        collectionFormData.append('coverImage', coverImage);
+        collectionFormData.append("coverImage", coverImage);
       }
-      
+
       let response;
-      
+
       if (isEditing) {
         // Update existing collection
-        response = await axios.put(`/api/collections/${initialData._id}`, collectionFormData);
-        toast.success('Collection updated successfully!');
+        response = await axios.put(
+          `/api/collections/${initialData._id}`,
+          collectionFormData
+        );
+        toast.success("Collection updated successfully!");
       } else {
         // Create new collection
-        response = await axios.post('/api/collections', collectionFormData);
-        toast.success('Collection created successfully!');
+        response = await axios.post("/api/collections", collectionFormData);
+        toast.success("Collection created successfully!");
       }
-      
+
       // Redirect to the collection detail page
       navigate(`/collections/${response.data.data._id}`);
     } catch (err) {
-      const errorMessage = 
+      const errorMessage =
         err.response && err.response.data.message
           ? err.response.data.message
-          : isEditing ? 'Failed to update collection' : 'Failed to create collection';
-      
+          : isEditing
+          ? "Failed to update collection"
+          : "Failed to create collection";
+
       toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
-  
+
   return (
     <FormContainer onSubmit={handleSubmit}>
       <FormTitle>
         <FaFolder />
-        <span>{isEditing ? 'Edit Collection' : 'Create New Collection'}</span>
+        <span>{isEditing ? "Edit Collection" : "Create New Collection"}</span>
       </FormTitle>
-      
+
       <FormGroup>
         <Label htmlFor="name">Collection Name</Label>
         <Input
@@ -122,7 +129,7 @@ const CollectionForm = ({ initialData = null, isEditing = false }) => {
           required
         />
       </FormGroup>
-      
+
       <FormGroup>
         <Label htmlFor="description">Description (Optional)</Label>
         <TextArea
@@ -134,7 +141,7 @@ const CollectionForm = ({ initialData = null, isEditing = false }) => {
           rows={4}
         />
       </FormGroup>
-      
+
       <FormGroup>
         <Label>Cover Image (Optional)</Label>
         {coverPreview ? (
@@ -152,8 +159,8 @@ const CollectionForm = ({ initialData = null, isEditing = false }) => {
             </DropzoneIcon>
             <DropzoneText>
               {isDragActive
-                ? 'Drop your cover image here'
-                : 'Drag & drop a cover image, or click to select'}
+                ? "Drop your cover image here"
+                : "Drag & drop a cover image, or click to select"}
             </DropzoneText>
             <DropzoneSubtext>
               Supports: JPG, PNG, GIF (Max: 5MB)
@@ -162,7 +169,7 @@ const CollectionForm = ({ initialData = null, isEditing = false }) => {
           </DropzoneContainer>
         )}
       </FormGroup>
-      
+
       <FormGroup>
         <CheckboxContainer>
           <Checkbox
@@ -177,17 +184,24 @@ const CollectionForm = ({ initialData = null, isEditing = false }) => {
           </CheckboxLabel>
         </CheckboxContainer>
         <CheckboxHelp>
-          Public collections are visible to everyone. Private collections are only visible to you.
+          Public collections are visible to everyone. Private collections are
+          only visible to you.
         </CheckboxHelp>
       </FormGroup>
-      
+
       <ButtonGroup>
         <CancelButton type="button" onClick={() => navigate(-1)}>
           Cancel
         </CancelButton>
         <SubmitButton type="submit" disabled={loading}>
           <FaCheck />
-          <span>{loading ? 'Saving...' : isEditing ? 'Update Collection' : 'Create Collection'}</span>
+          <span>
+            {loading
+              ? "Saving..."
+              : isEditing
+              ? "Update Collection"
+              : "Create Collection"}
+          </span>
         </SubmitButton>
       </ButtonGroup>
     </FormContainer>
@@ -196,20 +210,20 @@ const CollectionForm = ({ initialData = null, isEditing = false }) => {
 
 // Styled Components
 const FormContainer = styled.form`
-  background-color: #ffffff;
+  background-color: #1e1e1e;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   padding: 2rem;
   max-width: 800px;
   margin: 0 auto;
 `;
 
 const FormTitle = styled.h2`
-  color: #333333;
+  color: #ffffff;
   margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
-  
+
   svg {
     color: #ff7e5f;
     margin-right: 0.75rem;
@@ -225,47 +239,60 @@ const Label = styled.label`
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: #333333;
+  color: #dddddd;
 `;
 
 const Input = styled.input`
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #dddddd;
+  border: 1px solid #444444;
   border-radius: 4px;
   font-size: 1rem;
   transition: border-color 0.3s;
-  
+  background-color: #333333;
+  color: #ffffff;
+
   &:focus {
     outline: none;
     border-color: #ff7e5f;
+  }
+
+  &::placeholder {
+    color: #888888;
   }
 `;
 
 const TextArea = styled.textarea`
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #dddddd;
+  border: 1px solid #444444;
   border-radius: 4px;
   font-size: 1rem;
   resize: vertical;
   transition: border-color 0.3s;
-  
+  background-color: #333333;
+  color: #ffffff;
+
   &:focus {
     outline: none;
     border-color: #ff7e5f;
   }
+
+  &::placeholder {
+    color: #888888;
+  }
 `;
 
 const DropzoneContainer = styled.div`
-  border: 2px dashed ${props => props.isDragActive ? '#ff7e5f' : '#dddddd'};
-  background-color: ${props => props.isDragActive ? 'rgba(255, 126, 95, 0.05)' : '#f9f9f9'};
+  border: 2px dashed ${(props) => (props.isDragActive ? "#ff7e5f" : "#444444")};
+  background-color: ${(props) =>
+    props.isDragActive ? "rgba(255, 126, 95, 0.1)" : "#272727"};
   border-radius: 4px;
   padding: 2rem;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   &:hover {
     border-color: #ff7e5f;
   }
@@ -279,7 +306,7 @@ const DropzoneIcon = styled.div`
 
 const DropzoneText = styled.p`
   font-size: 1.25rem;
-  color: #666666;
+  color: #cccccc;
   margin-bottom: 0.5rem;
 `;
 
@@ -295,6 +322,7 @@ const CoverPreviewContainer = styled.div`
   border-radius: 4px;
   overflow: hidden;
   max-height: 300px;
+  background-color: #272727;
 `;
 
 const CoverPreviewImage = styled.img`
@@ -302,7 +330,6 @@ const CoverPreviewImage = styled.img`
   width: 100%;
   max-height: 300px;
   object-fit: contain;
-  background-color: #f9f9f9;
 `;
 
 const RemoveCoverButton = styled.button`
@@ -320,7 +347,7 @@ const RemoveCoverButton = styled.button`
   justify-content: center;
   cursor: pointer;
   transition: background-color 0.3s;
-  
+
   &:hover {
     background-color: rgba(0, 0, 0, 0.7);
   }
@@ -337,17 +364,18 @@ const Checkbox = styled.input`
   width: 1.25rem;
   height: 1.25rem;
   cursor: pointer;
+  accent-color: #ff7e5f;
 `;
 
 const CheckboxLabel = styled.label`
   font-weight: 500;
-  color: #333333;
+  color: #dddddd;
   cursor: pointer;
 `;
 
 const CheckboxHelp = styled.p`
   font-size: 0.875rem;
-  color: #666666;
+  color: #aaaaaa;
   margin-top: 0.25rem;
   margin-left: 2rem;
 `;
@@ -357,7 +385,7 @@ const ButtonGroup = styled.div`
   justify-content: flex-end;
   gap: 1rem;
   margin-top: 2rem;
-  
+
   @media (max-width: 480px) {
     flex-direction: column;
   }
@@ -372,19 +400,19 @@ const Button = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   @media (max-width: 480px) {
     width: 100%;
   }
 `;
 
 const CancelButton = styled(Button)`
-  background-color: transparent;
-  color: #666666;
-  border: 1px solid #dddddd;
-  
+  background-color: #333333;
+  color: #dddddd;
+  border: 1px solid #444444;
+
   &:hover {
-    background-color: #f2f2f2;
+    background-color: #444444;
   }
 `;
 
@@ -392,17 +420,17 @@ const SubmitButton = styled(Button)`
   background-color: #ff7e5f;
   color: white;
   border: none;
-  
+
   svg {
     margin-right: 0.5rem;
   }
-  
+
   &:hover {
     background-color: #ff6347;
   }
-  
+
   &:disabled {
-    background-color: #cccccc;
+    background-color: #555555;
     cursor: not-allowed;
   }
 `;

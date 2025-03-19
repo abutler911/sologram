@@ -1,122 +1,137 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom';
-import styled from 'styled-components';
-import axios from 'axios';
-import { toast } from 'react-hot-toast';
-import { FaPlus, FaFolder, FaImages } from 'react-icons/fa';
-import { AuthContext } from '../context/AuthContext';
+import React, { useState, useEffect, useContext } from "react";
+import { Link } from "react-router-dom";
+import styled from "styled-components";
+import axios from "axios";
+import { toast } from "react-hot-toast";
+import { FaPlus, FaFolder, FaImages } from "react-icons/fa";
+import { AuthContext } from "../context/AuthContext";
 
 const CollectionsList = () => {
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   const { isAuthenticated } = useContext(AuthContext);
-  
+
   useEffect(() => {
     const fetchCollections = async () => {
       try {
         setLoading(true);
-        
-        const response = await axios.get('/api/collections');
+
+        const response = await axios.get("/api/collections");
         setCollections(response.data.data);
         setError(null);
       } catch (err) {
-        console.error('Error fetching collections:', err);
-        setError('Failed to load collections. Please try again.');
-        toast.error('Failed to load collections');
+        console.error("Error fetching collections:", err);
+        setError("Failed to load collections. Please try again.");
+        toast.error("Failed to load collections");
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchCollections();
   }, []);
-  
+
   if (loading) {
     return (
-      <Container>
-        <LoadingMessage>Loading collections...</LoadingMessage>
-      </Container>
+      <PageWrapper>
+        <Container>
+          <LoadingMessage>Loading collections...</LoadingMessage>
+        </Container>
+      </PageWrapper>
     );
   }
-  
+
   if (error) {
     return (
-      <Container>
-        <ErrorMessage>{error}</ErrorMessage>
-      </Container>
+      <PageWrapper>
+        <Container>
+          <ErrorMessage>{error}</ErrorMessage>
+        </Container>
+      </PageWrapper>
     );
   }
-  
+
   return (
-    <Container>
-      <PageHeader>
-        <PageTitle>
-          <FaFolder />
-          <span>Collections</span>
-        </PageTitle>
-        
-        {isAuthenticated && (
-          <CreateButton to="/collections/create">
-            <FaPlus />
-            <span>Create Collection</span>
-          </CreateButton>
-        )}
-      </PageHeader>
-      
-      {collections.length === 0 ? (
-        <EmptyState>
-          <EmptyIcon>
-            <FaImages />
-          </EmptyIcon>
-          <EmptyText>No collections yet</EmptyText>
+    <PageWrapper>
+      <Container>
+        <PageHeader>
+          <PageTitle>
+            <FaFolder />
+            <span>Collections</span>
+          </PageTitle>
+
           {isAuthenticated && (
-            <EmptyActionLink to="/collections/create">
-              Create your first collection
-            </EmptyActionLink>
+            <CreateButton to="/collections/create">
+              <FaPlus />
+              <span>Create Collection</span>
+            </CreateButton>
           )}
-        </EmptyState>
-      ) : (
-        <CollectionsGrid>
-          {collections.map(collection => (
-            <CollectionCard key={collection._id}>
-              <CollectionLink to={`/collections/${collection._id}`}>
-                {collection.coverImage ? (
-                  <CollectionCover src={collection.coverImage} alt={collection.name} />
-                ) : (
-                  <CollectionCoverPlaceholder>
-                    <FaImages />
-                  </CollectionCoverPlaceholder>
-                )}
-                <CollectionDetails>
-                  <CollectionName>{collection.name}</CollectionName>
-                  {collection.posts && (
-                    <PostCount>{collection.posts.length} posts</PostCount>
+        </PageHeader>
+
+        {collections.length === 0 ? (
+          <EmptyState>
+            <EmptyIcon>
+              <FaImages />
+            </EmptyIcon>
+            <EmptyText>No collections yet</EmptyText>
+            {isAuthenticated && (
+              <EmptyActionLink to="/collections/create">
+                Create your first collection
+              </EmptyActionLink>
+            )}
+          </EmptyState>
+        ) : (
+          <CollectionsGrid>
+            {collections.map((collection) => (
+              <CollectionCard key={collection._id}>
+                <CollectionLink to={`/collections/${collection._id}`}>
+                  {collection.coverImage ? (
+                    <CollectionCover
+                      src={collection.coverImage}
+                      alt={collection.name}
+                    />
+                  ) : (
+                    <CollectionCoverPlaceholder>
+                      <FaImages />
+                    </CollectionCoverPlaceholder>
                   )}
-                  {collection.description && (
-                    <CollectionDescription>
-                      {collection.description.length > 100
-                        ? `${collection.description.substring(0, 100)}...`
-                        : collection.description}
-                    </CollectionDescription>
-                  )}
-                </CollectionDetails>
-              </CollectionLink>
-            </CollectionCard>
-          ))}
-        </CollectionsGrid>
-      )}
-    </Container>
+                  <CollectionDetails>
+                    <CollectionName>{collection.name}</CollectionName>
+                    {collection.posts && (
+                      <PostCount>{collection.posts.length} posts</PostCount>
+                    )}
+                    {collection.description && (
+                      <CollectionDescription>
+                        {collection.description.length > 100
+                          ? `${collection.description.substring(0, 100)}...`
+                          : collection.description}
+                      </CollectionDescription>
+                    )}
+                  </CollectionDetails>
+                </CollectionLink>
+              </CollectionCard>
+            ))}
+          </CollectionsGrid>
+        )}
+      </Container>
+    </PageWrapper>
   );
 };
 
 // Styled Components
+const PageWrapper = styled.div`
+  background-color: #121212;
+  min-height: 100vh;
+  padding: 1rem 0;
+`;
+
 const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  
+
   @media (max-width: 768px) {
     padding: 1rem;
   }
@@ -127,7 +142,7 @@ const PageHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  
+
   @media (max-width: 640px) {
     flex-direction: column;
     align-items: flex-start;
@@ -139,9 +154,9 @@ const PageTitle = styled.h1`
   display: flex;
   align-items: center;
   font-size: 2rem;
-  color: #333333;
+  color: #ffffff;
   margin: 0;
-  
+
   svg {
     margin-right: 0.75rem;
     color: #ff7e5f;
@@ -160,11 +175,11 @@ const CreateButton = styled(Link)`
   font-weight: 600;
   text-decoration: none;
   transition: background-color 0.3s;
-  
+
   &:hover {
     background-color: #ff6347;
   }
-  
+
   svg {
     margin-right: 0.5rem;
   }
@@ -177,15 +192,15 @@ const CollectionsGrid = styled.div`
 `;
 
 const CollectionCard = styled.div`
-  background-color: #ffffff;
+  background-color: #1e1e1e;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s, box-shadow 0.3s;
-  
+
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   }
 `;
 
@@ -204,14 +219,14 @@ const CollectionCover = styled.img`
 const CollectionCoverPlaceholder = styled.div`
   width: 100%;
   height: 180px;
-  background-color: #f3f3f3;
+  background-color: #2a2a2a;
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   svg {
     font-size: 3rem;
-    color: #cccccc;
+    color: #444444;
   }
 `;
 
@@ -222,18 +237,18 @@ const CollectionDetails = styled.div`
 const CollectionName = styled.h2`
   font-size: 1.25rem;
   margin: 0 0 0.5rem;
-  color: #333333;
+  color: #ffffff;
 `;
 
 const PostCount = styled.div`
   font-size: 0.875rem;
-  color: #666666;
+  color: #aaaaaa;
   margin-bottom: 0.75rem;
 `;
 
 const CollectionDescription = styled.p`
   font-size: 0.875rem;
-  color: #666666;
+  color: #aaaaaa;
   margin: 0;
   line-height: 1.5;
 `;
@@ -242,12 +257,12 @@ const LoadingMessage = styled.div`
   text-align: center;
   padding: 4rem 0;
   font-size: 1.125rem;
-  color: #666666;
+  color: #aaaaaa;
 `;
 
 const ErrorMessage = styled.div`
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: rgba(248, 215, 218, 0.2);
+  color: #ff6b6b;
   padding: 1rem;
   border-radius: 4px;
   margin: 2rem 0;
@@ -257,17 +272,20 @@ const ErrorMessage = styled.div`
 const EmptyState = styled.div`
   text-align: center;
   padding: 4rem 0;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 `;
 
 const EmptyIcon = styled.div`
   font-size: 3rem;
-  color: #cccccc;
+  color: #444444;
   margin-bottom: 1rem;
 `;
 
 const EmptyText = styled.h3`
   font-size: 1.5rem;
-  color: #666666;
+  color: #aaaaaa;
   margin-bottom: 1rem;
 `;
 
@@ -280,7 +298,7 @@ const EmptyActionLink = styled(Link)`
   border-radius: 4px;
   font-weight: 600;
   transition: background-color 0.3s;
-  
+
   &:hover {
     background-color: #ff6347;
   }
