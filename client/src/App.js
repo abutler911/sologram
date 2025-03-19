@@ -12,6 +12,10 @@ import CreatePost from "./pages/CreatePost";
 import EditPost from "./pages/EditPost";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import About from "./pages/About";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+
 // Collection Pages
 import CollectionsList from "./pages/CollectionsList";
 import CollectionDetail from "./pages/CollectionDetail";
@@ -41,6 +45,9 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/post/:id" element={<PostDetail />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
 
               {/* Protected Routes */}
               <Route

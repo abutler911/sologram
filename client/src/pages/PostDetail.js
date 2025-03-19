@@ -3,12 +3,12 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { formatDistance } from "date-fns";
+import { format } from "date-fns"; // Changed from formatDistance to format
 import {
   FaHeart,
   FaEdit,
   FaTrash,
-  FaClock,
+  FaCalendarAlt, // Changed from FaClock to FaCalendarAlt for better icon representation
   FaArrowLeft,
   FaChevronLeft,
   FaChevronRight,
@@ -136,10 +136,8 @@ const PostDetail = () => {
     );
   }
 
-  // Format date
-  const formattedDate = formatDistance(new Date(post.createdAt), new Date(), {
-    addSuffix: true,
-  });
+  // Format date to calendar date format: MMMM d, yyyy (e.g., March 18, 2025)
+  const formattedDate = format(new Date(post.createdAt), "MMMM d, yyyy");
 
   return (
     <PageWrapper>
@@ -224,7 +222,7 @@ const PostDetail = () => {
 
             <MetaData>
               <TimeStamp>
-                <FaClock />
+                <FaCalendarAlt />
                 <span>{formattedDate}</span>
               </TimeStamp>
 

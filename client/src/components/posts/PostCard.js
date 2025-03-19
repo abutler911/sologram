@@ -9,7 +9,7 @@ import {
   FaChevronLeft,
   FaChevronRight,
 } from "react-icons/fa";
-import { formatDistance } from "date-fns";
+import { format } from "date-fns";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
@@ -21,9 +21,7 @@ const PostCard = ({ post: initialPost, onDelete }) => {
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const hasMultipleMedia = post.media && post.media.length > 1;
 
-  const formattedDate = formatDistance(new Date(post.createdAt), new Date(), {
-    addSuffix: true,
-  });
+  const formattedDate = format(new Date(post.createdAt), "MMMM d, yyyy");
 
   const handleLike = async () => {
     try {
