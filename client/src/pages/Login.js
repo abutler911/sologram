@@ -1,47 +1,48 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import { FaCamera, FaLock, FaEnvelope } from 'react-icons/fa';
-import { AuthContext } from '../context/AuthContext';
+import React, { useState, useContext, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import styled from "styled-components";
+import { FaCamera, FaLock, FaEnvelope } from "react-icons/fa";
+import { AuthContext } from "../context/AuthContext";
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const { login, isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
-  
+
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate("/");
     }
   }, [isAuthenticated, navigate]);
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     const success = await login(email, password);
-    
+
     if (success) {
-      navigate('/');
+      navigate("/");
     }
-    
+
     setLoading(false);
   };
-  
+
   return (
     <LoginContainer>
       <FormContainer>
         <LogoContainer>
           <FaCamera />
           <LogoText>SoloGram</LogoText>
+          <Tagline>One Voice. Infinite Moments.</Tagline>
         </LogoContainer>
-        
+
         <FormTitle>Login to your account</FormTitle>
-        
+
         <Form onSubmit={handleSubmit}>
           <FormGroup>
             <InputIcon>
@@ -55,7 +56,7 @@ const Login = () => {
               required
             />
           </FormGroup>
-          
+
           <FormGroup>
             <InputIcon>
               <FaLock />
@@ -68,12 +69,12 @@ const Login = () => {
               required
             />
           </FormGroup>
-          
+
           <SubmitButton type="submit" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? "Logging in..." : "Login"}
           </SubmitButton>
         </Form>
-        
+
         <AdminNoteText>
           This login is for site administration only
         </AdminNoteText>
@@ -106,7 +107,7 @@ const LogoContainer = styled.div`
   justify-content: center;
   margin-bottom: 2rem;
   color: #ff7e5f;
-  
+
   svg {
     font-size: 2.5rem;
     margin-right: 0.75rem;
@@ -149,7 +150,7 @@ const Input = styled.input`
   border-radius: 4px;
   font-size: 1rem;
   transition: border-color 0.3s;
-  
+
   &:focus {
     outline: none;
     border-color: #ff7e5f;
@@ -167,11 +168,11 @@ const SubmitButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.3s;
-  
+
   &:hover {
     background-color: #ff6347;
   }
-  
+
   &:disabled {
     background-color: #cccccc;
     cursor: not-allowed;
@@ -183,6 +184,14 @@ const AdminNoteText = styled.p`
   font-size: 0.875rem;
   color: #666666;
   font-style: italic;
+`;
+
+const Tagline = styled.p`
+  color: #666666;
+  font-size: 1rem;
+  font-style: italic;
+  text-align: center;
+  margin-bottom: 2rem;
 `;
 
 export default Login;

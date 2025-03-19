@@ -80,6 +80,7 @@ const InstallPrompt = () => {
         <PromptLogo>
           <FaCamera />
           <span>SoloGram</span>
+          <Tagline>One Voice. Infinite Moments.</Tagline>
         </PromptLogo>
 
         <PromptMessage>
@@ -139,19 +140,34 @@ const PromptContent = styled.div`
 const PromptLogo = styled.div`
   display: flex;
   align-items: center;
-  color: #ff7e5f;
-  font-weight: 600;
   margin-bottom: 0.75rem;
 
   svg {
     font-size: 1.5rem;
+    color: #ff7e5f;
     margin-right: 0.5rem;
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  span {
+    color: #ff7e5f;
+    font-weight: 600;
   }
 
   @media (min-width: 768px) {
     margin-bottom: 0;
     margin-right: 1rem;
   }
+`;
+
+const Tagline = styled.small`
+  font-size: 0.7rem;
+  font-style: italic;
+  color: #666;
 `;
 
 const PromptMessage = styled.div`

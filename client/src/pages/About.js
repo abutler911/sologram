@@ -17,6 +17,7 @@ const About = () => {
             <FaCamera />
           </LogoIcon>
           <PageTitle>About SoloGram</PageTitle>
+          <Tagline>One Voice. Infinite Moments.</Tagline>
         </PageHeader>
 
         <Section>
@@ -214,6 +215,14 @@ const EmailLink = styled.a`
   &:hover {
     text-decoration: underline;
   }
+`;
+
+const Tagline = styled.h2`
+  font-size: 1rem;
+  color: #ff7e5f;
+  font-style: italic;
+  text-align: center;
+  margin: 0 0 2rem 0;
 `;
 
 export default About;

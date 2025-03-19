@@ -169,6 +169,7 @@ const Home = () => {
               </LogoContainer>
               <BannerTextContainer>
                 <BannerTitle>Welcome to Sologram</BannerTitle>
+                <BannerTagline>One Voice. Infinite Moments.</BannerTagline>
                 <BannerDescription>
                   My personal photography journal where I share moments and
                   create collections. Feel free to explore and enjoy the visual
@@ -309,6 +310,14 @@ const BannerTextContainer = styled.div`
 const BannerTitle = styled.h2`
   font-size: 1.25rem;
   color: #333;
+  margin: 0 0 0.5rem;
+`;
+
+const BannerTagline = styled.p`
+  font-size: 1.1rem;
+  color: #ff7e5f;
+  font-weight: 500;
+  font-style: italic;
   margin: 0 0 0.5rem;
 `;
 

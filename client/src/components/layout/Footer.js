@@ -10,8 +10,11 @@ const Footer = () => {
       <FooterContent>
         <TopSection>
           <LogoSection>
-            <FaCamera />
-            <span>SoloGram</span>
+            <div className="logo">
+              <FaCamera />
+              <span>SoloGram</span>
+            </div>
+            <div className="tagline">One Voice. Infinite Moments.</div>
           </LogoSection>
 
           <SocialLinks>
@@ -83,13 +86,26 @@ const TopSection = styled.div`
 
 const LogoSection = styled.div`
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   color: #ff7e5f;
-  font-size: 1.25rem;
-  font-weight: 700;
 
-  span {
-    margin-left: 0.5rem;
+  .logo {
+    display: flex;
+    align-items: center;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .tagline {
+    font-size: 0.9rem;
+    font-style: italic;
+    color: #666;
+  }
+
+  svg {
+    margin-right: 0.5rem;
   }
 `;
 

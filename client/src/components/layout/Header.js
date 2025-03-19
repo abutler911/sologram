@@ -39,8 +39,11 @@ const Header = () => {
     <HeaderContainer>
       <HeaderContent>
         <Logo to="/">
-          <FaCamera />
-          <span>SoloGram</span>
+          <div className="logo-main">
+            <FaCamera />
+            <span>SoloGram</span>
+          </div>
+          <div className="tagline">One Voice. Infinite Moments.</div>
         </Logo>
 
         <MobileMenuIcon onClick={toggleMenu}>
@@ -171,11 +174,24 @@ const HeaderContent = styled.div`
 
 const Logo = styled(Link)`
   display: flex;
-  align-items: center;
+  flex-direction: column;
   color: #ff7e5f;
-  font-size: 1.5rem;
-  font-weight: 700;
   text-decoration: none;
+
+  .logo-main {
+    display: flex;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .tagline {
+    font-size: 0.7rem;
+    font-style: italic;
+    font-weight: 400;
+    color: #666;
+    margin-left: 0; /* Start at the same position as the icon */
+  }
 
   span {
     margin-left: 0.5rem;
