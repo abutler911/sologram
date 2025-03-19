@@ -19,7 +19,27 @@ const Home = () => {
 
   const observer = useRef();
 
-  // Last element callback for infinite scrolling
+  // Lazy Load Videos (Intersection Observer)
+  useEffect(() => {
+    const lazyVideos = document.querySelectorAll(".lazy-video");
+    const videoObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const video = entry.target;
+          const source = video.querySelector("source");
+          if (source && !source.src) {
+            source.src = video.dataset.src;
+            video.load(); // Load when visible
+          }
+          videoObserver.unobserve(video);
+        }
+      });
+    });
+
+    lazyVideos.forEach((video) => videoObserver.observe(video));
+  }, [posts]); // Run whenever posts change
+
+  // Infinite Scroll - Loads more posts when last element is visible
   const lastPostElementRef = useCallback(
     (node) => {
       if (loading) return;
@@ -51,15 +71,9 @@ const Home = () => {
         if (isMounted) {
           const { data, currentPage, totalPages } = response.data;
 
-          setPosts((prevPosts) => {
-            // If it's the first page, replace posts
-            if (currentPage === 1) {
-              return data;
-            }
-            // Otherwise append new posts
-            return [...prevPosts, ...data];
-          });
-
+          setPosts((prevPosts) =>
+            currentPage === 1 ? data : [...prevPosts, ...data]
+          );
           setHasMore(currentPage < totalPages);
           setError(null);
         }
@@ -77,31 +91,15 @@ const Home = () => {
     };
 
     fetchPosts();
-
     return () => {
       isMounted = false;
     };
   }, [page]);
 
-  // Check local storage for banner visibility
-  useEffect(() => {
-    const hasBannerBeenClosed = localStorage.getItem("aboutBannerClosed");
-    if (hasBannerBeenClosed) {
-      setShowAboutBanner(false);
-    }
-  }, []);
-
-  const closeBanner = () => {
-    setShowAboutBanner(false);
-    localStorage.setItem("aboutBannerClosed", "true");
-  };
-
   // Handle search
   const handleSearch = async (e) => {
     e.preventDefault();
-
     if (!searchQuery.trim()) {
-      // Reset to normal post fetch if search query is empty
       setPage(1);
       return;
     }
@@ -115,7 +113,7 @@ const Home = () => {
       });
 
       setPosts(response.data.data);
-      setHasMore(false); // No infinite scrolling for search results
+      setHasMore(false);
       setError(null);
 
       if (response.data.count === 0) {
@@ -138,27 +136,9 @@ const Home = () => {
     setHasMore(true);
   };
 
-  // Handle post deletion
-  const handleDeletePost = async (postId) => {
-    if (!window.confirm("Are you sure you want to delete this post?")) {
-      return;
-    }
-
-    try {
-      await axios.delete(`/api/posts/${postId}`);
-
-      setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
-      toast.success("Post deleted successfully");
-    } catch (err) {
-      console.error("Error deleting post:", err);
-      toast.error("Failed to delete post");
-    }
-  };
-
   return (
     <PageWrapper>
       <HomeContainer>
-        {/* Added Subscription Banner */}
         <SubscribeBanner />
 
         {showAboutBanner && (
@@ -170,14 +150,11 @@ const Home = () => {
               <BannerTextContainer>
                 <BannerTitle>Welcome to Sologram</BannerTitle>
                 <BannerTagline>One Voice. Infinite Moments.</BannerTagline>
-                <BannerDescription>
-                  My personal photography journal where I share moments and
-                  create collections. Feel free to explore and enjoy the visual
-                  storytelling.
-                </BannerDescription>
               </BannerTextContainer>
             </BannerContent>
-            <CloseButton onClick={closeBanner}>×</CloseButton>
+            <CloseButton onClick={() => setShowAboutBanner(false)}>
+              ×
+            </CloseButton>
           </AboutBanner>
         )}
         <Stories />
@@ -193,7 +170,6 @@ const Home = () => {
               <FaSearch />
             </SearchButton>
           </SearchForm>
-
           {searching && (
             <ClearSearchButton onClick={clearSearch}>
               Clear Search
@@ -201,32 +177,19 @@ const Home = () => {
           )}
         </SearchContainer>
 
-        {searching && (
-          <SearchResults>
-            Showing results for "{searchQuery}" ({posts.length}{" "}
-            {posts.length === 1 ? "post" : "posts"})
-          </SearchResults>
-        )}
-
         {error ? (
           <ErrorMessage>{error}</ErrorMessage>
         ) : posts.length > 0 ? (
           <PostGrid>
             {posts.map((post, index) => {
-              if (posts.length === index + 1) {
-                // Add ref to last element for infinite scrolling
-                return (
-                  <GridItem ref={lastPostElementRef} key={post._id}>
-                    <PostCard post={post} onDelete={handleDeletePost} />
-                  </GridItem>
-                );
-              } else {
-                return (
-                  <GridItem key={post._id}>
-                    <PostCard post={post} onDelete={handleDeletePost} />
-                  </GridItem>
-                );
-              }
+              return (
+                <GridItem
+                  ref={posts.length === index + 1 ? lastPostElementRef : null}
+                  key={post._id}
+                >
+                  <PostCard post={post} />
+                </GridItem>
+              );
             })}
           </PostGrid>
         ) : loading ? (
@@ -245,29 +208,69 @@ const Home = () => {
   );
 };
 
-// New wrapper for dark background
-const PageWrapper = styled.div`
-  background-color: #121212; /* Dark background color */
-  min-height: 100vh;
-  padding: 1rem 0;
-
-  @media (max-width: 768px) {
-    padding: 0;
-  }
-`;
+// Lazy Loading Applied to Videos
+const LazyVideo = ({ src }) => (
+  <video className="lazy-video" controls data-src={src}>
+    <source data-src={src} type="video/mp4" />
+  </video>
+);
 
 // Styled Components
+const PageWrapper = styled.div`
+  background-color: #121212;
+  min-height: 100vh;
+  padding: 1rem 0;
+`;
 const HomeContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+`;
+const PostGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  justify-content: center;
 
-  @media (max-width: 768px) {
-    padding: 1rem;
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
   }
 `;
 
-// About Banner Styles
+const GridItem = styled.div`
+  display: flex;
+  height: 100%;
+  width: 100%;
+`;
+const ErrorMessage = styled.div`
+  background-color: rgba(248, 215, 218, 0.9);
+  color: #721c24;
+  padding: 1rem;
+`;
+const LoadingMessage = styled.div`
+  text-align: center;
+  margin: 4rem 0;
+  color: #ddd;
+  font-size: 1.125rem;
+`;
+const NoPostsMessage = styled.div`
+  text-align: center;
+  margin: 4rem 0;
+  color: #ddd;
+  font-size: 1.125rem;
+`;
+const LoadingMore = styled.div`
+  text-align: center;
+  margin: 2rem 0;
+  color: #aaa;
+  font-style: italic;
+`;
+
+// Styled Components for UI Elements
 const AboutBanner = styled.div`
   display: flex;
   align-items: center;
@@ -319,13 +322,6 @@ const BannerTagline = styled.p`
   font-weight: 500;
   font-style: italic;
   margin: 0 0 0.5rem;
-`;
-
-const BannerDescription = styled.p`
-  font-size: 0.95rem;
-  color: #666;
-  margin: 0;
-  line-height: 1.5;
 `;
 
 const CloseButton = styled.button`
@@ -402,62 +398,6 @@ const ClearSearchButton = styled.button`
   &:hover {
     background-color: #333;
   }
-`;
-
-const SearchResults = styled.div`
-  margin-bottom: 1.5rem;
-  font-size: 1rem;
-  color: #ddd;
-`;
-
-const PostGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-
-  @media (max-width: 1024px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const GridItem = styled.div`
-  display: flex;
-  height: 100%;
-  width: 100%;
-`;
-
-const ErrorMessage = styled.div`
-  background-color: rgba(248, 215, 218, 0.9);
-  color: #721c24;
-  padding: 1rem;
-  border-radius: 4px;
-  margin: 2rem 0;
-  text-align: center;
-`;
-
-const LoadingMessage = styled.div`
-  text-align: center;
-  margin: 4rem 0;
-  color: #ddd;
-  font-size: 1.125rem;
-`;
-
-const NoPostsMessage = styled.div`
-  text-align: center;
-  margin: 4rem 0;
-  color: #ddd;
-  font-size: 1.125rem;
-`;
-
-const LoadingMore = styled.div`
-  text-align: center;
-  margin: 2rem 0;
-  color: #aaa;
-  font-style: italic;
 `;
 
 export default Home;

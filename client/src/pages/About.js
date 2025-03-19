@@ -13,28 +13,31 @@ const About = () => {
 
       <ContentCard>
         <PageHeader>
-          <LogoIcon>
+          <LogoContainer>
             <FaCamera />
-          </LogoIcon>
-          <PageTitle>About SoloGram</PageTitle>
-          <Tagline>One Voice. Infinite Moments.</Tagline>
+          </LogoContainer>
+          <TitleContainer>
+            <PageTitle>SoloGram</PageTitle>
+            <Tagline>One Voice. Infinite Moments.</Tagline>
+          </TitleContainer>
         </PageHeader>
 
         <Section>
-          <SectionTitle>The Administrator</SectionTitle>
+          <SectionTitle>The Administrator - Andrew</SectionTitle>
           <Paragraph>
-            Hey, I'm Andrew—the creator, curator, and sole poster of SoloGram. I
+            Hey, I'm Andrew—the SoloGram administrator, CEO, creator, curator,
+            sole poster, and<Emphasis>Supreme Overlord</Emphasis> of SoloGram. I
             built this platform to replace traditional social media and create a
-            <Emphasis>personal space</Emphasis> where I can document my life,
+            <Emphasis> personal space </Emphasis> where I can document my life,
             share moments, and tell my story—without the distractions of a
             typical social feed.
           </Paragraph>
           <Paragraph>
-            Unlike other platforms, <Emphasis>SoloGram is mine alone</Emphasis>
-            —I'm the <Emphasis>only one who can post</Emphasis>. Everyone else?
+            Unlike other platforms, <Emphasis>SoloGram is mine alone</Emphasis>—
+            I'm the <Emphasis>only one who can post.</Emphasis> Everyone else?
             You're invited to follow along, view my content, and subscribe for
             updates. But the timeline? That's
-            <Emphasis>all me.</Emphasis>
+            <Emphasis> all me.</Emphasis>
           </Paragraph>
         </Section>
 
@@ -42,15 +45,15 @@ const About = () => {
           <SectionTitle>What is SoloGram?</SectionTitle>
           <Paragraph>
             SoloGram is my personal digital journal—a place where I share posts
-            and stories <Emphasis>on my own terms</Emphasis>. No ads, no
-            clutter, no noise—just my journey, my experiences, and my
-            perspective.
+            and stories <Emphasis> on my own terms.</Emphasis> No ads, no
+            clutter, no noise, and <Emphasis>NO INFLUENCERS</Emphasis>—just my
+            journey, my experiences, and my perspective.
           </Paragraph>
           <Paragraph>
-            Viewers can explore my <Emphasis>collections</Emphasis>, scroll
+            Viewers can explore my <Emphasis> collections</Emphasis>, scroll
             through my posts, and subscribe to receive notifications whenever I
-            share something new. It's a one-way broadcast:{" "}
-            <Emphasis>I post, you watch.</Emphasis>
+            share something new. It's a one-way broadcast:
+            <Emphasis> I post, you watch.</Emphasis>
           </Paragraph>
         </Section>
 
@@ -78,16 +81,16 @@ const About = () => {
             </FeatureText>
           </Feature>
           <Paragraph>
-            Think of it as <Emphasis>a social feed, but just for me</Emphasis>—a
-            space where I control the content and the narrative. If you're here,
-            welcome to the journey. 🚀
+            Think of it as <Emphasis> a social feed, but just for me</Emphasis>—
+            a space where I control the content and the narrative. If you're
+            here, welcome to the journey. 🚀
           </Paragraph>
         </Section>
 
         <Section>
           <SectionTitle>Stay Connected</SectionTitle>
           <Paragraph>
-            Want to stay in the loop? Hit <Emphasis>subscribe</Emphasis> to get
+            Want to stay in the loop? Hit <Emphasis> subscribe</Emphasis> to get
             notified whenever I post new content. Have a question or just want
             to say hi? Reach out at
             <EmailLink href="mailto:abutler911@gmail.com">
@@ -100,11 +103,14 @@ const About = () => {
   );
 };
 
-// Styled Components
+// 🌙 DARK THEME STYLED COMPONENTS
 const Container = styled.div`
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
+  background-color: #121212;
+  min-height: 100vh;
+  color: #ffffff;
 
   @media (max-width: 768px) {
     padding: 1.5rem;
@@ -114,7 +120,7 @@ const Container = styled.div`
 const BackLink = styled(Link)`
   display: inline-flex;
   align-items: center;
-  color: #666666;
+  color: #aaaaaa;
   text-decoration: none;
   margin-bottom: 1.5rem;
   transition: color 0.3s;
@@ -129,21 +135,22 @@ const BackLink = styled(Link)`
 `;
 
 const ContentCard = styled.div`
-  background-color: #ffffff;
+  background-color: #1e1e1e;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 2rem;
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);
 `;
 
 const PageHeader = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 2rem;
+  border-bottom: 1px solid #333;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #eeeeee;
+  gap: 1rem;
 `;
 
-const LogoIcon = styled.div`
+const LogoContainer = styled.div`
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
@@ -156,10 +163,24 @@ const LogoIcon = styled.div`
   margin-right: 1rem;
 `;
 
+const TitleContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+`;
+
 const PageTitle = styled.h1`
   font-size: 1.75rem;
-  color: #333333;
+  color: #ffffff;
   margin: 0;
+`;
+
+const Tagline = styled.h2`
+  font-size: 0.9rem;
+  color: #ff7e5f;
+  font-style: italic;
+  margin-top: 0.25rem;
+  margin-left: 0px;
 `;
 
 const Section = styled.section`
@@ -168,12 +189,12 @@ const Section = styled.section`
 
 const SectionTitle = styled.h2`
   font-size: 1.25rem;
-  color: #333333;
+  color: #ff7e5f;
   margin: 0 0 1rem 0;
 `;
 
 const Paragraph = styled.p`
-  color: #666666;
+  color: #bbbbbb;
   margin-bottom: 1rem;
   line-height: 1.6;
 `;
@@ -203,7 +224,7 @@ const FeatureIcon = styled.span`
 `;
 
 const FeatureText = styled.span`
-  color: #666666;
+  color: #bbbbbb;
   line-height: 1.6;
 `;
 
@@ -215,14 +236,6 @@ const EmailLink = styled.a`
   &:hover {
     text-decoration: underline;
   }
-`;
-
-const Tagline = styled.h2`
-  font-size: 1rem;
-  color: #ff7e5f;
-  font-style: italic;
-  text-align: center;
-  margin: 0 0 2rem 0;
 `;
 
 export default About;
