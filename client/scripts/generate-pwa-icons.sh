@@ -1,8 +1,11 @@
 #!/bin/bash
 
-# This script helps generate PWA icons from a source icon
+# PWA Icons Generator Script
 # Usage: ./scripts/generate-pwa-icons.sh source_image.png
-
+# Add these lines near the top of the script
+echo "Working directory: $(pwd)"
+echo "Source image path: $SOURCE_IMAGE"
+echo "Checking if file exists: $(ls -la $SOURCE_IMAGE 2>/dev/null || echo 'File not found')"
 # Check if ImageMagick is installed
 if ! command -v convert &> /dev/null; then
     echo "Error: ImageMagick is required but not installed."
@@ -29,7 +32,7 @@ fi
 
 echo "Generating PWA icons from $SOURCE_IMAGE..."
 
-# Create public directory if it doesn't exist
+# Create output directory if it doesn't exist
 mkdir -p public
 
 # Generate standard icons
@@ -46,7 +49,8 @@ convert public/favicon-16x16.png public/favicon-32x32.png public/favicon-48x48.p
 convert "$SOURCE_IMAGE" -resize 180x180 public/apple-touch-icon.png
 
 # Generate maskable icon (with padding for safe area)
-convert "$SOURCE_IMAGE" -resize 192x192 -gravity center -background none \
+# The maskable icon needs padding to ensure no content is cut off when displayed on various devices
+convert "$SOURCE_IMAGE" -resize 192x192 -gravity center -background transparent \
         -extent 236x236 public/maskable_icon.png
 
 echo "PWA icons generated successfully!"
@@ -59,3 +63,8 @@ echo "  - public/logo192.png"
 echo "  - public/logo512.png"
 echo "  - public/apple-touch-icon.png"
 echo "  - public/maskable_icon.png"
+echo ""
+echo "Next steps:"
+echo "1. Update manifest.json to include all icon files"
+echo "2. Update service-worker.js to cache icon files"
+echo "3. Ensure index.html references the correct favicon and apple-touch-icon"

@@ -17,6 +17,8 @@ const STATIC_ASSETS = [
   "/favicon.ico",
   "/logo192.png",
   "/logo512.png",
+  "/apple-touch-icon.png",
+  "/maskable_icon.png",
 ];
 
 // Install event handler
