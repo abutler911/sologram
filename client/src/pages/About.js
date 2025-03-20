@@ -2,6 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { FaArrowLeft, FaCamera } from "react-icons/fa";
+import ProfilePhoto from "./overlord.jpg";
 
 const About = () => {
   return (
@@ -24,6 +25,7 @@ const About = () => {
 
         <Section>
           <SectionTitle>The Administrator - Andrew</SectionTitle>
+          <ProfileImage src={ProfilePhoto} alt="Andrew" />
           <Paragraph>
             Hey, I'm Andrew—the SoloGram administrator, CEO, creator, curator,
             sole poster, and<Emphasis>Supreme Overlord</Emphasis> of SoloGram. I
@@ -185,6 +187,25 @@ const Tagline = styled.h2`
 
 const Section = styled.section`
   margin-bottom: 2rem;
+  position: relative;
+`;
+
+const ProfileImage = styled.img`
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  float: left;
+  margin-right: 1rem;
+  margin-bottom: 0.5rem;
+  border: 3px solid #ff7e5f;
+  shape-outside: circle();
+
+  @media (max-width: 480px) {
+    width: 120px;
+    height: 140px;
+    margin-right: 0.75rem;
+  }
 `;
 
 const SectionTitle = styled.h2`

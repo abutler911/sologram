@@ -68,11 +68,34 @@ const PostCard = ({ post: initialPost, onDelete }) => {
 
   const handleDelete = async () => {
     try {
-      await onDelete(post._id);
+      console.log("Deleting post with ID:", post._id);
+
+      await axios.delete(`/api/posts/${post._id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      console.log("Post deleted successfully!");
+
+      if (typeof onDelete === "function") {
+        onDelete(post._id); // Call parent function to update UI
+      } else {
+        console.warn("onDelete is not a function. Check parent component.");
+      }
+
       setShowDeleteModal(false);
+      toast.success("Post deleted successfully");
     } catch (err) {
       console.error("Error deleting post:", err);
-      toast.error("Failed to delete post");
+
+      if (err.response) {
+        console.error("Server response:", err.response.data);
+        toast.error(err.response.data.message || "Failed to delete post");
+      } else {
+        toast.error("Failed to delete post");
+      }
+
       setShowDeleteModal(false);
     }
   };
