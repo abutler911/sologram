@@ -52,7 +52,7 @@ const upload = multer({
 
 const uploadMultiple = multer({
   storage: storage,
-  limits: { fileSize: MAX_VIDEO_SIZE, files: 20 },
+  limits: { fileSize: MAX_VIDEO_SIZE, files: 25 },
 });
 
 module.exports = {

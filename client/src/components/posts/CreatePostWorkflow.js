@@ -75,11 +75,11 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     (acceptedFiles) => {
       if (acceptedFiles.length === 0) return;
 
-      // Check if adding these files would exceed the 20 file limit
+      // Check if adding these files would exceed the 25file limit
       const totalFiles =
         mediaFiles.length + existingMedia.length + acceptedFiles.length;
-      if (totalFiles > 20) {
-        toast.error("Maximum 20 media files allowed per post");
+      if (totalFiles > 25) {
+        toast.error("Maximum 25 media files allowed per post");
         return;
       }
 
@@ -294,7 +294,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                   <FaVideo />
                 </MediaTypeIcons>
                 <DropzoneSubtext>
-                  You can add up to 20 photos and videos. Max file size: 20MB
+                  You can add up to 25 photos and videos. Max file size: 25MB
                 </DropzoneSubtext>
               </DropzoneContainer>
             ) : (

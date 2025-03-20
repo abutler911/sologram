@@ -35,10 +35,10 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
   const onDrop = useCallback(acceptedFiles => {
     if (acceptedFiles.length === 0) return;
     
-    // Check if adding these files would exceed the 20 file limit
+    // Check if adding these files would exceed the 25 file limit
     const totalFiles = mediaFiles.length + existingMedia.length + acceptedFiles.length;
-    if (totalFiles > 20) {
-      toast.error('Maximum 20 media files allowed per post');
+    if (totalFiles > 25) {
+      toast.error('Maximum 25 media files allowed per post');
       return;
     }
     
@@ -189,11 +189,11 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
       </FormGroup>
       
       <FormGroup>
-        <Label>Media (Max 20 files)</Label>
+        <Label>Media (Max 25 files)</Label>
         
         {/* Display count of selected media */}
         <MediaCounter>
-          {mediaPreviews.length + existingMedia.length} / 20 media files selected
+          {mediaPreviews.length + existingMedia.length} / 25 media files selected
         </MediaCounter>
         
         {/* Display existing media previews */}
@@ -232,8 +232,8 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
           </MediaPreviewGrid>
         )}
         
-        {/* Only show dropzone if less than 20 total media files */}
-        {mediaPreviews.length + existingMedia.length < 20 && (
+        {/* Only show dropzone if less than 25 total media files */}
+        {mediaPreviews.length + existingMedia.length < 25 && (
           <DropzoneContainer {...getRootProps()} isDragActive={isDragActive}>
             <input {...getInputProps()} />
             <DropzoneIcon>
@@ -245,7 +245,7 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
                 : 'Drag & drop images or videos, or click to select'}
             </DropzoneText>
             <DropzoneSubtext>
-              Supports: JPG, PNG, GIF, MP4, MOV (Max: 20MB per file)
+              Supports: JPG, PNG, GIF, MP4, MOV (Max: 25MB per file)
             </DropzoneSubtext>
             <MediaTypeIcons>
               <FaImage />

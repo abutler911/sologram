@@ -30,12 +30,12 @@ router.get('/:id', getPost);
 // @route   POST /api/posts
 // @desc    Create a post
 // @access  Private (will add auth middleware later)
-router.post('/', uploadMultiple.array('media', 10), createPost);
+router.post('/', uploadMultiple.array('media', 25), createPost);
 
 // @route   PUT /api/posts/:id
 // @desc    Update a post
 // @access  Private (will add auth middleware later)
-router.put('/:id', uploadMultiple.array('media', 10), updatePost);
+router.put('/:id', uploadMultiple.array('media', 25), updatePost);
 
 // @route   DELETE /api/posts/:id
 // @desc    Delete a post
@@ -45,3 +45,5 @@ router.delete('/:id', deletePost);
 router.put('/:id/like', likeLimiter, likePost);
 
 module.exports = router;
+
+
