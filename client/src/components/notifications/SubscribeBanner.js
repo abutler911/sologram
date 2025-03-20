@@ -65,12 +65,6 @@ const SubscribeBanner = () => {
         </Banner>
       )}
 
-      {/* Fixed Subscribe Button */}
-      <SubscribeFixed onClick={handleToggleModal}>
-        <FaBell />
-        <span>Subscribe</span>
-      </SubscribeFixed>
-
       {/* Subscription Modal */}
       {isOpen && (
         <ModalOverlay>
@@ -232,47 +226,6 @@ const DismissButton = styled.button`
     width: 1.75rem;
     height: 1.75rem;
     font-size: 0.9rem;
-  }
-`;
-
-const SubscribeFixed = styled.button`
-  position: fixed;
-  bottom: 7rem;
-  right: 2rem;
-  background-color: #ff7e5f;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.75rem 1.25rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-  z-index: 98;
-  transition: transform 0.2s, background-color 0.3s;
-
-  &:hover {
-    background-color: #ff6347;
-    transform: translateY(-2px);
-  }
-
-  svg {
-    margin-right: 0.5rem;
-  }
-
-  @media (max-width: 768px) {
-    bottom: 5rem;
-    right: 1rem;
-    padding: 0.625rem 1rem;
-
-    span {
-      display: none;
-    }
-
-    svg {
-      margin-right: 0;
-    }
   }
 `;
 
