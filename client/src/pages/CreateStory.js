@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { FaUpload, FaTimes, FaCamera, FaImage } from "react-icons/fa";
+import { FaUpload, FaTimes, FaCamera, FaImage, FaVideo } from "react-icons/fa";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -30,10 +30,10 @@ const CreateStory = () => {
     if (rejectedFiles && rejectedFiles.length > 0) {
       rejectedFiles.forEach(({ file, errors }) => {
         if (errors[0]?.code === "file-too-large") {
-          toast.error(`File ${file.name} is too large. Max size is 5MB.`);
+          toast.error(`File ${file.name} is too large. Max size is 25MB for images and 50MB for videos.`);
         } else if (errors[0]?.code === "file-invalid-type") {
           toast.error(
-            `File ${file.name} has an invalid type. Only images are allowed.`
+            `File ${file.name} has an invalid type. Only images (JPG, PNG, GIF) and videos (MP4, MOV) are allowed.`
           );
         } else {
           toast.error(
@@ -51,8 +51,9 @@ const CreateStory = () => {
 
       // Create previews
       const newPreviews = acceptedFiles.map((file) => {
+        const isVideo = file.type.startsWith("video/");
         const preview = URL.createObjectURL(file);
-        return { file, preview };
+        return { file, preview, type: isVideo ? "video" : "image" };
       });
 
       setPreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
@@ -66,8 +67,10 @@ const CreateStory = () => {
       "image/jpeg": [".jpg", ".jpeg"],
       "image/png": [".png"],
       "image/gif": [".gif"],
+      "video/mp4": [".mp4"],
+      "video/quicktime": [".mov"],
     },
-    maxSize: 5 * 1024 * 1024, // 5MB
+    maxSize: 50 * 1024 * 1024, // 50MB for videos
     maxFiles: 10, // Reasonable limit
     noClick: isPWA, // Disable click in PWA mode (use buttons instead)
     noKeyboard: false, // Allow keyboard navigation
@@ -109,7 +112,26 @@ const CreateStory = () => {
     input.click();
   };
 
-  // Handle selecting images from gallery
+  // Handle video recording
+  const handleVideoCapture = () => {
+    // Create a hidden file input specifically for video
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "video/*";
+    input.capture = "environment"; // Use the back camera
+
+    input.onchange = (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        const file = e.target.files[0];
+        // Process the file as if it was dropped
+        onDrop([file], []);
+      }
+    };
+
+    input.click();
+  };
+
+  // Handle selecting media from gallery
   const handleGallerySelect = () => {
     // This explicitly calls the dropzone's open method
     open();
@@ -125,7 +147,7 @@ const CreateStory = () => {
     }
 
     if (mediaFiles.length === 0) {
-      toast.error("Please add at least one image to your story");
+      toast.error("Please add at least one image or video to your story");
       return;
     }
 
@@ -183,7 +205,7 @@ const CreateStory = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label>Add Images</Label>
+            <Label>Add Images & Videos</Label>
             <DropzoneContainer
               {...getRootProps()}
               isDragActive={isDragActive}
@@ -194,11 +216,20 @@ const CreateStory = () => {
                 <FaUpload />
               </UploadIcon>
               {isPWA ? (
-                <p>Use the buttons below to add images</p>
+                <p>Use the buttons below to add media</p>
               ) : (
-                <p>Drag & drop images here, or click to select files</p>
+                <p>Drag & drop images or videos here, or click to select files</p>
               )}
-              <small>Max 5MB per image</small>
+              <MediaTypes>
+                <MediaTypeIcon>
+                  <FaImage />
+                  <span>Images (25MB max)</span>
+                </MediaTypeIcon>
+                <MediaTypeIcon>
+                  <FaVideo />
+                  <span>Videos (50MB max)</span>
+                </MediaTypeIcon>
+              </MediaTypes>
             </DropzoneContainer>
 
             {/* Explicit buttons for PWA mode and better mobile UX */}
@@ -207,6 +238,11 @@ const CreateStory = () => {
                 <FaCamera />
                 <span>Take Photo</span>
               </CameraButton>
+
+              <VideoButton type="button" onClick={handleVideoCapture}>
+                <FaVideo />
+                <span>Record Video</span>
+              </VideoButton>
 
               <GalleryButton type="button" onClick={handleGallerySelect}>
                 <FaImage />
@@ -217,11 +253,18 @@ const CreateStory = () => {
 
           {previews.length > 0 && (
             <PreviewSection>
-              <Label>Selected Images ({previews.length})</Label>
+              <Label>Selected Media ({previews.length})</Label>
               <PreviewList>
                 {previews.map((item, index) => (
                   <PreviewItem key={index}>
-                    <PreviewImage src={item.preview} alt={`Preview ${index}`} />
+                    {item.type === "image" ? (
+                      <PreviewImage src={item.preview} alt={`Preview ${index}`} />
+                    ) : (
+                      <PreviewVideo>
+                        <video src={item.preview} controls muted />
+                        <VideoIcon><FaVideo /></VideoIcon>
+                      </PreviewVideo>
+                    )}
                     <RemoveButton onClick={() => removePreview(index)}>
                       <FaTimes />
                     </RemoveButton>
@@ -349,7 +392,7 @@ const DropzoneContainer = styled.div`
     border-color: ${(props) => (props.isPWA ? "#444" : "#ff7e5f")};
   }
 
-  @media (max-width: a480px) {
+  @media (max-width: 480px) {
     padding: 1.5rem;
   }
 `;
@@ -360,11 +403,40 @@ const UploadIcon = styled.div`
   color: #ff7e5f;
 `;
 
+const MediaTypes = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+`;
+
+const MediaTypeIcon = styled.div`
+  display: flex;
+  align-items: center;
+  color: #888;
+  font-size: 0.8rem;
+  
+  svg {
+    color: #ff7e5f;
+    margin-right: 0.5rem;
+    font-size: 1rem;
+  }
+`;
+
 const ActionButtonsContainer = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
   margin-top: 1rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
 
   @media (max-width: 480px) {
     grid-template-columns: 1fr;
@@ -398,6 +470,15 @@ const CameraButton = styled(ActionButton)`
   }
 `;
 
+const VideoButton = styled(ActionButton)`
+  background-color: #e74c3c;
+  color: white;
+
+  &:hover {
+    background-color: #c0392b;
+  }
+`;
+
 const GalleryButton = styled(ActionButton)`
   background-color: #4a90e2;
   color: white;
@@ -427,12 +508,45 @@ const PreviewItem = styled.div`
   overflow: hidden;
   aspect-ratio: 1;
   border: 1px solid #333;
+  background-color: #000;
 `;
 
 const PreviewImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+`;
+
+const PreviewVideo = styled.div`
+  position: relative;
+  width: 100%;
+  height: 100%;
+  
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+`;
+
+const VideoIcon = styled.div`
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  @media (max-width: 480px) {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+  }
 `;
 
 const RemoveButton = styled.button`
