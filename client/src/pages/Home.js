@@ -19,6 +19,14 @@ const Home = () => {
 
   const observer = useRef();
 
+  // Check localStorage for banner visibility on mount
+  useEffect(() => {
+    const bannerClosed = localStorage.getItem("aboutBannerClosed");
+    if (bannerClosed === "true") {
+      setShowAboutBanner(false);
+    }
+  }, []);
+
   // Lazy Load Videos (Intersection Observer)
   useEffect(() => {
     const lazyVideos = document.querySelectorAll(".lazy-video");
@@ -136,6 +144,12 @@ const Home = () => {
     setHasMore(true);
   };
 
+  // Close banner and save state to localStorage
+  const closeBanner = () => {
+    setShowAboutBanner(false);
+    localStorage.setItem("aboutBannerClosed", "true");
+  };
+
   return (
     <PageWrapper>
       <HomeContainer>
@@ -152,9 +166,7 @@ const Home = () => {
                 <BannerTagline>One Voice. Infinite Moments.</BannerTagline>
               </BannerTextContainer>
             </BannerContent>
-            <CloseButton onClick={() => setShowAboutBanner(false)}>
-              ×
-            </CloseButton>
+            <CloseButton onClick={closeBanner}>×</CloseButton>
           </AboutBanner>
         )}
         <Stories />
@@ -281,12 +293,24 @@ const AboutBanner = styled.div`
   padding: 1.5rem;
   margin-bottom: 2rem;
   position: relative;
+
+  @media (max-width: 640px) {
+    padding: 1.2rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 1rem;
+  }
 `;
 
 const BannerContent = styled.div`
   display: flex;
   align-items: center;
   flex: 1;
+
+  @media (max-width: 480px) {
+    align-items: flex-start;
+  }
 `;
 
 const LogoContainer = styled.div`
@@ -304,6 +328,26 @@ const LogoContainer = styled.div`
     font-size: 1.5rem;
     color: white;
   }
+
+  @media (max-width: 640px) {
+    width: 40px;
+    height: 40px;
+    margin-right: 1rem;
+
+    svg {
+      font-size: 1.2rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    width: 36px;
+    height: 36px;
+    margin-right: 0.8rem;
+
+    svg {
+      font-size: 1rem;
+    }
+  }
 `;
 
 const BannerTextContainer = styled.div`
@@ -314,6 +358,16 @@ const BannerTitle = styled.h2`
   font-size: 1.25rem;
   color: #333;
   margin: 0 0 0.5rem;
+
+  @media (max-width: 640px) {
+    font-size: 1.1rem;
+    margin: 0 0 0.3rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    margin: 0 0 0.2rem;
+  }
 `;
 
 const BannerTagline = styled.p`
@@ -322,6 +376,15 @@ const BannerTagline = styled.p`
   font-weight: 500;
   font-style: italic;
   margin: 0 0 0.5rem;
+
+  @media (max-width: 640px) {
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+  }
 `;
 
 const CloseButton = styled.button`
@@ -336,6 +399,16 @@ const CloseButton = styled.button`
 
   &:hover {
     color: #555;
+  }
+
+  @media (max-width: 640px) {
+    font-size: 1.3rem;
+    margin-left: 0.8rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1.2rem;
+    margin-left: 0.5rem;
   }
 `;
 

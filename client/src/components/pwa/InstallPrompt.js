@@ -77,11 +77,13 @@ const InstallPrompt = () => {
   return (
     <PromptContainer>
       <PromptContent>
-        <PromptLogo>
-          <FaCamera />
-          <span>SoloGram</span>
+        <LogoContainer>
+          <LogoWrapper>
+            <FaCamera />
+            <AppName>SoloGram</AppName>
+          </LogoWrapper>
           <Tagline>One Voice. Infinite Moments.</Tagline>
-        </PromptLogo>
+        </LogoContainer>
 
         <PromptMessage>
           <PromptTitle>Install SoloGram</PromptTitle>
@@ -137,37 +139,40 @@ const PromptContent = styled.div`
   }
 `;
 
-const PromptLogo = styled.div`
+const LogoContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.75rem;
+
+  @media (min-width: 768px) {
+    margin-bottom: 0;
+    margin-right: 1rem;
+    min-width: 100px;
+  }
+`;
+
+const LogoWrapper = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 0.75rem;
 
   svg {
     font-size: 1.5rem;
     color: #ff7e5f;
     margin-right: 0.5rem;
   }
+`;
 
-  div {
-    display: flex;
-    flex-direction: column;
-  }
-
-  span {
-    color: #ff7e5f;
-    font-weight: 600;
-  }
-
-  @media (min-width: 768px) {
-    margin-bottom: 0;
-    margin-right: 1rem;
-  }
+const AppName = styled.span`
+  color: #ff7e5f;
+  font-weight: 600;
 `;
 
 const Tagline = styled.small`
   font-size: 0.7rem;
   font-style: italic;
-  color: #666;
+  color: #888;
+  margin-top: 0.2rem;
+  margin-left: 2rem; /* Align with the text after the icon */
 `;
 
 const PromptMessage = styled.div`

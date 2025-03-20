@@ -1,5 +1,4 @@
-// components/stories/CreateStory.js
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { FaCamera, FaUpload, FaTimes } from "react-icons/fa";
@@ -14,25 +13,53 @@ const CreateStory = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Handle file uploads
-  const onDrop = (acceptedFiles) => {
-    setMediaFiles([...mediaFiles, ...acceptedFiles]);
+  // Handle file uploads with enhanced error handling and accept types
+  const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
+    // Handle rejected files first
+    if (rejectedFiles && rejectedFiles.length > 0) {
+      rejectedFiles.forEach(({ file, errors }) => {
+        if (errors[0]?.code === "file-too-large") {
+          toast.error(`File ${file.name} is too large. Max size is 5MB.`);
+        } else if (errors[0]?.code === "file-invalid-type") {
+          toast.error(
+            `File ${file.name} has an invalid type. Only images are allowed.`
+          );
+        } else {
+          toast.error(
+            `File ${file.name} couldn't be uploaded. ${errors[0]?.message}`
+          );
+        }
+      });
+    }
 
-    // Create previews
-    const newPreviews = acceptedFiles.map((file) => {
-      const preview = URL.createObjectURL(file);
-      return { file, preview };
-    });
+    // Process accepted files
+    if (acceptedFiles && acceptedFiles.length > 0) {
+      setMediaFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
 
-    setPreviews([...previews, ...newPreviews]);
-  };
+      // Create previews
+      const newPreviews = acceptedFiles.map((file) => {
+        const preview = URL.createObjectURL(file);
+        return { file, preview };
+      });
 
-  const { getRootProps, getInputProps } = useDropzone({
+      setPreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
+    }
+  }, []);
+
+  // Configure dropzone with more specific options to improve mobile compatibility
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: {
-      "image/*": [".jpeg", ".jpg", ".png", ".gif"],
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/png": [".png"],
+      "image/gif": [".gif"],
     },
     maxSize: 5 * 1024 * 1024, // 5MB
+    maxFiles: 10, // Reasonable limit
+    noClick: false, // Allow clicking
+    noKeyboard: false, // Allow keyboard navigation
+    preventDropOnDocument: true, // Prevent dropping on document
+    useFsAccessApi: false, // Disable File System Access API which can cause issues on some mobile devices
   });
 
   // Remove a preview and its file
@@ -50,7 +77,7 @@ const CreateStory = () => {
     setMediaFiles(newMediaFiles);
   };
 
-  // Handle form submission
+  // Handle form submission with improved error handling
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -74,13 +101,30 @@ const CreateStory = () => {
         formData.append("media", file);
       });
 
-      await axios.post("/api/stories", formData);
+      const response = await axios.post("/api/stories", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          // Optional: Show upload progress
+          console.log(`Upload progress: ${percentCompleted}%`);
+        },
+      });
 
-      toast.success("Story created successfully!");
-      navigate("/");
+      if (response.data && response.data.success) {
+        toast.success("Story created successfully!");
+        navigate("/");
+      } else {
+        throw new Error("Server returned an invalid response");
+      }
     } catch (err) {
       console.error("Error creating story:", err);
-      toast.error("Failed to create story");
+      const errorMessage =
+        err.response?.data?.message || "Failed to create story";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -106,7 +150,10 @@ const CreateStory = () => {
 
           <FormGroup>
             <Label>Add Images</Label>
-            <DropzoneContainer {...getRootProps()}>
+            <DropzoneContainer
+              {...getRootProps({ className: "dropzone" })}
+              isDragActive={isDragActive}
+            >
               <input {...getInputProps()} />
               <UploadIcon>
                 <FaUpload />
@@ -114,6 +161,11 @@ const CreateStory = () => {
               <p>Drag & drop images here, or click to select files</p>
               <small>Max 5MB per image</small>
             </DropzoneContainer>
+
+            {/* Add an explicit button for mobile users */}
+            <UploadButton type="button" onClick={open}>
+              <FaCamera /> Select Images from Your Device
+            </UploadButton>
           </FormGroup>
 
           {previews.length > 0 && (
@@ -151,6 +203,11 @@ const PageWrapper = styled.div`
   background-color: #121212;
   min-height: 100vh;
   padding: 1rem 0;
+
+  /* Fix for iOS to better handle full height */
+  @supports (-webkit-touch-callout: none) {
+    min-height: -webkit-fill-available;
+  }
 `;
 
 const Container = styled.div`
@@ -159,6 +216,12 @@ const Container = styled.div`
   padding: 2rem;
 
   @media (max-width: 768px) {
+    padding: 1rem;
+  }
+
+  /* Ensure good rendering in PWA mode */
+  @media screen and (display-mode: standalone) {
+    width: 100%;
     padding: 1rem;
   }
 `;
@@ -174,6 +237,10 @@ const StoryForm = styled.form`
   border-radius: 8px;
   padding: 2rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+  @media (max-width: 480px) {
+    padding: 1.5rem;
+  }
 `;
 
 const FormGroup = styled.div`
@@ -203,7 +270,7 @@ const Input = styled.input`
 `;
 
 const DropzoneContainer = styled.div`
-  border: 2px dashed #444;
+  border: 2px dashed ${(props) => (props.isDragActive ? "#ff7e5f" : "#444")};
   border-radius: 4px;
   padding: 2rem;
   text-align: center;
@@ -211,9 +278,15 @@ const DropzoneContainer = styled.div`
   cursor: pointer;
   transition: border-color 0.3s;
   color: #aaa;
+  margin-bottom: 1rem;
 
   &:hover {
     border-color: #ff7e5f;
+  }
+
+  /* Make dropzone more visible on mobile */
+  @media (max-width: 480px) {
+    padding: 1.5rem;
   }
 `;
 
@@ -221,6 +294,37 @@ const UploadIcon = styled.div`
   font-size: 2rem;
   margin-bottom: 1rem;
   color: #ff7e5f;
+`;
+
+/* New button specific for mobile usage */
+const UploadButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+
+  svg {
+    margin-right: 0.5rem;
+    color: #ff7e5f;
+  }
+
+  &:hover {
+    background-color: #444;
+    border-color: #ff7e5f;
+  }
+
+  /* More visible on mobile */
+  @media (max-width: 480px) {
+    font-weight: 600;
+  }
 `;
 
 const PreviewSection = styled.div`
@@ -231,6 +335,10 @@ const PreviewList = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 1rem;
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
 `;
 
 const PreviewItem = styled.div`
@@ -238,6 +346,7 @@ const PreviewItem = styled.div`
   border-radius: 4px;
   overflow: hidden;
   aspect-ratio: 1;
+  border: 1px solid #333;
 `;
 
 const PreviewImage = styled.img`
@@ -264,6 +373,12 @@ const RemoveButton = styled.button`
 
   &:hover {
     background-color: rgba(255, 0, 0, 0.7);
+  }
+
+  /* Larger touch target on mobile */
+  @media (max-width: 480px) {
+    width: 30px;
+    height: 30px;
   }
 `;
 

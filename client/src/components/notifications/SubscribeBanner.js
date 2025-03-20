@@ -111,13 +111,23 @@ const Banner = styled.div`
 
   @media (max-width: 768px) {
     flex-direction: column;
-    padding: 1.5rem;
+    align-items: flex-start;
+    padding: 1.25rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
   }
 `;
 
 const BannerContent = styled.div`
   display: flex;
   align-items: center;
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
 `;
 
 const BannerIcon = styled.div`
@@ -132,6 +142,13 @@ const BannerIcon = styled.div`
   font-size: 1.25rem;
   margin-right: 1rem;
   flex-shrink: 0;
+
+  @media (max-width: 480px) {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1rem;
+    margin-right: 0.75rem;
+  }
 `;
 
 const BannerText = styled.div`
@@ -142,11 +159,20 @@ const BannerTitle = styled.h3`
   font-size: 1.125rem;
   color: #333333;
   margin: 0 0 0.25rem;
+
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    margin: 0 0 0.15rem;
+  }
 `;
 
 const BannerDescription = styled.p`
   color: #666666;
   margin: 0;
+
+  @media (max-width: 480px) {
+    font-size: 0.875rem;
+  }
 `;
 
 const BannerActions = styled.div`
@@ -178,6 +204,11 @@ const SubscribeButton = styled.button`
   @media (max-width: 768px) {
     flex: 1;
   }
+
+  @media (max-width: 480px) {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
 `;
 
 const DismissButton = styled.button`
@@ -195,6 +226,12 @@ const DismissButton = styled.button`
 
   &:hover {
     background-color: #e0e0e0;
+  }
+
+  @media (max-width: 480px) {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.9rem;
   }
 `;
 
@@ -279,6 +316,10 @@ const ModalContent = styled.div`
       opacity: 1;
     }
   }
+
+  @media (max-width: 480px) {
+    margin: 0 1rem;
+  }
 `;
 
 const CloseButton = styled.button`
@@ -300,6 +341,14 @@ const CloseButton = styled.button`
 
   &:hover {
     background-color: #555555;
+  }
+
+  @media (max-width: 480px) {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.9rem;
+    top: -0.875rem;
+    right: -0.875rem;
   }
 `;
 

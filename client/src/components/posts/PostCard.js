@@ -249,11 +249,24 @@ const Card = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%; /* Take full height of grid cell */
-  width: 100%; /* Ensure it takes full width */
+  width: 100%; /* Ensure full width */
 
-  /* Fixed card width for desktop and tablet */
-  @media (min-width: 768px) {
-    width: 100%; /* Ensure it takes full width */
+  /* Ensure proper rendering in PWA and mobile environments */
+  max-width: 100vw;
+  box-sizing: border-box;
+  margin: 0 auto;
+
+  /* On small mobile screens, increase width to fill more screen space */
+  @media (max-width: 480px) {
+    width: 100%;
+    border-radius: 6px; /* Slightly smaller border radius on small screens */
+  }
+
+  /* For PWA specifically - this helps address possible viewport issues */
+  @media screen and (display-mode: standalone) {
+    width: 96vw; /* Use viewport width units for PWA mode */
+    max-width: 600px; /* Cap maximum width */
+    margin: 0 auto;
   }
 
   &:hover {
@@ -269,6 +282,7 @@ const MediaContainer = styled(Link)`
   overflow: hidden;
   aspect-ratio: 1 / 1; /* Square aspect ratio like Instagram */
   flex-shrink: 0; /* Prevent the media container from shrinking */
+  background-color: #121212; /* Dark background for loading state */
 `;
 
 // Carousel Components
@@ -330,6 +344,21 @@ const NavigationArrow = styled.button`
     opacity: 0.3;
     cursor: default;
   }
+
+  /* Make arrows more visible and touchable on mobile */
+  @media (max-width: 768px) {
+    width: 36px;
+    height: 36px;
+    opacity: 0.7; /* Always show on mobile */
+
+    &.prev {
+      left: 8px;
+    }
+
+    &.next {
+      right: 8px;
+    }
+  }
 `;
 
 const IndicatorDots = styled.div`
@@ -352,6 +381,13 @@ const Dot = styled.button`
   border: none;
   cursor: pointer;
   padding: 0;
+
+  /* Larger dots on mobile for better touch targets */
+  @media (max-width: 768px) {
+    width: 10px;
+    height: 10px;
+    margin: 0 3px;
+  }
 `;
 
 const PostImage = styled.img`
@@ -377,6 +413,11 @@ const CardContent = styled.div`
   flex-grow: 1; /* Allow content to grow but maintain consistent card heights */
   display: flex;
   flex-direction: column;
+
+  /* Adjust padding on mobile */
+  @media (max-width: 480px) {
+    padding: 1rem;
+  }
 `;
 
 const Caption = styled(Link)`
@@ -397,6 +438,11 @@ const Caption = styled(Link)`
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+
+  /* Slightly smaller font on very small screens */
+  @media (max-width: 360px) {
+    font-size: 1.125rem;
+  }
 `;
 
 const Content = styled.p`
@@ -437,11 +483,22 @@ const CardFooter = styled.div`
   border-top: 1px solid #333333;
   padding-top: 1rem;
   margin-top: auto; /* Push the footer to the bottom of the card */
+
+  /* Additional spacing on small screens */
+  @media (max-width: 480px) {
+    padding-top: 0.75rem;
+  }
 `;
 
 const MetaData = styled.div`
   display: flex;
   align-items: center;
+  flex-wrap: wrap; /* Allow wrapping on very small screens */
+
+  /* More space on very small screens */
+  @media (max-width: 360px) {
+    margin-right: 0.5rem;
+  }
 `;
 
 const TimeStamp = styled.div`
@@ -453,6 +510,12 @@ const TimeStamp = styled.div`
 
   svg {
     margin-right: 0.25rem;
+  }
+
+  /* Adjustments for mobile */
+  @media (max-width: 480px) {
+    font-size: 0.8125rem;
+    margin-right: 0.75rem;
   }
 `;
 
@@ -476,19 +539,41 @@ const LikesCount = styled.button`
     margin-right: 0.25rem;
     ${(props) => (props.liked ? "fill: #ff5e3a;" : "")}
   }
+
+  /* Ensure good touch target size on mobile */
+  @media (max-width: 480px) {
+    font-size: 0.8125rem;
+    min-height: 1.5rem;
+    display: flex;
+    align-items: center;
+  }
 `;
 
 const Actions = styled.div`
   display: flex;
+  align-items: center; /* Ensure vertical alignment */
+  margin-left: 0.5rem; /* Provide some separation from metadata */
 `;
 
 const EditButton = styled(Link)`
   color: #4a90e2;
-  margin-right: 0.75rem;
   transition: color 0.3s ease;
+  padding: 0.25rem 0.5rem; /* Add padding for larger touch target */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+
+  /* Increase spacing between buttons */
+  margin-right: 0.75rem;
 
   &:hover {
     color: #3a70b2;
+  }
+
+  /* Adjustments for mobile */
+  @media (max-width: 480px) {
+    padding: 0.3rem 0.6rem;
   }
 `;
 
@@ -497,11 +582,20 @@ const DeleteButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0;
   transition: color 0.3s ease;
+  padding: 0.25rem 0.5rem; /* Add padding for larger touch target */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
 
   &:hover {
     color: #c0392b;
+  }
+
+  /* Adjustments for mobile */
+  @media (max-width: 480px) {
+    padding: 0.3rem 0.6rem;
   }
 `;
 
@@ -535,6 +629,12 @@ const DeleteModalContent = styled.div`
   p {
     color: #dddddd;
     margin-bottom: 1.5rem;
+  }
+
+  /* Adjustments for mobile */
+  @media (max-width: 480px) {
+    padding: 1.5rem;
+    width: 85%;
   }
 `;
 
