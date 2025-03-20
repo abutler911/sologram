@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import {
-  FaSearch,
   FaCamera,
   FaFolder,
   FaImages,
@@ -12,9 +11,8 @@ import {
 import { Link } from "react-router-dom";
 import Stories from "../components/stories/Stories";
 import PostCard from "../components/posts/PostCard";
-import SubscribeBanner from "../components/notifications/SubscribeBanner";
 
-const Home = () => {
+const Home = forwardRef((props, ref) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,13 +22,16 @@ const Home = () => {
   const [searching, setSearching] = useState(false);
   const [showAboutBanner, setShowAboutBanner] = useState(true);
 
-  // New state for top collections
   const [topCollections, setTopCollections] = useState([]);
   const [collectionsLoading, setCollectionsLoading] = useState(true);
 
   const observer = useRef();
 
-  // Check localStorage for banner visibility on mount
+  useImperativeHandle(ref, () => ({
+    handleHeaderSearch: (query) => handleSearch(query),
+    clearSearch: () => clearSearch()
+  }));
+
   useEffect(() => {
     const bannerClosed = localStorage.getItem("aboutBannerClosed");
     if (bannerClosed === "true") {
@@ -38,13 +39,12 @@ const Home = () => {
     }
   }, []);
 
-  // Fetch top collections for the homepage
   useEffect(() => {
     const fetchTopCollections = async () => {
       try {
         setCollectionsLoading(true);
         const response = await axios.get("/api/collections", {
-          params: { limit: 3 }, // Just get 3 most recent collections
+          params: { limit: 3 },
         });
         setTopCollections(response.data.data);
       } catch (error) {
@@ -57,58 +57,46 @@ const Home = () => {
     fetchTopCollections();
   }, []);
 
-  // Setup lazy loading for videos when posts change
   useEffect(() => {
-    // Only run if there are posts with video media
     if (!posts.length) return;
-
-    // Find all videos that should be lazy loaded
+    
     const lazyVideos = document.querySelectorAll("video[data-src]");
     if (!lazyVideos.length) return;
-
-    // Create an intersection observer to load videos when they come into view
+    
     const videoObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const video = entry.target;
-
-            // If the video has a data-src but no src, load it
+            
             if (video.dataset.src && !video.src) {
-              console.log("Lazy loading video:", video.dataset.src);
               video.src = video.dataset.src;
-
-              // Also update any source elements
+              
               const sources = video.querySelectorAll("source[data-src]");
               sources.forEach((source) => {
                 source.src = source.dataset.src;
               });
-
-              // Reload the video to apply the new source
+              
               video.load();
             }
-
-            // Stop observing once loaded
+            
             videoObserver.unobserve(video);
           }
         });
       },
       {
-        rootMargin: "100px", // Start loading when video is 100px away
-        threshold: 0.1, // Trigger when at least 10% of the element is visible
+        rootMargin: "100px",
+        threshold: 0.1,
       }
     );
-
-    // Start observing all lazy videos
+    
     lazyVideos.forEach((video) => videoObserver.observe(video));
-
-    // Clean up observer on component unmount or when posts change
+    
     return () => {
       videoObserver.disconnect();
     };
   }, [posts]);
 
-  // Infinite Scroll - Loads more posts when last element is visible
   const lastPostElementRef = useCallback(
     (node) => {
       if (loading) return;
@@ -125,7 +113,6 @@ const Home = () => {
     [loading, hasMore]
   );
 
-  // Fetch posts
   useEffect(() => {
     let isMounted = true;
 
@@ -159,26 +146,28 @@ const Home = () => {
       }
     };
 
-    fetchPosts();
+    if (!searching) {
+      fetchPosts();
+    }
+    
     return () => {
       isMounted = false;
     };
-  }, [page]);
+  }, [page, searching]);
 
-  // Handle search
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
-      setPage(1);
-      return;
+  const handleSearch = async (query) => {
+    if (!query.trim()) {
+      return clearSearch();
     }
-
+    
+    setSearchQuery(query);
+    
     try {
       setSearching(true);
       setLoading(true);
 
       const response = await axios.get("/api/posts/search", {
-        params: { query: searchQuery },
+        params: { query },
       });
 
       setPosts(response.data.data);
@@ -197,7 +186,6 @@ const Home = () => {
     }
   };
 
-  // Clear search
   const clearSearch = () => {
     setSearchQuery("");
     setSearching(false);
@@ -205,7 +193,6 @@ const Home = () => {
     setHasMore(true);
   };
 
-  // Close banner and save state to localStorage
   const closeBanner = () => {
     setShowAboutBanner(false);
     localStorage.setItem("aboutBannerClosed", "true");
@@ -214,8 +201,6 @@ const Home = () => {
   return (
     <PageWrapper>
       <HomeContainer>
-        <SubscribeBanner />
-
         {showAboutBanner && (
           <AboutBanner>
             <BannerContent>
@@ -231,7 +216,18 @@ const Home = () => {
           </AboutBanner>
         )}
 
-        {/* Stories Section with Header */}
+        {searching && searchQuery && (
+          <SearchResultsIndicator>
+            <SearchResultsText>
+              Showing results for "{searchQuery}" ({posts.length}{" "}
+              {posts.length === 1 ? "post" : "posts"})
+            </SearchResultsText>
+            <ClearSearchButton onClick={clearSearch}>
+              Clear Search
+            </ClearSearchButton>
+          </SearchResultsIndicator>
+        )}
+
         <ContentSection>
           <CompactSectionHeader>
             <SectionTitle>
@@ -242,7 +238,6 @@ const Home = () => {
           <Stories />
         </ContentSection>
 
-        {/* Collections Section - Updated to horizontal scroll */}
         <ContentSection className="collections-section">
           <CompactSectionHeader>
             <SectionTitle>
@@ -279,51 +274,26 @@ const Home = () => {
           )}
         </ContentSection>
 
-        {/* Posts Section */}
         <ContentSection>
-          <SectionHeaderWithSearch>
-            <SectionTitleWrapper>
-              <SectionTitle>
-                <FaCamera />
-                <span>Posts</span>
-              </SectionTitle>
-            </SectionTitleWrapper>
-            <SearchWrapper>
-              <SearchContainer searching={searching}>
-                <SearchForm onSubmit={handleSearch}>
-                  <SearchInput
-                    type="text"
-                    placeholder="Search posts..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  <SearchButton type="submit">
-                    <FaSearch />
-                  </SearchButton>
-                </SearchForm>
-                {searching && (
-                  <ClearSearchButton onClick={clearSearch}>
-                    Clear Search
-                  </ClearSearchButton>
-                )}
-              </SearchContainer>
-            </SearchWrapper>
-          </SectionHeaderWithSearch>
+          <CompactSectionHeader>
+            <SectionTitle>
+              <FaCamera />
+              <span>Posts</span>
+            </SectionTitle>
+          </CompactSectionHeader>
 
           {error ? (
             <ErrorMessage>{error}</ErrorMessage>
           ) : posts.length > 0 ? (
             <PostGrid>
-              {posts.map((post, index) => {
-                return (
-                  <GridItem
-                    ref={posts.length === index + 1 ? lastPostElementRef : null}
-                    key={post._id}
-                  >
-                    <PostCard post={post} />
-                  </GridItem>
-                );
-              })}
+              {posts.map((post, index) => (
+                <GridItem
+                  ref={posts.length === index + 1 ? lastPostElementRef : null}
+                  key={post._id}
+                >
+                  <PostCard post={post} />
+                </GridItem>
+              ))}
             </PostGrid>
           ) : loading ? (
             <LoadingMessage>Loading posts...</LoadingMessage>
@@ -340,15 +310,13 @@ const Home = () => {
       </HomeContainer>
     </PageWrapper>
   );
-};
+});
 
-// Styled Components
 const PageWrapper = styled.div`
   background-color: #121212;
   min-height: 100vh;
-  padding: 0.5rem 0 1rem; /* Reduced top padding */
+  padding: 0.5rem 0 1rem;
 
-  /* Fix for iOS to better handle full height */
   @supports (-webkit-touch-callout: none) {
     min-height: -webkit-fill-available;
   }
@@ -357,7 +325,7 @@ const PageWrapper = styled.div`
 const HomeContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0.75rem 2rem; /* Reduced top/bottom padding */
+  padding: 0.75rem 2rem;
 
   @media (max-width: 768px) {
     padding: 0.5rem 1.5rem;
@@ -367,43 +335,76 @@ const HomeContainer = styled.div`
     padding: 0.5rem 1rem;
   }
 
-  /* Specific adjustments for PWA mode */
   @media screen and (display-mode: standalone) {
     width: 100%;
     box-sizing: border-box;
     padding: 0.5rem 1rem;
   }
 
-  /* Visual separation between sections */
   & > section {
-    margin-top: 1rem; /* Add spacing between content sections */
+    margin-top: 1rem;
   }
 `;
 
-// Generic Content Section - With background and padding
+const SearchResultsIndicator = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(30, 30, 30, 0.7);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+`;
+
+const SearchResultsText = styled.div`
+  color: #ddd;
+  font-size: 0.9375rem;
+`;
+
+const ClearSearchButton = styled.button`
+  background-color: #2a2a2a;
+  color: #ddd;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: #333;
+  }
+`;
+
 const ContentSection = styled.section`
-  margin-bottom: 1rem; /* Reduced margin to minimize vertical spacing */
-  background-color: rgba(30, 30, 30, 0.7); /* Subtle dark background */
+  margin-bottom: 1rem;
+  background-color: rgba(30, 30, 30, 0.7);
   border-radius: 8px;
   padding: 0.75rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.03); /* Subtle border */
+  border: 1px solid rgba(255, 255, 255, 0.03);
 
-  /* Special treatment for collections section */
   &.collections-section {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
   }
 `;
 
-// Shared Section Header Styling - More compact with subtle divider
 const CompactSectionHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem; /* Slightly more margin for separation */
+  margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Subtle separator */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 
   @media (max-width: 768px) {
     flex-direction: ${(props) => (props.withSearch ? "column" : "row")};
@@ -412,45 +413,22 @@ const CompactSectionHeader = styled.div`
   }
 `;
 
-// Special section header for the posts section with search
-const SectionHeaderWithSearch = styled.div`
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Subtle separator */
-  flex-wrap: wrap;
-  gap: 0.5rem;
-
-  @media (max-width: 600px) {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-`;
-
-const SectionTitleWrapper = styled.div`
-  flex: 0 0 auto;
-`;
-
 const SectionTitle = styled.h2`
   color: #fff;
-  font-size: 1.125rem; /* Smaller font size */
+  font-size: 1.125rem;
   display: flex;
   align-items: center;
   margin: 0;
-  font-weight: 500; /* Lighter weight */
+  font-weight: 500;
   position: relative;
   padding: 0.125rem 0;
 
   svg {
     color: #ff7e5f;
-    margin-right: 0.375rem; /* Smaller spacing */
-    font-size: 0.9em; /* Smaller icon */
+    margin-right: 0.375rem;
+    font-size: 0.9em;
   }
 
-  /* Subtle accent color highlight behind the icon */
   &::before {
     content: "";
     position: absolute;
@@ -465,7 +443,7 @@ const SectionTitle = styled.h2`
 
 const ViewAllLink = styled(Link)`
   color: #ff7e5f;
-  font-size: 0.8125rem; /* Smaller font size */
+  font-size: 0.8125rem;
   text-decoration: none;
 
   &:hover {
@@ -473,26 +451,23 @@ const ViewAllLink = styled(Link)`
   }
 `;
 
-// Collections Section Components - Horizontal scrollable layout like stories
 const CollectionsRow = styled.div`
   display: flex;
   overflow-x: auto;
   padding: 0.5rem 0;
   gap: 1rem;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 
   &::-webkit-scrollbar {
-    display: none; /* Chrome/Safari/Opera */
+    display: none;
   }
 
-  /* Add padding to allow focus outline to be visible at the edges */
   &::after {
     content: "";
     padding-right: 0.5rem;
   }
 
-  /* Improve touch scrolling */
   -webkit-overflow-scrolling: touch;
 `;
 
@@ -571,7 +546,7 @@ const EmptyMessage = styled.div`
   color: #aaa;
   padding: 0.75rem 0;
   font-size: 0.75rem;
-  height: 80px; /* Match the height of collection items */
+  height: 80px;
 `;
 
 const LoadingIndicator = styled.div`
@@ -581,154 +556,16 @@ const LoadingIndicator = styled.div`
   color: #aaa;
   padding: 0.75rem 0;
   font-size: 0.75rem;
-  height: 80px; /* Match the height of collection items */
-`;
-
-// New wrapper component to center search elements - improved alignment
-const SearchWrapper = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  flex: 1;
-  max-width: 450px;
-
-  @media (max-width: 768px) {
-    width: 100%;
-    max-width: none;
-    justify-content: flex-start;
-  }
-
-  @media (max-width: 600px) {
-    width: 100%;
-  }
-
-  /* Ensure proper width in PWA mode */
-  @media screen and (display-mode: standalone) {
-    width: 100%;
-    box-sizing: border-box;
-  }
-`;
-
-const SearchContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem; /* Reduced gap */
-  width: 100%;
-
-  @media (max-width: 768px) {
-    flex-direction: ${(props) => (props.searching ? "column" : "row")};
-    align-items: ${(props) => (props.searching ? "stretch" : "center")};
-    gap: ${(props) => (props.searching ? "0.5rem" : "0.5rem")};
-  }
-
-  /* Ensure proper sizing in PWA mode */
-  @media screen and (display-mode: standalone) {
-    width: 100%;
-    max-width: 100%;
-  }
-`;
-
-const SearchForm = styled.form`
-  display: flex;
-  flex: 1;
-  width: 100%;
-
-  @media screen and (display-mode: standalone) {
-    max-width: 100%;
-  }
-`;
-
-const SearchInput = styled.input`
-  flex: 1;
-  padding: 0.5rem; /* Reduced padding */
-  border: 1px solid #333;
-  border-right: none;
-  border-radius: 4px 0 0 4px;
-  font-size: 0.875rem; /* Smaller font */
-  background-color: #1e1e1e;
-  color: #fff;
-  width: 100%;
-  box-sizing: border-box;
-
-  &::placeholder {
-    color: #aaa;
-  }
-
-  &:focus {
-    outline: none;
-    border-color: #ff7e5f;
-  }
-
-  /* Enhance touch target on mobile */
-  @media (max-width: 480px) {
-    padding: 0.625rem 0.5rem;
-    font-size: 16px; /* Prevent iOS zoom */
-  }
-`;
-
-const SearchButton = styled.button`
-  background-color: #ff7e5f;
-  color: white;
-  border: none;
-  border-radius: 0 4px 4px 0;
-  padding: 0 0.75rem; /* Reduced padding */
-  cursor: pointer;
-  transition: background-color 0.3s;
-  min-width: 2.5rem; /* Smaller width */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    background-color: #ff6347;
-  }
-
-  /* Larger touch target on mobile */
-  @media (max-width: 480px) {
-    min-width: 3rem;
-  }
-`;
-
-const ClearSearchButton = styled.button`
-  background-color: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
-  border-radius: 4px;
-  padding: 0.5rem 0.75rem; /* Reduced padding */
-  font-size: 0.875rem; /* Smaller font */
-  cursor: pointer;
-  transition: all 0.3s;
-  white-space: nowrap;
-
-  &:hover {
-    background-color: #333;
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.5rem;
-    width: 100%;
-  }
-
-  @media screen and (display-mode: standalone) {
-    padding: 0.5rem;
-    width: 100%;
-  }
+  height: 80px;
 `;
 
 const PostGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(
-    auto-fit,
-    minmax(260px, 1fr)
-  ); /* Slightly narrower cards */
-  gap: 1rem; /* Reduced gap */
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
   justify-content: center;
-  padding: 0.25rem 0.125rem; /* Slight padding inside container */
-  background-color: rgba(
-    20,
-    20,
-    20,
-    0.4
-  ); /* Subtle nested background for depth */
+  padding: 0.25rem 0.125rem;
+  background-color: rgba(20, 20, 20, 0.4);
   border-radius: 6px;
 
   @media (max-width: 1024px) {
@@ -739,7 +576,6 @@ const PostGrid = styled.div`
     grid-template-columns: 1fr;
   }
 
-  /* Adjust for PWA mode */
   @media screen and (display-mode: standalone) {
     gap: 0.75rem;
   }
@@ -750,7 +586,6 @@ const GridItem = styled.div`
   height: 100%;
   width: 100%;
 
-  /* Ensure proper rendering in PWA mode */
   @media screen and (display-mode: standalone) {
     width: 100%;
   }
@@ -759,36 +594,35 @@ const GridItem = styled.div`
 const ErrorMessage = styled.div`
   background-color: rgba(248, 215, 218, 0.9);
   color: #721c24;
-  padding: 0.75rem; /* Reduced padding */
+  padding: 0.75rem;
   border-radius: 4px;
-  margin-bottom: 1rem; /* Reduced margin */
+  margin-bottom: 1rem;
   text-align: center;
-  font-size: 0.875rem; /* Smaller font */
+  font-size: 0.875rem;
 `;
 
 const LoadingMessage = styled.div`
   text-align: center;
-  margin: 2rem 0; /* Reduced margin */
+  margin: 2rem 0;
   color: #ddd;
-  font-size: 0.9375rem; /* Smaller font */
+  font-size: 0.9375rem;
 `;
 
 const NoPostsMessage = styled.div`
   text-align: center;
-  margin: 2rem 0; /* Reduced margin */
+  margin: 2rem 0;
   color: #ddd;
-  font-size: 0.9375rem; /* Smaller font */
+  font-size: 0.9375rem;
 `;
 
 const LoadingMore = styled.div`
   text-align: center;
-  margin: 1rem 0; /* Reduced margin */
+  margin: 1rem 0;
   color: #aaa;
   font-style: italic;
-  font-size: 0.875rem; /* Smaller font */
+  font-size: 0.875rem;
 `;
 
-// Styled Components for UI Elements
 const AboutBanner = styled.div`
   display: flex;
   align-items: center;
@@ -796,8 +630,8 @@ const AboutBanner = styled.div`
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  padding: 1rem; /* Reduced padding */
-  margin-bottom: 1rem; /* Reduced margin */
+  padding: 1rem;
+  margin-bottom: 1rem;
   position: relative;
   width: 100%;
   box-sizing: border-box;
@@ -810,7 +644,6 @@ const AboutBanner = styled.div`
     padding: 0.75rem;
   }
 
-  /* Ensure proper rendering in PWA mode */
   @media screen and (display-mode: standalone) {
     width: 100%;
     margin-bottom: 1rem;
@@ -828,18 +661,18 @@ const BannerContent = styled.div`
 `;
 
 const LogoContainer = styled.div`
-  width: 40px; /* Smaller logo */
+  width: 40px;
   height: 40px;
   background-color: #ff7e5f;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 1rem; /* Reduced margin */
+  margin-right: 1rem;
   flex-shrink: 0;
 
   svg {
-    font-size: 1.125rem; /* Smaller icon */
+    font-size: 1.125rem;
     color: white;
   }
 
@@ -869,9 +702,9 @@ const BannerTextContainer = styled.div`
 `;
 
 const BannerTitle = styled.h2`
-  font-size: 1.125rem; /* Smaller font */
+  font-size: 1.125rem;
   color: #333;
-  margin: 0 0 0.25rem; /* Reduced margin */
+  margin: 0 0 0.25rem;
 
   @media (max-width: 640px) {
     font-size: 1rem;
@@ -885,7 +718,7 @@ const BannerTitle = styled.h2`
 `;
 
 const BannerTagline = styled.p`
-  font-size: 0.9375rem; /* Smaller font */
+  font-size: 0.9375rem;
   color: #ff7e5f;
   font-weight: 500;
   font-style: italic;
@@ -904,11 +737,11 @@ const CloseButton = styled.button`
   background: none;
   border: none;
   color: #999;
-  font-size: 1.25rem; /* Smaller font */
+  font-size: 1.25rem;
   cursor: pointer;
   padding: 0;
   line-height: 1;
-  margin-left: 0.75rem; /* Reduced margin */
+  margin-left: 0.75rem;
 
   &:hover {
     color: #555;

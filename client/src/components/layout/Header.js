@@ -1,5 +1,5 @@
-import React, { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useContext, useState, useEffect, useRef } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import {
   FaCamera,
@@ -12,15 +12,37 @@ import {
   FaPlus,
   FaArchive,
   FaBell,
+  FaSearch
 } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
+import HeaderSubscriptionBanner from "../subscription/HeaderSubscriptionBanner";
 
-const Header = () => {
+const Header = ({ onSearch, onClearSearch }) => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showCreateOptions, setShowCreateOptions] = useState(false);
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const isAdmin = user?.role === "admin";
+  const searchInputRef = useRef(null);
+
+  useEffect(() => {
+    if (searchExpanded && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchExpanded]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const query = params.get("search") || "";
+    setSearchQuery(query);
+    
+    if (location.pathname === "/" && query && onSearch) {
+      onSearch(query);
+    }
+  }, [location, onSearch]);
 
   const handleLogout = () => {
     logout();
@@ -40,83 +62,151 @@ const Header = () => {
     setIsMenuOpen(false);
   };
 
+  const toggleSearch = () => {
+    setSearchExpanded(!searchExpanded);
+    if (searchExpanded && searchQuery.trim() === "") {
+      onClearSearch && onClearSearch();
+    }
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      onSearch && onSearch(searchQuery);
+      
+      if (location.pathname !== "/") {
+        navigate("/?search=" + encodeURIComponent(searchQuery));
+      }
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    onClearSearch && onClearSearch();
+  };
+  
+  // Show subscription banner to all users on the homepage
+  const showSubscriptionBanner = location.pathname === "/";
+
   return (
-    <HeaderContainer>
-      <HeaderContent>
-        <Logo to="/" onClick={closeMenu}>
-          <div className="logo-main">
-            <FaCamera />
-            <span>SoloGram</span>
-          </div>
-          <div className="tagline">One Voice. Infinite Moments.</div>
-        </Logo>
+    <HeaderWrapper>
+      <HeaderContainer>
+        <HeaderContent>
+          <Logo to="/" onClick={closeMenu}>
+            <div className="logo-main">
+              <FaCamera />
+              <span>SoloGram</span>
+            </div>
+            <div className="tagline">One Voice. Infinite Moments.</div>
+          </Logo>
 
-        <MobileMenuIcon onClick={toggleMenu}>
-          {isMenuOpen ? <FaTimes /> : <FaBars />}
-        </MobileMenuIcon>
+          {location.pathname === "/" && (
+            <SearchContainer expanded={searchExpanded}>
+              <SearchIconButton 
+                onClick={toggleSearch}
+                aria-label="Toggle search"
+              >
+                <FaSearch />
+              </SearchIconButton>
+              
+              <SearchForm 
+                expanded={searchExpanded}
+                onSubmit={handleSearchSubmit}
+              >
+                <SearchInput
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search posts..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                
+                {searchQuery && (
+                  <ClearButton 
+                    onClick={clearSearch}
+                    aria-label="Clear search"
+                  >
+                    <FaTimes />
+                  </ClearButton>
+                )}
+                
+                <SearchSubmit type="submit">
+                  <FaSearch />
+                </SearchSubmit>
+              </SearchForm>
+            </SearchContainer>
+          )}
 
-        <Navigation className={isMenuOpen ? "active" : ""}>
-          {isAuthenticated ? (
-            <>
-              <NavItem>
-                <CreatePostButton to="/create" onClick={closeMenu}>
-                  <FaPlus />
-                  <span>Create Post</span>
-                </CreatePostButton>
-              </NavItem>
-              <NavItem>
-                <NavLink to="/collections" onClick={closeMenu}>
-                  <FaFolder />
-                  <span>Collections</span>
-                </NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink to="/story-archive" onClick={closeMenu}>
-                  <FaArchive />
-                  <span>Story Archive</span>
-                </NavLink>
-              </NavItem>
+          <MobileMenuIcon onClick={toggleMenu}>
+            {isMenuOpen ? <FaTimes /> : <FaBars />}
+          </MobileMenuIcon>
 
-              {isAdmin && (
+          <Navigation className={isMenuOpen ? "active" : ""}>
+            {isAuthenticated ? (
+              <>
                 <NavItem>
-                  <NavLink to="/subscribers" onClick={closeMenu}>
-                    <FaBell />
-                    <span>Subscribers</span>
+                  <CreatePostButton to="/create" onClick={closeMenu}>
+                    <FaPlus />
+                    <span>Create Post</span>
+                  </CreatePostButton>
+                </NavItem>
+                <NavItem>
+                  <NavLink to="/collections" onClick={closeMenu}>
+                    <FaFolder />
+                    <span>Collections</span>
                   </NavLink>
                 </NavItem>
-              )}
+                <NavItem>
+                  <NavLink to="/story-archive" onClick={closeMenu}>
+                    <FaArchive />
+                    <span>Story Archive</span>
+                  </NavLink>
+                </NavItem>
 
-              <NavItem>
-                <NavLink to="/profile" onClick={closeMenu}>
-                  <FaUser />
-                  <span>{user?.username}</span>
-                </NavLink>
-              </NavItem>
-              <NavItem>
-                <LogoutButton onClick={handleLogout}>
-                  <FaSignOutAlt />
-                  <span>Logout</span>
-                </LogoutButton>
-              </NavItem>
-            </>
-          ) : (
-            <>
-              <NavItem>
-                <NavLink to="/collections" onClick={closeMenu}>
-                  <FaFolder />
-                  <span>Collections</span>
-                </NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink to="/login" onClick={closeMenu}>
-                  <FaSignInAlt />
-                  <span>Login</span>
-                </NavLink>
-              </NavItem>
-            </>
-          )}
-        </Navigation>
-      </HeaderContent>
+                {isAdmin && (
+                  <NavItem>
+                    <NavLink to="/subscribers" onClick={closeMenu}>
+                      <FaBell />
+                      <span>Subscribers</span>
+                    </NavLink>
+                  </NavItem>
+                )}
+
+                <NavItem>
+                  <NavLink to="/profile" onClick={closeMenu}>
+                    <FaUser />
+                    <span>{user?.username}</span>
+                  </NavLink>
+                </NavItem>
+                <NavItem>
+                  <LogoutButton onClick={handleLogout}>
+                    <FaSignOutAlt />
+                    <span>Logout</span>
+                  </LogoutButton>
+                </NavItem>
+              </>
+            ) : (
+              <>
+                <NavItem>
+                  <NavLink to="/collections" onClick={closeMenu}>
+                    <FaFolder />
+                    <span>Collections</span>
+                  </NavLink>
+                </NavItem>
+                <NavItem>
+                  <NavLink to="/login" onClick={closeMenu}>
+                    <FaSignInAlt />
+                    <span>Login</span>
+                  </NavLink>
+                </NavItem>
+              </>
+            )}
+          </Navigation>
+        </HeaderContent>
+      </HeaderContainer>
+      
+      {/* Show subscription banner for all users on homepage */}
+      {showSubscriptionBanner && <HeaderSubscriptionBanner />}
 
       {isAuthenticated && (
         <FloatingActionButtonContainer>
@@ -162,16 +252,19 @@ const Header = () => {
           )}
         </FloatingActionButtonContainer>
       )}
-    </HeaderContainer>
+    </HeaderWrapper>
   );
 };
 
-const HeaderContainer = styled.header`
-  background-color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+const HeaderWrapper = styled.div`
   position: sticky;
   top: 0;
   z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+`;
+
+const HeaderContainer = styled.header`
+  background-color: #ffffff;
 `;
 
 const HeaderContent = styled.div`
@@ -181,6 +274,7 @@ const HeaderContent = styled.div`
   padding: 1rem 2rem;
   max-width: 1200px;
   margin: 0 auto;
+  position: relative;
 
   @media (max-width: 768px) {
     padding: 1rem;
@@ -217,6 +311,109 @@ const Logo = styled(Link)`
   }
 `;
 
+const SearchContainer = styled.div`
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin-left: auto;
+  margin-right: 1.5rem;
+  z-index: 100;
+  
+  @media (max-width: 768px) {
+    margin-right: 1rem;
+    position: ${props => props.expanded ? 'absolute' : 'relative'};
+    right: ${props => props.expanded ? '3.5rem' : 'auto'};
+    left: ${props => props.expanded ? '1rem' : 'auto'};
+  }
+`;
+
+const SearchIconButton = styled.button`
+  background: none;
+  border: none;
+  color: #4a4a4a;
+  font-size: 1.125rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s;
+  z-index: 101;
+  
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
+
+const SearchForm = styled.form`
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  transition: all 0.3s ease;
+  width: ${props => props.expanded ? '240px' : '0'};
+  opacity: ${props => props.expanded ? '1' : '0'};
+  visibility: ${props => props.expanded ? 'visible' : 'hidden'};
+  position: absolute;
+  right: 2.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  box-shadow: ${props => props.expanded ? '0 2px 5px rgba(0,0,0,0.1)' : 'none'};
+  
+  @media (max-width: 768px) {
+    width: ${props => props.expanded ? 'calc(100% - 3.5rem)' : '0'};
+    right: 0;
+  }
+`;
+
+const SearchInput = styled.input`
+  background: transparent;
+  border: none;
+  color: #4a4a4a;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  width: 100%;
+  outline: none;
+  
+  &::placeholder {
+    color: #999;
+  }
+`;
+
+const ClearButton = styled.button`
+  background: none;
+  border: none;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
+
+const SearchSubmit = styled.button`
+  background-color: #ff7e5f;
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  
+  &:hover {
+    background-color: #ff6347;
+  }
+`;
+
 const MobileMenuIcon = styled.div`
   display: none;
   font-size: 1.5rem;
@@ -243,6 +440,7 @@ const Navigation = styled.ul`
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     padding: 1rem 0;
     display: none;
+    z-index: 1001;
 
     &.active {
       display: flex;
