@@ -97,6 +97,31 @@ const GlobalStyle = createGlobalStyle`
     }
   }
   
+  @media screen and (display-mode: standalone) {
+  body {
+    /* Prevent overscroll bounce */
+    overscroll-behavior: none;
+  }
+  
+  .app {
+    /* Ensure full height in standalone mode */
+    height: 100vh;
+    height: -webkit-fill-available; /* For iOS */
+    width: 100%;
+    overflow-x: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+  
+  .main-content {
+    /* Allow scrolling within the main content area */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+}
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
