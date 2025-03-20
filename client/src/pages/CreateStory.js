@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { FaUpload, FaTimes } from "react-icons/fa";
+import { FaUpload, FaTimes, FaCamera, FaImage } from "react-icons/fa";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -11,27 +11,68 @@ const CreateStory = () => {
   const [mediaFiles, setMediaFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isPWA, setIsPWA] = useState(
+    window.matchMedia("(display-mode: standalone)").matches
+  );
   const navigate = useNavigate();
 
-  // Handle file uploads
-  const onDrop = (acceptedFiles) => {
-    setMediaFiles([...mediaFiles, ...acceptedFiles]);
+  // Check if running as PWA
+  React.useEffect(() => {
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const handleChange = (e) => setIsPWA(e.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
-    // Create previews
-    const newPreviews = acceptedFiles.map((file) => {
-      const preview = URL.createObjectURL(file);
-      return { file, preview };
-    });
+  // Handle file uploads with enhanced error handling
+  const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
+    // Handle rejected files first
+    if (rejectedFiles && rejectedFiles.length > 0) {
+      rejectedFiles.forEach(({ file, errors }) => {
+        if (errors[0]?.code === "file-too-large") {
+          toast.error(`File ${file.name} is too large. Max size is 5MB.`);
+        } else if (errors[0]?.code === "file-invalid-type") {
+          toast.error(
+            `File ${file.name} has an invalid type. Only images are allowed.`
+          );
+        } else {
+          toast.error(
+            `File ${file.name} couldn't be uploaded. ${errors[0]?.message}`
+          );
+        }
+      });
+    }
 
-    setPreviews([...previews, ...newPreviews]);
-  };
+    // Process accepted files
+    if (acceptedFiles && acceptedFiles.length > 0) {
+      console.log("Accepted files:", acceptedFiles);
 
-  const { getRootProps, getInputProps } = useDropzone({
+      setMediaFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
+
+      // Create previews
+      const newPreviews = acceptedFiles.map((file) => {
+        const preview = URL.createObjectURL(file);
+        return { file, preview };
+      });
+
+      setPreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
+    }
+  }, []);
+
+  // Configure dropzone with more specific options to improve mobile compatibility
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: {
-      "image/*": [".jpeg", ".jpg", ".png", ".gif"],
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/png": [".png"],
+      "image/gif": [".gif"],
     },
     maxSize: 5 * 1024 * 1024, // 5MB
+    maxFiles: 10, // Reasonable limit
+    noClick: isPWA, // Disable click in PWA mode (use buttons instead)
+    noKeyboard: false, // Allow keyboard navigation
+    preventDropOnDocument: true, // Prevent dropping on document
+    useFsAccessApi: false, // Disable File System Access API which can cause issues
   });
 
   // Remove a preview and its file
@@ -49,7 +90,32 @@ const CreateStory = () => {
     setMediaFiles(newMediaFiles);
   };
 
-  // Handle form submission
+  // Handle direct camera access
+  const handleCameraCapture = () => {
+    // Create a hidden file input specifically for camera
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.capture = "environment"; // Use the back camera
+
+    input.onchange = (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        const file = e.target.files[0];
+        // Process the file as if it was dropped
+        onDrop([file], []);
+      }
+    };
+
+    input.click();
+  };
+
+  // Handle selecting images from gallery
+  const handleGallerySelect = () => {
+    // This explicitly calls the dropzone's open method
+    open();
+  };
+
+  // Handle form submission with improved error handling
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -73,13 +139,26 @@ const CreateStory = () => {
         formData.append("media", file);
       });
 
-      await axios.post("/api/stories", formData);
+      const response = await axios.post("/api/stories", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          console.log(`Upload progress: ${percentCompleted}%`);
+        },
+      });
 
+      console.log("Upload response:", response);
       toast.success("Story created successfully!");
       navigate("/");
     } catch (err) {
       console.error("Error creating story:", err);
-      toast.error("Failed to create story");
+      const errorMessage =
+        err.response?.data?.message || "Failed to create story";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -105,14 +184,35 @@ const CreateStory = () => {
 
           <FormGroup>
             <Label>Add Images</Label>
-            <DropzoneContainer {...getRootProps()}>
+            <DropzoneContainer
+              {...getRootProps()}
+              isDragActive={isDragActive}
+              isPWA={isPWA}
+            >
               <input {...getInputProps()} />
               <UploadIcon>
                 <FaUpload />
               </UploadIcon>
-              <p>Drag & drop images here, or click to select files</p>
+              {isPWA ? (
+                <p>Use the buttons below to add images</p>
+              ) : (
+                <p>Drag & drop images here, or click to select files</p>
+              )}
               <small>Max 5MB per image</small>
             </DropzoneContainer>
+
+            {/* Explicit buttons for PWA mode and better mobile UX */}
+            <ActionButtonsContainer>
+              <CameraButton type="button" onClick={handleCameraCapture}>
+                <FaCamera />
+                <span>Take Photo</span>
+              </CameraButton>
+
+              <GalleryButton type="button" onClick={handleGallerySelect}>
+                <FaImage />
+                <span>Choose from Gallery</span>
+              </GalleryButton>
+            </ActionButtonsContainer>
           </FormGroup>
 
           {previews.length > 0 && (
@@ -150,6 +250,11 @@ const PageWrapper = styled.div`
   background-color: #121212;
   min-height: 100vh;
   padding: 1rem 0;
+
+  /* Fix for iOS to better handle full height */
+  @supports (-webkit-touch-callout: none) {
+    min-height: -webkit-fill-available;
+  }
 `;
 
 const Container = styled.div`
@@ -160,12 +265,24 @@ const Container = styled.div`
   @media (max-width: 768px) {
     padding: 1rem;
   }
+
+  /* Ensure good rendering in PWA mode */
+  @media screen and (display-mode: standalone) {
+    width: 100%;
+    padding: 1rem;
+    box-sizing: border-box;
+  }
 `;
 
 const PageHeader = styled.h1`
   color: #fff;
   margin-bottom: 2rem;
   font-size: 1.75rem;
+
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
 `;
 
 const StoryForm = styled.form`
@@ -173,6 +290,16 @@ const StoryForm = styled.form`
   border-radius: 8px;
   padding: 2rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+  @media (max-width: 480px) {
+    padding: 1.5rem;
+  }
+
+  /* Ensure proper rendering in PWA mode */
+  @media screen and (display-mode: standalone) {
+    width: 100%;
+    box-sizing: border-box;
+  }
 `;
 
 const FormGroup = styled.div`
@@ -194,25 +321,36 @@ const Input = styled.input`
   border-radius: 4px;
   color: #fff;
   font-size: 1rem;
+  box-sizing: border-box;
 
   &:focus {
     outline: none;
     border-color: #ff7e5f;
   }
+
+  /* Prevent zoom on iOS */
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
 `;
 
 const DropzoneContainer = styled.div`
-  border: 2px dashed #444;
+  border: 2px dashed ${(props) => (props.isDragActive ? "#ff7e5f" : "#444")};
   border-radius: 4px;
   padding: 2rem;
   text-align: center;
   background-color: #252525;
-  cursor: pointer;
+  cursor: ${(props) => (props.isPWA ? "default" : "pointer")};
   transition: border-color 0.3s;
   color: #aaa;
+  margin-bottom: 1rem;
 
   &:hover {
-    border-color: #ff7e5f;
+    border-color: ${(props) => (props.isPWA ? "#444" : "#ff7e5f")};
+  }
+
+  @media (max-width: a480px) {
+    padding: 1.5rem;
   }
 `;
 
@@ -220,6 +358,53 @@ const UploadIcon = styled.div`
   font-size: 2rem;
   margin-bottom: 1rem;
   color: #ff7e5f;
+`;
+
+const ActionButtonsContainer = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const ActionButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  gap: 0.5rem;
+  border: none;
+  font-size: 1rem;
+
+  svg {
+    font-size: 1.25rem;
+  }
+`;
+
+const CameraButton = styled(ActionButton)`
+  background-color: #ff7e5f;
+  color: white;
+
+  &:hover {
+    background-color: #ff6347;
+  }
+`;
+
+const GalleryButton = styled(ActionButton)`
+  background-color: #4a90e2;
+  color: white;
+
+  &:hover {
+    background-color: #3a70b2;
+  }
 `;
 
 const PreviewSection = styled.div`
@@ -230,6 +415,10 @@ const PreviewList = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 1rem;
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
 `;
 
 const PreviewItem = styled.div`
@@ -237,6 +426,7 @@ const PreviewItem = styled.div`
   border-radius: 4px;
   overflow: hidden;
   aspect-ratio: 1;
+  border: 1px solid #333;
 `;
 
 const PreviewImage = styled.img`
@@ -263,6 +453,12 @@ const RemoveButton = styled.button`
 
   &:hover {
     background-color: rgba(255, 0, 0, 0.7);
+  }
+
+  /* Larger touch target on mobile */
+  @media (max-width: 480px) {
+    width: 30px;
+    height: 30px;
   }
 `;
 

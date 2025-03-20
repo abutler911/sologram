@@ -27,25 +27,56 @@ const Home = () => {
     }
   }, []);
 
-  // Lazy Load Videos (Intersection Observer)
+  // Setup lazy loading for videos when posts change
   useEffect(() => {
-    const lazyVideos = document.querySelectorAll(".lazy-video");
-    const videoObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const video = entry.target;
-          const source = video.querySelector("source");
-          if (source && !source.src) {
-            source.src = video.dataset.src;
-            video.load(); // Load when visible
-          }
-          videoObserver.unobserve(video);
-        }
-      });
-    });
+    // Only run if there are posts with video media
+    if (!posts.length) return;
 
+    // Find all videos that should be lazy loaded
+    const lazyVideos = document.querySelectorAll("video[data-src]");
+    if (!lazyVideos.length) return;
+
+    // Create an intersection observer to load videos when they come into view
+    const videoObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const video = entry.target;
+
+            // If the video has a data-src but no src, load it
+            if (video.dataset.src && !video.src) {
+              console.log("Lazy loading video:", video.dataset.src);
+              video.src = video.dataset.src;
+
+              // Also update any source elements
+              const sources = video.querySelectorAll("source[data-src]");
+              sources.forEach((source) => {
+                source.src = source.dataset.src;
+              });
+
+              // Reload the video to apply the new source
+              video.load();
+            }
+
+            // Stop observing once loaded
+            videoObserver.unobserve(video);
+          }
+        });
+      },
+      {
+        rootMargin: "100px", // Start loading when video is 100px away
+        threshold: 0.1, // Trigger when at least 10% of the element is visible
+      }
+    );
+
+    // Start observing all lazy videos
     lazyVideos.forEach((video) => videoObserver.observe(video));
-  }, [posts]); // Run whenever posts change
+
+    // Clean up observer on component unmount or when posts change
+    return () => {
+      videoObserver.disconnect();
+    };
+  }, [posts]);
 
   // Infinite Scroll - Loads more posts when last element is visible
   const lastPostElementRef = useCallback(
@@ -170,24 +201,26 @@ const Home = () => {
           </AboutBanner>
         )}
         <Stories />
-        <SearchContainer>
-          <SearchForm onSubmit={handleSearch}>
-            <SearchInput
-              type="text"
-              placeholder="Search posts..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <SearchButton type="submit">
-              <FaSearch />
-            </SearchButton>
-          </SearchForm>
-          {searching && (
-            <ClearSearchButton onClick={clearSearch}>
-              Clear Search
-            </ClearSearchButton>
-          )}
-        </SearchContainer>
+        <SearchWrapper>
+          <SearchContainer searching={searching}>
+            <SearchForm onSubmit={handleSearch}>
+              <SearchInput
+                type="text"
+                placeholder="Search posts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <SearchButton type="submit">
+                <FaSearch />
+              </SearchButton>
+            </SearchForm>
+            {searching && (
+              <ClearSearchButton onClick={clearSearch}>
+                Clear Search
+              </ClearSearchButton>
+            )}
+          </SearchContainer>
+        </SearchWrapper>
 
         {error ? (
           <ErrorMessage>{error}</ErrorMessage>
@@ -220,28 +253,164 @@ const Home = () => {
   );
 };
 
-// Lazy Loading Applied to Videos
-const LazyVideo = ({ src }) => (
-  <video className="lazy-video" controls data-src={src}>
-    <source data-src={src} type="video/mp4" />
-  </video>
-);
-
 // Styled Components
 const PageWrapper = styled.div`
   background-color: #121212;
   min-height: 100vh;
   padding: 1rem 0;
+
+  /* Fix for iOS to better handle full height */
+  @supports (-webkit-touch-callout: none) {
+    min-height: -webkit-fill-available;
+  }
 `;
+
 const HomeContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 1rem;
+  }
+
+  /* Specific adjustments for PWA mode */
+  @media screen and (display-mode: standalone) {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 1rem;
+  }
 `;
+
+// New wrapper component to center search elements
+const SearchWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 2rem;
+
+  /* Ensure proper width in PWA mode */
+  @media screen and (display-mode: standalone) {
+    width: 100%;
+    box-sizing: border-box;
+  }
+`;
+
+const SearchContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 800px;
+
+  @media (max-width: 768px) {
+    flex-direction: ${(props) => (props.searching ? "column" : "row")};
+    align-items: ${(props) => (props.searching ? "stretch" : "center")};
+    gap: ${(props) => (props.searching ? "0.75rem" : "1rem")};
+  }
+
+  /* Ensure proper sizing in PWA mode */
+  @media screen and (display-mode: standalone) {
+    width: 100%;
+    max-width: 100%;
+  }
+`;
+
+const SearchForm = styled.form`
+  display: flex;
+  flex: 1;
+  max-width: 600px;
+  width: 100%;
+
+  @media screen and (display-mode: standalone) {
+    max-width: 100%;
+  }
+`;
+
+const SearchInput = styled.input`
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #333;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+  font-size: 1rem;
+  background-color: #1e1e1e;
+  color: #fff;
+  width: 100%;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: #aaa;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #ff7e5f;
+  }
+
+  /* Enhance touch target on mobile */
+  @media (max-width: 480px) {
+    padding: 0.875rem 0.75rem;
+    font-size: 16px; /* Prevent iOS zoom */
+  }
+`;
+
+const SearchButton = styled.button`
+  background-color: #ff7e5f;
+  color: white;
+  border: none;
+  border-radius: 0 4px 4px 0;
+  padding: 0 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  min-width: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: #ff6347;
+  }
+
+  /* Larger touch target on mobile */
+  @media (max-width: 480px) {
+    min-width: 3.5rem;
+  }
+`;
+
+const ClearSearchButton = styled.button`
+  background-color: #2a2a2a;
+  color: #ddd;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: #333;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+    width: 100%;
+  }
+
+  @media screen and (display-mode: standalone) {
+    padding: 0.75rem;
+    width: 100%;
+  }
+`;
+
 const PostGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
   justify-content: center;
 
   @media (max-width: 1024px) {
@@ -251,30 +420,47 @@ const PostGrid = styled.div`
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
   }
+
+  /* Adjust for PWA mode */
+  @media screen and (display-mode: standalone) {
+    gap: 1rem;
+  }
 `;
 
 const GridItem = styled.div`
   display: flex;
   height: 100%;
   width: 100%;
+
+  /* Ensure proper rendering in PWA mode */
+  @media screen and (display-mode: standalone) {
+    width: 100%;
+  }
 `;
+
 const ErrorMessage = styled.div`
   background-color: rgba(248, 215, 218, 0.9);
   color: #721c24;
   padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  text-align: center;
 `;
+
 const LoadingMessage = styled.div`
   text-align: center;
   margin: 4rem 0;
   color: #ddd;
   font-size: 1.125rem;
 `;
+
 const NoPostsMessage = styled.div`
   text-align: center;
   margin: 4rem 0;
   color: #ddd;
   font-size: 1.125rem;
 `;
+
 const LoadingMore = styled.div`
   text-align: center;
   margin: 2rem 0;
@@ -293,6 +479,8 @@ const AboutBanner = styled.div`
   padding: 1.5rem;
   margin-bottom: 2rem;
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
 
   @media (max-width: 640px) {
     padding: 1.2rem;
@@ -300,6 +488,12 @@ const AboutBanner = styled.div`
 
   @media (max-width: 480px) {
     padding: 1rem;
+  }
+
+  /* Ensure proper rendering in PWA mode */
+  @media screen and (display-mode: standalone) {
+    width: 100%;
+    margin-bottom: 1.5rem;
   }
 `;
 
@@ -409,67 +603,6 @@ const CloseButton = styled.button`
   @media (max-width: 480px) {
     font-size: 1.2rem;
     margin-left: 0.5rem;
-  }
-`;
-
-const SearchContainer = styled.div`
-  margin-bottom: 2rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-`;
-
-const SearchForm = styled.form`
-  display: flex;
-  flex: 1;
-  max-width: 600px;
-`;
-
-const SearchInput = styled.input`
-  flex: 1;
-  padding: 0.75rem;
-  border: 1px solid #333;
-  border-right: none;
-  border-radius: 4px 0 0 4px;
-  font-size: 1rem;
-  background-color: #1e1e1e;
-  color: #fff;
-
-  &::placeholder {
-    color: #aaa;
-  }
-
-  &:focus {
-    outline: none;
-    border-color: #ff7e5f;
-  }
-`;
-
-const SearchButton = styled.button`
-  background-color: #ff7e5f;
-  color: white;
-  border: none;
-  border-radius: 0 4px 4px 0;
-  padding: 0 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
-
-  &:hover {
-    background-color: #ff6347;
-  }
-`;
-
-const ClearSearchButton = styled.button`
-  background-color: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
-  border-radius: 4px;
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  transition: all 0.3s;
-
-  &:hover {
-    background-color: #333;
   }
 `;
 

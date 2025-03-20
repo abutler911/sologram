@@ -5,11 +5,11 @@ import {
   FaHeart,
   FaEdit,
   FaTrash,
-  FaClock,
+  FaCalendarAlt, // Changed from FaClock to FaCalendarAlt
   FaChevronLeft,
   FaChevronRight,
 } from "react-icons/fa";
-import { formatDistance } from "date-fns";
+import { format } from "date-fns"; // Changed from formatDistance to format
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
@@ -24,9 +24,8 @@ const PostCard = ({ post: initialPost, onDelete }) => {
   const [isLiking, setIsLiking] = useState(false);
   const [hasLiked, setHasLiked] = useState(false);
 
-  const formattedDate = formatDistance(new Date(post.createdAt), new Date(), {
-    addSuffix: true,
-  });
+  // Format date as MMM d, yyyy (e.g., "Mar 15, 2025")
+  const formattedDate = format(new Date(post.createdAt), "MMM d, yyyy");
 
   const handleLike = async () => {
     // Prevent multiple clicks or if already liked
@@ -187,7 +186,7 @@ const PostCard = ({ post: initialPost, onDelete }) => {
           <CardFooter>
             <MetaData>
               <TimeStamp>
-                <FaClock />
+                <FaCalendarAlt />
                 <span>{formattedDate}</span>
               </TimeStamp>
 
