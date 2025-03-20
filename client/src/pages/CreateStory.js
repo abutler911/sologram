@@ -45,8 +45,6 @@ const CreateStory = () => {
 
     // Process accepted files
     if (acceptedFiles && acceptedFiles.length > 0) {
-      console.log("Accepted files:", acceptedFiles);
-
       setMediaFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
 
       // Create previews
@@ -161,19 +159,12 @@ const CreateStory = () => {
         formData.append("media", file);
       });
 
-      const response = await axios.post("/api/stories", formData, {
+      await axios.post("/api/stories", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-        },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          console.log(`Upload progress: ${percentCompleted}%`);
-        },
+        }
       });
 
-      console.log("Upload response:", response);
       toast.success("Story created successfully!");
       navigate("/");
     } catch (err) {

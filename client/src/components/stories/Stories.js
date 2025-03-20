@@ -1,10 +1,10 @@
 // components/stories/Stories.js
 import React, { useState, useEffect, useContext } from "react";
 import styled from "styled-components";
-import { FaTimes, FaVideo, FaTrash } from "react-icons/fa";
+import { FaTimes, FaVideo, FaTrash, FaExclamationTriangle } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { AuthContext } from "../../context/AuthContext"; // Import AuthContext
+import { AuthContext } from "../../context/AuthContext";
 
 const Stories = () => {
   const [stories, setStories] = useState([]);
@@ -13,6 +13,8 @@ const Stories = () => {
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(10);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [storyToDelete, setStoryToDelete] = useState(null);
   
   // Get authentication context to check if user is admin
   const { user, isAuthenticated } = useContext(AuthContext);
@@ -94,27 +96,36 @@ const Stories = () => {
     }
   };
 
+  // Handle opening the delete confirmation modal
+  const openDeleteModal = () => {
+    if (!activeStory || !isAdmin) return;
+    setStoryToDelete(activeStory);
+    setShowDeleteModal(true);
+  };
+
+  // Handle closing the delete confirmation modal
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setStoryToDelete(null);
+  };
+
   // Handle story deletion
   const handleDeleteStory = async () => {
-    if (!activeStory || !isAdmin) return;
-    
-    // Confirm before deleting
-    if (!window.confirm(`Are you sure you want to delete the story "${activeStory.title}"?`)) {
-      return;
-    }
+    if (!storyToDelete || !isAdmin) return;
     
     setDeleting(true);
     
     try {
-      await axios.delete(`/api/stories/${activeStory._id}`);
+      await axios.delete(`/api/stories/${storyToDelete._id}`);
       
       // Update the UI by removing the deleted story
       setStories(prevStories => 
-        prevStories.filter(story => story._id !== activeStory._id)
+        prevStories.filter(story => story._id !== storyToDelete._id)
       );
       
-      // Close the story view
+      // Close the story view and delete modal
       closeStory();
+      closeDeleteModal();
       
       toast.success("Story deleted successfully");
     } catch (error) {
@@ -123,6 +134,45 @@ const Stories = () => {
     } finally {
       setDeleting(false);
     }
+  };
+
+  // Function to get thumbnail URL for a media item
+  const getThumbnailUrl = (media) => {
+    if (media.mediaType === "image") {
+      return media.mediaUrl;
+    } else if (media.mediaType === "video") {
+      // Check if it's a Cloudinary URL (they typically contain 'cloudinary.com')
+      const url = media.mediaUrl;
+      
+      if (url && url.includes('cloudinary.com')) {
+        // Extract relevant parts of the URL
+        const urlParts = url.split('/');
+        const uploadIndex = urlParts.findIndex(part => part === 'upload');
+        
+        if (uploadIndex !== -1) {
+          // Insert thumbnail transformation after 'upload'
+          urlParts.splice(uploadIndex + 1, 0, 'w_400,h_400,c_fill,g_auto,so_1');
+          
+          // Get file extension
+          const filename = urlParts[urlParts.length - 1];
+          const extension = filename.split('.').pop();
+          
+          // Replace extension if it's a video format
+          const videoExtensions = ['mp4', 'mov', 'avi', 'webm'];
+          if (videoExtensions.includes(extension.toLowerCase())) {
+            urlParts[urlParts.length - 1] = filename.replace(`.${extension}`, '.jpg');
+          }
+          
+          return urlParts.join('/');
+        }
+      }
+      
+      // Return a default video thumbnail if we couldn't transform the URL
+      return '/video-thumbnail-placeholder.jpg';
+    }
+    
+    // Default case (should not happen)
+    return media.mediaUrl;
   };
 
   if (loading) {
@@ -147,11 +197,20 @@ const Stories = () => {
         {stories.map((story) => {
           const firstMedia = story.media[0];
           const isVideo = firstMedia.mediaType === "video";
+          const thumbnailUrl = getThumbnailUrl(firstMedia);
           
           return (
             <StoryCircle key={story._id} onClick={() => openStory(story)}>
               <StoryImageWrapper>
-                <ThumbnailImage src={firstMedia.mediaUrl} alt={story.title} />
+                <ThumbnailImage 
+                  src={thumbnailUrl} 
+                  alt={story.title} 
+                  onError={(e) => {
+                    // Fallback to a styled container with a video icon if image fails to load
+                    e.target.style.display = 'none';
+                    e.target.parentNode.classList.add('video-fallback');
+                  }}
+                />
                 {isVideo && <VideoIndicator><FaVideo /></VideoIndicator>}
               </StoryImageWrapper>
               <StoryTitle>{story.title}</StoryTitle>
@@ -170,7 +229,7 @@ const Stories = () => {
             {/* Admin Delete Button */}
             {isAdmin && (
               <DeleteButton 
-                onClick={handleDeleteStory}
+                onClick={openDeleteModal}
                 disabled={deleting}
                 title="Delete this story"
               >
@@ -217,6 +276,33 @@ const Stories = () => {
           </StoryContent>
         </StoryModal>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <ModalOverlay>
+          <DeleteModal>
+            <DeleteModalHeader>
+              <FaExclamationTriangle />
+              <DeleteModalTitle>Delete Story?</DeleteModalTitle>
+            </DeleteModalHeader>
+            
+            <DeleteModalContent>
+              Are you sure you want to delete the story "{storyToDelete?.title}"?
+              <br />
+              This action cannot be undone.
+            </DeleteModalContent>
+            
+            <DeleteModalButtons>
+              <CancelButton onClick={closeDeleteModal} disabled={deleting}>
+                Cancel
+              </CancelButton>
+              <ConfirmDeleteButton onClick={handleDeleteStory} disabled={deleting}>
+                {deleting ? "Deleting..." : "Delete Story"}
+              </ConfirmDeleteButton>
+            </DeleteModalButtons>
+          </DeleteModal>
+        </ModalOverlay>
+      )}
     </>
   );
 };
@@ -258,6 +344,21 @@ const StoryImageWrapper = styled.div`
   border: 2px solid #ff7e5f;
   padding: 3px;
   background-color: #333;
+  
+  &.video-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #444;
+    
+    &:before {
+      content: '\\f03d'; /* Video icon in Font Awesome */
+      font-family: 'Font Awesome 5 Free';
+      font-weight: 900;
+      font-size: 1.5rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+  }
 `;
 
 // Thumbnail image (circle shape)
@@ -428,6 +529,114 @@ const StoryNavigation = styled.div`
 const NavArea = styled.div`
   flex: 1;
   cursor: pointer;
+`;
+
+// Custom delete confirmation modal
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000; // Higher than the story modal
+  padding: 1rem;
+`;
+
+const DeleteModal = styled.div`
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+`;
+
+const DeleteModalHeader = styled.div`
+  background-color: #e74c3c;
+  color: white;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  
+  svg {
+    font-size: 1.5rem;
+    margin-right: 0.75rem;
+  }
+`;
+
+const DeleteModalTitle = styled.h3`
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+`;
+
+const DeleteModalContent = styled.div`
+  padding: 1.5rem;
+  color: #ddd;
+  line-height: 1.5;
+`;
+
+const DeleteModalButtons = styled.div`
+  display: flex;
+  padding: 1rem 1.5rem;
+  justify-content: flex-end;
+  gap: 1rem;
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
+`;
+
+const ConfirmDeleteButton = styled.button`
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  
+  &:hover {
+    background-color: #c0392b;
+  }
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  
+  @media (max-width: 480px) {
+    order: 1;
+  }
+`;
+
+const CancelButton = styled.button`
+  background-color: transparent;
+  color: #ddd;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background-color: #333;
+  }
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  
+  @media (max-width: 480px) {
+    order: 2;
+  }
 `;
 
 export default Stories;
