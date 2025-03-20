@@ -24,6 +24,7 @@ const Header = () => {
 
   const handleLogout = () => {
     logout();
+    setIsMenuOpen(false);
     navigate("/login");
   };
 
@@ -35,10 +36,14 @@ const Header = () => {
     setShowCreateOptions(!showCreateOptions);
   };
 
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
+
   return (
     <HeaderContainer>
       <HeaderContent>
-        <Logo to="/">
+        <Logo to="/" onClick={closeMenu}>
           <div className="logo-main">
             <FaCamera />
             <span>SoloGram</span>
@@ -54,19 +59,19 @@ const Header = () => {
           {isAuthenticated ? (
             <>
               <NavItem>
-                <CreatePostButton to="/create">
+                <CreatePostButton to="/create" onClick={closeMenu}>
                   <FaPlus />
                   <span>Create Post</span>
                 </CreatePostButton>
               </NavItem>
               <NavItem>
-                <NavLink to="/collections">
+                <NavLink to="/collections" onClick={closeMenu}>
                   <FaFolder />
                   <span>Collections</span>
                 </NavLink>
               </NavItem>
               <NavItem>
-                <NavLink to="/story-archive">
+                <NavLink to="/story-archive" onClick={closeMenu}>
                   <FaArchive />
                   <span>Story Archive</span>
                 </NavLink>
@@ -74,7 +79,7 @@ const Header = () => {
 
               {isAdmin && (
                 <NavItem>
-                  <NavLink to="/subscribers">
+                  <NavLink to="/subscribers" onClick={closeMenu}>
                     <FaBell />
                     <span>Subscribers</span>
                   </NavLink>
@@ -82,7 +87,7 @@ const Header = () => {
               )}
 
               <NavItem>
-                <NavLink to="/profile">
+                <NavLink to="/profile" onClick={closeMenu}>
                   <FaUser />
                   <span>{user?.username}</span>
                 </NavLink>
@@ -97,13 +102,13 @@ const Header = () => {
           ) : (
             <>
               <NavItem>
-                <NavLink to="/collections">
+                <NavLink to="/collections" onClick={closeMenu}>
                   <FaFolder />
                   <span>Collections</span>
                 </NavLink>
               </NavItem>
               <NavItem>
-                <NavLink to="/login">
+                <NavLink to="/login" onClick={closeMenu}>
                   <FaSignInAlt />
                   <span>Login</span>
                 </NavLink>
