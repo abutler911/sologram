@@ -9,8 +9,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Define max file sizes (in bytes)
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+// Define max file sizes (in bytes) - Increased for story images
+const MAX_IMAGE_SIZE = 25 * 1024 * 1024; 
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
 
 // Define allowed formats
@@ -42,16 +42,11 @@ const storage = new CloudinaryStorage({
   },
 });
 
-// Multer upload configurations
+// Multer upload configurations with higher limits
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: (req, file, cb) => {
-      const isImage = IMAGE_FORMATS.includes(file.mimetype.split("/")[1]);
-      const isVideo = VIDEO_FORMATS.includes(file.mimetype.split("/")[1]);
-      const maxSize = isImage ? MAX_IMAGE_SIZE : isVideo ? MAX_VIDEO_SIZE : 0;
-      cb(null, maxSize);
-    },
+    fileSize: MAX_IMAGE_SIZE, 
   },
 });
 
@@ -64,4 +59,6 @@ module.exports = {
   cloudinary,
   upload,
   uploadMultiple,
+  MAX_IMAGE_SIZE, 
+  MAX_VIDEO_SIZE
 };
