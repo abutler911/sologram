@@ -11,7 +11,7 @@ cloudinary.config({
 
 // Define max file sizes (in bytes) - Increased for story images
 const MAX_IMAGE_SIZE = 25 * 1024 * 1024; 
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 
 // Define allowed formats
 const IMAGE_FORMATS = ["jpg", "jpeg", "png", "gif", "webp"];
