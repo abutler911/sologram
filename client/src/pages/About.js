@@ -6,116 +6,144 @@ import ProfilePhoto from "./overlord.jpg";
 
 const About = () => {
   return (
-    <Container>
-      <BackLink to="/">
-        <FaArrowLeft />
-        <span>Back to Home</span>
-      </BackLink>
+    <PageWrapper>
+      <Container>
+        <BackLink to="/">
+          <FaArrowLeft />
+          <span>Back to Home</span>
+        </BackLink>
 
-      <ContentCard>
-        <PageHeader>
-          <LogoContainer>
-            <FaCamera />
-          </LogoContainer>
-          <TitleContainer>
-            <PageTitle>SoloGram</PageTitle>
-            <Tagline>One Voice. Infinite Moments.</Tagline>
-          </TitleContainer>
-        </PageHeader>
+        <ContentCard>
+          <PageHeader>
+            <LogoContainer>
+              <FaCamera />
+            </LogoContainer>
+            <TitleContainer>
+              <PageTitle>SoloGram</PageTitle>
+              <Tagline>One Voice. Infinite Moments.</Tagline>
+            </TitleContainer>
+          </PageHeader>
 
-        <Section>
-          <SectionTitle>The Administrator - Andrew</SectionTitle>
-          <ProfileImage src={ProfilePhoto} alt="Andrew" />
-          <Paragraph>
-            Hey, I'm Andrew—the SoloGram administrator, CEO, creator, curator,
-            sole poster, and<Emphasis>Supreme Overlord</Emphasis> of SoloGram. I
-            built this platform to replace traditional social media and create a
-            <Emphasis> personal space </Emphasis> where I can document my life,
-            share moments, and tell my story—without the distractions of a
-            typical social feed.
-          </Paragraph>
-          <Paragraph>
-            Unlike other platforms, <Emphasis>SoloGram is mine alone</Emphasis>—
-            I'm the <Emphasis>only one who can post.</Emphasis> Everyone else?
-            You're invited to follow along, view my content, and subscribe for
-            updates. But the timeline? That's
-            <Emphasis> all me.</Emphasis>
-          </Paragraph>
-        </Section>
+          <Section>
+            <SectionTitle>The Administrator - Andrew</SectionTitle>
+            <ProfileImage src={ProfilePhoto} alt="Andrew" />
+            <Paragraph>
+              Hey, I'm Andrew—the SoloGram administrator, CEO, creator, curator,
+              sole poster, and<Emphasis>Supreme Overlord</Emphasis> of SoloGram.
+              I built this platform to replace traditional social media and
+              create a<Emphasis> personal space </Emphasis> where I can document
+              my life, share moments, and tell my story—without the distractions
+              of a typical social feed.
+            </Paragraph>
+            <Paragraph>
+              Unlike other platforms,{" "}
+              <Emphasis>SoloGram is mine alone</Emphasis>— I'm the{" "}
+              <Emphasis>only one who can post.</Emphasis> Everyone else? You're
+              invited to follow along, view my content, and subscribe for
+              updates. But the timeline? That's
+              <Emphasis> all me.</Emphasis>
+            </Paragraph>
+          </Section>
 
-        <Section>
-          <SectionTitle>What is SoloGram?</SectionTitle>
-          <Paragraph>
-            SoloGram is my personal digital journal—a place where I share posts
-            and stories <Emphasis> on my own terms.</Emphasis> No ads, no
-            clutter, no noise, and <Emphasis>NO INFLUENCERS</Emphasis>—just my
-            journey, my experiences, and my perspective.
-          </Paragraph>
-          <Paragraph>
-            Viewers can explore my <Emphasis> collections</Emphasis>, scroll
-            through my posts, and subscribe to receive notifications whenever I
-            share something new. It's a one-way broadcast:
-            <Emphasis> I post, you watch.</Emphasis>
-          </Paragraph>
-        </Section>
+          <Section>
+            <SectionTitle>What is SoloGram?</SectionTitle>
+            <Paragraph>
+              SoloGram is my personal digital journal—a place where I share
+              posts and stories <Emphasis> on my own terms.</Emphasis> No ads,
+              no clutter, no noise, and <Emphasis>NO INFLUENCERS</Emphasis>—just
+              my journey, my experiences, and my perspective.
+            </Paragraph>
+            <Paragraph>
+              Viewers can explore my <Emphasis> collections</Emphasis>, scroll
+              through my posts, and subscribe to receive notifications whenever
+              I share something new. It's a one-way broadcast:
+              <Emphasis> I post, you watch.</Emphasis>
+            </Paragraph>
+          </Section>
 
-        <Section>
-          <SectionTitle>How It Works</SectionTitle>
-          <Feature>
-            <FeatureIcon>📌</FeatureIcon>
-            <FeatureText>
-              <Strong>Only I can post</Strong> – Every story, every update,
-              every moment is from me.
-            </FeatureText>
-          </Feature>
-          <Feature>
-            <FeatureIcon>👀</FeatureIcon>
-            <FeatureText>
-              <Strong>Everyone can view</Strong> – Scroll, explore, and see
-              what's new.
-            </FeatureText>
-          </Feature>
-          <Feature>
-            <FeatureIcon>🔔</FeatureIcon>
-            <FeatureText>
-              <Strong>You can subscribe</Strong> – Get notified when I share
-              something new.
-            </FeatureText>
-          </Feature>
-          <Paragraph>
-            Think of it as <Emphasis> a social feed, but just for me</Emphasis>—
-            a space where I control the content and the narrative. If you're
-            here, welcome to the journey. 🚀
-          </Paragraph>
-        </Section>
+          <Section>
+            <SectionTitle>How It Works</SectionTitle>
+            <Feature>
+              <FeatureIcon>📌</FeatureIcon>
+              <FeatureText>
+                <Strong>Only I can post</Strong> – Every story, every update,
+                every moment is from me.
+              </FeatureText>
+            </Feature>
+            <Feature>
+              <FeatureIcon>👀</FeatureIcon>
+              <FeatureText>
+                <Strong>Everyone can view</Strong> – Scroll, explore, and see
+                what's new.
+              </FeatureText>
+            </Feature>
+            <Feature>
+              <FeatureIcon>🔔</FeatureIcon>
+              <FeatureText>
+                <Strong>You can subscribe</Strong> – Get notified when I share
+                something new.
+              </FeatureText>
+            </Feature>
+            <Paragraph>
+              Think of it as{" "}
+              <Emphasis> a social feed, but just for me</Emphasis>— a space
+              where I control the content and the narrative. If you're here,
+              welcome to the journey. 🚀
+            </Paragraph>
+          </Section>
 
-        <Section>
-          <SectionTitle>Stay Connected</SectionTitle>
-          <Paragraph>
-            Want to stay in the loop? Hit <Emphasis> subscribe</Emphasis> to get
-            notified whenever I post new content. Have a question or just want
-            to say hi? Reach out at
-            <EmailLink href="mailto:abutler911@gmail.com">
-              abutler911@gmail.com
-            </EmailLink>
-          </Paragraph>
-        </Section>
-      </ContentCard>
-    </Container>
+          <Section>
+            <SectionTitle>Stay Connected</SectionTitle>
+            <Paragraph>
+              Want to stay in the loop? Hit <Emphasis> subscribe</Emphasis> to
+              get notified whenever I post new content. Have a question or just
+              want to say hi? Reach out at
+              <EmailLink href="mailto:abutler911@gmail.com">
+                abutler911@gmail.com
+              </EmailLink>
+            </Paragraph>
+          </Section>
+        </ContentCard>
+      </Container>
+    </PageWrapper>
   );
 };
 
-// 🌙 DARK THEME STYLED COMPONENTS
-const Container = styled.div`
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
+// Full-width page wrapper that fills the viewport
+const PageWrapper = styled.div`
   background-color: #121212;
   min-height: 100vh;
-  color: #ffffff;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+`;
 
-  @media (max-width: 768px) {
+// 🌙 DARK THEME STYLED COMPONENTS - Optimized for wider display
+const Container = styled.div`
+  width: 100%;
+  max-width: 1000px; /* Increased from 800px for wider content */
+  padding: 2rem;
+  color: #ffffff;
+  box-sizing: border-box;
+
+  @media (max-width: 1024px) {
+    max-width: 100%;
     padding: 1.5rem;
+  }
+
+  /* Specific adjustments for smaller screens */
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 1rem 0.75rem;
+  }
+
+  /* Specific adjustments for PWA mode */
+  @media screen and (display-mode: standalone) {
+    max-width: 100%;
+    padding: 1rem;
   }
 `;
 
@@ -141,6 +169,22 @@ const ContentCard = styled.div`
   border-radius: 8px;
   padding: 2rem;
   box-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 1.25rem;
+    border-radius: 6px;
+  }
+
+  /* Ensure proper rendering in PWA mode */
+  @media screen and (display-mode: standalone) {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 1.5rem;
+  }
 `;
 
 const PageHeader = styled.div`
@@ -163,6 +207,13 @@ const LogoContainer = styled.div`
   justify-content: center;
   font-size: 1.5rem;
   margin-right: 1rem;
+
+  @media (max-width: 480px) {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.25rem;
+    margin-right: 0.75rem;
+  }
 `;
 
 const TitleContainer = styled.div`
@@ -175,6 +226,10 @@ const PageTitle = styled.h1`
   font-size: 1.75rem;
   color: #ffffff;
   margin: 0;
+
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+  }
 `;
 
 const Tagline = styled.h2`
@@ -203,7 +258,7 @@ const ProfileImage = styled.img`
 
   @media (max-width: 480px) {
     width: 120px;
-    height: 140px;
+    height: 120px;
     margin-right: 0.75rem;
   }
 `;
