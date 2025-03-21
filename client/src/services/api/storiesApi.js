@@ -1,19 +1,14 @@
-// src/services/api/storiesApi.js
 import axios from 'axios';
 
-// Helper function to retrieve auth token
 const getAuthToken = () => localStorage.getItem('token');
 
-// Helper function to attach auth header
 const authHeaders = () => ({
   headers: {
     Authorization: `Bearer ${getAuthToken()}`
   }
 });
 
-// API functions for stories
 export const storiesApi = {
-  // Get all active stories
   getStories: async () => {
     try {
       const response = await axios.get('/api/stories');
@@ -24,7 +19,6 @@ export const storiesApi = {
     }
   },
 
-  // Get a single active story by ID
   getStory: async (storyId) => {
     try {
       const response = await axios.get(`/api/stories/${storyId}`);
@@ -35,7 +29,6 @@ export const storiesApi = {
     }
   },
 
-  // Create a new story
   createStory: async (formData) => {
     try {
       const response = await axios.post('/api/stories', formData, authHeaders());
@@ -46,7 +39,6 @@ export const storiesApi = {
     }
   },
 
-  // Manually archive a story
   archiveStory: async (storyId) => {
     try {
       const response = await axios.put(
@@ -61,7 +53,6 @@ export const storiesApi = {
     }
   },
 
-  // Delete a story (active)
   deleteStory: async (storyId) => {
     try {
       const response = await axios.delete(
@@ -75,11 +66,10 @@ export const storiesApi = {
     }
   },
 
-  // Get all archived stories - Using original endpoint
   getArchivedStories: async () => {
     try {
       const response = await axios.get(
-        '/api/stories/archived', 
+        '/api/archived-stories', 
         authHeaders()
       );
       return response.data;
@@ -89,11 +79,10 @@ export const storiesApi = {
     }
   },
 
-  // Get a single archived story - Using original endpoint
   getArchivedStory: async (storyId) => {
     try {
       const response = await axios.get(
-        `/api/stories/archived/${storyId}`, 
+        `/api/archived-stories/${storyId}`, 
         authHeaders()
       );
       return response.data;
@@ -103,11 +92,10 @@ export const storiesApi = {
     }
   },
 
-  // Delete an archived story - Using original endpoint
   deleteArchivedStory: async (storyId) => {
     try {
       const response = await axios.delete(
-        `/api/stories/archived/${storyId}`, 
+        `/api/archived-stories/${storyId}`, 
         authHeaders()
       );
       return response.data;
