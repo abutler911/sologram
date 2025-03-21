@@ -286,10 +286,7 @@ const Stories = () => {
                   }}
                 />
                 {isVideo && <VideoIndicator><FaVideo /></VideoIndicator>}
-                <ExpirationBadge title="Time remaining until expiration">
-                  <FaClock />
-                  <span>{expirationTime}</span>
-                </ExpirationBadge>
+                
               </StoryImageWrapper>
               <StoryTitle>{story.title}</StoryTitle>
             </StoryCircle>
@@ -509,24 +506,7 @@ const VideoIndicator = styled.div`
   font-size: 0.8rem;
 `;
 
-const ExpirationBadge = styled.div`
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.6);
-  border-radius: 10px;
-  padding: 2px 6px;
-  font-size: 0.6rem;
-  color: white;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  
-  svg {
-    font-size: 0.7rem;
-  }
-`;
+
 
 const StoryTitle = styled.span`
   font-size: 0.75rem;
