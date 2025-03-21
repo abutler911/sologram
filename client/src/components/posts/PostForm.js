@@ -6,6 +6,14 @@ import { FaCloudUploadAlt, FaTimes, FaImage, FaVideo } from 'react-icons/fa';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
 const PostForm = ({ initialData = null, isEditing = false }) => {
   const [formData, setFormData] = useState({
     caption: initialData?.caption || '',
@@ -20,7 +28,6 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
   
   const navigate = useNavigate();
   
-  // Initialize existing media if editing
   useEffect(() => {
     if (isEditing && initialData?.media && initialData.media.length > 0) {
       setExistingMedia(initialData.media.map(media => ({
@@ -35,30 +42,39 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
   const onDrop = useCallback(acceptedFiles => {
     if (acceptedFiles.length === 0) return;
     
-    // Check if adding these files would exceed the 25 file limit
     const totalFiles = mediaFiles.length + existingMedia.length + acceptedFiles.length;
-    if (totalFiles > 25) {
-      toast.error('Maximum 25 media files allowed per post');
+    if (totalFiles > 20) {
+      toast.error('Maximum 20 media files allowed per post');
       return;
     }
     
-    // Process each dropped file
     acceptedFiles.forEach(file => {
-      // Create preview for the file
+      // Check file size based on type
+      if (file.type.startsWith('image/') && file.size > 20 * 1024 * 1024) {
+        toast.error(`Image file size exceeds 20MB limit: ${file.name}`);
+        return;
+      }
+      
+      if (file.type.startsWith('video/') && file.size > 2 * 1024 * 1024 * 1024) {
+        toast.error(`Video file size exceeds 2GB limit: ${file.name}`);
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onload = () => {
         setMediaPreviews(prev => [
           ...prev, 
           {
-            id: Date.now() + Math.random().toString(), // Generate unique id
+            id: Date.now() + Math.random().toString(),
             preview: reader.result,
-            type: file.type.startsWith('image') ? 'image' : 'video'
+            type: file.type.startsWith('image') ? 'image' : 'video',
+            name: file.name,
+            size: formatFileSize(file.size)
           }
         ]);
       };
       reader.readAsDataURL(file);
       
-      // Add to media files array
       setMediaFiles(prev => [...prev, file]);
     });
   }, [mediaFiles, existingMedia.length]);
@@ -69,7 +85,7 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
       'image/*': ['.jpeg', '.jpg', '.png', '.gif'],
       'video/*': ['.mp4', '.mov', '.avi', '.webm']
     },
-    maxSize: 20 * 1024 * 1024, // 20MB
+    maxSize: 2 * 1024 * 1024 * 1024, // Set to 2GB for larger videos
     multiple: true
   });
   
@@ -78,19 +94,14 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
     setFormData({ ...formData, [name]: value });
   };
   
-  // Remove a preview file
   const removePreviewFile = (id) => {
     const previewIndex = mediaPreviews.findIndex(p => p.id === id);
     if (previewIndex !== -1) {
-      // Remove the preview
       setMediaPreviews(prev => prev.filter(p => p.id !== id));
-      
-      // Remove the corresponding file
       setMediaFiles(prev => prev.filter((_, index) => index !== previewIndex));
     }
   };
   
-  // Remove an existing media file
   const removeExistingMedia = (id) => {
     setExistingMedia(prev => prev.filter(m => m.id !== id));
   };
@@ -100,20 +111,17 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
     setLoading(true);
     
     try {
-      // Create form data for submission
       const postFormData = new FormData();
       postFormData.append('caption', formData.caption);
       postFormData.append('content', formData.content);
       postFormData.append('tags', formData.tags);
       
-      // Add all media files
       if (mediaFiles.length > 0) {
         mediaFiles.forEach(file => {
           postFormData.append('media', file);
         });
       }
       
-      // Add IDs of existing media to keep (when editing)
       if (isEditing && existingMedia.length > 0) {
         const mediaIdsToKeep = existingMedia.map(media => media.id).join(',');
         postFormData.append('keepMedia', mediaIdsToKeep);
@@ -122,16 +130,13 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
       let response;
       
       if (isEditing) {
-        // Update existing post
         response = await axios.put(`/api/posts/${initialData._id}`, postFormData);
         toast.success('Post updated successfully!');
       } else {
-        // Create new post
         response = await axios.post('/api/posts', postFormData);
         toast.success('Post created successfully!');
       }
       
-      // Redirect to the post detail page
       navigate(`/post/${response.data.data._id}`);
     } catch (err) {
       const errorMessage = 
@@ -189,14 +194,12 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
       </FormGroup>
       
       <FormGroup>
-        <Label>Media (Max 25 files)</Label>
+        <Label>Media (Max 20 files)</Label>
         
-        {/* Display count of selected media */}
         <MediaCounter>
-          {mediaPreviews.length + existingMedia.length} / 25 media files selected
+          {mediaPreviews.length + existingMedia.length} / 20 media files selected
         </MediaCounter>
         
-        {/* Display existing media previews */}
         {existingMedia.length > 0 && (
           <ExistingMediaGrid>
             {existingMedia.map(media => (
@@ -206,6 +209,9 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
                 ) : (
                   <PreviewVideo src={media.mediaUrl} controls />
                 )}
+                <MediaTypeIndicator>
+                  {media.mediaType === 'image' ? <FaImage /> : <FaVideo />}
+                </MediaTypeIndicator>
                 <RemoveMediaButton type="button" onClick={() => removeExistingMedia(media.id)}>
                   <FaTimes />
                 </RemoveMediaButton>
@@ -214,7 +220,6 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
           </ExistingMediaGrid>
         )}
         
-        {/* Display new media previews */}
         {mediaPreviews.length > 0 && (
           <MediaPreviewGrid>
             {mediaPreviews.map(preview => (
@@ -224,6 +229,15 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
                 ) : (
                   <PreviewVideo src={preview.preview} controls />
                 )}
+                <MediaTypeIndicator>
+                  {preview.type === 'image' ? <FaImage /> : <FaVideo />}
+                </MediaTypeIndicator>
+                {preview.name && (
+                  <MediaInfoOverlay>
+                    <MediaName>{preview.name}</MediaName>
+                    <MediaSize>{preview.size}</MediaSize>
+                  </MediaInfoOverlay>
+                )}
                 <RemoveMediaButton type="button" onClick={() => removePreviewFile(preview.id)}>
                   <FaTimes />
                 </RemoveMediaButton>
@@ -232,8 +246,7 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
           </MediaPreviewGrid>
         )}
         
-        {/* Only show dropzone if less than 25 total media files */}
-        {mediaPreviews.length + existingMedia.length < 25 && (
+        {mediaPreviews.length + existingMedia.length < 20 && (
           <DropzoneContainer {...getRootProps()} isDragActive={isDragActive}>
             <input {...getInputProps()} />
             <DropzoneIcon>
@@ -245,7 +258,7 @@ const PostForm = ({ initialData = null, isEditing = false }) => {
                 : 'Drag & drop images or videos, or click to select'}
             </DropzoneText>
             <DropzoneSubtext>
-              Supports: JPG, PNG, GIF, MP4, MOV (Max: 25MB per file)
+              Supports: JPG, PNG, GIF (up to 20MB), MP4, MOV (up to 2GB)
             </DropzoneSubtext>
             <MediaTypeIcons>
               <FaImage />
@@ -363,7 +376,6 @@ const MediaTypeIcons = styled.div`
   font-size: 1.5rem;
 `;
 
-// Styled Components for multiple media
 const MediaCounter = styled.div`
   margin-bottom: 1rem;
   color: #666666;
@@ -404,6 +416,50 @@ const PreviewVideo = styled.video`
   width: 100%;
   height: 100%;
   object-fit: cover;
+`;
+
+const MediaTypeIndicator = styled.div`
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border-radius: 50%;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+`;
+
+const MediaInfoOverlay = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+  
+  ${MediaPreviewItem}:hover & {
+    opacity: 1;
+  }
+`;
+
+const MediaName = styled.div`
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.25rem;
+`;
+
+const MediaSize = styled.div`
+  font-size: 0.7rem;
+  opacity: 0.8;
 `;
 
 const RemoveMediaButton = styled.button`

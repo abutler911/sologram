@@ -12,6 +12,15 @@ import {
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
+// Helper function to format file size
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
 const CollectionForm = ({ initialData = null, isEditing = false }) => {
   const [formData, setFormData] = useState({
     name: initialData?.name || "",
@@ -23,11 +32,28 @@ const CollectionForm = ({ initialData = null, isEditing = false }) => {
   const [coverPreview, setCoverPreview] = useState(
     initialData?.coverImage || null
   );
+  const [fileDetails, setFileDetails] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
-  const onDrop = useCallback((acceptedFiles) => {
+  const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
+    if (rejectedFiles && rejectedFiles.length > 0) {
+      rejectedFiles.forEach(({ file, errors }) => {
+        if (errors[0]?.code === "file-too-large") {
+          toast.error(`File ${file.name} is too large. Max size is 20MB.`);
+        } else if (errors[0]?.code === "file-invalid-type") {
+          toast.error(
+            `File ${file.name} has an invalid type. Only images (JPG, PNG, GIF) are allowed.`
+          );
+        } else {
+          toast.error(
+            `File ${file.name} couldn't be uploaded. ${errors[0]?.message}`
+          );
+        }
+      });
+    }
+
     const file = acceptedFiles[0];
     if (!file) return;
 
@@ -38,6 +64,11 @@ const CollectionForm = ({ initialData = null, isEditing = false }) => {
     const reader = new FileReader();
     reader.onload = () => {
       setCoverPreview(reader.result);
+      setFileDetails({
+        name: file.name,
+        size: formatFileSize(file.size),
+        type: file.type,
+      });
     };
     reader.readAsDataURL(file);
   }, []);
@@ -47,7 +78,7 @@ const CollectionForm = ({ initialData = null, isEditing = false }) => {
     accept: {
       "image/*": [".jpeg", ".jpg", ".png", ".gif"],
     },
-    maxSize: 5 * 1024 * 1024, // 5MB
+    maxSize: 20 * 1024 * 1024, // 20MB - updated for Cloudinary tier
     multiple: false,
   });
 
@@ -62,6 +93,7 @@ const CollectionForm = ({ initialData = null, isEditing = false }) => {
   const removeCoverImage = () => {
     setCoverPreview(null);
     setCoverImage(null);
+    setFileDetails(null);
   };
 
   const handleSubmit = async (e) => {
@@ -147,6 +179,12 @@ const CollectionForm = ({ initialData = null, isEditing = false }) => {
         {coverPreview ? (
           <CoverPreviewContainer>
             <CoverPreviewImage src={coverPreview} alt="Cover preview" />
+            {fileDetails && (
+              <FileInfoOverlay>
+                <FileName>{fileDetails.name}</FileName>
+                <FileSize>{fileDetails.size}</FileSize>
+              </FileInfoOverlay>
+            )}
             <RemoveCoverButton type="button" onClick={removeCoverImage}>
               <FaTimes />
             </RemoveCoverButton>
@@ -163,7 +201,7 @@ const CollectionForm = ({ initialData = null, isEditing = false }) => {
                 : "Drag & drop a cover image, or click to select"}
             </DropzoneText>
             <DropzoneSubtext>
-              Supports: JPG, PNG, GIF (Max: 5MB)
+              Supports: JPG, PNG, GIF (Max: 20MB)
             </DropzoneSubtext>
             <FaImage />
           </DropzoneContainer>
@@ -330,6 +368,35 @@ const CoverPreviewImage = styled.img`
   width: 100%;
   max-height: 300px;
   object-fit: contain;
+`;
+
+const FileInfoOverlay = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  transform: translateY(100%);
+  transition: transform 0.2s ease-in-out;
+  
+  ${CoverPreviewContainer}:hover & {
+    transform: translateY(0);
+  }
+`;
+
+const FileName = styled.div`
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.25rem;
+`;
+
+const FileSize = styled.div`
+  font-size: 0.7rem;
+  opacity: 0.8;
 `;
 
 const RemoveCoverButton = styled.button`

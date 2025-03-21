@@ -6,6 +6,15 @@ import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
+// Helper function to format file size
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
 const CreateStory = () => {
   const [title, setTitle] = useState("");
   const [mediaFiles, setMediaFiles] = useState([]);
@@ -30,7 +39,7 @@ const CreateStory = () => {
     if (rejectedFiles && rejectedFiles.length > 0) {
       rejectedFiles.forEach(({ file, errors }) => {
         if (errors[0]?.code === "file-too-large") {
-          toast.error(`File ${file.name} is too large. Max size is 25MB for images and 50MB for videos.`);
+          toast.error(`File ${file.name} is too large. Max size is 20MB for images and 2GB for videos.`);
         } else if (errors[0]?.code === "file-invalid-type") {
           toast.error(
             `File ${file.name} has an invalid type. Only images (JPG, PNG, GIF) and videos (MP4, MOV) are allowed.`
@@ -43,22 +52,49 @@ const CreateStory = () => {
       });
     }
 
+    // Check if adding these files would exceed the 20 file limit
+    if (mediaFiles.length + acceptedFiles.length > 20) {
+      toast.error('Maximum 20 media files allowed per story');
+      return;
+    }
+
     // Process accepted files
     if (acceptedFiles && acceptedFiles.length > 0) {
-      setMediaFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
+      // Check file sizes based on type
+      const validFiles = acceptedFiles.filter(file => {
+        if (file.type.startsWith('image/') && file.size > 20 * 1024 * 1024) {
+          toast.error(`Image ${file.name} exceeds 20MB limit`);
+          return false;
+        }
+        if (file.type.startsWith('video/') && file.size > 2 * 1024 * 1024 * 1024) {
+          toast.error(`Video ${file.name} exceeds 2GB limit`);
+          return false;
+        }
+        return true;
+      });
+
+      if (validFiles.length === 0) return;
+
+      setMediaFiles((prevFiles) => [...prevFiles, ...validFiles]);
 
       // Create previews
-      const newPreviews = acceptedFiles.map((file) => {
+      const newPreviews = validFiles.map((file) => {
         const isVideo = file.type.startsWith("video/");
         const preview = URL.createObjectURL(file);
-        return { file, preview, type: isVideo ? "video" : "image" };
+        return { 
+          file, 
+          preview, 
+          type: isVideo ? "video" : "image",
+          name: file.name,
+          size: formatFileSize(file.size)
+        };
       });
 
       setPreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
     }
-  }, []);
+  }, [mediaFiles]);
 
-  // Configure dropzone with more specific options to improve mobile compatibility
+  // Configure dropzone with more specific options
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: {
@@ -68,8 +104,8 @@ const CreateStory = () => {
       "video/mp4": [".mp4"],
       "video/quicktime": [".mov"],
     },
-    maxSize: 50 * 1024 * 1024, // 50MB for videos
-    maxFiles: 10, // Reasonable limit
+    maxSize: 2 * 1024 * 1024 * 1024, // 2GB for videos (updated for Cloudinary tier)
+    maxFiles: 20, // Updated limit to match Cloudinary tier
     noClick: isPWA, // Disable click in PWA mode (use buttons instead)
     noKeyboard: false, // Allow keyboard navigation
     preventDropOnDocument: true, // Prevent dropping on document
@@ -214,11 +250,11 @@ const CreateStory = () => {
               <MediaTypes>
                 <MediaTypeIcon>
                   <FaImage />
-                  <span>Images (25MB max)</span>
+                  <span>Images (20MB max)</span>
                 </MediaTypeIcon>
                 <MediaTypeIcon>
                   <FaVideo />
-                  <span>Videos (50MB max)</span>
+                  <span>Videos (2GB max)</span>
                 </MediaTypeIcon>
               </MediaTypes>
             </DropzoneContainer>
@@ -244,7 +280,7 @@ const CreateStory = () => {
 
           {previews.length > 0 && (
             <PreviewSection>
-              <Label>Selected Media ({previews.length})</Label>
+              <Label>Selected Media ({previews.length}/20)</Label>
               <PreviewList>
                 {previews.map((item, index) => (
                   <PreviewItem key={index}>
@@ -255,6 +291,12 @@ const CreateStory = () => {
                         <video src={item.preview} controls muted />
                         <VideoIcon><FaVideo /></VideoIcon>
                       </PreviewVideo>
+                    )}
+                    {item.name && (
+                      <MediaInfoOverlay>
+                        <MediaName>{item.name}</MediaName>
+                        <MediaSize>{item.size}</MediaSize>
+                      </MediaInfoOverlay>
                     )}
                     <RemoveButton onClick={() => removePreview(index)}>
                       <FaTimes />
@@ -538,6 +580,35 @@ const VideoIcon = styled.div`
     height: 20px;
     font-size: 0.75rem;
   }
+`;
+
+const MediaInfoOverlay = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  transform: translateY(100%);
+  transition: transform 0.2s ease-in-out;
+  
+  ${PreviewItem}:hover & {
+    transform: translateY(0);
+  }
+`;
+
+const MediaName = styled.div`
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.25rem;
+`;
+
+const MediaSize = styled.div`
+  font-size: 0.7rem;
+  opacity: 0.8;
 `;
 
 const RemoveButton = styled.button`
