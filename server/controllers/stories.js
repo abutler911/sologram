@@ -235,35 +235,27 @@ exports.archiveStory = async (req, res) => {
 // @access  Private
 exports.getArchivedStories = async (req, res) => {
   try {
-    console.log("Fetching archived stories...");
-
-    // Include pagination
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    // Get total count for pagination
-    const total = await Story.countDocuments({ archived: true });
+    console.log("getArchivedStories function called");
+    console.log("User ID:", req.user ? req.user.id : "No user in request");
     
-    // Get archived stories with pagination
     const archivedStories = await Story.find({ archived: true })
-      .sort({ archivedAt: -1, createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
+      .sort({ archivedAt: -1 })
       .lean();
-
-    console.log(`Found ${archivedStories.length} archived stories (total: ${total})`);
-
+    
+    console.log(`Found ${archivedStories.length} archived stories`);
+    
     res.status(200).json({
       success: true,
       count: archivedStories.length,
-      total,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
       data: archivedStories,
     });
   } catch (err) {
-    handleServerError(res, err, "Error fetching archived stories");
+    console.error("Error in getArchivedStories:", err);
+    res.status(500).json({
+      success: false,
+      message: "Error retrieving archived stories",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
   }
 };
 

@@ -24,7 +24,7 @@ const StoryArchive = () => {
         console.log("Fetching archived stories");
 
         const token = localStorage.getItem("token");
-        const response = await axios.get("/api/archived-stories", {
+        const response = await axios.get("/api/stories/archived", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
