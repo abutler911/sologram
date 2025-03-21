@@ -60,6 +60,7 @@ async function startServer() {
     const authRoutes = require("./routes/auth");
     const collectionRoutes = require("./routes/collections");
     const storyRoutes = require("./routes/stories");
+    const archivedStoryRoutes = require("./routes/archivedStories");
     const subscriberRoutes = require("./routes/subscribers");
     const notificationRoutes = require("./routes/notifications");
     
@@ -74,11 +75,8 @@ async function startServer() {
     app.use("/api/auth", authRoutes);
     app.use("/api/posts", postRoutes);
     app.use("/api/collections", collectionRoutes);
-    
-    // Important: The stories route now handles both active and archived stories
-    // We don't need a separate archived-stories route
     app.use("/api/stories", storyRoutes);
-    
+    app.use("/api/archived-stories", archivedStoryRoutes);
     app.use("/api/subscribers", subscriberRoutes);
     app.use("/api/notifications", notificationRoutes);
     

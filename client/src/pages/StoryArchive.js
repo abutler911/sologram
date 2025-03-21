@@ -23,6 +23,7 @@ const StoryArchive = () => {
         setLoading(true);
         console.log("Fetching archived stories");
 
+        // Use the original endpoint that's already implemented on the server
         const token = localStorage.getItem("token");
         const response = await axios.get("/api/stories/archived", {
           headers: {
@@ -42,7 +43,7 @@ const StoryArchive = () => {
         }
       } catch (err) {
         console.error("Error fetching archived stories:", err);
-        setError("Failed to load archived stories");
+        setError("Failed to load archived stories. Please try again.");
         toast.error("Failed to load archived stories");
       } finally {
         setLoading(false);
@@ -63,7 +64,8 @@ const StoryArchive = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.delete(`/api/archived-stories/${id}`, {
+      // Use the original endpoint that's already implemented on the server
+      const response = await axios.delete(`/api/stories/archived/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -186,6 +188,7 @@ const StoryArchive = () => {
   );
 };
 
+// Styled components remain the same
 const PageWrapper = styled.div`
   background-color: #121212;
   min-height: 100vh;

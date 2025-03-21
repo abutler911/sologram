@@ -1,11 +1,11 @@
 // components/stories/Stories.js
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import styled from "styled-components";
 import { FaTimes, FaVideo, FaTrash, FaExclamationTriangle, FaClock, FaArchive } from "react-icons/fa";
-import axios from "axios";
-import { toast } from "react-hot-toast";
-import { AuthContext } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import axios from 'axios'; // Use direct axios instead of storiesApi for now
+import { AuthContext } from "../../context/AuthContext";
 
 const Stories = () => {
   const [stories, setStories] = useState([]);
@@ -22,11 +22,24 @@ const Stories = () => {
   const { user, isAuthenticated } = useContext(AuthContext);
   const isAdmin = isAuthenticated && user && user.role === 'admin';
 
+  // Define nextStoryItem as useCallback
+  const nextStoryItem = useCallback(() => {
+    if (activeStory && activeStoryIndex < activeStory.media.length - 1) {
+      setActiveStoryIndex((prev) => prev + 1);
+      setTimeLeft(10);
+    } else {
+      // End of story items, close the story
+      setActiveStory(null);
+      setActiveStoryIndex(0);
+    }
+  }, [activeStory, activeStoryIndex]);
+
   // Fetch stories when component mounts
   useEffect(() => {
     const fetchStories = async () => {
       try {
         setLoading(true);
+        
         const response = await axios.get("/api/stories");
         
         if (response.data.success) {
@@ -78,18 +91,7 @@ const Stories = () => {
     }
 
     return () => clearTimeout(timer);
-  }, [activeStory, activeStoryIndex, timeLeft]);
-
-  const nextStoryItem = () => {
-    if (activeStory && activeStoryIndex < activeStory.media.length - 1) {
-      setActiveStoryIndex((prev) => prev + 1);
-      setTimeLeft(10);
-    } else {
-      // End of story items, close the story
-      setActiveStory(null);
-      setActiveStoryIndex(0);
-    }
-  };
+  }, [activeStory, activeStoryIndex, timeLeft, nextStoryItem]);
 
   const openStory = (story) => {
     setActiveStory(story);
@@ -103,7 +105,7 @@ const Stories = () => {
   };
 
   const handleNext = () => {
-    if (activeStoryIndex < activeStory.media.length - 1) {
+    if (activeStory && activeStoryIndex < activeStory.media.length - 1) {
       setActiveStoryIndex((prev) => prev + 1);
       setTimeLeft(10);
     } else {
@@ -138,7 +140,12 @@ const Stories = () => {
     setDeleting(true);
     
     try {
-      const response = await axios.delete(`/api/stories/${storyToDelete._id}`);
+      const token = localStorage.getItem('token');
+      const response = await axios.delete(`/api/stories/${storyToDelete._id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       
       if (response.data.success) {
         // Update the UI by removing the deleted story

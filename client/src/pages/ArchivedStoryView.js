@@ -26,7 +26,8 @@ const ArchivedStoryView = () => {
         console.log("Fetching archived story with ID:", id);
 
         const token = localStorage.getItem("token");
-        const response = await axios.get(`/api/archived-stories/${id}`, {
+        // Use the original endpoint that's already implemented on the server
+        const response = await axios.get(`/api/stories/archived/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -95,7 +96,8 @@ const ArchivedStoryView = () => {
       console.log("Deleting archived story with ID:", id);
 
       const token = localStorage.getItem("token");
-      const response = await axios.delete(`/api/archived-stories/${id}`, {
+      // Use the original endpoint that's already implemented on the server
+      const response = await axios.delete(`/api/stories/archived/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

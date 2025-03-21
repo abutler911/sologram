@@ -1,16 +1,26 @@
+// routes/archivedStories.js
 const express = require("express");
 const router = express.Router();
 const {
   getArchivedStories,
   getArchivedStory,
   deleteArchivedStory,
-} = require("../controllers/stories");
-const { protect } = require("../middleware/auth");
+} = require("../controllers/archivedStories");
+const { protect, authorize } = require("../middleware/auth");
 
-// Archive routes only
-router.get("/", protect, getArchivedStories); // List all archived stories
-router.get("/:id", protect, getArchivedStory); // Get a specific archived story
-router.delete("/:id", protect, deleteArchivedStory); // Delete an archived story
+// All routes here require authentication
+router.use(protect);
+
+// GET /api/archived-stories - Get all archived stories
+router.get("/", getArchivedStories);
+
+// GET /api/archived-stories/:id - Get a specific archived story
+router.get("/:id", getArchivedStory);
+
+// DELETE /api/archived-stories/:id - Delete an archived story
+router.delete("/:id", deleteArchivedStory);
+
+// Health check for debugging
 router.get("/test", (req, res) => {
   res.status(200).json({
     success: true,

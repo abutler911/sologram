@@ -1,4 +1,4 @@
-// services/api/storiesApi.js
+// src/services/api/storiesApi.js
 import axios from 'axios';
 
 // Helper function to retrieve auth token
@@ -75,11 +75,11 @@ export const storiesApi = {
     }
   },
 
-  // Get all archived stories
+  // Get all archived stories - Using original endpoint
   getArchivedStories: async () => {
     try {
       const response = await axios.get(
-        '/api/archived-stories', 
+        '/api/stories/archived', 
         authHeaders()
       );
       return response.data;
@@ -89,11 +89,11 @@ export const storiesApi = {
     }
   },
 
-  // Get a single archived story
+  // Get a single archived story - Using original endpoint
   getArchivedStory: async (storyId) => {
     try {
       const response = await axios.get(
-        `/api/archived-stories/${storyId}`, 
+        `/api/stories/archived/${storyId}`, 
         authHeaders()
       );
       return response.data;
@@ -103,11 +103,11 @@ export const storiesApi = {
     }
   },
 
-  // Delete an archived story
+  // Delete an archived story - Using original endpoint
   deleteArchivedStory: async (storyId) => {
     try {
       const response = await axios.delete(
-        `/api/archived-stories/${storyId}`, 
+        `/api/stories/archived/${storyId}`, 
         authHeaders()
       );
       return response.data;
