@@ -1,14 +1,16 @@
 // components/stories/Stories.js
 import React, { useState, useEffect, useContext } from "react";
 import styled from "styled-components";
-import { FaTimes, FaVideo, FaTrash, FaExclamationTriangle } from "react-icons/fa";
+import { FaTimes, FaVideo, FaTrash, FaExclamationTriangle, FaClock, FaArchive } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { AuthContext } from "../../context/AuthContext";
+import { Link } from "react-router-dom";
 
 const Stories = () => {
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeStory, setActiveStory] = useState(null);
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(10);
@@ -24,16 +26,30 @@ const Stories = () => {
   useEffect(() => {
     const fetchStories = async () => {
       try {
+        setLoading(true);
         const response = await axios.get("/api/stories");
-        setStories(response.data.data);
+        
+        if (response.data.success) {
+          setStories(response.data.data);
+          setError(null);
+        } else {
+          throw new Error(response.data.message || "Failed to fetch stories");
+        }
       } catch (error) {
         console.error("Error fetching stories:", error);
+        setError("Unable to load stories. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchStories();
+    
+    // Set up a refresh interval to check for expired stories every minute
+    const refreshInterval = setInterval(fetchStories, 60000);
+    
+    // Clean up the interval on component unmount
+    return () => clearInterval(refreshInterval);
   }, []);
 
   // Handle story auto-progression timer
@@ -41,9 +57,15 @@ const Stories = () => {
     let timer;
 
     if (activeStory) {
+      if (!activeStory.media || activeStoryIndex >= activeStory.media.length) {
+        // Safety check - close the story viewer if there's no media
+        closeStory();
+        return;
+      }
+
       const currentMedia = activeStory.media[activeStoryIndex];
       // Set longer duration for videos (don't auto-progress)
-      const isVideo = currentMedia.mediaType === "video";
+      const isVideo = currentMedia && currentMedia.mediaType === "video";
       
       if (!isVideo && timeLeft > 0) {
         timer = setTimeout(() => {
@@ -116,28 +138,58 @@ const Stories = () => {
     setDeleting(true);
     
     try {
-      await axios.delete(`/api/stories/${storyToDelete._id}`);
+      const response = await axios.delete(`/api/stories/${storyToDelete._id}`);
       
-      // Update the UI by removing the deleted story
-      setStories(prevStories => 
-        prevStories.filter(story => story._id !== storyToDelete._id)
-      );
-      
-      // Close the story view and delete modal
-      closeStory();
-      closeDeleteModal();
-      
-      toast.success("Story deleted successfully");
+      if (response.data.success) {
+        // Update the UI by removing the deleted story
+        setStories(prevStories => 
+          prevStories.filter(story => story._id !== storyToDelete._id)
+        );
+        
+        // Close the story view and delete modal
+        closeStory();
+        closeDeleteModal();
+        
+        toast.success("Story deleted successfully");
+      } else {
+        throw new Error(response.data.message || "Failed to delete story");
+      }
     } catch (error) {
       console.error("Error deleting story:", error);
-      toast.error("Failed to delete story");
+      toast.error("Failed to delete story. Please try again.");
     } finally {
       setDeleting(false);
     }
   };
 
+  // Calculate the expiration time for a story
+  const getExpirationTime = (story) => {
+    if (!story || !story.expiresAt) return "Unknown";
+    
+    const expiresAt = new Date(story.expiresAt);
+    const now = new Date();
+    
+    // Calculate the time difference in hours and minutes
+    const diffMs = expiresAt - now;
+    
+    if (diffMs <= 0) {
+      return "Expiring...";
+    }
+    
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (diffHours > 0) {
+      return `${diffHours}h ${diffMinutes}m`;
+    } else {
+      return `${diffMinutes}m`;
+    }
+  };
+
   // Function to get thumbnail URL for a media item
   const getThumbnailUrl = (media) => {
+    if (!media) return "/placeholder-image.jpg";
+    
     if (media.mediaType === "image") {
       return media.mediaUrl;
     } else if (media.mediaType === "video") {
@@ -178,7 +230,15 @@ const Stories = () => {
   if (loading) {
     return (
       <StoriesContainer>
-        <p>Loading stories...</p>
+        <LoadingMessage>Loading stories...</LoadingMessage>
+      </StoriesContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <StoriesContainer>
+        <ErrorMessage>{error}</ErrorMessage>
       </StoriesContainer>
     );
   }
@@ -194,10 +254,17 @@ const Stories = () => {
   return (
     <>
       <StoriesContainer>
+        {isAdmin && (
+          <StoryArchiveLink to="/story-archive" title="View archived stories">
+            <FaArchive />
+            <span>Archive</span>
+          </StoryArchiveLink>
+        )}
         {stories.map((story) => {
-          const firstMedia = story.media[0];
-          const isVideo = firstMedia.mediaType === "video";
-          const thumbnailUrl = getThumbnailUrl(firstMedia);
+          const firstMedia = story.media && story.media[0];
+          const isVideo = firstMedia && firstMedia.mediaType === "video";
+          const thumbnailUrl = firstMedia ? getThumbnailUrl(firstMedia) : "/placeholder-image.jpg";
+          const expirationTime = getExpirationTime(story);
           
           return (
             <StoryCircle key={story._id} onClick={() => openStory(story)}>
@@ -206,12 +273,16 @@ const Stories = () => {
                   src={thumbnailUrl} 
                   alt={story.title} 
                   onError={(e) => {
-                    // Fallback to a styled container with a video icon if image fails to load
+                    // Fallback to a styled container if image fails to load
                     e.target.style.display = 'none';
-                    e.target.parentNode.classList.add('video-fallback');
+                    e.target.parentNode.classList.add('image-fallback');
                   }}
                 />
                 {isVideo && <VideoIndicator><FaVideo /></VideoIndicator>}
+                <ExpirationBadge title="Time remaining until expiration">
+                  <FaClock />
+                  <span>{expirationTime}</span>
+                </ExpirationBadge>
               </StoryImageWrapper>
               <StoryTitle>{story.title}</StoryTitle>
             </StoryCircle>
@@ -274,6 +345,13 @@ const Stories = () => {
               <NavArea onClick={handleNext} side="right" />
             </StoryNavigation>
           </StoryContent>
+          
+          <StoryInfo>
+            <StoryInfoTitle>{activeStory.title}</StoryInfoTitle>
+            <StoryInfoExpires>
+              Expires in: {getExpirationTime(activeStory)}
+            </StoryInfoExpires>
+          </StoryInfo>
         </StoryModal>
       )}
 
@@ -313,10 +391,50 @@ const StoriesContainer = styled.div`
   overflow-x: auto;
   padding: 1rem 0;
   gap: 1rem;
+  position: relative;
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
   }
+`;
+
+const StoryArchiveLink = styled(Link)`
+  flex: 0 0 auto;
+  width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: #aaa;
+  transition: color 0.3s;
+  
+  &:hover {
+    color: #ff7e5f;
+  }
+  
+  svg {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  span {
+    font-size: 0.75rem;
+  }
+`;
+
+const LoadingMessage = styled.p`
+  color: #888;
+  width: 100%;
+  text-align: center;
+  padding: 1rem 0;
+`;
+
+const ErrorMessage = styled.p`
+  color: #e74c3c;
+  width: 100%;
+  text-align: center;
+  padding: 1rem 0;
 `;
 
 const EmptyMessage = styled.p`
@@ -345,14 +463,14 @@ const StoryImageWrapper = styled.div`
   padding: 3px;
   background-color: #333;
   
-  &.video-fallback {
+  &.image-fallback {
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: #444;
     
     &:before {
-      content: '\\f03d'; /* Video icon in Font Awesome */
+      content: '\\f03e'; /* Image icon in Font Awesome */
       font-family: 'Font Awesome 5 Free';
       font-weight: 900;
       font-size: 1.5rem;
@@ -361,21 +479,11 @@ const StoryImageWrapper = styled.div`
   }
 `;
 
-// Thumbnail image (circle shape)
 const ThumbnailImage = styled.img`
   width: 100%;
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-`;
-
-// Full-screen image (no border radius)
-const FullScreenImage = styled.img`
-  max-width: 100%;
-  max-height: 90vh;
-  width: auto;
-  height: auto;
-  object-fit: contain;
 `;
 
 const VideoIndicator = styled.div`
@@ -394,10 +502,29 @@ const VideoIndicator = styled.div`
   font-size: 0.8rem;
 `;
 
+const ExpirationBadge = styled.div`
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 10px;
+  padding: 2px 6px;
+  font-size: 0.6rem;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  
+  svg {
+    font-size: 0.7rem;
+  }
+`;
+
 const StoryTitle = styled.span`
   font-size: 0.75rem;
   color: #ddd;
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
   text-align: center;
   max-width: 100%;
   overflow: hidden;
@@ -417,7 +544,6 @@ const StoryModal = styled.div`
   flex-direction: column;
 `;
 
-// Added a controls bar to hold both close and delete buttons
 const ControlsBar = styled.div`
   position: absolute;
   top: 1rem;
@@ -446,7 +572,6 @@ const CloseButton = styled.button`
   }
 `;
 
-// New delete button for admin
 const DeleteButton = styled.button`
   background-color: rgba(231, 76, 60, 0.7);
   border: none;
@@ -510,6 +635,14 @@ const StoryContent = styled.div`
   position: relative;
 `;
 
+const FullScreenImage = styled.img`
+  max-width: 100%;
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+`;
+
 const StoryVideo = styled.video`
   max-width: 100%;
   max-height: 90vh;
@@ -529,6 +662,30 @@ const StoryNavigation = styled.div`
 const NavArea = styled.div`
   flex: 1;
   cursor: pointer;
+`;
+
+const StoryInfo = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  padding: 1.5rem;
+  color: white;
+`;
+
+const StoryInfoTitle = styled.h3`
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+`;
+
+const StoryInfoExpires = styled.p`
+  margin: 0;
+  font-size: 0.875rem;
+  color: #eee;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 `;
 
 // Custom delete confirmation modal

@@ -1,15 +1,14 @@
+// controllers/stories.js
 const mongoose = require("mongoose");
 const Story = require("../models/Story");
-const {
-  notifySubscribersOfNewContent,
-} = require("../services/notificationService");
+const cloudinary = require("../config/cloudinary").cloudinary;
 
+// Helper function for handling server errors
 const handleServerError = (res, err, customMessage = "Server Error") => {
-  console.error("Detailed error:", {
+  console.error(`Error in ${customMessage}:`, {
     message: err.message,
     stack: err.stack,
     name: err.name,
-    customMessage,
   });
 
   res.status(500).json({
@@ -22,27 +21,26 @@ const handleServerError = (res, err, customMessage = "Server Error") => {
   });
 };
 
+// Run this before each request to ensure expired stories are archived
 async function checkAndArchiveExpiredStories() {
-  const now = new Date();
-  const result = await Story.updateMany(
-    {
-      archived: false,
-      expiresAt: { $lt: now },
-    },
-    {
-      $set: {
-        archived: true,
-        archivedAt: now,
-      },
+  try {
+    const count = await Story.archiveExpired();
+    if (count > 0) {
+      console.log(`Automatically archived ${count} expired stories`);
     }
-  );
-
-  console.log(`Automatically archived ${result.modifiedCount} expired stories`);
-  return result;
+    return count;
+  } catch (err) {
+    console.error("Error in automatic story archiving:", err);
+    return 0;
+  }
 }
 
+// @desc    Get all active (non-archived) stories
+// @route   GET /api/stories
+// @access  Public
 exports.getStories = async (req, res) => {
   try {
+    // Always check for and archive expired stories first
     await checkAndArchiveExpiredStories();
 
     const stories = await Story.find({ archived: false })
@@ -59,12 +57,15 @@ exports.getStories = async (req, res) => {
   }
 };
 
+// @desc    Get a single story by ID
+// @route   GET /api/stories/:id
+// @access  Public
 exports.getStory = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid story ID",
+        message: "Invalid story ID format",
       });
     }
 
@@ -86,6 +87,9 @@ exports.getStory = async (req, res) => {
   }
 };
 
+// @desc    Create a new story
+// @route   POST /api/stories
+// @access  Private
 exports.createStory = async (req, res) => {
   try {
     const { title } = req.body;
@@ -104,50 +108,29 @@ exports.createStory = async (req, res) => {
       });
     }
 
+    if (req.files.length > 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Maximum 10 media files allowed per story",
+      });
+    }
+
     const media = req.files.map((file) => ({
       mediaType: file.mimetype.startsWith("image") ? "image" : "video",
       mediaUrl: file.path,
+      cloudinaryId: file.filename || file.public_id || null,
     }));
 
-    if (media.length > 10) {
-      return res.status(400).json({
-        success: false,
-        message: "Maximum 10 media files allowed",
-      });
-    }
-
-    const validMediaTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/gif",
-      "video/mp4",
-      "video/quicktime",
-    ];
-    const invalidMedia = req.files.some(
-      (file) => !validMediaTypes.includes(file.mimetype)
-    );
-
-    if (invalidMedia) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid media type. Allowed types: JPEG, PNG, GIF, MP4, MOV",
-      });
-    }
+    // Set expiration time to 24 hours from now
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+    // expiresAt.setMinutes(expiresAt.getMinutes() + 2);
 
     const story = await Story.create({
       title,
       media,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      expiresAt,
     });
-
-    try {
-      await notifySubscribersOfNewContent({
-        title,
-        type: "story",
-      });
-    } catch (notifyError) {
-      console.error("Notification error:", notifyError);
-    }
 
     res.status(201).json({
       success: true,
@@ -158,18 +141,46 @@ exports.createStory = async (req, res) => {
   }
 };
 
+// @desc    Delete a story
+// @route   DELETE /api/stories/:id
+// @access  Private
 exports.deleteStory = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid story ID format",
+      });
+    }
+
     const story = await Story.findById(req.params.id);
+
     if (!story) {
       return res.status(404).json({
         success: false,
         message: "Story not found",
       });
     }
+
+    // Delete all media files from Cloudinary
+    if (story.media && story.media.length > 0) {
+      for (const media of story.media) {
+        if (media.cloudinaryId) {
+          try {
+            await cloudinary.uploader.destroy(media.cloudinaryId);
+          } catch (cloudinaryError) {
+            console.error("Error deleting media from Cloudinary:", cloudinaryError);
+            // Continue with deletion even if Cloudinary delete fails
+          }
+        }
+      }
+    }
+
     await story.deleteOne();
+
     res.status(200).json({
       success: true,
+      message: "Story deleted successfully",
       data: {},
     });
   } catch (err) {
@@ -177,33 +188,71 @@ exports.deleteStory = async (req, res) => {
   }
 };
 
+// @desc    Manually archive a story
+// @route   PUT /api/stories/:id/archive
+// @access  Private
+exports.archiveStory = async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid story ID format",
+      });
+    }
+
+    const story = await Story.findById(req.params.id);
+
+    if (!story) {
+      return res.status(404).json({
+        success: false,
+        message: "Story not found",
+      });
+    }
+
+    if (story.archived) {
+      return res.status(400).json({
+        success: false,
+        message: "Story is already archived",
+      });
+    }
+
+    story.archived = true;
+    story.archivedAt = new Date();
+    await story.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Story archived successfully",
+      data: story,
+    });
+  } catch (err) {
+    handleServerError(res, err, "Error archiving story");
+  }
+};
+
+// @desc    Get all archived stories
+// @route   GET /api/stories/archived
+// @access  Private
 exports.getArchivedStories = async (req, res) => {
   try {
-    console.log("getArchivedStories function called");
+    console.log("Fetching archived stories...");
 
-    // Skip the automatic archiving if it's causing issues
-    // await checkAndArchiveExpiredStories();
-
+    // Include pagination
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    console.log(
-      `Querying for archived stories with pagination: page=${page}, limit=${limit}`
-    );
-
-    // Explicitly find stories where archived is true
+    // Get total count for pagination
+    const total = await Story.countDocuments({ archived: true });
+    
+    // Get archived stories with pagination
     const archivedStories = await Story.find({ archived: true })
-      .sort({ createdAt: -1 })
+      .sort({ archivedAt: -1, createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
-    const total = await Story.countDocuments({ archived: true });
-
-    console.log(
-      `Found ${archivedStories.length} archived stories out of ${total} total`
-    );
+    console.log(`Found ${archivedStories.length} archived stories (total: ${total})`);
 
     res.status(200).json({
       success: true,
@@ -214,81 +263,63 @@ exports.getArchivedStories = async (req, res) => {
       data: archivedStories,
     });
   } catch (err) {
-    console.error("Error in getArchivedStories:", err);
-    res.status(500).json({
-      success: false,
-      message: "Error retrieving archived stories",
-      error: process.env.NODE_ENV === "development" ? err.message : undefined,
-    });
+    handleServerError(res, err, "Error fetching archived stories");
   }
 };
 
+// @desc    Get a single archived story
+// @route   GET /api/stories/archived/:id
+// @access  Private
 exports.getArchivedStory = async (req, res) => {
   try {
-    const { id } = req.params;
-    console.log(`getArchivedStory function called with ID: ${id}`);
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      console.error(`Invalid ObjectId: ${id}`);
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid ID format",
+        message: "Invalid story ID format",
       });
     }
 
-    // Look for a story that has both the matching ID AND is archived
-    const story = await Story.findOne({
-      _id: id,
-      archived: true,
-    });
-
-    if (!story) {
-      console.log(`No archived story found with ID: ${id}`);
-      return res.status(404).json({
-        success: false,
-        message: "Archived story not found",
-      });
-    }
-
-    console.log(`Successfully found archived story with ID: ${id}`);
-    res.status(200).json({
-      success: true,
-      data: story,
-    });
-  } catch (err) {
-    console.error(`Error in getArchivedStory with ID ${req.params.id}:`, err);
-    res.status(500).json({
-      success: false,
-      message: "Error retrieving archived story",
-      error: process.env.NODE_ENV === "development" ? err.message : undefined,
-    });
-  }
-};
-
-exports.archiveStory = async (req, res) => {
-  try {
+    // Find the story by ID, regardless of archived status
     const story = await Story.findById(req.params.id);
+
     if (!story) {
       return res.status(404).json({
         success: false,
         message: "Story not found",
       });
     }
-    story.archived = true;
-    story.archivedAt = new Date();
-    await story.save();
+
+    // If the story isn't archived, return with a message
+    if (!story.archived) {
+      return res.status(400).json({
+        success: false,
+        message: "This story is not archived",
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: story,
     });
   } catch (err) {
-    handleServerError(res, err, "Error archiving story");
+    handleServerError(res, err, "Error fetching archived story");
   }
 };
 
+// @desc    Delete an archived story
+// @route   DELETE /api/stories/archived/:id
+// @access  Private
 exports.deleteArchivedStory = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid story ID format",
+      });
+    }
+
     const story = await Story.findById(req.params.id);
+
     if (!story) {
       return res.status(404).json({
         success: false,
@@ -296,17 +327,33 @@ exports.deleteArchivedStory = async (req, res) => {
       });
     }
 
-    // Relaxing this restriction - allow deleting any story from the archived endpoint
-    // if (!story.archived) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Story must be archived before it can be deleted",
-    //   });
-    // }
+    // Verify the story is archived
+    if (!story.archived) {
+      return res.status(400).json({
+        success: false,
+        message: "Only archived stories can be deleted from the archive",
+      });
+    }
+
+    // Delete all media files from Cloudinary
+    if (story.media && story.media.length > 0) {
+      for (const media of story.media) {
+        if (media.cloudinaryId) {
+          try {
+            await cloudinary.uploader.destroy(media.cloudinaryId);
+          } catch (cloudinaryError) {
+            console.error("Error deleting media from Cloudinary:", cloudinaryError);
+            // Continue with deletion even if Cloudinary delete fails
+          }
+        }
+      }
+    }
 
     await story.deleteOne();
+
     res.status(200).json({
       success: true,
+      message: "Archived story deleted successfully",
       data: {},
     });
   } catch (err) {

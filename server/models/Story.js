@@ -1,3 +1,4 @@
+// models/Story.js
 const mongoose = require("mongoose");
 
 const StorySchema = new mongoose.Schema(
@@ -21,8 +22,10 @@ const StorySchema = new mongoose.Schema(
         mediaUrl: {
           type: String,
           required: [true, "Media URL is required"],
-          // No validation on the URL to ensure Cloudinary URLs work
         },
+        cloudinaryId: {
+          type: String,
+        }
       },
     ],
     archived: {
@@ -46,9 +49,6 @@ const StorySchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    // Add this to ensure Mongoose doesn't throw errors on unknown fields
-    strict: false,
-    // This ensures virtuals are included when converting to JSON
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
@@ -59,7 +59,7 @@ StorySchema.index({ archived: 1, expiresAt: 1 });
 
 // Pre-save hook to check for expiration
 StorySchema.pre("save", function (next) {
-  // Check if story should be archived
+  // Check if story should be archived based on expiration time
   if (this.expiresAt && this.expiresAt < new Date() && !this.archived) {
     this.archived = true;
     this.archivedAt = new Date();
@@ -67,7 +67,7 @@ StorySchema.pre("save", function (next) {
   next();
 });
 
-// Add virtual property for time left
+// Virtual property for time left (useful for client-side display)
 StorySchema.virtual("timeLeft").get(function () {
   if (this.archived) return 0;
 
@@ -97,6 +97,24 @@ StorySchema.statics.findExpired = function () {
     archived: false,
     expiresAt: { $lt: new Date() },
   });
+};
+
+// Static method to archive all expired stories
+StorySchema.statics.archiveExpired = async function () {
+  const result = await this.updateMany(
+    {
+      archived: false,
+      expiresAt: { $lt: new Date() }
+    },
+    {
+      $set: {
+        archived: true,
+        archivedAt: new Date()
+      }
+    }
+  );
+  
+  return result.modifiedCount || 0;
 };
 
 module.exports = mongoose.model("Story", StorySchema);
