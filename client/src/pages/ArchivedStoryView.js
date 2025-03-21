@@ -23,17 +23,12 @@ const ArchivedStoryView = () => {
     const fetchStory = async () => {
       try {
         setLoading(true);
-        console.log("Fetching archived story with ID:", id);
-
         const token = localStorage.getItem("token");
-        // Use the original endpoint that's already implemented on the server
-        const response = await axios.get(`/api/stories/archived/${id}`, {
+        const response = await axios.get(`/api/archived-stories/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-
-        console.log("Archived story response:", response.data);
 
         if (!response.data.success) {
           throw new Error(response.data.message || "Failed to load story");
@@ -52,7 +47,6 @@ const ArchivedStoryView = () => {
         setStory(fetchedStory);
         setError(null);
       } catch (err) {
-        console.error("Error fetching archived story:", err);
         const errorMessage =
           err.response?.data?.message || err.message || "Failed to load story";
         setError(errorMessage);
@@ -93,17 +87,12 @@ const ArchivedStoryView = () => {
 
     try {
       setLoading(true);
-      console.log("Deleting archived story with ID:", id);
-
       const token = localStorage.getItem("token");
-      // Use the original endpoint that's already implemented on the server
-      const response = await axios.delete(`/api/stories/archived/${id}`, {
+      const response = await axios.delete(`/api/archived-stories/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
-      console.log("Delete response:", response.data);
 
       if (response.data.success) {
         toast.success("Story deleted successfully");
@@ -112,7 +101,6 @@ const ArchivedStoryView = () => {
         throw new Error(response.data.message || "Failed to delete story");
       }
     } catch (err) {
-      console.error("Error deleting story:", err);
       const errorMessage =
         err.response?.data?.message || err.message || "Failed to delete story";
       toast.error(errorMessage);

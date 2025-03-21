@@ -25,7 +25,7 @@ const StoryArchive = () => {
 
         // Use the original endpoint that's already implemented on the server
         const token = localStorage.getItem("token");
-        const response = await axios.get("/api/stories/archived", {
+        const response = await axios.get("/api/archived-stories", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -65,7 +65,7 @@ const StoryArchive = () => {
     try {
       const token = localStorage.getItem("token");
       // Use the original endpoint that's already implemented on the server
-      const response = await axios.delete(`/api/stories/archived/${id}`, {
+      const response = await axios.delete(`/api/archived-stories/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
