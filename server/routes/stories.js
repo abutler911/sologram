@@ -1,23 +1,29 @@
-// routes/stories.js
 const express = require("express");
 const router = express.Router();
-const { upload } = require("../config/cloudinary");
+const { upload, uploadMultiple } = require("../config/cloudinary");
 const {
   getStories,
   getStory,
   createStory,
+  getArchivedStories,
+  getArchivedStory,
   archiveStory,
   deleteStory,
 } = require("../controllers/stories");
-const { protect, authorize } = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
 
-// Public routes - anyone can view stories
 router.get("/", getStories);
+
 router.get("/:id", getStory);
 
-// Protected routes - requires authentication
-router.post("/", protect, upload.array("media", 10), createStory);
-router.delete("/:id", protect, deleteStory);
+router.post("/", protect, uploadMultiple.array("media", 20), createStory);
+
+router.get("/archived", protect, getArchivedStories);
+
+router.get("/archived/:id", protect, getArchivedStory);
+
 router.put("/:id/archive", protect, archiveStory);
+
+router.delete("/:id", protect, deleteStory);
 
 module.exports = router;
