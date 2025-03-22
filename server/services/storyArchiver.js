@@ -64,6 +64,17 @@ async function gracefulShutdown() {
   }
 }
 
+
+async function monitorExpiredStories() {
+  const expiredCount = await Story.countDocuments({
+    archived: false,
+    expiresAt: { $lt: new Date() }
+  });
+  
+  if (expiredCount > 0) {
+    console.log(`Found ${expiredCount} expired stories that need archiving`);
+  }
+}
 // Listen for shutdown signals
 process.on("SIGTERM", gracefulShutdown);
 process.on("SIGINT", gracefulShutdown);
