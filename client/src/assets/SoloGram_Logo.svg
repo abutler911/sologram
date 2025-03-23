@@ -1,0 +1,13 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with deeper orange -->
+  <rect x="10" y="10" width="180" height="180" rx="40" ry="40" fill="#F26B4F" />
+
+  <!-- Camera lens elements -->
+  <circle cx="100" cy="80" r="30" fill="white" opacity="0.2"/>
+  <circle cx="100" cy="80" r="20" fill="#ffffff"/>
+  <circle cx="100" cy="80" r="10" fill="#F26B4F" opacity="0.7"/>
+  <circle cx="140" cy="40" r="5" fill="white" opacity="0.6"/>
+
+  <!-- SoloGram text with large handwritten-style font -->
+  <text x="100" y="175" font-family="'Patrick Hand', 'Comic Sans MS', cursive" font-size="34" fill="#ffffff" text-anchor="middle">SoloGram</text>
+</svg>

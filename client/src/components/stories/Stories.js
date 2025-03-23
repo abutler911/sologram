@@ -509,14 +509,17 @@ const VideoIndicator = styled.div`
 
 
 const StoryTitle = styled.span`
-  font-size: 0.75rem;
+   font-size: 0.65rem;
   color: #ddd;
-  margin-top: 0.75rem;
+  margin: 0.5rem 0 0;
   text-align: center;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 80px;
+  white-space: normal; 
+  overflow: visible; 
+  word-wrap: break-word; 
+  display: -webkit-box; 
+  -webkit-line-clamp: 2; 
+  -webkit-box-orient: vertical;
 `;
 
 const StoryModal = styled.div`
