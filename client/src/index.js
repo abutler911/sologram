@@ -57,10 +57,11 @@ const GlobalStyle = createGlobalStyle`
   
   /* Adjust the floating action button position on mobile to account for bottom nav */
   @media (max-width: 767px) {
-    .FloatingActionButtonContainer {
-      bottom: 70px !important;
-    }
+  div[class^="FloatingActionButtonContainer"] {
+    bottom: 80px !important; /* Position above bottom nav */
+    z-index: 999; /* Ensure it's above other elements */
   }
+}
   
   /* Hide bottom nav when keyboard is visible */
   @media screen and (max-height: 450px) {
