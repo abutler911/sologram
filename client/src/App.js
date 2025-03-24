@@ -52,16 +52,6 @@ function App() {
 
         if (result) {
           console.log("OneSignal initialized successfully");
-
-          // ✅ Listen for subscription events
-          window.OneSignal?.on("subscriptionChange", (isSubscribed) => {
-            if (isSubscribed) {
-              toast.success("You're subscribed to notifications!");
-              OneSignal.getUserId().then((id) => {
-                console.log("Subscribed with OneSignal ID:", id);
-              });
-            }
-          });
         } else {
           console.warn("OneSignal initialization failed");
         }

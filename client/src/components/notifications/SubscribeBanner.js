@@ -12,6 +12,7 @@ const SubscribeBanner = () => {
 
     const checkSubscription = async () => {
       try {
+        await new Promise((res) => setTimeout(res, 1000));
         if (
           !OneSignal ||
           typeof OneSignal.isPushNotificationsEnabled !== "function"
