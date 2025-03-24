@@ -526,7 +526,7 @@ const CreatePostButton = styled(Link)`
 
 const FloatingActionButtonContainer = styled.div`
   position: fixed;
-  bottom: 2rem;
+  bottom: 6rem;
   right: 2rem;
   z-index: 100;
 `;
