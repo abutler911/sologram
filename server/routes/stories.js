@@ -10,20 +10,25 @@ const {
   archiveStory,
   deleteStory,
 } = require("../controllers/stories");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 
 router.get("/", getStories);
-
 router.get("/:id", getStory);
-
-router.post("/", protect, uploadMultiple.array("media", 20), createStory);
-
+router.post(
+  "/",
+  protect,
+  authorize(["admin", "creator"]),
+  uploadMultiple.array("media", 20),
+  createStory
+);
 router.get("/archived", protect, getArchivedStories);
-
 router.get("/archived/:id", protect, getArchivedStory);
-
-router.put("/:id/archive", protect, archiveStory);
-
-router.delete("/:id", protect, deleteStory);
+router.put(
+  "/:id/archive",
+  protect,
+  authorize(["admin", "creator"]),
+  archiveStory
+);
+router.delete("/:id", protect, authorize(["admin", "creator"]), deleteStory);
 
 module.exports = router;

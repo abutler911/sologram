@@ -6,8 +6,9 @@ const {
   getMe,
   updateProfile,
   updateBio,
+  promoteToCreator,
 } = require("../controllers/auth");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 
 router.post("/login", login);
 router.get("/me", protect, getMe);
@@ -18,5 +19,6 @@ router.put(
   updateProfile
 );
 router.put("/update-bio", protect, updateBio);
+router.put("/promote/:userId", protect, authorize("admin"), promoteToCreator);
 
 module.exports = router;

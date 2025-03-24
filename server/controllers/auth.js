@@ -2,19 +2,16 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const { cloudinary } = require("../config/cloudinary");
 
-// Generate JWT token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
 };
 
-// Register user
 exports.register = async (req, res) => {
   try {
     const { username, email, password, bio } = req.body;
 
-    // Check if user already exists
     const userExists = await User.findOne({
       $or: [{ email }, { username }],
     });
@@ -26,7 +23,6 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Create new user
     let userData = {
       username,
       email,
@@ -34,7 +30,6 @@ exports.register = async (req, res) => {
       bio: bio || "",
     };
 
-    // Handle profile image if uploaded
     if (req.file) {
       userData.profileImage = req.file.path;
       userData.cloudinaryId = req.file.filename;
@@ -42,7 +37,6 @@ exports.register = async (req, res) => {
 
     const user = await User.create(userData);
 
-    // Generate token
     const token = generateToken(user._id);
 
     res.status(201).json({
@@ -60,7 +54,6 @@ exports.register = async (req, res) => {
   } catch (err) {
     console.error(err);
 
-    // Handle validation errors
     if (err.name === "ValidationError") {
       return res.status(400).json({
         success: false,
@@ -77,12 +70,10 @@ exports.register = async (req, res) => {
   }
 };
 
-// Login user
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if user exists
     const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
@@ -92,7 +83,6 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Check if password matches
     const isMatch = await user.matchPassword(password);
 
     if (!isMatch) {
@@ -102,7 +92,6 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Generate token
     const token = generateToken(user._id);
 
     res.status(200).json({
@@ -126,7 +115,6 @@ exports.login = async (req, res) => {
   }
 };
 
-// Get current user
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -158,12 +146,10 @@ exports.getMe = async (req, res) => {
   }
 };
 
-// Update profile
 exports.updateProfile = async (req, res) => {
   try {
     const { username, email, bio } = req.body;
 
-    // Find user
     let user = await User.findById(req.user.id);
 
     if (!user) {
@@ -173,7 +159,6 @@ exports.updateProfile = async (req, res) => {
       });
     }
 
-    // Check if username is taken
     if (username && username !== user.username) {
       const usernameExists = await User.findOne({ username });
 
@@ -185,7 +170,6 @@ exports.updateProfile = async (req, res) => {
       }
     }
 
-    // Check if email is taken
     if (email && email !== user.email) {
       const emailExists = await User.findOne({ email });
 
@@ -197,9 +181,7 @@ exports.updateProfile = async (req, res) => {
       }
     }
 
-    // Update profile image if uploaded
     if (req.file) {
-      // Delete old image from Cloudinary if it exists
       if (user.cloudinaryId) {
         await cloudinary.uploader.destroy(user.cloudinaryId);
       }
@@ -208,12 +190,10 @@ exports.updateProfile = async (req, res) => {
       user.cloudinaryId = req.file.filename;
     }
 
-    // Update other fields
     user.username = username || user.username;
     user.email = email || user.email;
     user.bio = bio === undefined ? user.bio : bio;
 
-    // Save user
     await user.save();
 
     res.status(200).json({
@@ -230,7 +210,6 @@ exports.updateProfile = async (req, res) => {
   } catch (err) {
     console.error(err);
 
-    // Handle validation errors
     if (err.name === "ValidationError") {
       return res.status(400).json({
         success: false,
@@ -247,12 +226,10 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-// Update bio only
 exports.updateBio = async (req, res) => {
   try {
     const { bio } = req.body;
 
-    // Find user
     let user = await User.findById(req.user.id);
 
     if (!user) {
@@ -262,10 +239,8 @@ exports.updateBio = async (req, res) => {
       });
     }
 
-    // Update only the bio field
     user.bio = bio === undefined ? user.bio : bio;
 
-    // Save user
     await user.save();
 
     res.status(200).json({
@@ -282,7 +257,6 @@ exports.updateBio = async (req, res) => {
   } catch (err) {
     console.error("Bio update error:", err);
 
-    // Handle validation errors
     if (err.name === "ValidationError") {
       return res.status(400).json({
         success: false,
@@ -292,6 +266,40 @@ exports.updateBio = async (req, res) => {
       });
     }
 
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+exports.promoteToCreator = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    user.role = "creator";
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "User promoted to creator successfully",
+      data: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (err) {
+    console.error("Error promoting user:", err);
     res.status(500).json({
       success: false,
       message: "Server Error",
