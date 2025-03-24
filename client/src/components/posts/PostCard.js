@@ -159,7 +159,7 @@ const PostCard = ({ post: initialPost, onDelete }) => {
   };
 
   return (
-    <>
+    <CardWrapper>
       <Card>
         <CardHeader>
           <UserInfo>
@@ -319,7 +319,7 @@ const PostCard = ({ post: initialPost, onDelete }) => {
           <Backdrop onClick={cancelDelete} />
         </DeleteModal>
       )}
-    </>
+    </CardWrapper>
   );
 };
 
@@ -346,6 +346,19 @@ const scaleIn = keyframes`
   }
 `;
 
+// New wrapper component to handle mobile layout
+const CardWrapper = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+`;
+
 // Styled Components
 const Card = styled.article`
   background-color: #121212;
@@ -357,17 +370,14 @@ const Card = styled.article`
   flex-direction: column;
   width: 100%;
   max-width: 614px;
-  margin: 0 auto;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 
   @media (max-width: 768px) {
-    max-width: 100%;
-    width: 100vw;
-    margin-left: -16px;
-    margin-right: -16px;
+    width: 100%;
     border-radius: 0;
     border-left: none;
     border-right: none;
+    max-width: none;
   }
 `;
 
@@ -424,7 +434,7 @@ const ActionsButton = styled.button`
 
 const ActionsMenu = styled.div`
   position: absolute;
-  right: 16px;
+  right: 0;
   top: 40px;
   background-color: #262626;
   border-radius: 4px;
