@@ -283,10 +283,8 @@ const PostCard = ({ post: initialPost, onDelete }) => {
         </LikesCounter>
 
         <CardContent>
-          <CaptionContainer>
-            <UsernameLink to="/profile">{AUTHOR_NAME}</UsernameLink>
-            <Caption>{post.caption}</Caption>
-          </CaptionContainer>
+          {/* Post Title (Caption) is now bigger and bolder, without the author name */}
+          <PostTitle>{post.caption}</PostTitle>
 
           {post.content && <Content>{post.content}</Content>}
 
@@ -643,26 +641,13 @@ const CardContent = styled.div`
   flex-direction: column;
 `;
 
-const CaptionContainer = styled.div`
-  display: flex;
-  margin-bottom: 8px;
-`;
-
-const UsernameLink = styled(Link)`
-  font-weight: 600;
+// New styled component for the post title
+const PostTitle = styled.h2`
+  font-size: 1.25rem;
+  font-weight: 700;
   color: #ffffff;
-  text-decoration: none;
-  margin-right: 8px;
-  font-size: 0.875rem;
-
-  &:hover {
-    text-decoration: underline;
-  }
-`;
-
-const Caption = styled.span`
-  color: #ffffff;
-  font-size: 0.875rem;
+  margin: 0 0 12px 0;
+  line-height: 1.3;
   word-break: break-word;
 `;
 
