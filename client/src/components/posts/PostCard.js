@@ -167,7 +167,7 @@ const PostCard = ({ post: initialPost, onDelete }) => {
             <Username>{AUTHOR_NAME}</Username>
           </UserInfo>
           {isAuthenticated && (
-            <div ref={actionsRef}>
+            <ActionsContainer ref={actionsRef}>
               <ActionsButton onClick={() => setShowActions(!showActions)}>
                 <FaEllipsisH />
               </ActionsButton>
@@ -181,7 +181,7 @@ const PostCard = ({ post: initialPost, onDelete }) => {
                   </ActionItem>
                 </ActionsMenu>
               )}
-            </div>
+            </ActionsContainer>
           )}
         </CardHeader>
 
@@ -374,6 +374,10 @@ const UserInfo = styled.div`
   align-items: center;
 `;
 
+const ActionsContainer = styled.div`
+  position: relative;
+`;
+
 const UserAvatar = styled.div`
   width: 32px;
   height: 32px;
@@ -410,7 +414,7 @@ const ActionsButton = styled.button`
 
 const ActionsMenu = styled.div`
   position: absolute;
-  right: 0;
+  right: 16px;
   top: 40px;
   background-color: #262626;
   border-radius: 4px;
