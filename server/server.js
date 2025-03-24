@@ -4,23 +4,31 @@ const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const path = require("path");
-const { setupAgenda, gracefulShutdown: agendaShutdown } = require("./services/storyArchiver");
+const {
+  setupAgenda,
+  gracefulShutdown: agendaShutdown,
+} = require("./services/storyArchiver");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+app.use(express.json({ limit: "100mb" }));
+app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://thesologram.com', 'https://www.thesologram.com'] 
-    : 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  origin:
+    process.env.NODE_ENV === "production"
+      ? [
+          "https://thesologram.com",
+          "https://www.thesologram.com",
+          "https://sologram.onrender.com",
+        ]
+      : ["http://localhost:3000"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
-  maxAge: 86400 
+  maxAge: 86400, // 24 hours
 };
 
 app.use(cors(corsOptions));
@@ -51,20 +59,23 @@ async function startServer() {
     if (!mongoURI) {
       throw new Error("MongoDB connection string is not defined");
     }
-    
+
     // Connect to MongoDB
     await mongoose.connect(mongoURI);
     console.log("MongoDB connected successfully");
-    
+
     // Initialize the Story archiving scheduler using Agenda
     try {
       await setupAgenda();
       console.log("Story archiving service initialized successfully");
     } catch (agendaError) {
-      console.error("Warning: Story archiving service setup failed:", agendaError);
+      console.error(
+        "Warning: Story archiving service setup failed:",
+        agendaError
+      );
       // Continue server startup even if agenda fails
     }
-    
+
     // Import routes
     const postRoutes = require("./routes/posts");
     const authRoutes = require("./routes/auth");
@@ -73,14 +84,14 @@ async function startServer() {
     const archivedStoryRoutes = require("./routes/archivedStories");
     const subscriberRoutes = require("./routes/subscribers");
     const notificationRoutes = require("./routes/notifications");
-    
+
     // Route validation middleware - helps catch route conflicts
     app.use((req, res, next) => {
       const originalUrl = req.originalUrl;
       console.log(`Request received: ${req.method} ${originalUrl}`);
       next();
     });
-    
+
     // Use routes - order matters for nested routes!
     app.use("/api/auth", authRoutes);
     app.use("/api/posts", postRoutes);
@@ -89,7 +100,7 @@ async function startServer() {
     app.use("/api/archived-stories", archivedStoryRoutes);
     app.use("/api/subscribers", subscriberRoutes);
     app.use("/api/notifications", notificationRoutes);
-    
+
     // Add a health check endpoint
     app.get("/api/health", (req, res) => {
       res.status(200).json({
@@ -98,7 +109,7 @@ async function startServer() {
         timestamp: new Date(),
       });
     });
-    
+
     // Static files for production
     if (process.env.NODE_ENV === "production") {
       app.use(express.static(path.join(__dirname, "../client/build")));
@@ -106,10 +117,10 @@ async function startServer() {
         res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
       });
     }
-    
+
     // Apply global error handler
     app.use(globalErrorHandler);
-    
+
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
@@ -132,13 +143,13 @@ const gracefulShutdown = async () => {
     } catch (agendaError) {
       console.error("Error shutting down Agenda:", agendaError);
     }
-    
+
     // Close MongoDB connection
     await mongoose.connection.close();
     console.log("MongoDB connection closed");
-    
+
     // Other cleanup tasks can be added here
-    
+
     console.log("All connections closed successfully");
     process.exit(0);
   } catch (err) {

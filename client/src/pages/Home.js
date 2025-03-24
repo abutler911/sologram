@@ -1,17 +1,20 @@
-import React, { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import {
-  FaCamera,
-  FaFolder,
-  FaImages,
-  FaBookOpen,
-} from "react-icons/fa";
+import { FaCamera, FaFolder, FaImages, FaBookOpen } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import Stories from "../components/stories/Stories";
 import PostCard from "../components/posts/PostCard";
-import logoSrc from '../assets/SoloGram_Logo.svg';
+import api from "../utils/api";
+import logoSrc from "../assets/SoloGram_Logo.svg";
 
 const Home = forwardRef((props, ref) => {
   const [posts, setPosts] = useState([]);
@@ -30,7 +33,7 @@ const Home = forwardRef((props, ref) => {
 
   useImperativeHandle(ref, () => ({
     handleHeaderSearch: (query) => handleSearch(query),
-    clearSearch: () => clearSearch()
+    clearSearch: () => clearSearch(),
   }));
 
   useEffect(() => {
@@ -60,27 +63,27 @@ const Home = forwardRef((props, ref) => {
 
   useEffect(() => {
     if (!posts.length) return;
-    
+
     const lazyVideos = document.querySelectorAll("video[data-src]");
     if (!lazyVideos.length) return;
-    
+
     const videoObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const video = entry.target;
-            
+
             if (video.dataset.src && !video.src) {
               video.src = video.dataset.src;
-              
+
               const sources = video.querySelectorAll("source[data-src]");
               sources.forEach((source) => {
                 source.src = source.dataset.src;
               });
-              
+
               video.load();
             }
-            
+
             videoObserver.unobserve(video);
           }
         });
@@ -90,9 +93,9 @@ const Home = forwardRef((props, ref) => {
         threshold: 0.1,
       }
     );
-    
+
     lazyVideos.forEach((video) => videoObserver.observe(video));
-    
+
     return () => {
       videoObserver.disconnect();
     };
@@ -150,7 +153,7 @@ const Home = forwardRef((props, ref) => {
     if (!searching) {
       fetchPosts();
     }
-    
+
     return () => {
       isMounted = false;
     };
@@ -160,9 +163,9 @@ const Home = forwardRef((props, ref) => {
     if (!query.trim()) {
       return clearSearch();
     }
-    
+
     setSearchQuery(query);
-    
+
     try {
       setSearching(true);
       setLoading(true);
@@ -358,7 +361,7 @@ const SearchResultsIndicator = styled.div`
   margin-bottom: 1rem;
   flex-wrap: wrap;
   gap: 0.5rem;
-  
+
   @media (max-width: 640px) {
     flex-direction: column;
     align-items: flex-start;
@@ -536,11 +539,11 @@ const CollectionName = styled.h3`
   margin: 0.5rem 0 0;
   text-align: center;
   max-width: 80px;
-  white-space: normal; 
-  overflow: visible; 
-  word-wrap: break-word; 
-  display: -webkit-box; 
-  -webkit-line-clamp: 2; 
+  white-space: normal;
+  overflow: visible;
+  word-wrap: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 `;
 
