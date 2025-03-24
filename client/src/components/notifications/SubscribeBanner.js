@@ -13,7 +13,7 @@ const SubscribeBanner = () => {
       try {
         // Wait for OneSignal to fully load
         const waitForOneSignal = async () => {
-          for (let i = 0; i < 10; i++) {
+          for (let i = 0; i < 30; i++) {
             if (typeof OneSignal?.isPushNotificationsEnabled === "function") {
               return true;
             }

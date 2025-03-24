@@ -43,7 +43,6 @@ function App() {
   const [oneSignalInitialized, setOneSignalInitialized] = useState(false);
   const homeRef = useRef(null);
 
-  // ✅ Initialize OneSignal on app mount
   useEffect(() => {
     const setupOneSignal = async () => {
       try {
@@ -63,7 +62,6 @@ function App() {
     setupOneSignal();
   }, []);
 
-  // ✅ Monitor network status for offline toast
   useEffect(() => {
     const handleOnline = () => setNetworkStatus(true);
     const handleOffline = () => setNetworkStatus(false);
