@@ -1,15 +1,17 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import {
   FaHeart,
-  FaEdit,
-  FaTrash,
-  FaCalendarAlt, // Changed from FaClock to FaCalendarAlt
+  FaRegHeart,
+  FaEllipsisH,
   FaChevronLeft,
   FaChevronRight,
+  FaEdit,
+  FaTrash,
+  FaCalendarAlt,
 } from "react-icons/fa";
-import { format } from "date-fns"; // Changed from formatDistance to format
+import { format } from "date-fns";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
@@ -17,15 +19,33 @@ import { AuthContext } from "../../context/AuthContext";
 
 const PostCard = ({ post: initialPost, onDelete }) => {
   const [post, setPost] = useState(initialPost);
-  const { isAuthenticated } = useContext(AuthContext);
+  const { user, isAuthenticated } = useContext(AuthContext);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const hasMultipleMedia = post.media && post.media.length > 1;
+  const [showActions, setShowActions] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [hasLiked, setHasLiked] = useState(false);
+  const [isDoubleTapLiking, setIsDoubleTapLiking] = useState(false);
+  const actionsRef = useRef(null);
+
+  const hasMultipleMedia = post.media && post.media.length > 1;
 
   // Format date as MMM d, yyyy (e.g., "Mar 15, 2025")
   const formattedDate = format(new Date(post.createdAt), "MMM d, yyyy");
+
+  // Close the actions menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (actionsRef.current && !actionsRef.current.contains(event.target)) {
+        setShowActions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleLike = async () => {
     // Prevent multiple clicks or if already liked
@@ -37,29 +57,39 @@ const PostCard = ({ post: initialPost, onDelete }) => {
       const response = await axios.put(`/api/posts/${post._id}/like`);
       if (response.data.success) {
         setPost({ ...post, likes: post.likes + 1 });
-        setHasLiked(true); // Mark as liked to prevent further clicks
-        // We don't need to reset isLiking since hasLiked will keep it disabled
+        setHasLiked(true);
       }
     } catch (err) {
       console.error("Error liking post:", err);
 
-      // Check if the error is because they already liked the post
       if (
         err.response?.status === 400 &&
         err.response?.data?.message?.includes("already liked")
       ) {
-        setHasLiked(true); // Prevent further clicks
+        setHasLiked(true);
         toast.error(err.response.data.message);
       } else {
         toast.error("Failed to like post");
-        // Only reset isLiking after a delay to prevent rapid retries
         setTimeout(() => setIsLiking(false), 2000);
       }
     }
   };
 
+  const handleDoubleTapLike = () => {
+    if (!hasLiked && !isLiking) {
+      setIsDoubleTapLiking(true);
+      handleLike();
+
+      // Reset animation after it completes
+      setTimeout(() => {
+        setIsDoubleTapLiking(false);
+      }, 1000);
+    }
+  };
+
   const confirmDelete = () => {
     setShowDeleteModal(true);
+    setShowActions(false);
   };
 
   const cancelDelete = () => {
@@ -68,18 +98,14 @@ const PostCard = ({ post: initialPost, onDelete }) => {
 
   const handleDelete = async () => {
     try {
-      console.log("Deleting post with ID:", post._id);
-
       await axios.delete(`/api/posts/${post._id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
 
-      console.log("Post deleted successfully!");
-
       if (typeof onDelete === "function") {
-        onDelete(post._id); // Call parent function to update UI
+        onDelete(post._id);
       } else {
         console.warn("onDelete is not a function. Check parent component.");
       }
@@ -90,7 +116,6 @@ const PostCard = ({ post: initialPost, onDelete }) => {
       console.error("Error deleting post:", err);
 
       if (err.response) {
-        console.error("Server response:", err.response.data);
         toast.error(err.response.data.message || "Failed to delete post");
       } else {
         toast.error("Failed to delete post");
@@ -101,14 +126,14 @@ const PostCard = ({ post: initialPost, onDelete }) => {
   };
 
   const handleNext = (e) => {
-    if (e) e.preventDefault(); // Prevent navigation to post detail
+    if (e) e.preventDefault();
     if (currentMediaIndex < post.media.length - 1) {
       setCurrentMediaIndex(currentMediaIndex + 1);
     }
   };
 
   const handlePrev = (e) => {
-    if (e) e.preventDefault(); // Prevent navigation to post detail
+    if (e) e.preventDefault();
     if (currentMediaIndex > 0) {
       setCurrentMediaIndex(currentMediaIndex - 1);
     }
@@ -124,8 +149,6 @@ const PostCard = ({ post: initialPost, onDelete }) => {
   });
 
   const handleMediaClick = (e) => {
-    // Only prevent default if we have multiple media
-    // Otherwise, allow navigation to post detail
     if (hasMultipleMedia) {
       e.preventDefault();
     }
@@ -134,8 +157,36 @@ const PostCard = ({ post: initialPost, onDelete }) => {
   return (
     <>
       <Card>
+        <CardHeader>
+          <UserInfo>
+            <UserAvatar>{user?.username?.charAt(0) || "S"}</UserAvatar>
+            <Username>SoloGram</Username>
+          </UserInfo>
+          {isAuthenticated && (
+            <div ref={actionsRef}>
+              <ActionsButton onClick={() => setShowActions(!showActions)}>
+                <FaEllipsisH />
+              </ActionsButton>
+              {showActions && (
+                <ActionsMenu>
+                  <ActionItem as={Link} to={`/edit/${post._id}`}>
+                    <FaEdit /> Edit Post
+                  </ActionItem>
+                  <ActionItem onClick={confirmDelete}>
+                    <FaTrash /> Delete Post
+                  </ActionItem>
+                </ActionsMenu>
+              )}
+            </div>
+          )}
+        </CardHeader>
+
         {post.media && post.media.length > 0 && (
-          <MediaContainer to={`/post/${post._id}`} onClick={handleMediaClick}>
+          <MediaContainer
+            to={`/post/${post._id}`}
+            onClick={handleMediaClick}
+            onDoubleClick={handleDoubleTapLike}
+          >
             <MediaCarousel {...swipeHandlers}>
               <MediaTrack
                 style={{
@@ -145,9 +196,17 @@ const PostCard = ({ post: initialPost, onDelete }) => {
                 {post.media.map((media, index) => (
                   <MediaItem key={index}>
                     {media.mediaType === "image" ? (
-                      <PostImage src={media.mediaUrl} alt={post.caption} />
+                      <PostImage
+                        src={media.mediaUrl}
+                        alt={post.caption}
+                        loading="lazy"
+                      />
                     ) : (
-                      <PostVideo src={media.mediaUrl} controls />
+                      <PostVideo
+                        src={media.mediaUrl}
+                        controls
+                        preload="metadata"
+                      />
                     )}
                   </MediaItem>
                 ))}
@@ -184,19 +243,45 @@ const PostCard = ({ post: initialPost, onDelete }) => {
                 </IndicatorDots>
               </>
             )}
+
+            {isDoubleTapLiking && (
+              <HeartAnimation>
+                <FaHeart />
+              </HeartAnimation>
+            )}
           </MediaContainer>
         )}
 
-        <CardContent>
-          <Caption to={`/post/${post._id}`}>{post.caption}</Caption>
+        <CardActions>
+          <ActionGroup>
+            <LikeButton
+              onClick={handleLike}
+              disabled={isLiking || hasLiked}
+              liked={hasLiked}
+              aria-label={hasLiked ? "Post liked" : "Like post"}
+            >
+              {hasLiked ? <FaHeart /> : <FaRegHeart />}
+            </LikeButton>
+            <DateDisplay>
+              <FaCalendarAlt />
+              <span>{formattedDate}</span>
+            </DateDisplay>
+          </ActionGroup>
+        </CardActions>
 
-          {post.content && (
-            <Content>
-              {post.content.length > 150
-                ? `${post.content.substring(0, 150)}...`
-                : post.content}
-            </Content>
-          )}
+        <LikesCounter>
+          <strong>
+            {post.likes} {post.likes === 1 ? "like" : "likes"}
+          </strong>
+        </LikesCounter>
+
+        <CardContent>
+          <CaptionContainer>
+            <UsernameLink to="/profile">SoloGram</UsernameLink>
+            <Caption>{post.caption}</Caption>
+          </CaptionContainer>
+
+          {post.content && <Content>{post.content}</Content>}
 
           {post.tags && post.tags.length > 0 && (
             <TagsContainer>
@@ -206,35 +291,7 @@ const PostCard = ({ post: initialPost, onDelete }) => {
             </TagsContainer>
           )}
 
-          <CardFooter>
-            <MetaData>
-              <TimeStamp>
-                <FaCalendarAlt />
-                <span>{formattedDate}</span>
-              </TimeStamp>
-
-              <LikesCount
-                onClick={handleLike}
-                disabled={isLiking || hasLiked}
-                liked={hasLiked}
-              >
-                <FaHeart />
-                <span>{post.likes}</span>
-              </LikesCount>
-            </MetaData>
-
-            {isAuthenticated && (
-              <Actions>
-                <EditButton to={`/edit/${post._id}`}>
-                  <FaEdit />
-                </EditButton>
-
-                <DeleteButton onClick={confirmDelete}>
-                  <FaTrash />
-                </DeleteButton>
-              </Actions>
-            )}
-          </CardFooter>
+          <ViewPostLink to={`/post/${post._id}`}>View post</ViewPostLink>
         </CardContent>
       </Card>
 
@@ -261,53 +318,137 @@ const PostCard = ({ post: initialPost, onDelete }) => {
   );
 };
 
+// Animation keyframes
+const scaleIn = keyframes`
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  15% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  30% {
+    transform: scale(0.95);
+  }
+  45%, 80% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+`;
+
 // Styled Components
-const Card = styled.div`
-  background-color: #1e1e1e;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+const Card = styled.article`
+  background-color: #121212;
+  border-radius: 3px;
+  border: 1px solid #262626;
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
-  height: 100%; /* Take full height of grid cell */
-  width: 100%; /* Ensure full width */
-
-  /* Ensure proper rendering in PWA and mobile environments */
-  max-width: 100vw;
-  box-sizing: border-box;
+  width: 100%;
+  max-width: 614px;
   margin: 0 auto;
+`;
 
-  /* On small mobile screens, increase width to fill more screen space */
-  @media (max-width: 480px) {
-    width: 100%;
-    border-radius: 6px; /* Slightly smaller border radius on small screens */
-  }
+const CardHeader = styled.header`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #262626;
+`;
 
-  /* For PWA specifically - this helps address possible viewport issues */
-  @media screen and (display-mode: standalone) {
-    width: 96vw; /* Use viewport width units for PWA mode */
-    max-width: 600px; /* Cap maximum width */
-    margin: 0 auto;
-  }
+const UserInfo = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const UserAvatar = styled.div`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #ff7e5f;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-right: 12px;
+`;
+
+const Username = styled.span`
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 0.875rem;
+`;
+
+const ActionsButton = styled.button`
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    background-color: #262626;
+  }
+`;
+
+const ActionsMenu = styled.div`
+  position: absolute;
+  right: 0;
+  top: 40px;
+  background-color: #262626;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  overflow: hidden;
+  width: 180px;
+`;
+
+const ActionItem = styled.button`
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  color: #ffffff;
+  text-align: left;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+
+  &:hover {
+    background-color: #363636;
+  }
+
+  svg {
+    margin-right: 12px;
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid #363636;
   }
 `;
 
 const MediaContainer = styled(Link)`
-  display: block;
-  width: 100%;
   position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  display: block;
   overflow: hidden;
-  aspect-ratio: 1 / 1; /* Square aspect ratio like Instagram */
-  flex-shrink: 0; /* Prevent the media container from shrinking */
-  background-color: #121212; /* Dark background for loading state */
+  background-color: #000000;
+  flex-shrink: 0;
 `;
 
-// Carousel Components
 const MediaCarousel = styled.div`
   position: relative;
   width: 100%;
@@ -319,7 +460,7 @@ const MediaTrack = styled.div`
   display: flex;
   height: 100%;
   width: 100%;
-  transition: transform 0.3s ease-out;
+  transition: transform 0.3s ease;
 `;
 
 const MediaItem = styled.div`
@@ -329,11 +470,24 @@ const MediaItem = styled.div`
   position: relative;
 `;
 
+const PostImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const PostVideo = styled.video`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
 const NavigationArrow = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
   border: none;
   border-radius: 50%;
   width: 30px;
@@ -346,46 +500,38 @@ const NavigationArrow = styled.button`
   transition: opacity 0.2s;
   z-index: 2;
 
-  ${Card}:hover & {
-    opacity: 0.8;
+  &:hover {
+    opacity: 0.9 !important;
+    background-color: rgba(0, 0, 0, 0.7);
   }
 
-  &:hover {
-    opacity: 1 !important;
+  ${Card}:hover & {
+    opacity: 0.7;
   }
 
   &.prev {
-    left: 10px;
+    left: 16px;
   }
 
   &.next {
-    right: 10px;
+    right: 16px;
   }
 
   &:disabled {
     opacity: 0.3;
-    cursor: default;
+    cursor: not-allowed;
   }
 
-  /* Make arrows more visible and touchable on mobile */
   @media (max-width: 768px) {
+    opacity: 0.7;
     width: 36px;
     height: 36px;
-    opacity: 0.7; /* Always show on mobile */
-
-    &.prev {
-      left: 8px;
-    }
-
-    &.next {
-      right: 8px;
-    }
   }
 `;
 
 const IndicatorDots = styled.div`
   position: absolute;
-  bottom: 10px;
+  bottom: 16px;
   left: 0;
   right: 0;
   display: flex;
@@ -395,229 +541,153 @@ const IndicatorDots = styled.div`
 `;
 
 const Dot = styled.button`
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? "#ff7e5f" : "rgba(255, 255, 255, 0.7)"};
+    props.active ? "#ffffff" : "rgba(255, 255, 255, 0.4)"};
   border: none;
   cursor: pointer;
   padding: 0;
+  transition: all 0.2s ease;
 
-  /* Larger dots on mobile for better touch targets */
   @media (max-width: 768px) {
-    width: 10px;
-    height: 10px;
-    margin: 0 3px;
+    width: 8px;
+    height: 8px;
   }
 `;
 
-const PostImage = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* This crops the image to fill the container */
+const HeartAnimation = styled.div`
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-size: 80px;
+  opacity: 0;
+  animation: ${scaleIn} 1s ease forwards;
+  z-index: 3;
+
+  svg {
+    filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+  }
 `;
 
-const PostVideo = styled.video`
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* This crops the video to fill the container */
-  position: absolute;
-  top: 0;
-  left: 0;
+const CardActions = styled.div`
+  padding: 8px 16px;
+  border-bottom: 1px solid #262626;
+`;
+
+const ActionGroup = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+const LikeButton = styled.button`
+  background: none;
+  border: none;
+  color: ${(props) => (props.liked ? "#ed4956" : "#ffffff")};
+  font-size: 1.5rem;
+  cursor: ${(props) =>
+    props.disabled && !props.liked ? "default" : "pointer"};
+  padding: 8px;
+  margin-left: -8px;
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: ${(props) =>
+      !props.disabled || props.liked ? "scale(1.1)" : "none"};
+  }
+
+  &:active {
+    transform: ${(props) =>
+      !props.disabled || props.liked ? "scale(0.9)" : "none"};
+  }
+`;
+
+const DateDisplay = styled.div`
+  display: flex;
+  align-items: center;
+  color: #a8a8a8;
+  font-size: 0.75rem;
+
+  svg {
+    margin-right: 4px;
+    font-size: 0.75rem;
+  }
+`;
+
+const LikesCounter = styled.div`
+  padding: 0 16px;
+  margin-top: 8px;
+  font-size: 0.875rem;
+  color: #ffffff;
 `;
 
 const CardContent = styled.div`
-  padding: 1.25rem;
-  flex-grow: 1; /* Allow content to grow but maintain consistent card heights */
+  padding: 8px 16px 16px;
   display: flex;
   flex-direction: column;
+`;
 
-  /* Adjust padding on mobile */
-  @media (max-width: 480px) {
-    padding: 1rem;
+const CaptionContainer = styled.div`
+  display: flex;
+  margin-bottom: 8px;
+`;
+
+const UsernameLink = styled(Link)`
+  font-weight: 600;
+  color: #ffffff;
+  text-decoration: none;
+  margin-right: 8px;
+  font-size: 0.875rem;
+
+  &:hover {
+    text-decoration: underline;
   }
 `;
 
-const Caption = styled(Link)`
-  display: block;
-  font-weight: 700;
-  font-size: 1.25rem;
-  margin-bottom: 0.75rem;
+const Caption = styled.span`
   color: #ffffff;
-  text-decoration: none;
-
-  &:hover {
-    color: #ff7e5f;
-  }
-
-  /* Set max-height and handle overflow for consistent height */
-  max-height: 3.75rem; /* Approximately 2 lines */
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-
-  /* Slightly smaller font on very small screens */
-  @media (max-width: 360px) {
-    font-size: 1.125rem;
-  }
+  font-size: 0.875rem;
+  word-break: break-word;
 `;
 
 const Content = styled.p`
-  color: #aaaaaa;
-  margin-bottom: 1rem;
-  line-height: 1.5;
-
-  /* Set max-height and handle overflow for consistent height */
-  max-height: 4.5rem; /* Approximately 3 lines */
+  color: #a8a8a8;
+  font-size: 0.875rem;
+  margin: 8px 0;
+  word-break: break-word;
   overflow: hidden;
+  text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 `;
 
 const TagsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
-  margin-bottom: 1rem;
-  overflow: hidden;
-  max-height: 2.5rem; /* Limit the visible tags */
+  gap: 8px;
+  margin: 8px 0;
 `;
 
 const Tag = styled.span`
-  background-color: #333333;
-  color: #aaaaaa;
-  padding: 0.25rem 0.5rem;
-  border-radius: 16px;
+  color: #0095f6;
   font-size: 0.875rem;
-  margin-right: 0.5rem;
-  margin-bottom: 0.5rem;
 `;
 
-const CardFooter = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-top: 1px solid #333333;
-  padding-top: 1rem;
-  margin-top: auto; /* Push the footer to the bottom of the card */
-
-  /* Additional spacing on small screens */
-  @media (max-width: 480px) {
-    padding-top: 0.75rem;
-  }
-`;
-
-const MetaData = styled.div`
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap; /* Allow wrapping on very small screens */
-
-  /* More space on very small screens */
-  @media (max-width: 360px) {
-    margin-right: 0.5rem;
-  }
-`;
-
-const TimeStamp = styled.div`
-  display: flex;
-  align-items: center;
-  color: #888888;
-  font-size: 0.875rem;
-  margin-right: 1rem;
-
-  svg {
-    margin-right: 0.25rem;
-  }
-
-  /* Adjustments for mobile */
-  @media (max-width: 480px) {
-    font-size: 0.8125rem;
-    margin-right: 0.75rem;
-  }
-`;
-
-const LikesCount = styled.button`
-  display: flex;
-  align-items: center;
-  background: none;
-  border: none;
-  color: ${(props) => (props.liked ? "#ff5e3a" : "#ff7e5f")};
-  font-size: 0.875rem;
-  cursor: ${(props) => (props.disabled ? "default" : "pointer")};
-  transition: color 0.2s ease;
-  padding: 0;
-  opacity: ${(props) => (props.disabled && !props.liked ? 0.7 : 1)};
+const ViewPostLink = styled(Link)`
+  color: #a8a8a8;
+  font-size: 0.75rem;
+  margin-top: 8px;
+  text-decoration: none;
 
   &:hover {
-    color: ${(props) => (!props.disabled ? "#ff5e3a" : "")};
-  }
-
-  svg {
-    margin-right: 0.25rem;
-    ${(props) => (props.liked ? "fill: #ff5e3a;" : "")}
-  }
-
-  /* Ensure good touch target size on mobile */
-  @media (max-width: 480px) {
-    font-size: 0.8125rem;
-    min-height: 1.5rem;
-    display: flex;
-    align-items: center;
-  }
-`;
-
-const Actions = styled.div`
-  display: flex;
-  align-items: center; /* Ensure vertical alignment */
-  margin-left: 0.5rem; /* Provide some separation from metadata */
-`;
-
-const EditButton = styled(Link)`
-  color: #4a90e2;
-  transition: color 0.3s ease;
-  padding: 0.25rem 0.5rem; /* Add padding for larger touch target */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-
-  /* Increase spacing between buttons */
-  margin-right: 0.75rem;
-
-  &:hover {
-    color: #3a70b2;
-  }
-
-  /* Adjustments for mobile */
-  @media (max-width: 480px) {
-    padding: 0.3rem 0.6rem;
-  }
-`;
-
-const DeleteButton = styled.button`
-  color: #e74c3c;
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: color 0.3s ease;
-  padding: 0.25rem 0.5rem; /* Add padding for larger touch target */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-
-  &:hover {
-    color: #c0392b;
-  }
-
-  /* Adjustments for mobile */
-  @media (max-width: 480px) {
-    padding: 0.3rem 0.6rem;
+    text-decoration: underline;
   }
 `;
 
@@ -634,76 +704,63 @@ const DeleteModal = styled.div`
 `;
 
 const DeleteModalContent = styled.div`
-  background-color: #1e1e1e;
+  background-color: #262626;
   border-radius: 8px;
-  padding: 2rem;
+  padding: 24px;
   width: 90%;
-  max-width: 500px;
+  max-width: 400px;
   z-index: 1001;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  text-align: center;
 
   h3 {
     color: #ffffff;
     margin-top: 0;
-    margin-bottom: 1rem;
+    margin-bottom: 16px;
+    font-weight: 600;
   }
 
   p {
-    color: #dddddd;
-    margin-bottom: 1.5rem;
-  }
-
-  /* Adjustments for mobile */
-  @media (max-width: 480px) {
-    padding: 1.5rem;
-    width: 85%;
+    color: #a8a8a8;
+    margin-bottom: 24px;
   }
 `;
 
 const DeleteModalButtons = styled.div`
   display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-
-  @media (max-width: 480px) {
-    flex-direction: column;
-  }
+  flex-direction: column;
+  gap: 8px;
 `;
 
 const CancelButton = styled.button`
-  background-color: #333333;
-  color: #dddddd;
+  background: none;
+  color: #0095f6;
   border: none;
   border-radius: 4px;
-  padding: 0.75rem 1rem;
+  padding: 12px;
+  font-weight: 600;
   cursor: pointer;
   transition: background-color 0.3s;
+  width: 100%;
 
   &:hover {
-    background-color: #444444;
-  }
-
-  @media (max-width: 480px) {
-    order: 2;
+    background-color: rgba(0, 149, 246, 0.1);
   }
 `;
 
 const ConfirmDeleteButton = styled.button`
-  background-color: #e74c3c;
-  color: white;
+  background: none;
+  color: #ed4956;
   border: none;
   border-radius: 4px;
-  padding: 0.75rem 1rem;
+  padding: 12px;
+  font-weight: 600;
   cursor: pointer;
   transition: background-color 0.3s;
+  width: 100%;
+  border-top: 1px solid #363636;
 
   &:hover {
-    background-color: #c0392b;
-  }
-
-  @media (max-width: 480px) {
-    order: 1;
-    margin-bottom: 0.5rem;
+    background-color: rgba(237, 73, 86, 0.1);
   }
 `;
 
@@ -713,7 +770,7 @@ const Backdrop = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.65);
   z-index: 1000;
 `;
 
