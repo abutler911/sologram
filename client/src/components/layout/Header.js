@@ -99,11 +99,7 @@ const Header = ({ onSearch, onClearSearch }) => {
             </div>
             <div className="tagline">One Voice. Infinite Moments.</div>
           </Logo>
-          {isAuthenticated && (
-            <MobileLogoutButton onClick={handleLogout}>
-              <FaSignOutAlt />
-            </MobileLogoutButton>
-          )}
+
           {location.pathname === "/" && (
             <SearchContainer expanded={searchExpanded}>
               <SearchIconButton
@@ -138,9 +134,16 @@ const Header = ({ onSearch, onClearSearch }) => {
             </SearchContainer>
           )}
 
-          <MobileMenuIcon onClick={toggleMenu}>
-            {isMenuOpen ? <FaTimes /> : <FaBars />}
-          </MobileMenuIcon>
+          {/* Add mobile sign-in button when not authenticated */}
+          {!isAuthenticated ? (
+            <MobileAuthButton to="/login">
+              <FaSignInAlt />
+            </MobileAuthButton>
+          ) : (
+            <MobileLogoutButton onClick={handleLogout}>
+              <FaSignOutAlt />
+            </MobileLogoutButton>
+          )}
 
           <Navigation className={isMenuOpen ? "active" : ""}>
             {isAuthenticated ? (
@@ -257,6 +260,8 @@ const Header = ({ onSearch, onClearSearch }) => {
   );
 };
 
+// Styled Components (most remain the same)
+
 const HeaderWrapper = styled.div`
   position: sticky;
   top: 0;
@@ -313,12 +318,36 @@ const Logo = styled(Link)`
 
   @media (max-width: 767px) {
     .logo-main {
-      font-size: 1.5rem;
+      font-size: 1.2rem;
     }
 
     svg {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
     }
+
+    .tagline {
+      font-size: 0.6rem;
+    }
+  }
+`;
+
+const MobileAuthButton = styled(Link)`
+  display: none; /* Hidden by default */
+  background: none;
+  border: none;
+  color: #4a4a4a;
+  font-size: 1.25rem;
+  padding: 0.5rem;
+  margin-left: auto;
+
+  &:hover {
+    color: #ff7e5f;
+  }
+
+  @media (max-width: 767px) {
+    display: flex; /* Only show on mobile */
+    align-items: center;
+    justify-content: center;
   }
 `;
 
@@ -353,9 +382,9 @@ const SearchContainer = styled.div`
 
   @media (max-width: 767px) {
     margin-right: 0.5rem;
-    margin-left: auto;
+    margin-left: 0;
     position: ${(props) => (props.expanded ? "absolute" : "relative")};
-    right: ${(props) => (props.expanded ? "1rem" : "auto")};
+    right: ${(props) => (props.expanded ? "3.5rem" : "auto")};
     left: ${(props) => (props.expanded ? "1rem" : "auto")};
   }
 `;
@@ -449,7 +478,9 @@ const SearchSubmit = styled.button`
 `;
 
 const MobileMenuIcon = styled.div`
-  display: none; /* Hide the hamburger menu since we have bottom nav */
+  display: none; /* Hide the hamburger menu on mobile since we have bottom nav */
+  font-size: 1.5rem;
+  cursor: pointer;
 `;
 
 const Navigation = styled.ul`
@@ -459,7 +490,7 @@ const Navigation = styled.ul`
   padding: 0;
 
   @media (max-width: 767px) {
-    display: none; /* Hide completely on mobile since we have bottom nav */
+    display: none; /* Hide navigation on mobile since we have bottom nav */
   }
 `;
 
@@ -547,7 +578,7 @@ const CreatePostButton = styled(Link)`
 
 const FloatingActionButtonContainer = styled.div`
   position: fixed;
-  bottom: 6rem;
+  bottom: 5rem; /* Positioned above bottom navbar */
   right: 2rem;
   z-index: 100;
 `;
