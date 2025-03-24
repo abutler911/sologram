@@ -17,21 +17,16 @@ exports.sendCustomNotification = async (req, res) => {
 
     // Call OneSignal API
     const notification = {
-      app_id: process.env.ONESIGNAL_APP_ID,
+      app_id: ONESIGNAL_APP_ID,
       contents: { en: message },
       headings: { en: title || "SoloGram Update" },
       included_segments: ["All"], // Send to all subscribers
-      // You could also use filters to target specific subscribers
     };
 
-    axios.post(
+    // Make sure to await the response and store it in a variable
+    const response = await axios.post(
       "https://onesignal.com/api/v1/notifications",
-      {
-        app_id: ONESIGNAL_APP_ID,
-        contents: { en: message },
-        headings: { en: title },
-        included_segments: ["All"],
-      },
+      notification,
       {
         headers: {
           Authorization: `Basic ${ONESIGNAL_API_KEY}`,
@@ -39,7 +34,7 @@ exports.sendCustomNotification = async (req, res) => {
       }
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: `Notification sent successfully to subscribers`,
       notified: response.data.recipients || 0,
@@ -47,7 +42,7 @@ exports.sendCustomNotification = async (req, res) => {
     });
   } catch (err) {
     console.error("Send notification error:", err);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Server Error",
       error: err.response?.data || err.message,
@@ -59,7 +54,7 @@ exports.sendCustomNotification = async (req, res) => {
 exports.notifySubscribersOfNewContent = async (content) => {
   try {
     const notification = {
-      app_id: process.env.ONESIGNAL_APP_ID,
+      app_id: ONESIGNAL_APP_ID,
       contents: {
         en: `New ${content.type || "post"} "${
           content.title
@@ -76,7 +71,8 @@ exports.notifySubscribersOfNewContent = async (content) => {
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Basic ${process.env.ONESIGNAL_REST_API_KEY}`,
+          // Fixed the key name to match the one at the top of the file
+          Authorization: `Basic ${ONESIGNAL_API_KEY}`,
         },
       }
     );
