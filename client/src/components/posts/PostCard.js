@@ -28,6 +28,10 @@ const PostCard = ({ post: initialPost, onDelete }) => {
   const [isDoubleTapLiking, setIsDoubleTapLiking] = useState(false);
   const actionsRef = useRef(null);
 
+  // Constants for personalization
+  const AUTHOR_NAME = "Andrew";
+  const AUTHOR_INITIAL = "A";
+
   const hasMultipleMedia = post.media && post.media.length > 1;
 
   // Format date as MMM d, yyyy (e.g., "Mar 15, 2025")
@@ -159,8 +163,8 @@ const PostCard = ({ post: initialPost, onDelete }) => {
       <Card>
         <CardHeader>
           <UserInfo>
-            <UserAvatar>{user?.username?.charAt(0) || "S"}</UserAvatar>
-            <Username>SoloGram</Username>
+            <UserAvatar>{AUTHOR_INITIAL}</UserAvatar>
+            <Username>{AUTHOR_NAME}</Username>
           </UserInfo>
           {isAuthenticated && (
             <div ref={actionsRef}>
@@ -219,6 +223,7 @@ const PostCard = ({ post: initialPost, onDelete }) => {
                   className="prev"
                   onClick={handlePrev}
                   disabled={currentMediaIndex === 0}
+                  aria-label="Previous image"
                 >
                   <FaChevronLeft />
                 </NavigationArrow>
@@ -226,6 +231,7 @@ const PostCard = ({ post: initialPost, onDelete }) => {
                   className="next"
                   onClick={handleNext}
                   disabled={currentMediaIndex === post.media.length - 1}
+                  aria-label="Next image"
                 >
                   <FaChevronRight />
                 </NavigationArrow>
@@ -238,6 +244,7 @@ const PostCard = ({ post: initialPost, onDelete }) => {
                         e.preventDefault();
                         setCurrentMediaIndex(index);
                       }}
+                      aria-label={`Go to slide ${index + 1}`}
                     />
                   ))}
                 </IndicatorDots>
@@ -277,7 +284,7 @@ const PostCard = ({ post: initialPost, onDelete }) => {
 
         <CardContent>
           <CaptionContainer>
-            <UsernameLink to="/profile">SoloGram</UsernameLink>
+            <UsernameLink to="/profile">{AUTHOR_NAME}</UsernameLink>
             <Caption>{post.caption}</Caption>
           </CaptionContainer>
 
@@ -347,12 +354,13 @@ const Card = styled.article`
   border-radius: 3px;
   border: 1px solid #262626;
   overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: 24px;
   display: flex;
   flex-direction: column;
   width: 100%;
   max-width: 614px;
   margin: 0 auto;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 `;
 
 const CardHeader = styled.header`
@@ -395,6 +403,7 @@ const ActionsButton = styled.button`
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
+  transition: background-color 0.2s;
 
   &:hover {
     background-color: #262626;
@@ -425,6 +434,7 @@ const ActionItem = styled.button`
   display: flex;
   align-items: center;
   text-decoration: none;
+  transition: background-color 0.2s;
 
   &:hover {
     background-color: #363636;
