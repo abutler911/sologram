@@ -4,39 +4,45 @@ import { FaBell, FaTimes } from "react-icons/fa";
 import OneSignal from "react-onesignal";
 
 const SubscribeBanner = () => {
-  // const [isOpen, setIsOpen] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
     let timer;
 
-    const checkSubscription = async () => {
+    const checkOneSignalAndShowBanner = async () => {
       try {
-        await new Promise((res) => setTimeout(res, 1000));
-        if (
-          !OneSignal ||
-          typeof OneSignal.isPushNotificationsEnabled !== "function"
-        ) {
-          console.warn("OneSignal not ready or invalid.");
+        // Wait for OneSignal to fully load
+        const waitForOneSignal = async () => {
+          for (let i = 0; i < 10; i++) {
+            if (typeof OneSignal?.isPushNotificationsEnabled === "function") {
+              return true;
+            }
+            await new Promise((res) => setTimeout(res, 300));
+          }
+          return false;
+        };
+
+        const isReady = await waitForOneSignal();
+
+        if (!isReady) {
+          console.warn("OneSignal still not ready after waiting.");
           return;
         }
 
         const isSubscribed = await OneSignal.isPushNotificationsEnabled();
-        const hasBannerBeenDismissed = localStorage.getItem(
-          "subscribeBannerDismissed"
-        );
+        const hasDismissed = localStorage.getItem("subscribeBannerDismissed");
 
-        if (!isSubscribed && !hasBannerBeenDismissed) {
+        if (!isSubscribed && !hasDismissed) {
           timer = setTimeout(() => {
             setShowBanner(true);
-          }, 3000);
+          }, 1000);
         }
       } catch (err) {
-        console.error("OneSignal check failed:", err);
+        console.error("Banner check failed:", err);
       }
     };
 
-    checkSubscription();
+    checkOneSignalAndShowBanner();
 
     return () => {
       if (timer) clearTimeout(timer);
@@ -49,7 +55,7 @@ const SubscribeBanner = () => {
   };
 
   const handleSubscribeClick = () => {
-    if (typeof OneSignal.showSlidedownPrompt === "function") {
+    if (typeof OneSignal?.showSlidedownPrompt === "function") {
       OneSignal.showSlidedownPrompt();
     } else {
       console.warn("OneSignal not initialized yet.");
