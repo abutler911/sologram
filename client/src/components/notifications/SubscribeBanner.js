@@ -12,25 +12,25 @@ const SubscribeBanner = () => {
 
     const checkSubscription = async () => {
       try {
-        // Make sure OneSignal is loaded
-        if (
-          !OneSignal ||
-          typeof OneSignal.isPushNotificationsEnabled !== "function"
-        ) {
-          console.warn("OneSignal not ready or invalid.");
-          return;
-        }
+        // ✅ Wait for OneSignal to be ready before calling methods
+        OneSignal.push(async () => {
+          if (typeof OneSignal.isPushNotificationsEnabled === "function") {
+            const isSubscribed = await OneSignal.isPushNotificationsEnabled();
+            const hasBannerBeenDismissed = localStorage.getItem(
+              "subscribeBannerDismissed"
+            );
 
-        const isSubscribed = await OneSignal.isPushNotificationsEnabled();
-        const hasBannerBeenDismissed = localStorage.getItem(
-          "subscribeBannerDismissed"
-        );
-
-        if (!isSubscribed && !hasBannerBeenDismissed) {
-          timer = setTimeout(() => {
-            setShowBanner(true);
-          }, 3000);
-        }
+            if (!isSubscribed && !hasBannerBeenDismissed) {
+              timer = setTimeout(() => {
+                setShowBanner(true);
+              }, 3000);
+            }
+          } else {
+            console.warn(
+              "OneSignal not ready or isPushNotificationsEnabled missing"
+            );
+          }
+        });
       } catch (err) {
         console.error("OneSignal check failed:", err);
       }

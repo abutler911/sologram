@@ -10,15 +10,19 @@ export const initializeOneSignal = async () => {
       },
     });
 
-    await OneSignal.isPushNotificationsEnabled();
-    if (typeof OneSignal.showSlidedownPrompt === "function") {
-      OneSignal.showSlidedownPrompt();
-    }
+    // ✅ Ensure methods only run when SDK is ready
+    OneSignal.push(async () => {
+      const userId = localStorage.getItem("userId");
+      if (userId) {
+        await OneSignal.setExternalUserId(userId);
+      }
 
-    const userId = localStorage.getItem("userId");
-    if (userId) {
-      OneSignal.setExternalUserId(userId);
-    }
+      if (typeof OneSignal.showSlidedownPrompt === "function") {
+        OneSignal.showSlidedownPrompt();
+      } else {
+        console.warn("showSlidedownPrompt not available yet.");
+      }
+    });
 
     return true;
   } catch (error) {
