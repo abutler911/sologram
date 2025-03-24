@@ -231,7 +231,8 @@ const Home = forwardRef((props, ref) => {
           </SearchResultsIndicator>
         )}
 
-        <ContentSection>
+        {/* Compact Stories Section */}
+        <CompactContentSection>
           <CompactSectionHeader>
             <SectionTitle>
               <FaBookOpen />
@@ -239,9 +240,10 @@ const Home = forwardRef((props, ref) => {
             </SectionTitle>
           </CompactSectionHeader>
           <Stories />
-        </ContentSection>
+        </CompactContentSection>
 
-        <ContentSection className="collections-section">
+        {/* Compact Collections Section */}
+        <CompactContentSection className="collections-section">
           <CompactSectionHeader>
             <SectionTitle>
               <FaFolder />
@@ -253,29 +255,31 @@ const Home = forwardRef((props, ref) => {
           {collectionsLoading ? (
             <LoadingIndicator>Loading collections...</LoadingIndicator>
           ) : topCollections.length > 0 ? (
-            <CollectionsRow>
+            <CompactCollectionsRow>
               {topCollections.map((collection) => (
-                <CollectionCard key={collection._id}>
+                <CompactCollectionCard key={collection._id}>
                   <CollectionLink to={`/collections/${collection._id}`}>
                     {collection.coverImage ? (
-                      <CollectionCover
+                      <CompactCollectionCover
                         src={collection.coverImage}
                         alt={collection.name}
                       />
                     ) : (
-                      <CollectionCoverPlaceholder>
+                      <CompactCollectionCoverPlaceholder>
                         <FaImages />
-                      </CollectionCoverPlaceholder>
+                      </CompactCollectionCoverPlaceholder>
                     )}
-                    <CollectionName>{collection.name}</CollectionName>
+                    <CompactCollectionName>
+                      {collection.name}
+                    </CompactCollectionName>
                   </CollectionLink>
-                </CollectionCard>
+                </CompactCollectionCard>
               ))}
-            </CollectionsRow>
+            </CompactCollectionsRow>
           ) : (
             <EmptyMessage>No collections yet</EmptyMessage>
           )}
-        </ContentSection>
+        </CompactContentSection>
 
         <ContentSection>
           <CompactSectionHeader>
@@ -387,6 +391,22 @@ const ClearSearchButton = styled.button`
   }
 `;
 
+// COMPACT SECTION STYLES
+const CompactContentSection = styled.section`
+  margin-bottom: 0.5rem;
+  background-color: rgba(30, 30, 30, 0.7);
+  border-radius: 8px;
+  padding: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+
+  &.collections-section {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+`;
+
+// ORIGINAL CONTENT SECTION (kept for Posts section)
 const ContentSection = styled.section`
   margin-bottom: 1rem;
   background-color: rgba(30, 30, 30, 0.7);
@@ -405,8 +425,8 @@ const CompactSectionHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.375rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 
   @media (max-width: 768px) {
@@ -418,7 +438,7 @@ const CompactSectionHeader = styled.div`
 
 const SectionTitle = styled.h2`
   color: #fff;
-  font-size: 1.125rem;
+  font-size: 1rem; /* Reduced font size */
   display: flex;
   align-items: center;
   margin: 0;
@@ -446,7 +466,7 @@ const SectionTitle = styled.h2`
 
 const ViewAllLink = styled(Link)`
   color: #ff7e5f;
-  font-size: 0.8125rem;
+  font-size: 0.75rem; /* Reduced font size */
   text-decoration: none;
 
   &:hover {
@@ -454,6 +474,99 @@ const ViewAllLink = styled(Link)`
   }
 `;
 
+// COMPACT COLLECTIONS STYLES
+const CompactCollectionsRow = styled.div`
+  display: flex;
+  overflow-x: auto;
+  padding: 0.25rem 0;
+  gap: 0.75rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  &::after {
+    content: "";
+    padding-right: 0.5rem;
+  }
+
+  -webkit-overflow-scrolling: touch;
+`;
+
+const CompactCollectionCard = styled.div`
+  flex: 0 0 auto;
+  width: 60px; /* Reduced width */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+`;
+
+const CollectionLink = styled(Link)`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+`;
+
+const CompactCollectionCover = styled.img`
+  width: 50px; /* Reduced size */
+  height: 50px; /* Reduced size */
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ff7e5f;
+  padding: 2px; /* Reduced padding */
+  background-color: #222;
+  transition: border-color 0.2s;
+
+  ${CompactCollectionCard}:hover & {
+    border-color: #ff6347;
+  }
+`;
+
+const CompactCollectionCoverPlaceholder = styled.div`
+  width: 50px; /* Reduced size */
+  height: 50px; /* Reduced size */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #222;
+  border: 2px solid #ff7e5f;
+  padding: 2px; /* Reduced padding */
+
+  svg {
+    font-size: 1rem; /* Reduced icon size */
+    color: #555;
+  }
+
+  ${CompactCollectionCard}:hover & {
+    border-color: #ff6347;
+  }
+`;
+
+const CompactCollectionName = styled.h3`
+  font-size: 0.6rem; /* Reduced font size */
+  color: #ddd;
+  margin: 0.35rem 0 0; /* Reduced margin */
+  text-align: center;
+  max-width: 60px; /* Match the card width */
+  white-space: normal;
+  overflow: visible;
+  word-wrap: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+`;
+
+// Original Collection Styles (kept as reference)
 const CollectionsRow = styled.div`
   display: flex;
   overflow-x: auto;
@@ -485,14 +598,6 @@ const CollectionCard = styled.div`
   &:hover {
     transform: translateY(-2px);
   }
-`;
-
-const CollectionLink = styled(Link)`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-decoration: none;
-  color: inherit;
 `;
 
 const CollectionCover = styled.img`
@@ -550,9 +655,9 @@ const EmptyMessage = styled.div`
   align-items: center;
   justify-content: center;
   color: #aaa;
-  padding: 0.75rem 0;
-  font-size: 0.75rem;
-  height: 80px;
+  padding: 0.5rem 0; /* Reduced padding */
+  font-size: 0.7rem; /* Reduced font size */
+  height: 60px; /* Reduced height */
 `;
 
 const LoadingIndicator = styled.div`
@@ -560,9 +665,9 @@ const LoadingIndicator = styled.div`
   align-items: center;
   justify-content: center;
   color: #aaa;
-  padding: 0.75rem 0;
-  font-size: 0.75rem;
-  height: 80px;
+  padding: 0.5rem 0; /* Reduced padding */
+  font-size: 0.7rem; /* Reduced font size */
+  height: 60px; /* Reduced height */
 `;
 
 const PostGrid = styled.div`

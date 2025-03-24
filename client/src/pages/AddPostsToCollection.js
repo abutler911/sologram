@@ -1,118 +1,121 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import axios from 'axios';
-import { toast } from 'react-hot-toast';
-import { 
-  FaArrowLeft, 
-  FaFolder, 
-  FaSearch, 
-  FaPlus, 
-  FaCheck, 
-  FaTimes,
-  FaPlay
-} from 'react-icons/fa';
+import React, { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import styled from "styled-components";
+import axios from "axios";
+import { toast } from "react-hot-toast";
+import {
+  FaArrowLeft,
+  FaFolder,
+  FaSearch,
+  FaPlus,
+  FaCheck,
+  FaPlay,
+} from "react-icons/fa";
 
 const AddPostsToCollection = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
+
   const [collection, setCollection] = useState(null);
   const [allPosts, setAllPosts] = useState([]);
   const [filteredPosts, setFilteredPosts] = useState([]);
   const [selectedPosts, setSelectedPosts] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  
+
   // Fetch collection and posts data
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Get collection details
         const collectionResponse = await axios.get(`/api/collections/${id}`);
         const collectionData = collectionResponse.data.data;
         setCollection(collectionData);
-        
+
         // Get all posts
-        const postsResponse = await axios.get('/api/posts');
+        const postsResponse = await axios.get("/api/posts");
         const postsData = postsResponse.data.data;
-        
+
         // Filter out posts that are already in the collection
-        const collectionPostIds = collectionData.posts.map(post => post._id);
-        const availablePosts = postsData.filter(post => !collectionPostIds.includes(post._id));
-        
+        const collectionPostIds = collectionData.posts.map((post) => post._id);
+        const availablePosts = postsData.filter(
+          (post) => !collectionPostIds.includes(post._id)
+        );
+
         setAllPosts(availablePosts);
         setFilteredPosts(availablePosts);
         setError(null);
       } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load data. Please try again.');
-        toast.error('Failed to load data');
+        console.error("Error fetching data:", err);
+        setError("Failed to load data. Please try again.");
+        toast.error("Failed to load data");
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [id]);
-  
+
   // Filter posts based on search query
   useEffect(() => {
-    if (searchQuery.trim() === '') {
+    if (searchQuery.trim() === "") {
       setFilteredPosts(allPosts);
     } else {
       const query = searchQuery.toLowerCase();
-      const filtered = allPosts.filter(post => 
-        post.caption.toLowerCase().includes(query) || 
-        (post.content && post.content.toLowerCase().includes(query)) ||
-        (post.tags && post.tags.some(tag => tag.toLowerCase().includes(query)))
+      const filtered = allPosts.filter(
+        (post) =>
+          post.caption.toLowerCase().includes(query) ||
+          (post.content && post.content.toLowerCase().includes(query)) ||
+          (post.tags &&
+            post.tags.some((tag) => tag.toLowerCase().includes(query)))
       );
       setFilteredPosts(filtered);
     }
   }, [searchQuery, allPosts]);
-  
+
   // Handle search input
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
   };
-  
+
   // Toggle post selection
   const togglePostSelection = (postId) => {
     if (selectedPosts.includes(postId)) {
-      setSelectedPosts(selectedPosts.filter(id => id !== postId));
+      setSelectedPosts(selectedPosts.filter((id) => id !== postId));
     } else {
       setSelectedPosts([...selectedPosts, postId]);
     }
   };
-  
+
   // Add selected posts to collection
   const addPostsToCollection = async () => {
     if (selectedPosts.length === 0) {
-      toast.error('Please select at least one post');
+      toast.error("Please select at least one post");
       return;
     }
-    
+
     try {
       setSubmitting(true);
-      
+
       // Add each selected post to the collection
       for (const postId of selectedPosts) {
         await axios.post(`/api/collections/${id}/posts`, { postId });
       }
-      
+
       toast.success(`Added ${selectedPosts.length} posts to collection`);
       navigate(`/collections/${id}`);
     } catch (err) {
-      console.error('Error adding posts to collection:', err);
-      toast.error('Failed to add posts to collection');
+      console.error("Error adding posts to collection:", err);
+      toast.error("Failed to add posts to collection");
       setSubmitting(false);
     }
   };
-  
+
   if (loading) {
     return (
       <Container>
@@ -120,12 +123,12 @@ const AddPostsToCollection = () => {
       </Container>
     );
   }
-  
+
   if (error || !collection) {
     return (
       <Container>
         <ErrorContainer>
-          <ErrorMessage>{error || 'Collection not found'}</ErrorMessage>
+          <ErrorMessage>{error || "Collection not found"}</ErrorMessage>
           <BackButton to="/collections">
             <FaArrowLeft />
             <span>Back to Collections</span>
@@ -134,14 +137,14 @@ const AddPostsToCollection = () => {
       </Container>
     );
   }
-  
+
   return (
     <Container>
       <BackButton to={`/collections/${id}`}>
         <FaArrowLeft />
         <span>Back to Collection</span>
       </BackButton>
-      
+
       <PageHeader>
         <PageInfo>
           <PageTitle>
@@ -152,7 +155,7 @@ const AddPostsToCollection = () => {
             Select posts to add to your collection
           </PageDescription>
         </PageInfo>
-        
+
         <SearchContainer>
           <SearchIcon>
             <FaSearch />
@@ -165,7 +168,7 @@ const AddPostsToCollection = () => {
           />
         </SearchContainer>
       </PageHeader>
-      
+
       {filteredPosts.length === 0 ? (
         <EmptyState>
           {searchQuery ? (
@@ -177,50 +180,49 @@ const AddPostsToCollection = () => {
       ) : (
         <>
           <SelectionSummary>
-            <SelectedCount>
-              {selectedPosts.length} posts selected
-            </SelectedCount>
-            
+            <SelectedCount>{selectedPosts.length} posts selected</SelectedCount>
+
             <ActionButtons>
               {selectedPosts.length > 0 && (
                 <ClearSelectionButton onClick={() => setSelectedPosts([])}>
                   Clear Selection
                 </ClearSelectionButton>
               )}
-              
-              <AddButton 
-                onClick={addPostsToCollection} 
+
+              <AddButton
+                onClick={addPostsToCollection}
                 disabled={selectedPosts.length === 0 || submitting}
               >
                 <FaPlus />
                 <span>
-                  {submitting 
-                    ? 'Adding...' 
-                    : `Add ${selectedPosts.length > 0 ? selectedPosts.length : ''} Posts`}
+                  {submitting
+                    ? "Adding..."
+                    : `Add ${
+                        selectedPosts.length > 0 ? selectedPosts.length : ""
+                      } Posts`}
                 </span>
               </AddButton>
             </ActionButtons>
           </SelectionSummary>
-          
+
           <PostsGrid>
-            {filteredPosts.map(post => (
-              <PostItem 
-                key={post._id} 
+            {filteredPosts.map((post) => (
+              <PostItem
+                key={post._id}
                 selected={selectedPosts.includes(post._id)}
                 onClick={() => togglePostSelection(post._id)}
               >
                 <SelectionIndicator selected={selectedPosts.includes(post._id)}>
-                  {selectedPosts.includes(post._id) ? (
-                    <FaCheck />
-                  ) : (
-                    <FaPlus />
-                  )}
+                  {selectedPosts.includes(post._id) ? <FaCheck /> : <FaPlus />}
                 </SelectionIndicator>
-                
+
                 {post.media && post.media.length > 0 && (
                   <PostThumbnail>
-                    {post.media[0].mediaType === 'image' ? (
-                      <ThumbnailImage src={post.media[0].mediaUrl} alt={post.caption} />
+                    {post.media[0].mediaType === "image" ? (
+                      <ThumbnailImage
+                        src={post.media[0].mediaUrl}
+                        alt={post.caption}
+                      />
                     ) : (
                       <ThumbnailVideo>
                         <VideoIcon />
@@ -229,10 +231,10 @@ const AddPostsToCollection = () => {
                     )}
                   </PostThumbnail>
                 )}
-                
+
                 <PostDetails>
                   <PostTitle>{post.caption}</PostTitle>
-                  
+
                   {post.content && (
                     <PostContent>
                       {post.content.length > 80
@@ -240,7 +242,7 @@ const AddPostsToCollection = () => {
                         : post.content}
                     </PostContent>
                   )}
-                  
+
                   {post.tags && post.tags.length > 0 && (
                     <TagsContainer>
                       {post.tags.map((tag, index) => (
@@ -263,7 +265,7 @@ const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  
+
   @media (max-width: 768px) {
     padding: 1rem;
   }
@@ -276,11 +278,11 @@ const BackButton = styled(Link)`
   text-decoration: none;
   margin-bottom: 2rem;
   transition: color 0.3s;
-  
+
   &:hover {
     color: #ff7e5f;
   }
-  
+
   svg {
     margin-right: 0.5rem;
   }
@@ -293,7 +295,7 @@ const PageHeader = styled.div`
   margin-bottom: 2rem;
   flex-wrap: wrap;
   gap: 1.5rem;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: stretch;
@@ -310,7 +312,7 @@ const PageTitle = styled.h1`
   font-size: 1.75rem;
   color: #333333;
   margin: 0 0 0.5rem 0;
-  
+
   svg {
     color: #ff7e5f;
     margin-right: 0.75rem;
@@ -326,7 +328,7 @@ const SearchContainer = styled.div`
   position: relative;
   width: 100%;
   max-width: 400px;
-  
+
   @media (max-width: 768px) {
     max-width: none;
   }
@@ -346,7 +348,7 @@ const SearchInput = styled.input`
   border: 1px solid #dddddd;
   border-radius: 4px;
   font-size: 1rem;
-  
+
   &:focus {
     outline: none;
     border-color: #ff7e5f;
@@ -362,7 +364,7 @@ const SelectionSummary = styled.div`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
-  
+
   @media (max-width: 640px) {
     flex-direction: column;
     gap: 1rem;
@@ -378,7 +380,7 @@ const SelectedCount = styled.div`
 const ActionButtons = styled.div`
   display: flex;
   gap: 1rem;
-  
+
   @media (max-width: 480px) {
     flex-direction: column;
   }
@@ -393,7 +395,7 @@ const ClearSelectionButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
-  
+
   &:hover {
     background-color: #f2f2f2;
   }
@@ -411,16 +413,16 @@ const AddButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.3s;
-  
+
   &:hover {
     background-color: #ff6347;
   }
-  
+
   &:disabled {
     background-color: #cccccc;
     cursor: not-allowed;
   }
-  
+
   svg {
     margin-right: 0.5rem;
   }
@@ -444,7 +446,7 @@ const PostsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
-  
+
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
   }
@@ -460,8 +462,8 @@ const PostItem = styled.div`
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s;
-  border: 2px solid ${props => props.selected ? '#ff7e5f' : 'transparent'};
-  
+  border: 2px solid ${(props) => (props.selected ? "#ff7e5f" : "transparent")};
+
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -475,13 +477,14 @@ const SelectionIndicator = styled.div`
   width: 1.75rem;
   height: 1.75rem;
   border-radius: 50%;
-  background-color: ${props => props.selected ? '#ff7e5f' : 'rgba(255, 255, 255, 0.9)'};
-  color: ${props => props.selected ? 'white' : '#666666'};
+  background-color: ${(props) =>
+    props.selected ? "#ff7e5f" : "rgba(255, 255, 255, 0.9)"};
+  color: ${(props) => (props.selected ? "white" : "#666666")};
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2;
-  border: 1px solid ${props => props.selected ? '#ff7e5f' : '#dddddd'};
+  border: 1px solid ${(props) => (props.selected ? "#ff7e5f" : "#dddddd")};
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
