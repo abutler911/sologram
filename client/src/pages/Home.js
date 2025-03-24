@@ -13,8 +13,6 @@ import { FaCamera, FaFolder, FaImages, FaBookOpen } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import Stories from "../components/stories/Stories";
 import PostCard from "../components/posts/PostCard";
-import api from "../utils/api";
-import logoSrc from "../assets/SoloGram_Logo.svg";
 
 const Home = forwardRef((props, ref) => {
   const [posts, setPosts] = useState([]);
