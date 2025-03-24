@@ -75,6 +75,7 @@ const SubscriberAdmin = () => {
       setShowSendModal(false);
 
       const response = await axios.post("/api/notifications/custom", {
+        title: "SoloGram Update", // Add a title field
         message: customMessage,
       });
 

@@ -1,4 +1,6 @@
+// public/service-worker.js
 /* eslint-disable no-restricted-globals */
+importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
 // Configuration
 const APP_VERSION = "v1.0.0";

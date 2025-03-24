@@ -1,3 +1,4 @@
+// components/notifications/SubscribeBanner.js
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { FaBell, FaTimes } from "react-icons/fa";
@@ -5,93 +6,112 @@ import OneSignal from "react-onesignal";
 
 const SubscribeBanner = () => {
   const [showBanner, setShowBanner] = useState(false);
+  const [oneSignalReady, setOneSignalReady] = useState(false);
 
   useEffect(() => {
     let timer;
+    let checkInterval;
 
-    const checkOneSignalAndShowBanner = async () => {
-      try {
-        // Wait for OneSignal to fully load
-        const waitForOneSignal = async () => {
-          for (let i = 0; i < 30; i++) {
-            if (typeof OneSignal?.isPushNotificationsEnabled === "function") {
-              return true;
-            }
-            await new Promise((res) => setTimeout(res, 300));
-          }
-          return false;
-        };
-
-        const isReady = await waitForOneSignal();
-
-        if (!isReady) {
-          console.warn("OneSignal still not ready after waiting.");
-          return;
-        }
-
-        const isSubscribed = await OneSignal.isPushNotificationsEnabled();
-        const hasDismissed = localStorage.getItem("subscribeBannerDismissed");
-
-        if (!isSubscribed && !hasDismissed) {
-          timer = setTimeout(() => {
-            setShowBanner(true);
-          }, 1000);
-        }
-      } catch (err) {
-        console.error("Banner check failed:", err);
+    const checkOneSignalReadiness = () => {
+      if (typeof OneSignal?.isPushNotificationsEnabled === "function") {
+        setOneSignalReady(true);
+        clearInterval(checkInterval);
       }
     };
 
-    checkOneSignalAndShowBanner();
+    // Check if OneSignal is already initialized
+    checkOneSignalReadiness();
+
+    // Keep checking until OneSignal is ready
+    checkInterval = setInterval(checkOneSignalReadiness, 500);
+
+    const checkSubscriptionStatus = async () => {
+      if (!oneSignalReady) return;
+
+      try {
+        const isPushEnabled = await OneSignal.isPushNotificationsEnabled();
+        const permission = await OneSignal.getNotificationPermission();
+        const hasDismissed = localStorage.getItem("subscribeBannerDismissed");
+
+        // Show banner if:
+        // 1. User hasn't subscribed to push notifications
+        // 2. User hasn't permanently dismissed the banner
+        // 3. User hasn't denied notification permissions
+        if (!isPushEnabled && !hasDismissed && permission !== "denied") {
+          timer = setTimeout(() => {
+            setShowBanner(true);
+          }, 3000);
+        }
+      } catch (err) {
+        console.error("Error checking notification status:", err);
+      }
+    };
+
+    if (oneSignalReady) {
+      checkSubscriptionStatus();
+    }
 
     return () => {
       if (timer) clearTimeout(timer);
+      if (checkInterval) clearInterval(checkInterval);
     };
-  }, []);
+  }, [oneSignalReady]);
 
   const handleDismiss = () => {
     setShowBanner(false);
+    // Store in localStorage that the user has dismissed the banner
     localStorage.setItem("subscribeBannerDismissed", "true");
   };
 
-  const handleSubscribeClick = () => {
-    if (typeof OneSignal?.showSlidedownPrompt === "function") {
-      OneSignal.showSlidedownPrompt();
-    } else {
-      console.warn("OneSignal not initialized yet.");
+  const handleSubscribeClick = async () => {
+    if (!oneSignalReady) {
+      console.warn("OneSignal not ready yet");
+      return;
     }
 
-    setShowBanner(false);
-    localStorage.setItem("subscribeBannerDismissed", "true");
+    try {
+      // Show the OneSignal permission prompt
+      await OneSignal.showNativePrompt();
+
+      // Check if permission was granted after showing prompt
+      const permission = await OneSignal.getNotificationPermission();
+
+      if (permission === "granted") {
+        // Permission was granted, hide the banner
+        setShowBanner(false);
+        localStorage.setItem("subscribeBannerDismissed", "true");
+      }
+    } catch (error) {
+      console.error("Error showing notification prompt:", error);
+    }
   };
 
-  return (
-    <>
-      {showBanner && (
-        <Banner>
-          <BannerContent>
-            <BannerIcon>
-              <FaBell />
-            </BannerIcon>
-            <BannerText>
-              <BannerTitle>Stay Updated</BannerTitle>
-              <BannerDescription>
-                Get notified when new content is posted
-              </BannerDescription>
-            </BannerText>
-          </BannerContent>
+  // Only render the banner if we should show it
+  if (!showBanner) return null;
 
-          <BannerActions>
-            <SubscribeButton onClick={handleSubscribeClick}>
-              Subscribe Now
-            </SubscribeButton>
-            <DismissButton onClick={handleDismiss}>
-              <FaTimes />
-            </DismissButton>
-          </BannerActions>
-        </Banner>
-      )}
-    </>
+  return (
+    <Banner>
+      <BannerContent>
+        <BannerIcon>
+          <FaBell />
+        </BannerIcon>
+        <BannerText>
+          <BannerTitle>Stay Updated</BannerTitle>
+          <BannerDescription>
+            Get notified when new content is posted
+          </BannerDescription>
+        </BannerText>
+      </BannerContent>
+
+      <BannerActions>
+        <SubscribeButton onClick={handleSubscribeClick}>
+          Subscribe Now
+        </SubscribeButton>
+        <DismissButton onClick={handleDismiss}>
+          <FaTimes />
+        </DismissButton>
+      </BannerActions>
+    </Banner>
   );
 };
 
