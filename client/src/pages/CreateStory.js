@@ -216,6 +216,8 @@ const CreateStory = () => {
 
     try {
       const formData = new FormData();
+      // Use caption as title to maintain compatibility with backend
+      formData.append("title", caption || "My Story"); // Provide a default title if caption is empty
       formData.append("caption", caption);
 
       mediaFiles.forEach((file) => {
