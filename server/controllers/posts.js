@@ -1,9 +1,7 @@
 const Post = require("../models/Post");
 const Like = require("../models/Like");
 const { cloudinary } = require("../config/cloudinary");
-const {
-  notifySubscribersOfNewContent,
-} = require("../services/notificationService");
+const notificationService = require("../services/notificationService");
 
 exports.getPosts = async (req, res) => {
   try {
@@ -97,12 +95,11 @@ exports.createPost = async (req, res) => {
 
     const post = await Post.create(newPost);
 
-    notifySubscribersOfNewContent({
-      title: caption,
-      type: "post",
-    }).catch((error) => {
-      console.error("Error sending notifications:", error);
-    });
+    notificationService
+      .sendCustomNotification(`New post "${caption}" has been added!`, null)
+      .catch((error) => {
+        console.error("Error sending notifications:", error);
+      });
 
     res.status(201).json({
       success: true,
