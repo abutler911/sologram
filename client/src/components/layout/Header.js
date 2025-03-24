@@ -12,7 +12,7 @@ import {
   FaPlus,
   FaArchive,
   FaBell,
-  FaSearch
+  FaSearch,
 } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 import HeaderSubscriptionBanner from "../subscription/HeaderSubscriptionBanner";
@@ -38,7 +38,7 @@ const Header = ({ onSearch, onClearSearch }) => {
     const params = new URLSearchParams(location.search);
     const query = params.get("search") || "";
     setSearchQuery(query);
-    
+
     if (location.pathname === "/" && query && onSearch) {
       onSearch(query);
     }
@@ -73,7 +73,7 @@ const Header = ({ onSearch, onClearSearch }) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       onSearch && onSearch(searchQuery);
-      
+
       if (location.pathname !== "/") {
         navigate("/?search=" + encodeURIComponent(searchQuery));
       }
@@ -84,7 +84,7 @@ const Header = ({ onSearch, onClearSearch }) => {
     setSearchQuery("");
     onClearSearch && onClearSearch();
   };
-  
+
   // Show subscription banner to all users on the homepage
   const showSubscriptionBanner = location.pathname === "/";
 
@@ -102,14 +102,14 @@ const Header = ({ onSearch, onClearSearch }) => {
 
           {location.pathname === "/" && (
             <SearchContainer expanded={searchExpanded}>
-              <SearchIconButton 
+              <SearchIconButton
                 onClick={toggleSearch}
                 aria-label="Toggle search"
               >
                 <FaSearch />
               </SearchIconButton>
-              
-              <SearchForm 
+
+              <SearchForm
                 expanded={searchExpanded}
                 onSubmit={handleSearchSubmit}
               >
@@ -120,16 +120,13 @@ const Header = ({ onSearch, onClearSearch }) => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                
+
                 {searchQuery && (
-                  <ClearButton 
-                    onClick={clearSearch}
-                    aria-label="Clear search"
-                  >
+                  <ClearButton onClick={clearSearch} aria-label="Clear search">
                     <FaTimes />
                   </ClearButton>
                 )}
-                
+
                 <SearchSubmit type="submit">
                   <FaSearch />
                 </SearchSubmit>
@@ -204,7 +201,7 @@ const Header = ({ onSearch, onClearSearch }) => {
           </Navigation>
         </HeaderContent>
       </HeaderContainer>
-      
+
       {/* Show subscription banner for all users on homepage */}
       {showSubscriptionBanner && <HeaderSubscriptionBanner />}
 
@@ -309,6 +306,20 @@ const Logo = styled(Link)`
   svg {
     font-size: 1.8rem;
   }
+
+  @media (max-width: 767px) {
+    .logo-main {
+      font-size: 1.2rem;
+    }
+
+    .tagline {
+      display: none; /* Hide tagline on mobile to save space */
+    }
+
+    svg {
+      font-size: 1.5rem;
+    }
+  }
 `;
 
 const SearchContainer = styled.div`
@@ -318,12 +329,13 @@ const SearchContainer = styled.div`
   margin-left: auto;
   margin-right: 1.5rem;
   z-index: 100;
-  
-  @media (max-width: 768px) {
-    margin-right: 1rem;
-    position: ${props => props.expanded ? 'absolute' : 'relative'};
-    right: ${props => props.expanded ? '3.5rem' : 'auto'};
-    left: ${props => props.expanded ? '1rem' : 'auto'};
+
+  @media (max-width: 767px) {
+    margin-right: 0.5rem;
+    margin-left: auto;
+    position: ${(props) => (props.expanded ? "absolute" : "relative")};
+    right: ${(props) => (props.expanded ? "1rem" : "auto")};
+    left: ${(props) => (props.expanded ? "1rem" : "auto")};
   }
 `;
 
@@ -339,7 +351,7 @@ const SearchIconButton = styled.button`
   justify-content: center;
   transition: color 0.3s;
   z-index: 101;
-  
+
   &:hover {
     color: #ff7e5f;
   }
@@ -353,17 +365,18 @@ const SearchForm = styled.form`
   overflow: hidden;
   border: 1px solid #ddd;
   transition: all 0.3s ease;
-  width: ${props => props.expanded ? '240px' : '0'};
-  opacity: ${props => props.expanded ? '1' : '0'};
-  visibility: ${props => props.expanded ? 'visible' : 'hidden'};
+  width: ${(props) => (props.expanded ? "240px" : "0")};
+  opacity: ${(props) => (props.expanded ? "1" : "0")};
+  visibility: ${(props) => (props.expanded ? "visible" : "hidden")};
   position: absolute;
   right: 2.5rem;
   top: 50%;
   transform: translateY(-50%);
-  box-shadow: ${props => props.expanded ? '0 2px 5px rgba(0,0,0,0.1)' : 'none'};
-  
+  box-shadow: ${(props) =>
+    props.expanded ? "0 2px 5px rgba(0,0,0,0.1)" : "none"};
+
   @media (max-width: 768px) {
-    width: ${props => props.expanded ? 'calc(100% - 3.5rem)' : '0'};
+    width: ${(props) => (props.expanded ? "calc(100% - 3.5rem)" : "0")};
     right: 0;
   }
 `;
@@ -376,7 +389,7 @@ const SearchInput = styled.input`
   font-size: 0.875rem;
   width: 100%;
   outline: none;
-  
+
   &::placeholder {
     color: #999;
   }
@@ -392,7 +405,7 @@ const ClearButton = styled.button`
   padding: 0.5rem;
   cursor: pointer;
   font-size: 0.75rem;
-  
+
   &:hover {
     color: #ff7e5f;
   }
@@ -408,20 +421,14 @@ const SearchSubmit = styled.button`
   padding: 0.5rem 0.75rem;
   cursor: pointer;
   transition: background-color 0.3s;
-  
+
   &:hover {
     background-color: #ff6347;
   }
 `;
 
 const MobileMenuIcon = styled.div`
-  display: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-
-  @media (max-width: 768px) {
-    display: block;
-  }
+  display: none; /* Hide the hamburger menu since we have bottom nav */
 `;
 
 const Navigation = styled.ul`
@@ -430,21 +437,8 @@ const Navigation = styled.ul`
   margin: 0;
   padding: 0;
 
-  @media (max-width: 768px) {
-    flex-direction: column;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: #ffffff;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 1rem 0;
-    display: none;
-    z-index: 1001;
-
-    &.active {
-      display: flex;
-    }
+  @media (max-width: 767px) {
+    display: none; /* Hide completely on mobile since we have bottom nav */
   }
 `;
 

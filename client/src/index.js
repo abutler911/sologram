@@ -43,6 +43,30 @@ const GlobalStyle = createGlobalStyle`
   
   .main-content {
     flex: 1;
+    
+    /* Add padding to prevent content from being hidden behind bottom nav on mobile */
+    @media (max-width: 767px) {
+      padding-bottom: 60px; /* Slightly more than the height of the bottom nav */
+      
+      /* Add extra padding for iOS devices with notch */
+      @supports (padding-bottom: env(safe-area-inset-bottom)) {
+        padding-bottom: calc(60px + env(safe-area-inset-bottom));
+      }
+    }
+  }
+  
+  /* Adjust the floating action button position on mobile to account for bottom nav */
+  @media (max-width: 767px) {
+    .FloatingActionButtonContainer {
+      bottom: 70px !important;
+    }
+  }
+  
+  /* Hide bottom nav when keyboard is visible */
+  @media screen and (max-height: 450px) {
+    .bottom-nav {
+      display: none;
+    }
   }
   
   .loading-container {
@@ -64,22 +88,22 @@ const GlobalStyle = createGlobalStyle`
   }
   
   .filter-warm {
-  filter: saturate(1.5) sepia(0.2) contrast(1.1);
-}
+    filter: saturate(1.5) sepia(0.2) contrast(1.1);
+  }
 
-.filter-cool {
-  filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
-}
+  .filter-cool {
+    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
+  }
 
-.filter-grayscale {
-  filter: grayscale(1);
-}
+  .filter-grayscale {
+    filter: grayscale(1);
+  }
 
-.filter-vintage {
-  filter: sepia(0.4) saturate(1.3) contrast(1.2);
-}
+  .filter-vintage {
+    filter: sepia(0.4) saturate(1.3) contrast(1.2);
+  }
 
-.post-grid-item {
+  .post-grid-item {
     width: 100%;
   }
   
@@ -98,21 +122,22 @@ const GlobalStyle = createGlobalStyle`
   }
   
   @media screen and (display-mode: standalone) {
-  body {
-    /* Prevent overscroll bounce */
-    overscroll-behavior: none;
-  }
-  
-  .app {
-     display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
-  
-  .main-content {
-  flex: 1;
+    body {
+      /* Prevent overscroll bounce */
+      overscroll-behavior: none;
     }
-}
+    
+    .app {
+       display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+    .main-content {
+      flex: 1;
+    }
+  }
+  
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -153,7 +178,7 @@ serviceWorkerRegistration.register({
     updateAvailable.innerHTML = `
       <div style="
         position: fixed;
-        bottom: 20px;
+        bottom: 76px; /* Adjust to be above bottom navigation */
         right: 20px;
         background-color: #4a4a4a;
         color: white;

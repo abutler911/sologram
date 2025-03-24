@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
 import styled from "styled-components";
-import OneSignal from "react-onesignal";
 
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
+import BottomNavigation from "./components/layout/BottomNavigation"; // Add the new component
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -32,35 +32,14 @@ import StoryArchive from "./pages/StoryArchive";
 import ArchivedStoryView from "./pages/ArchivedStoryView";
 
 import InstallPrompt from "./components/pwa/InstallPrompt";
-import SubscribeBanner from "./components/notifications/SubscribeBanner"; // ✅ Added banner
+import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButtonAdjuster";
 
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
-import { initializeOneSignal } from "./utils/oneSignal";
 
 function App() {
   const [networkStatus, setNetworkStatus] = useState(navigator.onLine);
-  const [oneSignalInitialized, setOneSignalInitialized] = useState(false);
   const homeRef = useRef(null);
-
-  useEffect(() => {
-    const setupOneSignal = async () => {
-      try {
-        const result = await initializeOneSignal();
-        setOneSignalInitialized(result);
-
-        if (result) {
-          console.log("OneSignal initialized successfully");
-        } else {
-          console.warn("OneSignal initialization failed");
-        }
-      } catch (error) {
-        console.error("Error initializing OneSignal:", error);
-      }
-    };
-
-    setupOneSignal();
-  }, []);
 
   useEffect(() => {
     const handleOnline = () => setNetworkStatus(true);
@@ -106,7 +85,7 @@ function App() {
               You are currently offline. Some features may be limited.
             </OfflineIndicator>
           )}
-          <SubscribeBanner /> {/* ✅ Show notification banner globally */}
+
           <Routes>
             <Route
               path="/"
@@ -120,6 +99,7 @@ function App() {
                     <Home ref={homeRef} />
                   </main>
                   <Footer />
+                  <BottomNavigation /> {/* Add the bottom navigation */}
                 </>
               }
             />
@@ -133,6 +113,7 @@ function App() {
                     <Routes>
                       <Route path="/login" element={<Login />} />
                       <Route path="/post/:id" element={<PostDetail />} />
+
                       <Route path="/about" element={<About />} />
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/terms" element={<Terms />} />
@@ -145,6 +126,7 @@ function App() {
                           </PrivateRoute>
                         }
                       />
+
                       <Route
                         path="/create"
                         element={
@@ -232,11 +214,14 @@ function App() {
                     </Routes>
                   </main>
                   <Footer />
+                  <BottomNavigation /> {/* Add the bottom navigation */}
                 </>
               }
             />
           </Routes>
+
           <InstallPrompt />
+          <FloatingActionButtonAdjuster />
         </div>
       </Router>
     </AuthProvider>
