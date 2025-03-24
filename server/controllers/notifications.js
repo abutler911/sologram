@@ -96,6 +96,7 @@ exports.notifySubscribersOfNewContent = async (content) => {
 };
 
 // Get notification stats (admin only)
+// Get notification stats (admin only)
 exports.getNotificationStats = async (req, res) => {
   try {
     // Fetch OneSignal app details
@@ -108,6 +109,9 @@ exports.getNotificationStats = async (req, res) => {
       }
     );
 
+    // Extract players count from the response
+    const playerCount = appResponse.data.players || 0;
+
     // Find the most recent notification
     const notificationsResponse = await axios.get(
       `https://onesignal.com/api/v1/notifications?app_id=${ONESIGNAL_APP_ID}&limit=1`,
@@ -118,30 +122,26 @@ exports.getNotificationStats = async (req, res) => {
       }
     );
 
-    const lastNotification =
-      notificationsResponse.data.notifications &&
-      notificationsResponse.data.notifications.length > 0
-        ? notificationsResponse.data.notifications[0]
-        : null;
-
+    // Extract the timestamp for the last notification (if any)
     let lastSent = null;
     if (
       notificationsResponse.data.notifications &&
       notificationsResponse.data.notifications.length > 0
     ) {
-      // Get the timestamp from the most recent notification
       const timestamp =
         notificationsResponse.data.notifications[0].completed_at;
 
-      // Only use the timestamp if it's valid (not 0 or too old)
+      // Validate the timestamp (make sure it's not from 1970)
       if (timestamp && new Date(timestamp).getFullYear() > 2000) {
         lastSent = timestamp;
       }
     }
+
+    // Return the stats
     res.status(200).json({
       success: true,
       data: {
-        totalSubscribers: totalSubscribers || 0,
+        totalSubscribers: playerCount,
         lastSent: lastSent,
       },
     });
