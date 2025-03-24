@@ -253,18 +253,38 @@ function syncComments() {
 
 // Push notification event handler (for future implementation)
 self.addEventListener("push", (event) => {
+  // Check if this is a OneSignal push event
+  const isOneSignalEvent =
+    event.data &&
+    event.data.text &&
+    (event.data.text().includes("onesignal") ||
+      event.data.text().includes("OneSignal"));
+
+  // Skip handling if it's a OneSignal event
+  if (isOneSignalEvent) {
+    console.log(
+      "[Service Worker] OneSignal push event detected, skipping custom handler"
+    );
+    return;
+  }
+
+  // Only handle non-OneSignal push events
   if (!event.data) return;
 
-  const data = event.data.json();
+  try {
+    const data = event.data.json();
 
-  const options = {
-    body: data.body,
-    icon: "logo192.png",
-    badge: "favicon.ico",
-    data: { url: data.url },
-  };
+    const options = {
+      body: data.body,
+      icon: "logo192.png",
+      badge: "favicon.ico",
+      data: { url: data.url },
+    };
 
-  event.waitUntil(self.registration.showNotification(data.title, options));
+    event.waitUntil(self.registration.showNotification(data.title, options));
+  } catch (error) {
+    console.error("[Service Worker] Error handling push event:", error);
+  }
 });
 
 // Notification click handler

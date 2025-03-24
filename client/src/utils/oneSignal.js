@@ -6,15 +6,19 @@ export const initializeOneSignal = async () => {
     await OneSignal.init({
       appId: process.env.REACT_APP_ONESIGNAL_APP_ID,
       allowLocalhostAsSecureOrigin: true,
-      notifyButton: {
-        enable: false, // We'll use our custom UI instead
+      serviceWorkerParam: {
+        scope: "/",
       },
+      notifyButton: {
+        enable: false,
+      },
+
       promptOptions: {
         slidedown: {
           prompts: [
             {
-              type: "push", // "push" for push notifications prompt
-              autoPrompt: false, // We'll trigger this manually
+              type: "push",
+              autoPrompt: true,
               text: {
                 actionMessage: "Stay updated with SoloGram",
                 acceptButton: "Allow",
