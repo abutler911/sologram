@@ -313,11 +313,7 @@ const Logo = styled(Link)`
 
   @media (max-width: 767px) {
     .logo-main {
-      font-size: 1.2rem;
-    }
-
-    .tagline {
-      display: none; /* Hide tagline on mobile to save space */
+      font-size: 1.5rem;
     }
 
     svg {
