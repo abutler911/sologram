@@ -2,9 +2,7 @@
 const mongoose = require("mongoose");
 const Story = require("../models/Story");
 const cloudinary = require("../config/cloudinary").cloudinary;
-const {
-  notifySubscribersOfNewContent,
-} = require("../services/notificationService");
+const notificationService = require("../services/notificationService");
 
 // Helper function for handling server errors
 const handleServerError = (res, err, customMessage = "Server Error") => {
@@ -136,14 +134,13 @@ exports.createStory = async (req, res) => {
     });
 
     try {
-      await notifySubscribersOfNewContent({
-        title: title,
-        type: "story",
-      });
+      await notificationService.sendCustomNotification(
+        `New story "${title}" has been added!`,
+        null
+      );
       console.log("Story notification sent successfully");
     } catch (notificationError) {
       console.error("Failed to send notification:", notificationError);
-      // Don't let notification failure prevent story creation
     }
 
     res.status(201).json({
