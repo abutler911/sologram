@@ -32,37 +32,46 @@ function registerValidSW(swUrl, config) {
   navigator.serviceWorker
     .register(swUrl)
     .then((registration) => {
-      let refreshing = false;
-
-      navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (refreshing) return;
-        refreshing = true;
-        window.location.reload();
+      // Check for updates at appropriate times
+      window.addEventListener("online", () => {
+        registration.update();
       });
+
+      // Check for updates periodically
+      setInterval(() => {
+        registration.update();
+      }, 1000 * 60 * 60); // Check for updates every hour
 
       registration.onupdatefound = () => {
         const installingWorker = registration.installing;
-        if (!installingWorker) return;
-
+        if (installingWorker == null) {
+          return;
+        }
         installingWorker.onstatechange = () => {
-          if (
-            installingWorker.state === "installed" &&
-            navigator.serviceWorker.controller
-          ) {
-            console.log("New content is available and will be used soon.");
+          if (installingWorker.state === "installed") {
+            if (navigator.serviceWorker.controller) {
+              // At this point, the updated precached content has been fetched,
+              // but the previous service worker will still serve the older
+              // content until all client tabs are closed.
+              console.log(
+                "New content is available and will be used when all " +
+                  "tabs for this page are closed. See https://cra.link/PWA."
+              );
 
-            // Optionally trigger custom UI here
-            if (config && config.onUpdate) {
-              config.onUpdate(registration);
-            }
+              // Show update notification to the user
+              if (config && config.onUpdate) {
+                config.onUpdate(registration);
+              }
+            } else {
+              // At this point, everything has been precached.
+              // It's the perfect time to display a
+              // "Content is cached for offline use." message.
+              console.log("Content is cached for offline use.");
 
-            if (registration.waiting) {
-              registration.waiting.postMessage({ type: "SKIP_WAITING" });
-            }
-          } else if (installingWorker.state === "installed") {
-            console.log("Content is cached for offline use.");
-            if (config && config.onSuccess) {
-              config.onSuccess(registration);
+              // Execute callback
+              if (config && config.onSuccess) {
+                config.onSuccess(registration);
+              }
             }
           }
         };
