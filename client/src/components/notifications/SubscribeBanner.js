@@ -11,15 +11,28 @@ const SubscribeBanner = () => {
     let timer;
 
     const checkSubscription = async () => {
-      const isSubscribed = await OneSignal.isPushNotificationsEnabled();
-      const hasBannerBeenDismissed = localStorage.getItem(
-        "subscribeBannerDismissed"
-      );
+      try {
+        // Make sure OneSignal is loaded
+        if (
+          !OneSignal ||
+          typeof OneSignal.isPushNotificationsEnabled !== "function"
+        ) {
+          console.warn("OneSignal not ready or invalid.");
+          return;
+        }
 
-      if (!isSubscribed && !hasBannerBeenDismissed) {
-        timer = setTimeout(() => {
-          setShowBanner(true);
-        }, 3000);
+        const isSubscribed = await OneSignal.isPushNotificationsEnabled();
+        const hasBannerBeenDismissed = localStorage.getItem(
+          "subscribeBannerDismissed"
+        );
+
+        if (!isSubscribed && !hasBannerBeenDismissed) {
+          timer = setTimeout(() => {
+            setShowBanner(true);
+          }, 3000);
+        }
+      } catch (err) {
+        console.error("OneSignal check failed:", err);
       }
     };
 

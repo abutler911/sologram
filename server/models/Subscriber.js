@@ -16,6 +16,20 @@ const SubscriberSchema = new mongoose.Schema({
     required: [true, "Name is required"],
     trim: true,
   },
+  email: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    match: [
+      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+      "Please provide a valid email address",
+    ],
+  },
+  pushId: {
+    type: String,
+    default: null,
+  },
+  // Phone verification fields
   isVerified: {
     type: Boolean,
     default: false,
@@ -27,6 +41,34 @@ const SubscriberSchema = new mongoose.Schema({
   verificationExpires: {
     type: Date,
     select: false,
+  },
+  // Email verification fields
+  isEmailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  emailVerificationToken: {
+    type: String,
+    select: false,
+  },
+  emailVerificationExpires: {
+    type: Date,
+    select: false,
+  },
+  // Notification preferences
+  notificationPreferences: {
+    push: {
+      type: Boolean,
+      default: true,
+    },
+    email: {
+      type: Boolean,
+      default: true,
+    },
+    sms: {
+      type: Boolean,
+      default: true,
+    },
   },
   isActive: {
     type: Boolean,
