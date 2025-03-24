@@ -362,6 +362,9 @@ const Card = styled.article`
 
   @media (max-width: 768px) {
     max-width: 100%;
+    width: 100vw;
+    margin-left: -16px;
+    margin-right: -16px;
     border-radius: 0;
     border-left: none;
     border-right: none;
