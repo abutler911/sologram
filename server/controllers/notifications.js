@@ -20,7 +20,7 @@ exports.sendCustomNotification = async (req, res) => {
       app_id: ONESIGNAL_APP_ID,
       contents: { en: message },
       headings: { en: title || "SoloGram Update" },
-      included_segments: ["All"], // Send to all subscribers
+      included_segments: ["All"],
     };
 
     // Make the API call
@@ -66,7 +66,7 @@ exports.notifySubscribersOfNewContent = async (content) => {
       },
       headings: { en: "SoloGram Update" },
       included_segments: ["All"],
-      url: content.url || "https://sologram.app",
+      url: content.url || "https://thesologram.com",
     };
 
     const response = await axios.post(
@@ -124,12 +124,25 @@ exports.getNotificationStats = async (req, res) => {
         ? notificationsResponse.data.notifications[0]
         : null;
 
+    let lastSent = null;
+    if (
+      notificationsResponse.data.notifications &&
+      notificationsResponse.data.notifications.length > 0
+    ) {
+      // Get the timestamp from the most recent notification
+      const timestamp =
+        notificationsResponse.data.notifications[0].completed_at;
+
+      // Only use the timestamp if it's valid (not 0 or too old)
+      if (timestamp && new Date(timestamp).getFullYear() > 2000) {
+        lastSent = timestamp;
+      }
+    }
     res.status(200).json({
       success: true,
       data: {
-        totalSubscribers: appResponse.data.players || 0,
-        lastSent: lastNotification ? lastNotification.completed_at : null,
-        // You could include additional stats here
+        totalSubscribers: totalSubscribers || 0,
+        lastSent: lastSent,
       },
     });
   } catch (err) {

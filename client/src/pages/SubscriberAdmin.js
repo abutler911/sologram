@@ -159,7 +159,8 @@ const SubscriberAdmin = () => {
                 </StatIcon>
                 <StatInfo>
                   <StatValue>
-                    {subscriberStats.lastSent
+                    {subscriberStats.lastSent &&
+                    new Date(subscriberStats.lastSent).getFullYear() > 2000
                       ? new Date(subscriberStats.lastSent).toLocaleDateString()
                       : "Never"}
                   </StatValue>
