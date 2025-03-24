@@ -11,9 +11,11 @@ const {
 require("dotenv").config();
 const rateLimit = require("express-rate-limit");
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again later",
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  trustProxy: false,
 });
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -60,7 +62,7 @@ app.use(
   })
 );
 app.use(morgan("dev"));
-app.set("trust proxy", true);
+app.set("trust proxy", 1);
 
 // Global error handler middleware
 const globalErrorHandler = (err, req, res, next) => {
