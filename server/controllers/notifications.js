@@ -1,5 +1,7 @@
 // server/controllers/notifications.js
 const axios = require("axios");
+const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
+const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID;
 
 // Send custom notification using OneSignal API
 exports.sendCustomNotification = async (req, res) => {
@@ -22,13 +24,17 @@ exports.sendCustomNotification = async (req, res) => {
       // You could also use filters to target specific subscribers
     };
 
-    const response = await axios.post(
+    axios.post(
       "https://onesignal.com/api/v1/notifications",
-      notification,
+      {
+        app_id: ONESIGNAL_APP_ID,
+        contents: { en: message },
+        headings: { en: title },
+        included_segments: ["All"],
+      },
       {
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Basic ${process.env.ONESIGNAL_REST_API_KEY}`,
+          Authorization: `Basic ${ONESIGNAL_API_KEY}`,
         },
       }
     );
