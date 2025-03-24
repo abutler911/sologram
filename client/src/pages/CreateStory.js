@@ -1,28 +1,38 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { FaUpload, FaTimes, FaCamera, FaImage, FaVideo } from "react-icons/fa";
+import {
+  FaUpload,
+  FaTimes,
+  FaCamera,
+  FaImage,
+  FaVideo,
+  FaArrowLeft,
+  FaPlusCircle,
+} from "react-icons/fa";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
 // Helper function to format file size
 const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 Bytes';
+  if (bytes === 0) return "0 Bytes";
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const sizes = ["Bytes", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
 const CreateStory = () => {
-  const [title, setTitle] = useState("");
+  const [caption, setCaption] = useState("");
   const [mediaFiles, setMediaFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState("upload"); // "upload", "edit", "details"
   const [isPWA, setIsPWA] = useState(
     window.matchMedia("(display-mode: standalone)").matches
   );
+  const textAreaRef = useRef(null);
   const navigate = useNavigate();
 
   // Check if running as PWA
@@ -33,66 +43,88 @@ const CreateStory = () => {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
+  // Auto-resize textarea
+  React.useEffect(() => {
+    if (textAreaRef.current) {
+      textAreaRef.current.style.height = "auto";
+      textAreaRef.current.style.height =
+        textAreaRef.current.scrollHeight + "px";
+    }
+  }, [caption]);
+
   // Handle file uploads with enhanced error handling
-  const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
-    // Handle rejected files first
-    if (rejectedFiles && rejectedFiles.length > 0) {
-      rejectedFiles.forEach(({ file, errors }) => {
-        if (errors[0]?.code === "file-too-large") {
-          toast.error(`File ${file.name} is too large. Max size is 20MB for images and 2GB for videos.`);
-        } else if (errors[0]?.code === "file-invalid-type") {
-          toast.error(
-            `File ${file.name} has an invalid type. Only images (JPG, PNG, GIF) and videos (MP4, MOV) are allowed.`
-          );
-        } else {
-          toast.error(
-            `File ${file.name} couldn't be uploaded. ${errors[0]?.message}`
-          );
+  const onDrop = useCallback(
+    (acceptedFiles, rejectedFiles) => {
+      // Handle rejected files first
+      if (rejectedFiles && rejectedFiles.length > 0) {
+        rejectedFiles.forEach(({ file, errors }) => {
+          if (errors[0]?.code === "file-too-large") {
+            toast.error(
+              `File ${file.name} is too large. Max size is 20MB for images and 2GB for videos.`
+            );
+          } else if (errors[0]?.code === "file-invalid-type") {
+            toast.error(
+              `File ${file.name} has an invalid type. Only images (JPG, PNG, GIF) and videos (MP4, MOV) are allowed.`
+            );
+          } else {
+            toast.error(
+              `File ${file.name} couldn't be uploaded. ${errors[0]?.message}`
+            );
+          }
+        });
+      }
+
+      // Check if adding these files would exceed the 20 file limit
+      if (mediaFiles.length + acceptedFiles.length > 20) {
+        toast.error("Maximum 20 media files allowed per story");
+        return;
+      }
+
+      // Process accepted files
+      if (acceptedFiles && acceptedFiles.length > 0) {
+        // Check file sizes based on type
+        const validFiles = acceptedFiles.filter((file) => {
+          if (file.type.startsWith("image/") && file.size > 20 * 1024 * 1024) {
+            toast.error(`Image ${file.name} exceeds 20MB limit`);
+            return false;
+          }
+          if (
+            file.type.startsWith("video/") &&
+            file.size > 2 * 1024 * 1024 * 1024
+          ) {
+            toast.error(`Video ${file.name} exceeds 2GB limit`);
+            return false;
+          }
+          return true;
+        });
+
+        if (validFiles.length === 0) return;
+
+        setMediaFiles((prevFiles) => [...prevFiles, ...validFiles]);
+
+        // Create previews
+        const newPreviews = validFiles.map((file) => {
+          const isVideo = file.type.startsWith("video/");
+          const preview = URL.createObjectURL(file);
+          return {
+            file,
+            preview,
+            type: isVideo ? "video" : "image",
+            name: file.name,
+            size: formatFileSize(file.size),
+          };
+        });
+
+        setPreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
+
+        // If this is the first media, automatically go to next step
+        if (mediaFiles.length === 0) {
+          setCurrentStep("edit");
         }
-      });
-    }
-
-    // Check if adding these files would exceed the 20 file limit
-    if (mediaFiles.length + acceptedFiles.length > 20) {
-      toast.error('Maximum 20 media files allowed per story');
-      return;
-    }
-
-    // Process accepted files
-    if (acceptedFiles && acceptedFiles.length > 0) {
-      // Check file sizes based on type
-      const validFiles = acceptedFiles.filter(file => {
-        if (file.type.startsWith('image/') && file.size > 20 * 1024 * 1024) {
-          toast.error(`Image ${file.name} exceeds 20MB limit`);
-          return false;
-        }
-        if (file.type.startsWith('video/') && file.size > 2 * 1024 * 1024 * 1024) {
-          toast.error(`Video ${file.name} exceeds 2GB limit`);
-          return false;
-        }
-        return true;
-      });
-
-      if (validFiles.length === 0) return;
-
-      setMediaFiles((prevFiles) => [...prevFiles, ...validFiles]);
-
-      // Create previews
-      const newPreviews = validFiles.map((file) => {
-        const isVideo = file.type.startsWith("video/");
-        const preview = URL.createObjectURL(file);
-        return { 
-          file, 
-          preview, 
-          type: isVideo ? "video" : "image",
-          name: file.name,
-          size: formatFileSize(file.size)
-        };
-      });
-
-      setPreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
-    }
-  }, [mediaFiles]);
+      }
+    },
+    [mediaFiles]
+  );
 
   // Configure dropzone with more specific options
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -104,8 +136,8 @@ const CreateStory = () => {
       "video/mp4": [".mp4"],
       "video/quicktime": [".mov"],
     },
-    maxSize: 2 * 1024 * 1024 * 1024, // 2GB for videos (updated for Cloudinary tier)
-    maxFiles: 20, // Updated limit to match Cloudinary tier
+    maxSize: 2 * 1024 * 1024 * 1024, // 2GB for videos
+    maxFiles: 20,
     noClick: isPWA, // Disable click in PWA mode (use buttons instead)
     noKeyboard: false, // Allow keyboard navigation
     preventDropOnDocument: true, // Prevent dropping on document
@@ -125,11 +157,15 @@ const CreateStory = () => {
 
     setPreviews(newPreviews);
     setMediaFiles(newMediaFiles);
+
+    // If no media left, go back to upload step
+    if (newPreviews.length === 0) {
+      setCurrentStep("upload");
+    }
   };
 
   // Handle direct camera access
   const handleCameraCapture = () => {
-    // Create a hidden file input specifically for camera
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
@@ -138,7 +174,6 @@ const CreateStory = () => {
     input.onchange = (e) => {
       if (e.target.files && e.target.files.length > 0) {
         const file = e.target.files[0];
-        // Process the file as if it was dropped
         onDrop([file], []);
       }
     };
@@ -148,7 +183,6 @@ const CreateStory = () => {
 
   // Handle video recording
   const handleVideoCapture = () => {
-    // Create a hidden file input specifically for video
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "video/*";
@@ -157,7 +191,6 @@ const CreateStory = () => {
     input.onchange = (e) => {
       if (e.target.files && e.target.files.length > 0) {
         const file = e.target.files[0];
-        // Process the file as if it was dropped
         onDrop([file], []);
       }
     };
@@ -167,18 +200,12 @@ const CreateStory = () => {
 
   // Handle selecting media from gallery
   const handleGallerySelect = () => {
-    // This explicitly calls the dropzone's open method
     open();
   };
 
-  // Handle form submission with improved error handling
+  // Handle form submission
   const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!title.trim()) {
-      toast.error("Please provide a title for your story");
-      return;
-    }
+    if (e) e.preventDefault();
 
     if (mediaFiles.length === 0) {
       toast.error("Please add at least one image or video to your story");
@@ -189,7 +216,7 @@ const CreateStory = () => {
 
     try {
       const formData = new FormData();
-      formData.append("title", title);
+      formData.append("caption", caption);
 
       mediaFiles.forEach((file) => {
         formData.append("media", file);
@@ -198,7 +225,7 @@ const CreateStory = () => {
       await axios.post("/api/stories", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-        }
+        },
       });
 
       toast.success("Story created successfully!");
@@ -213,119 +240,192 @@ const CreateStory = () => {
     }
   };
 
-  return (
-    <PageWrapper>
-      <Container>
-        <PageHeader>Create New Story</PageHeader>
+  // Go to next step
+  const goToNextStep = () => {
+    if (currentStep === "edit") {
+      setCurrentStep("details");
+    } else if (currentStep === "details") {
+      handleSubmit();
+    }
+  };
 
-        <StoryForm onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="title">Story Title</Label>
-            <Input
-              type="text"
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Give your story a title"
-              required
-            />
-          </FormGroup>
+  // Go to previous step
+  const goToPreviousStep = () => {
+    if (currentStep === "details") {
+      setCurrentStep("edit");
+    } else if (currentStep === "edit") {
+      setCurrentStep("upload");
+    } else {
+      navigate("/");
+    }
+  };
 
-          <FormGroup>
-            <Label>Add Images & Videos</Label>
-            <DropzoneContainer
-              {...getRootProps()}
-              isDragActive={isDragActive}
-              isPWA={isPWA}
-            >
-              <input {...getInputProps()} />
+  // Render upload step
+  const renderUploadStep = () => (
+    <>
+      <UploadContainer>
+        <DropzoneContainer
+          {...getRootProps()}
+          isDragActive={isDragActive}
+          isPWA={isPWA}
+        >
+          <input {...getInputProps()} />
+          {isDragActive ? (
+            <DragActiveContent>
               <UploadIcon>
                 <FaUpload />
               </UploadIcon>
+              <p>Drop your files here</p>
+            </DragActiveContent>
+          ) : (
+            <DropzoneContent>
+              <UploadIcon>
+                <FaPlusCircle />
+              </UploadIcon>
               {isPWA ? (
-                <p>Use the buttons below to add media</p>
+                <p>Create a new story</p>
               ) : (
-                <p>Drag & drop images or videos here, or click to select files</p>
+                <p>Drag photos and videos here</p>
               )}
-              <MediaTypes>
-                <MediaTypeIcon>
-                  <FaImage />
-                  <span>Images (20MB max)</span>
-                </MediaTypeIcon>
-                <MediaTypeIcon>
-                  <FaVideo />
-                  <span>Videos (2GB max)</span>
-                </MediaTypeIcon>
-              </MediaTypes>
-            </DropzoneContainer>
-
-            {/* Explicit buttons for PWA mode and better mobile UX */}
-            <ActionButtonsContainer>
-              <CameraButton type="button" onClick={handleCameraCapture}>
-                <FaCamera />
-                <span>Take Photo</span>
-              </CameraButton>
-
-              <VideoButton type="button" onClick={handleVideoCapture}>
-                <FaVideo />
-                <span>Record Video</span>
-              </VideoButton>
-
-              <GalleryButton type="button" onClick={handleGallerySelect}>
-                <FaImage />
-                <span>Choose from Gallery</span>
-              </GalleryButton>
-            </ActionButtonsContainer>
-          </FormGroup>
-
-          {previews.length > 0 && (
-            <PreviewSection>
-              <Label>Selected Media ({previews.length}/20)</Label>
-              <PreviewList>
-                {previews.map((item, index) => (
-                  <PreviewItem key={index}>
-                    {item.type === "image" ? (
-                      <PreviewImage src={item.preview} alt={`Preview ${index}`} />
-                    ) : (
-                      <PreviewVideo>
-                        <video src={item.preview} controls muted />
-                        <VideoIcon><FaVideo /></VideoIcon>
-                      </PreviewVideo>
-                    )}
-                    {item.name && (
-                      <MediaInfoOverlay>
-                        <MediaName>{item.name}</MediaName>
-                        <MediaSize>{item.size}</MediaSize>
-                      </MediaInfoOverlay>
-                    )}
-                    <RemoveButton onClick={() => removePreview(index)}>
-                      <FaTimes />
-                    </RemoveButton>
-                  </PreviewItem>
-                ))}
-              </PreviewList>
-            </PreviewSection>
+            </DropzoneContent>
           )}
+        </DropzoneContainer>
 
-          <ButtonGroup>
-            <CancelButton type="button" onClick={() => navigate("/")}>
-              Cancel
-            </CancelButton>
-            <SubmitButton type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create Story"}
-            </SubmitButton>
-          </ButtonGroup>
-        </StoryForm>
-      </Container>
+        <ActionButtonsContainer>
+          <GalleryButton type="button" onClick={handleGallerySelect}>
+            <FaImage />
+            <span>Gallery</span>
+          </GalleryButton>
+
+          <CameraButton type="button" onClick={handleCameraCapture}>
+            <FaCamera />
+            <span>Camera</span>
+          </CameraButton>
+
+          <VideoButton type="button" onClick={handleVideoCapture}>
+            <FaVideo />
+            <span>Video</span>
+          </VideoButton>
+        </ActionButtonsContainer>
+      </UploadContainer>
+    </>
+  );
+
+  // Render edit step
+  const renderEditStep = () => (
+    <>
+      <EditContainer>
+        <MediaPreview>
+          {previews.map((item, index) => (
+            <PreviewItem key={index} isActive={index === 0}>
+              {item.type === "image" ? (
+                <PreviewImage src={item.preview} alt={`Preview ${index}`} />
+              ) : (
+                <PreviewVideo>
+                  <video src={item.preview} controls muted />
+                  <VideoIcon>
+                    <FaVideo />
+                  </VideoIcon>
+                </PreviewVideo>
+              )}
+              <RemoveButton onClick={() => removePreview(index)}>
+                <FaTimes />
+              </RemoveButton>
+              {previews.length > 1 && (
+                <PreviewNumber>{index + 1}</PreviewNumber>
+              )}
+            </PreviewItem>
+          ))}
+        </MediaPreview>
+
+        {previews.length > 0 && (
+          <AddMoreButton onClick={open}>
+            <FaPlusCircle />
+            <span>Add More</span>
+          </AddMoreButton>
+        )}
+      </EditContainer>
+    </>
+  );
+
+  // Render details step
+  const renderDetailsStep = () => (
+    <>
+      <DetailsContainer>
+        <MediaDetailsPreview>
+          {previews[0] && (
+            <>
+              {previews[0].type === "image" ? (
+                <PreviewThumbnail
+                  src={previews[0].preview}
+                  alt="Media preview"
+                />
+              ) : (
+                <VideoThumbnail>
+                  <video src={previews[0].preview} muted />
+                  <VideoIcon>
+                    <FaVideo />
+                  </VideoIcon>
+                </VideoThumbnail>
+              )}
+            </>
+          )}
+          {previews.length > 1 && (
+            <MultipleIndicator>+{previews.length - 1}</MultipleIndicator>
+          )}
+        </MediaDetailsPreview>
+
+        <CaptionContainer>
+          <CaptionTextarea
+            ref={textAreaRef}
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            placeholder="Write a caption..."
+            rows={1}
+          />
+        </CaptionContainer>
+      </DetailsContainer>
+    </>
+  );
+
+  return (
+    <PageWrapper>
+      <AppHeader>
+        <BackButton onClick={goToPreviousStep}>
+          <FaArrowLeft />
+        </BackButton>
+        <HeaderTitle>
+          {currentStep === "upload" && "New Story"}
+          {currentStep === "edit" && "Edit"}
+          {currentStep === "details" && "New Story"}
+        </HeaderTitle>
+        {currentStep !== "upload" && (
+          <NextButton onClick={goToNextStep} disabled={loading}>
+            {currentStep === "details"
+              ? loading
+                ? "Posting..."
+                : "Share"
+              : "Next"}
+          </NextButton>
+        )}
+      </AppHeader>
+
+      <MainContent>
+        {currentStep === "upload" && renderUploadStep()}
+        {currentStep === "edit" && renderEditStep()}
+        {currentStep === "details" && renderDetailsStep()}
+      </MainContent>
     </PageWrapper>
   );
 };
 
 // Styled Components
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: #000;
   min-height: 100vh;
-  padding: 1rem 0;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
 
   /* Fix for iOS to better handle full height */
   @supports (-webkit-touch-callout: none) {
@@ -333,228 +433,286 @@ const PageWrapper = styled.div`
   }
 `;
 
-const Container = styled.div`
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
-
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
-
-  /* Ensure good rendering in PWA mode */
-  @media screen and (display-mode: standalone) {
-    width: 100%;
-    padding: 1rem;
-    box-sizing: border-box;
-  }
+const AppHeader = styled.header`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #262626;
+  background-color: #000;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 `;
 
-const PageHeader = styled.h1`
+const BackButton = styled.button`
+  background: none;
+  border: none;
   color: #fff;
-  margin-bottom: 2rem;
-  font-size: 1.75rem;
-
-  @media (max-width: 480px) {
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
+  font-size: 1.25rem;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
-const StoryForm = styled.form`
-  background-color: #1e1e1e;
-  border-radius: 8px;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-
-  @media (max-width: 480px) {
-    padding: 1.5rem;
-  }
-
-  /* Ensure proper rendering in PWA mode */
-  @media screen and (display-mode: standalone) {
-    width: 100%;
-    box-sizing: border-box;
-  }
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 1.5rem;
-`;
-
-const Label = styled.label`
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #ddd;
-  font-weight: 500;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #333;
-  border: 1px solid #444;
-  border-radius: 4px;
-  color: #fff;
+const HeaderTitle = styled.h1`
   font-size: 1rem;
-  box-sizing: border-box;
+  font-weight: 600;
+  margin: 0;
+  flex-grow: 1;
+  text-align: center;
+`;
 
-  &:focus {
-    outline: none;
-    border-color: #ff7e5f;
-  }
+const NextButton = styled.button`
+  background: none;
+  border: none;
+  color: #0095f6;
+  font-weight: 600;
+  padding: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
 
-  /* Prevent zoom on iOS */
-  @media (max-width: 480px) {
-    font-size: 16px;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
+`;
+
+const MainContent = styled.main`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+`;
+
+// Upload Step
+const UploadContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  flex: 1;
 `;
 
 const DropzoneContainer = styled.div`
-  border: 2px dashed ${(props) => (props.isDragActive ? "#ff7e5f" : "#444")};
-  border-radius: 4px;
-  padding: 2rem;
-  text-align: center;
-  background-color: #252525;
+  width: 100%;
+  height: 250px;
+  border: 1px dashed ${(props) => (props.isDragActive ? "#0095f6" : "#333")};
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: ${(props) => (props.isPWA ? "default" : "pointer")};
-  transition: border-color 0.3s;
-  color: #aaa;
-  margin-bottom: 1rem;
+  margin-bottom: 24px;
+`;
 
-  &:hover {
-    border-color: ${(props) => (props.isPWA ? "#444" : "#ff7e5f")};
-  }
+const DropzoneContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  text-align: center;
+  padding: 16px;
+`;
 
-  @media (max-width: 480px) {
-    padding: 1.5rem;
-  }
+const DragActiveContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #0095f6;
+  text-align: center;
+  padding: 16px;
 `;
 
 const UploadIcon = styled.div`
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  color: #ff7e5f;
-`;
-
-const MediaTypes = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
-  margin-top: 1rem;
-  
-  @media (max-width: 480px) {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-`;
-
-const MediaTypeIcon = styled.div`
-  display: flex;
-  align-items: center;
-  color: #888;
-  font-size: 0.8rem;
-  
-  svg {
-    color: #ff7e5f;
-    margin-right: 0.5rem;
-    font-size: 1rem;
-  }
+  font-size: 3rem;
+  margin-bottom: 16px;
+  color: #0095f6;
 `;
 
 const ActionButtonsContainer = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-top: 1rem;
-
-  @media (min-width: 768px) {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
-
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
 `;
 
 const ActionButton = styled.button`
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0.875rem;
-  border-radius: 4px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  gap: 0.5rem;
+  padding: 16px 12px;
+  border-radius: 8px;
   border: none;
-  font-size: 1rem;
+  font-weight: 500;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
 
   svg {
-    font-size: 1.25rem;
-  }
-`;
-
-const CameraButton = styled(ActionButton)`
-  background-color: #ff7e5f;
-  color: white;
-
-  &:hover {
-    background-color: #ff6347;
-  }
-`;
-
-const VideoButton = styled(ActionButton)`
-  background-color: #e74c3c;
-  color: white;
-
-  &:hover {
-    background-color: #c0392b;
+    font-size: 1.5rem;
   }
 `;
 
 const GalleryButton = styled(ActionButton)`
-  background-color: #4a90e2;
+  background-color: #262626;
   color: white;
 
   &:hover {
-    background-color: #3a70b2;
+    background-color: #363636;
   }
 `;
 
-const PreviewSection = styled.div`
-  margin-bottom: 1.5rem;
+const CameraButton = styled(ActionButton)`
+  background-color: #262626;
+  color: white;
+
+  &:hover {
+    background-color: #363636;
+  }
 `;
 
-const PreviewList = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1rem;
+const VideoButton = styled(ActionButton)`
+  background-color: #262626;
+  color: white;
 
-  @media (max-width: 480px) {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  &:hover {
+    background-color: #363636;
   }
+`;
+
+// Edit Step
+const EditContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+`;
+
+const MediaPreview = styled.div`
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  position: relative;
+  background-color: #000;
+  overflow: hidden;
 `;
 
 const PreviewItem = styled.div`
-  position: relative;
-  border-radius: 4px;
-  overflow: hidden;
-  aspect-ratio: 1;
-  border: 1px solid #333;
-  background-color: #000;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: ${(props) => (props.isActive ? "block" : "none")};
 `;
 
 const PreviewImage = styled.img`
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 `;
 
 const PreviewVideo = styled.div`
-  position: relative;
   width: 100%;
   height: 100%;
-  
+  position: relative;
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+`;
+
+const VideoIcon = styled.div`
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const RemoveButton = styled.button`
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+`;
+
+const PreviewNumber = styled.div`
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+`;
+
+const AddMoreButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0095f6;
+  color: white;
+  border: none;
+  margin: 16px;
+  padding: 12px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  gap: 8px;
+`;
+
+// Details Step
+const DetailsContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+`;
+
+const MediaDetailsPreview = styled.div`
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 16px;
+`;
+
+const PreviewThumbnail = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const VideoThumbnail = styled.div`
+  width: 100%;
+  height: 100%;
+  position: relative;
+
   video {
     width: 100%;
     height: 100%;
@@ -562,126 +720,38 @@ const PreviewVideo = styled.div`
   }
 `;
 
-const VideoIcon = styled.div`
+const MultipleIndicator = styled.div`
   position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  @media (max-width: 480px) {
-    width: 20px;
-    height: 20px;
-    font-size: 0.75rem;
-  }
-`;
-
-const MediaInfoOverlay = styled.div`
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  top: 8px;
+  right: 8px;
   background-color: rgba(0, 0, 0, 0.7);
   color: white;
-  padding: 0.5rem;
-  font-size: 0.75rem;
-  transform: translateY(100%);
-  transition: transform 0.2s ease-in-out;
-  
-  ${PreviewItem}:hover & {
-    transform: translateY(0);
-  }
-`;
-
-const MediaName = styled.div`
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 0.25rem;
-`;
-
-const MediaSize = styled.div`
-  font-size: 0.7rem;
-  opacity: 0.8;
-`;
-
-const RemoveButton = styled.button`
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.3s;
-
-  &:hover {
-    background-color: rgba(255, 0, 0, 0.7);
-  }
-
-  /* Larger touch target on mobile */
-  @media (max-width: 480px) {
-    width: 30px;
-    height: 30px;
-  }
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-
-  @media (max-width: 480px) {
-    flex-direction: column;
-  }
-`;
-
-const Button = styled.button`
-  padding: 0.75rem 1.5rem;
   border-radius: 4px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  @media (max-width: 480px) {
-    width: 100%;
-  }
+  padding: 2px 6px;
+  font-size: 0.75rem;
 `;
 
-const CancelButton = styled(Button)`
-  background-color: transparent;
-  color: #ddd;
-  border: 1px solid #444;
-
-  &:hover {
-    background-color: #333;
-  }
+const CaptionContainer = styled.div`
+  border-top: 1px solid #262626;
+  padding-top: 16px;
 `;
 
-const SubmitButton = styled(Button)`
-  background-color: #ff7e5f;
-  color: white;
+const CaptionTextarea = styled.textarea`
+  width: 100%;
+  background: transparent;
   border: none;
+  color: #fff;
+  font-size: 1rem;
+  resize: none;
+  padding: 8px 0;
+  min-height: 90px;
 
-  &:hover {
-    background-color: #ff6347;
+  &:focus {
+    outline: none;
   }
 
-  &:disabled {
-    background-color: #666;
-    cursor: not-allowed;
+  &::placeholder {
+    color: #555;
   }
 `;
 
