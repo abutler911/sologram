@@ -6,13 +6,17 @@ export const initializeOneSignal = async () => {
     await OneSignal.init({
       appId: process.env.REACT_APP_ONESIGNAL_APP_ID,
       allowLocalhostAsSecureOrigin: true,
+
+      // Add service worker configuration
+      serviceWorkerPath: "/service-worker.js", // Your custom service worker
+      serviceWorkerUpdaterPath: "/service-worker.js", // Your custom service worker
+
       serviceWorkerParam: {
         scope: "/",
       },
       notifyButton: {
         enable: false,
       },
-
       promptOptions: {
         slidedown: {
           prompts: [
@@ -34,6 +38,13 @@ export const initializeOneSignal = async () => {
     const userId = localStorage.getItem("userId");
     if (userId && typeof OneSignal.setExternalUserId === "function") {
       await OneSignal.setExternalUserId(userId);
+    }
+
+    // Check if notifications are enabled for debugging
+    const isPushSupported = await OneSignal.isPushNotificationsSupported();
+    if (isPushSupported) {
+      const isEnabled = await OneSignal.isPushNotificationsEnabled();
+      console.log("[OneSignal] Push notifications enabled:", isEnabled);
     }
 
     return true;
@@ -59,7 +70,6 @@ export const sendNotification = async (title, message, url = null) => {
         url,
       }),
     });
-
     const data = await response.json();
     return data;
   } catch (error) {

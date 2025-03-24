@@ -2,12 +2,12 @@
 /* eslint-disable no-restricted-globals */
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-// Configuration
-const APP_VERSION = "v1.0.0";
-const CACHE_NAME = `sologram-cache-${APP_VERSION}`;
-const MEDIA_CACHE_NAME = `sologram-media-cache-${APP_VERSION}`;
+console.log("[Service Worker] OneSignal SDK imported");
+
+// Configuration - Fixed the duplicate APP_VERSION declaration
 const APP_VERSION = "1.0.1"; // Increment this when you want to force an update
 const CACHE_NAME = `sologram-cache-${APP_VERSION}`;
+const MEDIA_CACHE_NAME = `sologram-media-cache-${APP_VERSION}`;
 
 // Static assets to pre-cache during installation
 const STATIC_ASSETS = [
@@ -25,6 +25,7 @@ const STATIC_ASSETS = [
   "/maskable_icon.png",
 ];
 
+// Message event handler for SKIP_WAITING
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     console.log(
@@ -34,6 +35,7 @@ self.addEventListener("message", (event) => {
   }
 });
 
+// Install event handler - Removed skipWaiting() call here
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
@@ -251,37 +253,36 @@ function syncComments() {
   return Promise.resolve();
 }
 
-// Push notification event handler (for future implementation)
+// Improved push notification event handler
 self.addEventListener("push", (event) => {
-  // Check if this is a OneSignal push event
-  const isOneSignalEvent =
-    event.data &&
-    event.data.text &&
-    (event.data.text().includes("onesignal") ||
-      event.data.text().includes("OneSignal"));
+  console.log("[Service Worker] Push event received", event);
 
-  // Skip handling if it's a OneSignal event
-  if (isOneSignalEvent) {
-    console.log(
-      "[Service Worker] OneSignal push event detected, skipping custom handler"
-    );
+  // Let OneSignal handle push events if it's available
+  if (self.OneSignal) {
+    console.log("[Service Worker] Delegating to OneSignal push handler");
     return;
   }
 
-  // Only handle non-OneSignal push events
+  // Only handle non-OneSignal push events as fallback
   if (!event.data) return;
 
   try {
     const data = event.data.json();
+    console.log("[Service Worker] Processing push data:", data);
 
     const options = {
-      body: data.body,
+      body: data.body || "New update available",
       icon: "logo192.png",
       badge: "favicon.ico",
-      data: { url: data.url },
+      data: { url: data.url || "/" },
     };
 
-    event.waitUntil(self.registration.showNotification(data.title, options));
+    event.waitUntil(
+      self.registration.showNotification(
+        data.title || "SoloGram Update",
+        options
+      )
+    );
   } catch (error) {
     console.error("[Service Worker] Error handling push event:", error);
   }
