@@ -132,12 +132,20 @@ root.render(
 // Learn more about service workers: https://cra.link/PWA
 serviceWorkerRegistration.register({
   onUpdate: (registration) => {
+    // Only show notification if there's actually a new service worker waiting
+    if (!registration || !registration.waiting) {
+      console.log(
+        "[PWA] Update callback triggered but no waiting worker found"
+      );
+      return;
+    }
+
     // Prevent duplicate notifications
     if (document.getElementById("update-notification")) {
       return;
     }
 
-    console.log("[PWA] Update detected, showing notification");
+    console.log("[PWA] New version waiting, showing update notification");
 
     // Create a UI to notify users about the update
     const updateAvailable = document.createElement("div");
@@ -205,9 +213,6 @@ serviceWorkerRegistration.register({
         if (registration && registration.waiting) {
           console.log("[PWA] Sending SKIP_WAITING message to waiting worker");
           registration.waiting.postMessage({ type: "SKIP_WAITING" });
-        } else {
-          console.log("[PWA] No waiting worker found, reloading page");
-          window.location.reload();
         }
       });
   },

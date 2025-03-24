@@ -6,6 +6,8 @@ importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 const APP_VERSION = "v1.0.0";
 const CACHE_NAME = `sologram-cache-${APP_VERSION}`;
 const MEDIA_CACHE_NAME = `sologram-media-cache-${APP_VERSION}`;
+const APP_VERSION = "1.0.1"; // Increment this when you want to force an update
+const CACHE_NAME = `sologram-cache-${APP_VERSION}`;
 
 // Static assets to pre-cache during installation
 const STATIC_ASSETS = [
