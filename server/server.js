@@ -4,32 +4,28 @@ const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const path = require("path");
+const winston = require("winston");
+const rateLimit = require("express-rate-limit");
+const mongoSanitize = require("express-mongo-sanitize");
 const {
   setupAgenda,
   gracefulShutdown: agendaShutdown,
 } = require("./services/storyArchiver");
+
 require("dotenv").config();
-const rateLimit = require("express-rate-limit");
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  trustProxy: false,
-});
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5, // limit auth requests to 5 per 15 minutes
-  message: "Too many authentication attempts, please try again later",
-});
-const mongoSanitize = require("express-mongo-sanitize");
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(express.json({ limit: "100mb" }));
-app.use(express.urlencoded({ extended: true, limit: "100mb" }));
-app.use(mongoSanitize());
+const logger = winston.createLogger({
+  level: "info",
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.File({ filename: "error.log", level: "error" }),
+    new winston.transports.File({ filename: "combined.log" }),
+  ],
+});
+
 const corsOptions = {
   origin:
     process.env.NODE_ENV === "production"
@@ -42,10 +38,46 @@ const corsOptions = {
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
-  maxAge: 86400, // 24 hours
+  maxAge: 86400,
 };
 
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  trustProxy: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: "Too many authentication attempts, please try again later",
+});
+
+const globalErrorHandler = (err, req, res, next) => {
+  logger.error({
+    message: "Server error",
+    url: req.originalUrl,
+    method: req.method,
+    error: err.message,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+  });
+
+  res.status(500).json({
+    success: false,
+    message: "Server error",
+    error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+  });
+};
+
+app.set("trust proxy", 1);
+app.use(express.json({ limit: "100mb" }));
+app.use(express.urlencoded({ extended: true, limit: "100mb" }));
+app.use(mongoSanitize());
 app.use(cors(corsOptions));
+
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -61,24 +93,22 @@ app.use(
     referrerPolicy: { policy: "same-origin" },
   })
 );
-app.use(morgan("dev"));
-app.set("trust proxy", 1);
 
-// Global error handler middleware
-const globalErrorHandler = (err, req, res, next) => {
-  console.error("GLOBAL ERROR:", {
-    url: req.originalUrl,
-    method: req.method,
-    message: err.message,
-    stack: err.stack,
+app.use(morgan("dev"));
+
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    logger.info({
+      method: req.method,
+      url: req.originalUrl,
+      status: res.statusCode,
+      duration: `${duration}ms`,
+    });
   });
-  res.status(500).json({
-    success: false,
-    message: "Server error",
-    error: process.env.NODE_ENV === "development" ? err.message : undefined,
-    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
-  });
-};
+  next();
+});
 
 async function startServer() {
   try {
@@ -88,23 +118,18 @@ async function startServer() {
       throw new Error("MongoDB connection string is not defined");
     }
 
-    // Connect to MongoDB
     await mongoose.connect(mongoURI);
-    console.log("MongoDB connected successfully");
+    logger.info("Database connection established");
 
-    // Initialize the Story archiving scheduler using Agenda
     try {
       await setupAgenda();
-      console.log("Story archiving service initialized successfully");
+      logger.info("Story archiving service initialized");
     } catch (agendaError) {
-      console.error(
-        "Warning: Story archiving service setup failed:",
-        agendaError
-      );
-      // Continue server startup even if agenda fails
+      logger.warn("Story archiving service initialization failed", {
+        error: agendaError.message,
+      });
     }
 
-    // Import routes
     const postRoutes = require("./routes/posts");
     const authRoutes = require("./routes/auth");
     const collectionRoutes = require("./routes/collections");
@@ -113,14 +138,6 @@ async function startServer() {
     const subscriberRoutes = require("./routes/subscribers");
     const notificationRoutes = require("./routes/notifications");
 
-    // Route validation middleware - helps catch route conflicts
-    app.use((req, res, next) => {
-      const originalUrl = req.originalUrl;
-      console.log(`Request received: ${req.method} ${originalUrl}`);
-      next();
-    });
-
-    // Use routes - order matters for nested routes!
     app.use("/api/", apiLimiter);
     app.use("/api/auth/", authLimiter);
     app.use("/api/auth", authRoutes);
@@ -131,7 +148,6 @@ async function startServer() {
     app.use("/api/subscribers", subscriberRoutes);
     app.use("/api/notifications", notificationRoutes);
 
-    // Add a health check endpoint
     app.get("/api/health", (req, res) => {
       res.status(200).json({
         status: "ok",
@@ -140,7 +156,6 @@ async function startServer() {
       });
     });
 
-    // Static files for production
     if (process.env.NODE_ENV === "production") {
       app.use(express.static(path.join(__dirname, "../client/build")));
       app.get("*", (req, res) => {
@@ -148,46 +163,46 @@ async function startServer() {
       });
     }
 
-    // Apply global error handler
     app.use(globalErrorHandler);
 
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      logger.info(
+        `Server started on port ${PORT} in ${
+          process.env.NODE_ENV || "development"
+        } mode`
+      );
     });
   } catch (error) {
-    console.error("Server startup failed:", error);
+    logger.error("Server startup failed", {
+      error: error.message,
+      stack: error.stack,
+    });
     process.exit(1);
   }
 }
 
-startServer();
-
-// Graceful shutdown
 const gracefulShutdown = async () => {
-  console.log("Shutting down server gracefully...");
+  logger.info("Graceful shutdown initiated");
   try {
-    // Stop the Agenda job scheduler
     try {
       await agendaShutdown();
-      console.log("Story archiving service shut down properly");
+      logger.info("Story archiving service stopped");
     } catch (agendaError) {
-      console.error("Error shutting down Agenda:", agendaError);
+      logger.error("Agenda shutdown error", { error: agendaError.message });
     }
 
-    // Close MongoDB connection
     await mongoose.connection.close();
-    console.log("MongoDB connection closed");
+    logger.info("Database connection closed");
 
-    // Other cleanup tasks can be added here
-
-    console.log("All connections closed successfully");
+    logger.info("Server shutdown complete");
     process.exit(0);
   } catch (err) {
-    console.error("Error during graceful shutdown:", err);
+    logger.error("Error during shutdown", { error: err.message });
     process.exit(1);
   }
 };
 
-// Listen for termination signals
 process.on("SIGTERM", gracefulShutdown);
 process.on("SIGINT", gracefulShutdown);
+
+startServer();
