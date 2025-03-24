@@ -10,19 +10,16 @@ export const initializeOneSignal = async () => {
       },
     });
 
-    // ✅ Ensure methods only run when SDK is ready
-    OneSignal.push(async () => {
-      const userId = localStorage.getItem("userId");
-      if (userId) {
-        await OneSignal.setExternalUserId(userId);
-      }
+    // OPTIONAL: set external user ID if available
+    const userId = localStorage.getItem("userId");
+    if (userId && typeof OneSignal.setExternalUserId === "function") {
+      await OneSignal.setExternalUserId(userId);
+    }
 
-      if (typeof OneSignal.showSlidedownPrompt === "function") {
-        OneSignal.showSlidedownPrompt();
-      } else {
-        console.warn("showSlidedownPrompt not available yet.");
-      }
-    });
+    // OPTIONAL: show slide-down prompt if available
+    if (typeof OneSignal.showSlidedownPrompt === "function") {
+      OneSignal.showSlidedownPrompt();
+    }
 
     return true;
   } catch (error) {
