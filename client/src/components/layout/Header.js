@@ -99,7 +99,11 @@ const Header = ({ onSearch, onClearSearch }) => {
             </div>
             <div className="tagline">One Voice. Infinite Moments.</div>
           </Logo>
-
+          {isAuthenticated && (
+            <MobileLogoutButton onClick={handleLogout}>
+              <FaSignOutAlt />
+            </MobileLogoutButton>
+          )}
           {location.pathname === "/" && (
             <SearchContainer expanded={searchExpanded}>
               <SearchIconButton
@@ -319,6 +323,27 @@ const Logo = styled(Link)`
     svg {
       font-size: 1.5rem;
     }
+  }
+`;
+
+const MobileLogoutButton = styled.button`
+  display: none; /* Hidden by default */
+  background: none;
+  border: none;
+  color: #4a4a4a;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-left: auto;
+
+  &:hover {
+    color: #ff7e5f;
+  }
+
+  @media (max-width: 767px) {
+    display: flex; /* Only show on mobile */
+    align-items: center;
+    justify-content: center;
   }
 `;
 
