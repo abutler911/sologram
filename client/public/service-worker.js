@@ -23,7 +23,15 @@ const STATIC_ASSETS = [
   "/maskable_icon.png",
 ];
 
-// Install event handler
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    console.log(
+      "[Service Worker] Received skip waiting message, activating now"
+    );
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
@@ -36,7 +44,6 @@ self.addEventListener("install", (event) => {
       })
       .then(() => {
         console.log("[Service Worker] Installation completed");
-        return self.skipWaiting();
       })
   );
 });

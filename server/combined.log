@@ -84,3 +84,6 @@
 {"level":"info","message":"Database connection established"}
 {"level":"info","message":"Story archiving service initialized"}
 {"level":"info","message":"Server started on port 5000 in development mode"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"Story archiving service initialized"}
+{"level":"info","message":"Server started on port 5000 in development mode"}

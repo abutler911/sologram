@@ -132,6 +132,13 @@ root.render(
 // Learn more about service workers: https://cra.link/PWA
 serviceWorkerRegistration.register({
   onUpdate: (registration) => {
+    // Prevent duplicate notifications
+    if (document.getElementById("update-notification")) {
+      return;
+    }
+
+    console.log("[PWA] Update detected, showing notification");
+
     // Create a UI to notify users about the update
     const updateAvailable = document.createElement("div");
     updateAvailable.id = "update-notification";
@@ -168,30 +175,38 @@ serviceWorkerRegistration.register({
         </button>
       </div>
     `;
+
+    // Add to body
     document.body.appendChild(updateAvailable);
+
+    // Set up a global flag to track refresh status
+    window.__refreshing = false;
+
+    // Set up controller change listener BEFORE adding button click handler
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (window.__refreshing) return;
+      window.__refreshing = true;
+      console.log("[PWA] Service worker controller changed, reloading page");
+      window.location.reload();
+    });
 
     // Add event listener to the update button
     document
       .getElementById("update-app-button")
       .addEventListener("click", () => {
+        console.log("[PWA] Update button clicked");
+
         // Remove the notification
         if (updateAvailable.parentNode) {
           updateAvailable.parentNode.removeChild(updateAvailable);
         }
 
         // Tell the service worker to skip waiting and activate
-        if (registration.waiting) {
+        if (registration && registration.waiting) {
+          console.log("[PWA] Sending SKIP_WAITING message to waiting worker");
           registration.waiting.postMessage({ type: "SKIP_WAITING" });
-
-          // Set up one-time listener for controllerchange
-          let refreshing = false;
-          navigator.serviceWorker.addEventListener("controllerchange", () => {
-            if (refreshing) return;
-            refreshing = true;
-            window.location.reload();
-          });
         } else {
-          // If there's no waiting worker, just reload the page
+          console.log("[PWA] No waiting worker found, reloading page");
           window.location.reload();
         }
       });
