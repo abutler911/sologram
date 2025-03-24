@@ -1,26 +1,33 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { FaBell, FaTimes } from "react-icons/fa";
-import SubscriptionForm from "./SubscriptionForm";
+import OneSignal from "react-onesignal";
 
 const SubscribeBanner = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  // const [isOpen, setIsOpen] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    // Check if the banner has been dismissed
-    const hasBannerBeenDismissed = localStorage.getItem(
-      "subscribeBannerDismissed"
-    );
+    let timer;
 
-    if (!hasBannerBeenDismissed) {
-      // Show the banner after 3 seconds
-      const timer = setTimeout(() => {
-        setShowBanner(true);
-      }, 3000);
+    const checkSubscription = async () => {
+      const isSubscribed = await OneSignal.isPushNotificationsEnabled();
+      const hasBannerBeenDismissed = localStorage.getItem(
+        "subscribeBannerDismissed"
+      );
 
-      return () => clearTimeout(timer);
-    }
+      if (!isSubscribed && !hasBannerBeenDismissed) {
+        timer = setTimeout(() => {
+          setShowBanner(true);
+        }, 3000);
+      }
+    };
+
+    checkSubscription();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, []);
 
   const handleDismiss = () => {
@@ -28,14 +35,15 @@ const SubscribeBanner = () => {
     localStorage.setItem("subscribeBannerDismissed", "true");
   };
 
-  const handleToggleModal = () => {
-    setIsOpen(!isOpen);
-
-    // If closing the modal, mark the banner as dismissed
-    if (isOpen) {
-      setShowBanner(false);
-      localStorage.setItem("subscribeBannerDismissed", "true");
+  const handleSubscribeClick = () => {
+    if (window?.OneSignal?.showSlidedownPrompt) {
+      OneSignal.showSlidedownPrompt();
+    } else {
+      console.warn("OneSignal not initialized yet.");
     }
+
+    setShowBanner(false);
+    localStorage.setItem("subscribeBannerDismissed", "true");
   };
 
   return (
@@ -55,7 +63,7 @@ const SubscribeBanner = () => {
           </BannerContent>
 
           <BannerActions>
-            <SubscribeButton onClick={handleToggleModal}>
+            <SubscribeButton onClick={handleSubscribeClick}>
               Subscribe Now
             </SubscribeButton>
             <DismissButton onClick={handleDismiss}>
@@ -63,18 +71,6 @@ const SubscribeBanner = () => {
             </DismissButton>
           </BannerActions>
         </Banner>
-      )}
-
-      {/* Subscription Modal */}
-      {isOpen && (
-        <ModalOverlay>
-          <ModalContent>
-            <CloseButton onClick={handleToggleModal}>
-              <FaTimes />
-            </CloseButton>
-            <SubscriptionForm />
-          </ModalContent>
-        </ModalOverlay>
       )}
     </>
   );
@@ -226,82 +222,6 @@ const DismissButton = styled.button`
     width: 1.75rem;
     height: 1.75rem;
     font-size: 0.9rem;
-  }
-`;
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-  animation: fadeIn 0.3s ease-out;
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-`;
-
-const ModalContent = styled.div`
-  position: relative;
-  width: 100%;
-  max-width: 500px;
-  margin: 0 1.5rem;
-  animation: slideUp 0.3s ease-out;
-
-  @keyframes slideUp {
-    from {
-      transform: translateY(20px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  @media (max-width: 480px) {
-    margin: 0 1rem;
-  }
-`;
-
-const CloseButton = styled.button`
-  position: absolute;
-  top: -1rem;
-  right: -1rem;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background-color: #333333;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
-  z-index: 1;
-  transition: background-color 0.3s;
-
-  &:hover {
-    background-color: #555555;
-  }
-
-  @media (max-width: 480px) {
-    width: 1.75rem;
-    height: 1.75rem;
-    font-size: 0.9rem;
-    top: -0.875rem;
-    right: -0.875rem;
   }
 `;
 

@@ -26,6 +26,9 @@ export const AuthProvider = ({ children }) => {
           const res = await axios.get("/api/auth/me");
           setUser(res.data.data);
           setIsAuthenticated(true);
+
+          // Check if there's a pending OneSignal ID to associate with this user
+          checkPendingOneSignalId();
         } catch (err) {
           localStorage.removeItem("token");
           setToken(null);
@@ -47,6 +50,9 @@ export const AuthProvider = ({ children }) => {
       setToken(res.data.token);
       setUser(res.data.user);
       setIsAuthenticated(true);
+
+      // Associate OneSignal ID if available
+      checkPendingOneSignalId();
 
       toast.success("Registration successful!");
       return true;
@@ -71,6 +77,9 @@ export const AuthProvider = ({ children }) => {
       setUser(res.data.user);
       setIsAuthenticated(true);
 
+      // Associate OneSignal ID if available
+      checkPendingOneSignalId();
+
       toast.success("Login successful!");
       return true;
     } catch (err) {
@@ -78,6 +87,56 @@ export const AuthProvider = ({ children }) => {
         err.response && err.response.data.message
           ? err.response.data.message
           : "Login failed";
+
+      toast.error(errorMessage);
+      return false;
+    }
+  };
+
+  // Check if there's a pending OneSignal ID after login/register
+  const checkPendingOneSignalId = async () => {
+    const pendingId = localStorage.getItem("pendingOneSignalId");
+    if (pendingId) {
+      try {
+        await saveOneSignalId(pendingId);
+        localStorage.removeItem("pendingOneSignalId");
+      } catch (error) {
+        console.error("Error associating pending OneSignal ID:", error);
+      }
+    }
+  };
+
+  // Save OneSignal ID to server
+  const saveOneSignalId = async (oneSignalId) => {
+    try {
+      await axios.post("/api/subscribers/push-id", { oneSignalId });
+      return true;
+    } catch (error) {
+      console.error("Error saving OneSignal ID:", error);
+      return false;
+    }
+  };
+
+  // Update notification preferences
+  const updateNotificationPreferences = async (preferences) => {
+    try {
+      const res = await axios.post(
+        "/api/notifications/preferences",
+        preferences
+      );
+
+      // Update user state if the API returns updated user data
+      if (res.data.data && res.data.data.user) {
+        setUser(res.data.data.user);
+      }
+
+      toast.success("Notification preferences updated");
+      return true;
+    } catch (err) {
+      const errorMessage =
+        err.response && err.response.data.message
+          ? err.response.data.message
+          : "Failed to update notification preferences";
 
       toast.error(errorMessage);
       return false;
@@ -173,6 +232,8 @@ export const AuthProvider = ({ children }) => {
         logout,
         updateProfile,
         updateBio,
+        saveOneSignalId,
+        updateNotificationPreferences,
       }}
     >
       {children}
