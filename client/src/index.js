@@ -155,7 +155,7 @@ serviceWorkerRegistration.register({
           <p style="margin: 0 0 8px 0; font-weight: bold;">Update Available</p>
           <p style="margin: 0; font-size: 14px;">Refresh to see the latest version.</p>
         </div>
-        <button style="
+        <button id="update-app-button" style="
           background-color: #ff7e5f;
           color: white;
           border: none;
@@ -163,11 +163,37 @@ serviceWorkerRegistration.register({
           padding: 8px 16px;
           cursor: pointer;
           margin-left: 16px;
-        " onclick="window.location.reload()">
+        ">
           Update
         </button>
       </div>
     `;
     document.body.appendChild(updateAvailable);
+
+    // Add event listener to the update button
+    document
+      .getElementById("update-app-button")
+      .addEventListener("click", () => {
+        // Remove the notification
+        if (updateAvailable.parentNode) {
+          updateAvailable.parentNode.removeChild(updateAvailable);
+        }
+
+        // Tell the service worker to skip waiting and activate
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: "SKIP_WAITING" });
+
+          // Set up one-time listener for controllerchange
+          let refreshing = false;
+          navigator.serviceWorker.addEventListener("controllerchange", () => {
+            if (refreshing) return;
+            refreshing = true;
+            window.location.reload();
+          });
+        } else {
+          // If there's no waiting worker, just reload the page
+          window.location.reload();
+        }
+      });
   },
 });
