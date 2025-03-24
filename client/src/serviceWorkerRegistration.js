@@ -32,37 +32,37 @@ function registerValidSW(swUrl, config) {
   navigator.serviceWorker
     .register(swUrl)
     .then((registration) => {
-      window.addEventListener("online", () => registration.update());
-      setInterval(() => registration.update(), 60 * 60 * 1000);
+      let refreshing = false;
+
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
 
       registration.onupdatefound = () => {
         const installingWorker = registration.installing;
         if (!installingWorker) return;
 
         installingWorker.onstatechange = () => {
-          if (installingWorker.state === "installed") {
-            if (navigator.serviceWorker.controller) {
-              console.log("New content is available; reloading...");
-              if (config && config.onUpdate) {
-                config.onUpdate(registration);
-              }
-              // Force the waiting service worker to activate
-              if (registration.waiting) {
-                registration.waiting.postMessage({ type: "SKIP_WAITING" });
-                registration.waiting.addEventListener(
-                  "statechange",
-                  (event) => {
-                    if (event.target.state === "activated") {
-                      window.location.reload();
-                    }
-                  }
-                );
-              }
-            } else {
-              console.log("Content is cached for offline use.");
-              if (config && config.onSuccess) {
-                config.onSuccess(registration);
-              }
+          if (
+            installingWorker.state === "installed" &&
+            navigator.serviceWorker.controller
+          ) {
+            console.log("New content is available and will be used soon.");
+
+            // Optionally trigger custom UI here
+            if (config && config.onUpdate) {
+              config.onUpdate(registration);
+            }
+
+            if (registration.waiting) {
+              registration.waiting.postMessage({ type: "SKIP_WAITING" });
+            }
+          } else if (installingWorker.state === "installed") {
+            console.log("Content is cached for offline use.");
+            if (config && config.onSuccess) {
+              config.onSuccess(registration);
             }
           }
         };
