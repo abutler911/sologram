@@ -135,12 +135,16 @@ exports.createStory = async (req, res) => {
       expiresAt,
     });
 
-    notifySubscribersOfNewContent({
-      title: title,
-      type: "story",
-    }).catch((error) => {
-      console.error("Error sending notifications:", error);
-    });
+    try {
+      await notifySubscribersOfNewContent({
+        title: title,
+        type: "story",
+      });
+      console.log("Story notification sent successfully");
+    } catch (notificationError) {
+      console.error("Failed to send notification:", notificationError);
+      // Don't let notification failure prevent story creation
+    }
 
     res.status(201).json({
       success: true,
