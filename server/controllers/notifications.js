@@ -23,16 +23,20 @@ exports.sendCustomNotification = async (req, res) => {
       included_segments: ["All"], // Send to all subscribers
     };
 
-    // Make sure to await the response and store it in a variable
+    // Make the API call
     const response = await axios.post(
       "https://onesignal.com/api/v1/notifications",
       notification,
       {
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Basic ${ONESIGNAL_API_KEY}`,
         },
       }
     );
+
+    // Update last sent time in your local database (optional)
+    // For example, you might have a Settings model that tracks this
 
     return res.status(200).json({
       success: true,
@@ -61,8 +65,8 @@ exports.notifySubscribersOfNewContent = async (content) => {
         }" has been added. Check it out now!`,
       },
       headings: { en: "SoloGram Update" },
-      included_segments: ["All"], // Send to all subscribers
-      url: content.url || "https://sologram.app", // URL to open when notification is clicked
+      included_segments: ["All"],
+      url: content.url || "https://sologram.app",
     };
 
     const response = await axios.post(
@@ -71,7 +75,6 @@ exports.notifySubscribersOfNewContent = async (content) => {
       {
         headers: {
           "Content-Type": "application/json",
-          // Fixed the key name to match the one at the top of the file
           Authorization: `Basic ${ONESIGNAL_API_KEY}`,
         },
       }
@@ -95,20 +98,46 @@ exports.notifySubscribersOfNewContent = async (content) => {
 // Get notification stats (admin only)
 exports.getNotificationStats = async (req, res) => {
   try {
-    // You can implement this to get stats from OneSignal API if needed
+    // Fetch OneSignal app details
+    const appResponse = await axios.get(
+      `https://onesignal.com/api/v1/apps/${ONESIGNAL_APP_ID}`,
+      {
+        headers: {
+          Authorization: `Basic ${ONESIGNAL_API_KEY}`,
+        },
+      }
+    );
+
+    // Find the most recent notification
+    const notificationsResponse = await axios.get(
+      `https://onesignal.com/api/v1/notifications?app_id=${ONESIGNAL_APP_ID}&limit=1`,
+      {
+        headers: {
+          Authorization: `Basic ${ONESIGNAL_API_KEY}`,
+        },
+      }
+    );
+
+    const lastNotification =
+      notificationsResponse.data.notifications &&
+      notificationsResponse.data.notifications.length > 0
+        ? notificationsResponse.data.notifications[0]
+        : null;
+
     res.status(200).json({
       success: true,
       data: {
-        // Sample stats
-        totalSubscribers: 0,
-        lastSent: null,
+        totalSubscribers: appResponse.data.players || 0,
+        lastSent: lastNotification ? lastNotification.completed_at : null,
+        // You could include additional stats here
       },
     });
   } catch (err) {
     console.error("Get notification stats error:", err);
     res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: "OneSignal API Error",
+      error: err.response?.data || err.message,
     });
   }
 };
