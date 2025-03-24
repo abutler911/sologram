@@ -49,7 +49,7 @@ const SubscribeBanner = () => {
   };
 
   const handleSubscribeClick = () => {
-    if (window?.OneSignal?.showSlidedownPrompt) {
+    if (typeof OneSignal.showSlidedownPrompt === "function") {
       OneSignal.showSlidedownPrompt();
     } else {
       console.warn("OneSignal not initialized yet.");

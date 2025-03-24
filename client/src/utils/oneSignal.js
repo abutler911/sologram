@@ -1,33 +1,24 @@
-// utils/oneSignal.js
 import OneSignal from "react-onesignal";
 
 export const initializeOneSignal = async () => {
   try {
     await OneSignal.init({
       appId: process.env.REACT_APP_ONESIGNAL_APP_ID,
-      notifyButton: {
-        enable: true,
-        position: "bottom-right",
-        showCredit: false,
-      },
       allowLocalhostAsSecureOrigin: true,
+      notifyButton: {
+        enable: false,
+      },
     });
 
-    OneSignal.showSlidedownPrompt();
+    await OneSignal.isPushNotificationsEnabled();
+    if (typeof OneSignal.showSlidedownPrompt === "function") {
+      OneSignal.showSlidedownPrompt();
+    }
 
-    // When user subscribes, get their ID and send to backend
-    OneSignal.on("subscriptionChange", async function (isSubscribed) {
-      if (isSubscribed) {
-        try {
-          const userId = localStorage.getItem("userId");
-          if (userId) {
-            OneSignal.setExternalUserId(userId);
-          }
-        } catch (error) {
-          console.error("Error getting OneSignal user ID:", error);
-        }
-      }
-    });
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      OneSignal.setExternalUserId(userId);
+    }
 
     return true;
   } catch (error) {
@@ -35,33 +26,3 @@ export const initializeOneSignal = async () => {
     return false;
   }
 };
-
-// Function to save the OneSignal player ID to your backend
-// const savePushId = async (pushId) => {
-//   try {
-//     // Get user phone from localStorage or state
-//     const phone = localStorage.getItem("userPhone");
-
-//     if (!phone) {
-//       console.warn("No phone number available to associate with push ID");
-//       return;
-//     }
-
-//     // Send to your API
-//     const response = await fetch("/api/subscribers/push-id", {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify({ phone, pushId }),
-//     });
-
-//     const data = await response.json();
-
-//     if (!data.success) {
-//       console.error("Error saving push ID:", data.message);
-//     }
-//   } catch (error) {
-//     console.error("Error saving push ID:", error);
-//   }
-// };
