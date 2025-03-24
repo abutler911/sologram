@@ -2,6 +2,9 @@
 const mongoose = require("mongoose");
 const Story = require("../models/Story");
 const cloudinary = require("../config/cloudinary").cloudinary;
+const {
+  notifySubscribersOfNewContent,
+} = require("../services/notificationService");
 
 // Helper function for handling server errors
 const handleServerError = (res, err, customMessage = "Server Error") => {
@@ -132,6 +135,13 @@ exports.createStory = async (req, res) => {
       expiresAt,
     });
 
+    notifySubscribersOfNewContent({
+      title: title,
+      type: "story",
+    }).catch((error) => {
+      console.error("Error sending notifications:", error);
+    });
+
     res.status(201).json({
       success: true,
       data: story,
@@ -169,7 +179,10 @@ exports.deleteStory = async (req, res) => {
           try {
             await cloudinary.uploader.destroy(media.cloudinaryId);
           } catch (cloudinaryError) {
-            console.error("Error deleting media from Cloudinary:", cloudinaryError);
+            console.error(
+              "Error deleting media from Cloudinary:",
+              cloudinaryError
+            );
             // Continue with deletion even if Cloudinary delete fails
           }
         }
@@ -237,13 +250,13 @@ exports.getArchivedStories = async (req, res) => {
   try {
     console.log("getArchivedStories function called");
     console.log("User ID:", req.user ? req.user.id : "No user in request");
-    
+
     const archivedStories = await Story.find({ archived: true })
       .sort({ archivedAt: -1 })
       .lean();
-    
+
     console.log(`Found ${archivedStories.length} archived stories`);
-    
+
     res.status(200).json({
       success: true,
       count: archivedStories.length,
@@ -334,7 +347,10 @@ exports.deleteArchivedStory = async (req, res) => {
           try {
             await cloudinary.uploader.destroy(media.cloudinaryId);
           } catch (cloudinaryError) {
-            console.error("Error deleting media from Cloudinary:", cloudinaryError);
+            console.error(
+              "Error deleting media from Cloudinary:",
+              cloudinaryError
+            );
             // Continue with deletion even if Cloudinary delete fails
           }
         }
