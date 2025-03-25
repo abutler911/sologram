@@ -114,3 +114,11 @@
 {"level":"info","message":"Database connection established"}
 {"level":"info","message":"Story archiving service initialized"}
 {"level":"info","message":"Server started on port 5000 in development mode"}
+{"level":"info","message":"Database connection established"}
+{"level":"info","message":"Story archiving service initialized"}
+{"level":"info","message":"Server started on port 5000 in development mode"}
+{"level":"info","message":{"duration":"4ms","method":"GET","status":404,"url":"/"}}
+{"level":"info","message":{"duration":"1ms","method":"GET","status":404,"url":"/"}}
+{"level":"info","message":{"duration":"1ms","method":"GET","status":404,"url":"/loginMsg.js"}}
+{"level":"info","message":{"duration":"1ms","method":"GET","status":404,"url":"/cgi/get.cgi?cmd=home_login"}}
+{"level":"info","message":{"duration":"1ms","method":"GET","status":404,"url":"/boaform/admin/formPing/diag_ping.asp"}}

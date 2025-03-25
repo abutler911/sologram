@@ -322,7 +322,7 @@ const Home = forwardRef((props, ref) => {
 const PageWrapper = styled.div`
   background-color: #121212;
   min-height: 100vh;
-  padding: 0.5rem 0 1rem;
+  padding: 0.5rem 0 5rem;
 
   @supports (-webkit-touch-callout: none) {
     min-height: -webkit-fill-available;
