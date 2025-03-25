@@ -352,17 +352,15 @@ const CardWrapper = styled.div`
   display: flex;
   justify-content: center;
 
-  @media (max-width: 768px) {
-    width: 100%;
-    padding: 0;
-    margin: 0;
+  @media (max-width: 768px), screen and (display-mode: standalone) {
+    justify-content: stretch;
   }
 `;
 
 // Styled Components
 const Card = styled.article`
   background-color: #121212;
-  border-radius: 3px;
+  border-radius: 12px;
   border: 1px solid #262626;
   overflow: hidden;
   margin-bottom: 24px;
@@ -372,12 +370,13 @@ const Card = styled.article`
   max-width: 614px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 
-  @media (max-width: 768px) {
-    width: 100%;
+  @media (max-width: 768px), screen and (display-mode: standalone) {
+    max-width: 100%;
     border-radius: 0;
     border-left: none;
     border-right: none;
-    max-width: none;
+    margin-bottom: 0;
+    box-shadow: none;
   }
 `;
 
@@ -477,7 +476,7 @@ const MediaContainer = styled(Link)`
   aspect-ratio: 1;
   display: block;
   overflow: hidden;
-  background-color: #000000;
+  background-color: #000;
   flex-shrink: 0;
 `;
 
@@ -660,9 +659,13 @@ const LikesCounter = styled.div`
 `;
 
 const CardContent = styled.div`
-  padding: 8px 16px 16px;
+  padding: 1rem 1rem 1.25rem;
   display: flex;
   flex-direction: column;
+
+  @media (max-width: 768px), screen and (display-mode: standalone) {
+    padding: 0.75rem 1rem 1rem;
+  }
 `;
 
 // New styled component for the post title

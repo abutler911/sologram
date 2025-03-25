@@ -338,6 +338,10 @@ const HomeContainer = styled.div`
     padding: 0.5rem 1.5rem;
   }
 
+  @media (max-width: 640px) {
+    padding: 0.5rem 0.75rem;
+  }
+
   @media (max-width: 480px) {
     padding: 0.5rem 1rem;
   }
@@ -345,7 +349,7 @@ const HomeContainer = styled.div`
   @media screen and (display-mode: standalone) {
     width: 100%;
     box-sizing: border-box;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.75rem;
   }
 
   & > section {
@@ -679,15 +683,13 @@ const PostGrid = styled.div`
   background-color: rgba(20, 20, 20, 0.4);
   border-radius: 6px;
 
-  @media (max-width: 1024px) {
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  }
-
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
 
   @media screen and (display-mode: standalone) {
+    grid-template-columns: 1fr;
     gap: 0.75rem;
   }
 `;
