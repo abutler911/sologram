@@ -174,6 +174,36 @@ serviceWorkerRegistration.register({
       return;
     }
 
+    // Compare versions to ensure we're not showing a notification for the initial load
+    // or for the same version being reinstalled
+    const currentVersion = registration.waiting.scriptURL;
+    let previousVersion;
+
+    try {
+      previousVersion = localStorage.getItem("pwaVersion");
+    } catch (e) {
+      console.log("[PWA] Could not get previous version");
+    }
+
+    // Skip notification if this is the first install or same version
+    if (!previousVersion) {
+      try {
+        localStorage.setItem("pwaVersion", currentVersion);
+      } catch (e) {}
+      return;
+    }
+
+    // Skip if versions are the same (reinstall of same version)
+    if (previousVersion === currentVersion) {
+      console.log("[PWA] Same version detected, skipping update notification");
+      return;
+    }
+
+    // Store new version
+    try {
+      localStorage.setItem("pwaVersion", currentVersion);
+    } catch (e) {}
+
     // Prevent duplicate notifications
     if (document.getElementById("update-notification")) {
       return;

@@ -1,4 +1,4 @@
-// serviceWorkerRegistration.js
+// serviceWorkerRegistration.js - Updated
 const isLocalhost = Boolean(
   window.location.hostname === "localhost" ||
     window.location.hostname === "[::1]" ||
@@ -14,8 +14,6 @@ export function register(config) {
     if (publicUrl.origin !== window.location.origin) return;
 
     window.addEventListener("load", () => {
-      // Important: Use a different service worker name to avoid conflict with OneSignal
-      // OneSignal will register its own service worker named OneSignalSDKWorker.js
       const swUrl = `${process.env.PUBLIC_URL}/app-service-worker.js`;
 
       if (isLocalhost) {
@@ -38,6 +36,20 @@ function registerValidSW(swUrl, config) {
     .then((registration) => {
       console.log("[PWA] Service worker registered successfully", registration);
 
+      // Store the initial state
+      if (!window.__initialInstallation) {
+        window.__initialInstallation = true;
+
+        // Store current service worker version in sessionStorage
+        if (registration.active) {
+          try {
+            sessionStorage.setItem("swVersion", registration.active.scriptURL);
+          } catch (e) {
+            console.log("[PWA] Could not store service worker version");
+          }
+        }
+      }
+
       // Check for updates at appropriate times
       window.addEventListener("online", () => {
         registration.update();
@@ -53,20 +65,44 @@ function registerValidSW(swUrl, config) {
         if (installingWorker == null) {
           return;
         }
+
+        // Get previously stored SW version
+        let previousVersion;
+        try {
+          previousVersion = sessionStorage.getItem("swVersion");
+        } catch (e) {
+          console.log("[PWA] Could not get previous service worker version");
+        }
+
         installingWorker.onstatechange = () => {
           if (installingWorker.state === "installed") {
             if (navigator.serviceWorker.controller) {
               // At this point, the updated precached content has been fetched,
               // but the previous service worker will still serve the older
               // content until all client tabs are closed.
-              console.log(
-                "[PWA] New content is available and will be used when all " +
-                  "tabs for this page are closed."
-              );
 
-              // Show update notification to the user
-              if (config && config.onUpdate) {
-                config.onUpdate(registration);
+              // Compare with current version to avoid showing update for initial installation
+              const currentVersion = installingWorker.scriptURL;
+
+              // Only show update notification if there's a real version change
+              // and not just a reinstallation of the same version
+              if (previousVersion && previousVersion !== currentVersion) {
+                console.log(
+                  "[PWA] New content is available and will be used when all " +
+                    "tabs for this page are closed."
+                );
+
+                // Show update notification to the user
+                if (config && config.onUpdate) {
+                  config.onUpdate(registration);
+                }
+
+                // Update the stored version
+                try {
+                  sessionStorage.setItem("swVersion", currentVersion);
+                } catch (e) {
+                  console.log("[PWA] Could not update service worker version");
+                }
               }
             } else {
               // At this point, everything has been precached.
