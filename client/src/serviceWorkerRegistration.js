@@ -1,3 +1,4 @@
+// serviceWorkerRegistration.js
 const isLocalhost = Boolean(
   window.location.hostname === "localhost" ||
     window.location.hostname === "[::1]" ||
@@ -7,12 +8,15 @@ const isLocalhost = Boolean(
 );
 
 export function register(config) {
+  // Only register in production and if service workers are supported
   if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
     const publicUrl = new URL(process.env.PUBLIC_URL, window.location.href);
     if (publicUrl.origin !== window.location.origin) return;
 
     window.addEventListener("load", () => {
-      const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
+      // Important: Use a different service worker name to avoid conflict with OneSignal
+      // OneSignal will register its own service worker named OneSignalSDKWorker.js
+      const swUrl = `${process.env.PUBLIC_URL}/app-service-worker.js`;
 
       if (isLocalhost) {
         checkValidServiceWorker(swUrl, config);
@@ -32,6 +36,8 @@ function registerValidSW(swUrl, config) {
   navigator.serviceWorker
     .register(swUrl)
     .then((registration) => {
+      console.log("[PWA] Service worker registered successfully", registration);
+
       // Check for updates at appropriate times
       window.addEventListener("online", () => {
         registration.update();
@@ -54,8 +60,8 @@ function registerValidSW(swUrl, config) {
               // but the previous service worker will still serve the older
               // content until all client tabs are closed.
               console.log(
-                "New content is available and will be used when all " +
-                  "tabs for this page are closed. See https://cra.link/PWA."
+                "[PWA] New content is available and will be used when all " +
+                  "tabs for this page are closed."
               );
 
               // Show update notification to the user
@@ -64,9 +70,7 @@ function registerValidSW(swUrl, config) {
               }
             } else {
               // At this point, everything has been precached.
-              // It's the perfect time to display a
-              // "Content is cached for offline use." message.
-              console.log("Content is cached for offline use.");
+              console.log("[PWA] Content is cached for offline use.");
 
               // Execute callback
               if (config && config.onSuccess) {
@@ -78,7 +82,7 @@ function registerValidSW(swUrl, config) {
       };
     })
     .catch((error) => {
-      console.error("Error during service worker registration:", error);
+      console.error("[PWA] Error during service worker registration:", error);
     });
 }
 
@@ -92,18 +96,20 @@ function checkValidServiceWorker(swUrl, config) {
         response.status === 404 ||
         (contentType && contentType.indexOf("javascript") === -1)
       ) {
+        // No service worker found. Probably a different app. Reload the page.
         navigator.serviceWorker.ready.then((registration) => {
           registration.unregister().then(() => {
             window.location.reload();
           });
         });
       } else {
+        // Service worker found. Proceed as normal.
         registerValidSW(swUrl, config);
       }
     })
     .catch(() => {
       console.log(
-        "No internet connection found. App is running in offline mode."
+        "[PWA] No internet connection found. App is running in offline mode."
       );
     });
 }
@@ -116,18 +122,6 @@ export function unregister() {
       })
       .catch((error) => {
         console.error(error.message);
-      });
-  }
-}
-
-export function registerBackgroundSync() {
-  if ("serviceWorker" in navigator && "SyncManager" in window) {
-    navigator.serviceWorker.ready
-      .then((registration) => {
-        return registration.sync.register("sync-comments");
-      })
-      .catch((err) => {
-        console.log("Background sync could not be registered", err);
       });
   }
 }
