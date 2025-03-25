@@ -376,6 +376,7 @@ const Header = ({ onSearch, onClearSearch }) => {
                 </MobileMenuItem>
               )}
 
+              {/* Logout button is now just another item in the list, not pushed to bottom */}
               <MobileMenuLogoutButton onClick={handleLogout}>
                 <FaSignOutAlt />
                 <span>Logout</span>
@@ -983,7 +984,6 @@ const MobileMenuLogoutButton = styled.button`
   text-align: left;
   border-radius: 4px;
   cursor: pointer;
-  margin-top: auto;
 
   &:hover {
     background-color: rgba(255, 126, 95, 0.1);
