@@ -313,9 +313,9 @@ const Header = ({ onSearch, onClearSearch }) => {
             )}
 
             {/* Mobile Menu Toggle */}
-            <MobileMenuButton onClick={toggleMenu}>
+            <MobileMenuToggle onClick={toggleMenu}>
               <FaEllipsisV />
-            </MobileMenuButton>
+            </MobileMenuToggle>
           </HeaderActions>
         </HeaderContent>
       </HeaderContainer>
@@ -376,10 +376,10 @@ const Header = ({ onSearch, onClearSearch }) => {
                 </MobileMenuItem>
               )}
 
-              <MobileMenuButton onClick={handleLogout}>
+              <MobileMenuLogoutButton onClick={handleLogout}>
                 <FaSignOutAlt />
                 <span>Logout</span>
-              </MobileMenuButton>
+              </MobileMenuLogoutButton>
             </>
           )}
 
@@ -873,7 +873,8 @@ const LoginButton = styled(Link)`
   }
 `;
 
-const MobileMenuButton = styled.button`
+// Changed name to avoid duplicate identifier
+const MobileMenuToggle = styled.button`
   display: none;
   background: none;
   border: none;
@@ -969,7 +970,8 @@ const MobileMenuItem = styled(Link)`
   }
 `;
 
-const MobileMenuButton = styled.button`
+// Changed name to avoid duplicate identifier
+const MobileMenuLogoutButton = styled.button`
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem;

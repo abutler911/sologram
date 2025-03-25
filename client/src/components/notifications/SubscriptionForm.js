@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { FaBell, FaCheck, FaTimes, FaMobile } from "react-icons/fa";
+import { FaBell, FaCheck } from "react-icons/fa";
 
 const SubscriptionForm = () => {
   const [step, setStep] = useState("initial"); // initial, phone-entered, verification
