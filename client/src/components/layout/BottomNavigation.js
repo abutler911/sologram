@@ -18,7 +18,7 @@ const BottomNavigation = () => {
   };
 
   const handleSubscribeClick = async () => {
-    if (!window.OneSignal) {
+    if (typeof window.OneSignal === "undefined") {
       toast.error(
         "Push notifications not available yet. Please try again shortly."
       );
@@ -28,25 +28,34 @@ const BottomNavigation = () => {
     const OneSignal = window.OneSignal;
 
     try {
-      const isPushSupported = await OneSignal.isPushNotificationsSupported();
+      // Check if push notifications are supported
+      const isPushSupported = await OneSignal.isPushNotificationsSupported?.();
       if (!isPushSupported) {
         toast.error("Push notifications are not supported on this device.");
         return;
       }
 
-      const permission = await OneSignal.getNotificationPermission();
+      // Check current permission
+      const permission = await OneSignal.getNotificationPermission?.();
       if (permission === "granted") {
-        const isSubscribed = await OneSignal.isPushNotificationsEnabled();
+        const isSubscribed = await OneSignal.isPushNotificationsEnabled?.();
         if (isSubscribed) {
           toast.success("You're already subscribed to notifications!");
         } else {
-          await OneSignal.subscribe();
+          await OneSignal.subscribe?.();
           toast.success("Subscribed to notifications!");
         }
+      } else if (permission === "default") {
+        // Show native prompt or slide down if permission is not yet granted
+        await OneSignal.showSlidedownPrompt?.();
+        const updatedPermission = await OneSignal.getNotificationPermission?.();
+        if (updatedPermission === "granted") {
+          toast.success("Subscribed to notifications!");
+        } else {
+          toast("Subscription canceled or blocked.");
+        }
       } else {
-        // Ask for permission & subscribe
-        await OneSignal.registerForPushNotifications();
-        toast.success("Subscribed to notifications!");
+        toast("You've blocked notifications. Check your browser settings.");
       }
     } catch (err) {
       console.error("Failed to subscribe:", err);
