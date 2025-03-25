@@ -334,8 +334,9 @@ const HomeContainer = styled.div`
   margin: 0 auto;
   padding: 0.75rem 2rem;
 
-  @media (max-width: 768px) {
-    padding: 0.5rem 1.5rem;
+  @media (max-width: 768px), screen and (display-mode: standalone) {
+    max-width: 100%;
+    padding: 0rem 0.5rem;
   }
 
   @media (max-width: 640px) {
@@ -344,12 +345,6 @@ const HomeContainer = styled.div`
 
   @media (max-width: 480px) {
     padding: 0.5rem 1rem;
-  }
-
-  @media screen and (display-mode: standalone) {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0.5rem 0.75rem;
   }
 
   & > section {
@@ -570,90 +565,6 @@ const CompactCollectionName = styled.h3`
   -webkit-box-orient: vertical;
 `;
 
-// Original Collection Styles (kept as reference)
-const CollectionsRow = styled.div`
-  display: flex;
-  overflow-x: auto;
-  padding: 0.5rem 0;
-  gap: 1rem;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-
-  &::after {
-    content: "";
-    padding-right: 0.5rem;
-  }
-
-  -webkit-overflow-scrolling: touch;
-`;
-
-const CollectionCard = styled.div`
-  flex: 0 0 auto;
-  width: 80px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: transform 0.2s;
-
-  &:hover {
-    transform: translateY(-2px);
-  }
-`;
-
-const CollectionCover = styled.img`
-  width: 65px;
-  height: 65px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #ff7e5f;
-  padding: 3px;
-  background-color: #222;
-  transition: border-color 0.2s;
-
-  ${CollectionCard}:hover & {
-    border-color: #ff6347;
-  }
-`;
-
-const CollectionCoverPlaceholder = styled.div`
-  width: 65px;
-  height: 65px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #222;
-  border: 2px solid #ff7e5f;
-  padding: 3px;
-
-  svg {
-    font-size: 1.25rem;
-    color: #555;
-  }
-
-  ${CollectionCard}:hover & {
-    border-color: #ff6347;
-  }
-`;
-
-const CollectionName = styled.h3`
-  font-size: 0.65rem;
-  color: #ddd;
-  margin: 0.5rem 0 0;
-  text-align: center;
-  max-width: 80px;
-  white-space: normal;
-  overflow: visible;
-  word-wrap: break-word;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-`;
-
 const EmptyMessage = styled.div`
   display: flex;
   align-items: center;
@@ -676,20 +587,15 @@ const LoadingIndicator = styled.div`
 
 const PostGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1rem;
-  justify-content: center;
   padding: 0.25rem 0.125rem;
   background-color: rgba(20, 20, 20, 0.4);
   border-radius: 6px;
 
-  @media (max-width: 640px) {
+  @media (max-width: 768px), screen and (display-mode: standalone) {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-
-  @media screen and (display-mode: standalone) {
-    grid-template-columns: 1fr;
+    padding: 0;
     gap: 0.75rem;
   }
 `;
