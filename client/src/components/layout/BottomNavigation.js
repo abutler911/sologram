@@ -5,6 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import { FaHome, FaFolder, FaSearch, FaBell, FaUser } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
+import { toast } from "react-hot-toast";
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -17,20 +18,39 @@ const BottomNavigation = () => {
   };
 
   const handleSubscribeClick = async () => {
-    if (window.OneSignal) {
-      try {
-        const permission = await OneSignal.Notifications.permissionNative();
-        if (permission !== "granted") {
-          await OneSignal.Notifications.requestPermission(); // Or use showSlidedownPrompt()
-          console.log("Notification permission requested.");
-        } else {
-          console.log("Already subscribed to notifications.");
-        }
-      } catch (err) {
-        console.error("Failed to subscribe:", err);
+    if (!window.OneSignal) {
+      toast.error(
+        "Push notifications not available yet. Please try again shortly."
+      );
+      return;
+    }
+
+    const OneSignal = window.OneSignal;
+
+    try {
+      const isPushSupported = await OneSignal.isPushNotificationsSupported();
+      if (!isPushSupported) {
+        toast.error("Push notifications are not supported on this device.");
+        return;
       }
-    } else {
-      console.warn("OneSignal is not available.");
+
+      const permission = await OneSignal.getNotificationPermission();
+      if (permission === "granted") {
+        const isSubscribed = await OneSignal.isPushNotificationsEnabled();
+        if (isSubscribed) {
+          toast.success("You're already subscribed to notifications!");
+        } else {
+          await OneSignal.subscribe();
+          toast.success("Subscribed to notifications!");
+        }
+      } else {
+        // Ask for permission & subscribe
+        await OneSignal.registerForPushNotifications();
+        toast.success("Subscribed to notifications!");
+      }
+    } catch (err) {
+      console.error("Failed to subscribe:", err);
+      toast.error("Subscription failed. Please try again.");
     }
   };
 
@@ -67,7 +87,7 @@ const BottomNavigation = () => {
 
           <SubscribeButton onClick={handleSubscribeClick}>
             <FaBell />
-            <NavLabel>Subscribe</NavLabel>
+            <span>Subscribe</span>
           </SubscribeButton>
         </>
       )}
