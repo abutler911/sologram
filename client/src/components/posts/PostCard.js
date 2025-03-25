@@ -369,6 +369,12 @@ const Card = styled.article`
   width: 100%;
   max-width: 614px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     max-width: 100%;
@@ -377,6 +383,10 @@ const Card = styled.article`
     border-right: none;
     margin-bottom: 0;
     box-shadow: none;
+    &:hover {
+      transform: none;
+      box-shadow: none;
+    }
   }
 `;
 
