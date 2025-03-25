@@ -1,4 +1,5 @@
-// components/layout/BottomNavigation.js
+/* global OneSignal */
+
 import React, { useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import styled from "styled-components";
@@ -9,16 +10,32 @@ const BottomNavigation = () => {
   const location = useLocation();
   const { isAuthenticated } = useContext(AuthContext);
 
-  // Helper to check if current path matches or starts with a given path
   const isActive = (path) => {
-    if (path === "/") {
-      return location.pathname === "/";
+    return path === "/"
+      ? location.pathname === "/"
+      : location.pathname.startsWith(path);
+  };
+
+  const handleSubscribeClick = async () => {
+    if (window.OneSignal) {
+      try {
+        const permission = await OneSignal.Notifications.permissionNative();
+        if (permission !== "granted") {
+          await OneSignal.Notifications.requestPermission(); // Or use showSlidedownPrompt()
+          console.log("Notification permission requested.");
+        } else {
+          console.log("Already subscribed to notifications.");
+        }
+      } catch (err) {
+        console.error("Failed to subscribe:", err);
+      }
+    } else {
+      console.warn("OneSignal is not available.");
     }
-    return location.pathname.startsWith(path);
   };
 
   return (
-    <NavContainer>
+    <NavContainer className="bottom-nav">
       <NavItem to="/" active={isActive("/")}>
         <FaHome />
         <NavLabel>Home</NavLabel>
@@ -48,15 +65,10 @@ const BottomNavigation = () => {
             <NavLabel>About</NavLabel>
           </NavItem>
 
-          <NavItem
-            to="/"
-            onClick={() =>
-              document.querySelector(".SubscribeBanner button")?.click()
-            }
-          >
+          <SubscribeButton onClick={handleSubscribeClick}>
             <FaBell />
             <NavLabel>Subscribe</NavLabel>
-          </NavItem>
+          </SubscribeButton>
         </>
       )}
     </NavContainer>
@@ -64,8 +76,6 @@ const BottomNavigation = () => {
 };
 
 const NavContainer = styled.div`
-  display: none; /* Hidden by default on larger screens */
-
   @media (max-width: 767px) {
     display: flex;
     justify-content: space-around;
@@ -78,7 +88,6 @@ const NavContainer = styled.div`
     background-color: #1e1e1e;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
     z-index: 1000;
-    /* Safe area padding for iOS devices */
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
 `;
@@ -92,15 +101,34 @@ const NavItem = styled(Link)`
   flex: 1;
   color: ${(props) => (props.active ? "#ff7e5f" : "#aaaaaa")};
   text-decoration: none;
-  transition: color 0.3s;
-
-  &:hover {
-    color: #ff7e5f;
-  }
 
   svg {
     font-size: 1.25rem;
     margin-bottom: 0.25rem;
+  }
+
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
+
+const SubscribeButton = styled.button`
+  all: unset;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #aaaaaa;
+  cursor: pointer;
+
+  svg {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  &:hover {
+    color: #ff7e5f;
   }
 `;
 

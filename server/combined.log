@@ -122,3 +122,8 @@
 {"level":"info","message":{"duration":"1ms","method":"GET","status":404,"url":"/loginMsg.js"}}
 {"level":"info","message":{"duration":"1ms","method":"GET","status":404,"url":"/cgi/get.cgi?cmd=home_login"}}
 {"level":"info","message":{"duration":"1ms","method":"GET","status":404,"url":"/boaform/admin/formPing/diag_ping.asp"}}
+{"level":"info","message":{"duration":"1ms","method":"GET","status":404,"url":"/"}}
+{"level":"info","message":{"duration":"1ms","method":"GET","status":404,"url":"/"}}
+{"level":"info","message":{"duration":"2ms","method":"GET","status":404,"url":"/loginMsg.js"}}
+{"level":"info","message":{"duration":"2ms","method":"GET","status":404,"url":"/cgi/get.cgi?cmd=home_login"}}
+{"level":"info","message":{"duration":"2ms","method":"GET","status":404,"url":"/installHook.js.map"}}
