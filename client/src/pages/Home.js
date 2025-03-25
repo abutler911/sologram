@@ -335,8 +335,9 @@ const HomeContainer = styled.div`
   padding: 0.75rem 2rem;
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    max-width: 100%;
-    padding: 0rem 0.5rem;
+    max-width: 100vw;
+    ${"" /* padding: 0rem 0.5rem; */}
+    box-sizing: border-box;
   }
 
   @media (max-width: 640px) {
@@ -594,9 +595,9 @@ const PostGrid = styled.div`
   border-radius: 6px;
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    grid-template-columns: 1fr;
-    padding: 0;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 0.75rem;
+    padding: 0 0.5rem;
   }
 `;
 
