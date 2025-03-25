@@ -59,7 +59,13 @@ const FooterContainer = styled.footer`
   background-color: #ffffff;
   border-top: 1px solid #e6e6e6;
   padding: 2rem 0;
-  margin-top: 2rem;
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+  ${"" /* margin-top: 2rem; */}
+  margin-bottom: 65px;
+
+  @media (display-mode: standalone) {
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+  }
 `;
 
 const FooterContent = styled.div`
