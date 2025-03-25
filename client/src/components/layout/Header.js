@@ -13,6 +13,8 @@ import {
   FaArchive,
   FaBell,
   FaSearch,
+  FaChevronDown,
+  FaEllipsisV,
 } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 import HeaderSubscriptionBanner from "../subscription/HeaderSubscriptionBanner";
@@ -23,18 +25,15 @@ const Header = ({ onSearch, onClearSearch }) => {
   const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const isAdmin = user?.role === "admin";
   const searchInputRef = useRef(null);
   const searchContainerRef = useRef(null);
+  const userMenuRef = useRef(null);
 
-  useEffect(() => {
-    if (searchExpanded && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [searchExpanded]);
-
+  // Load search query from URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const query = params.get("search") || "";
@@ -45,9 +44,17 @@ const Header = ({ onSearch, onClearSearch }) => {
     }
   }, [location, onSearch]);
 
+  // Focus search input when expanded
+  useEffect(() => {
+    if (searchExpanded && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchExpanded]);
+
   // Handle clicks outside of search to close it
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Handle search container outside clicks
       if (
         searchExpanded &&
         searchContainerRef.current &&
@@ -55,17 +62,26 @@ const Header = ({ onSearch, onClearSearch }) => {
       ) {
         handleCloseSearch();
       }
+
+      // Handle user menu outside clicks
+      if (
+        showUserMenu &&
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target)
+      ) {
+        setShowUserMenu(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [searchExpanded]);
+  }, [searchExpanded, showUserMenu]);
 
   const handleLogout = () => {
     logout();
-    setIsMenuOpen(false);
+    setShowUserMenu(false);
     navigate("/login");
   };
 
@@ -101,7 +117,10 @@ const Header = ({ onSearch, onClearSearch }) => {
         navigate("/?search=" + encodeURIComponent(searchQuery));
       }
 
-      // Don't close search after successful submission
+      // Mobile only: close search after submission
+      if (window.innerWidth <= 768) {
+        handleCloseSearch();
+      }
     } else {
       // If search is empty, close the search bar
       handleCloseSearch();
@@ -114,6 +133,10 @@ const Header = ({ onSearch, onClearSearch }) => {
     searchInputRef.current.focus(); // Keep focus on input after clearing
   };
 
+  const toggleUserMenu = () => {
+    setShowUserMenu(!showUserMenu);
+  };
+
   // Show subscription banner to all users on the homepage
   const showSubscriptionBanner = location.pathname === "/";
 
@@ -121,6 +144,7 @@ const Header = ({ onSearch, onClearSearch }) => {
     <HeaderWrapper>
       <HeaderContainer>
         <HeaderContent searchExpanded={searchExpanded}>
+          {/* Logo */}
           <LogoContainer searchExpanded={searchExpanded}>
             <Logo to="/" onClick={closeMenu}>
               <div className="logo-main">
@@ -131,128 +155,246 @@ const Header = ({ onSearch, onClearSearch }) => {
             </Logo>
           </LogoContainer>
 
-          {location.pathname === "/" && (
-            <SearchContainer ref={searchContainerRef} expanded={searchExpanded}>
-              {!searchExpanded ? (
-                <SearchIconButton
-                  onClick={handleOpenSearch}
-                  aria-label="Open search"
-                >
-                  <FaSearch />
-                </SearchIconButton>
-              ) : (
-                <SearchForm onSubmit={handleSearchSubmit}>
-                  <SearchInput
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder="Search posts..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+          {/* Central Navigation for Desktop */}
+          <DesktopNavigation>
+            <NavLink to="/" active={location.pathname === "/"}>
+              Home
+            </NavLink>
+            <NavLink
+              to="/collections"
+              active={location.pathname.startsWith("/collections")}
+            >
+              Collections
+            </NavLink>
+            {isAuthenticated && (
+              <NavLink
+                to="/story-archive"
+                active={location.pathname.startsWith("/story-archive")}
+              >
+                Stories
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink
+                to="/subscribers"
+                active={location.pathname.startsWith("/subscribers")}
+              >
+                Subscribers
+              </NavLink>
+            )}
+          </DesktopNavigation>
 
-                  {searchQuery && (
-                    <ClearButton
-                      onClick={clearSearch}
-                      aria-label="Clear search"
+          {/* Right side buttons */}
+          <HeaderActions>
+            {/* Search Button/Form */}
+            {location.pathname === "/" && (
+              <SearchContainer
+                ref={searchContainerRef}
+                expanded={searchExpanded}
+              >
+                {!searchExpanded ? (
+                  <ActionButton
+                    onClick={handleOpenSearch}
+                    aria-label="Open search"
+                  >
+                    <FaSearch />
+                  </ActionButton>
+                ) : (
+                  <SearchForm onSubmit={handleSearchSubmit}>
+                    <SearchInput
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder="Search posts..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+
+                    {searchQuery && (
+                      <ClearButton
+                        onClick={clearSearch}
+                        aria-label="Clear search"
+                        type="button"
+                      >
+                        <FaTimes />
+                      </ClearButton>
+                    )}
+
+                    <SearchSubmit type="submit">
+                      <FaSearch />
+                    </SearchSubmit>
+
+                    <CloseSearchButton
+                      onClick={handleCloseSearch}
+                      aria-label="Close search"
                       type="button"
                     >
                       <FaTimes />
-                    </ClearButton>
-                  )}
-
-                  <SearchSubmit type="submit">
-                    <FaSearch />
-                  </SearchSubmit>
-
-                  <CloseSearchButton
-                    onClick={handleCloseSearch}
-                    aria-label="Close search"
-                    type="button"
-                  >
-                    <FaTimes />
-                  </CloseSearchButton>
-                </SearchForm>
-              )}
-            </SearchContainer>
-          )}
-
-          {/* Add mobile sign-in button when not authenticated */}
-          {!isAuthenticated ? (
-            <MobileAuthButton to="/login">
-              <FaSignInAlt />
-            </MobileAuthButton>
-          ) : (
-            <MobileLogoutButton onClick={handleLogout}>
-              <FaSignOutAlt />
-            </MobileLogoutButton>
-          )}
-
-          <Navigation
-            className={isMenuOpen ? "active" : ""}
-            searchExpanded={searchExpanded}
-          >
-            {isAuthenticated ? (
-              <>
-                <NavItem>
-                  <CreatePostButton to="/create" onClick={closeMenu}>
-                    <FaPlus />
-                    <span>Create Post</span>
-                  </CreatePostButton>
-                </NavItem>
-                <NavItem>
-                  <NavLink to="/collections" onClick={closeMenu}>
-                    <FaFolder />
-                    <span>Collections</span>
-                  </NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink to="/story-archive" onClick={closeMenu}>
-                    <FaArchive />
-                    <span>Story Archive</span>
-                  </NavLink>
-                </NavItem>
-
-                {isAdmin && (
-                  <NavItem>
-                    <NavLink to="/subscribers" onClick={closeMenu}>
-                      <FaBell />
-                      <span>Subscribers</span>
-                    </NavLink>
-                  </NavItem>
+                    </CloseSearchButton>
+                  </SearchForm>
                 )}
-
-                <NavItem>
-                  <NavLink to="/profile" onClick={closeMenu}>
-                    <FaUser />
-                    <span>{user?.username}</span>
-                  </NavLink>
-                </NavItem>
-                <NavItem>
-                  <LogoutButton onClick={handleLogout}>
-                    <FaSignOutAlt />
-                    <span>Logout</span>
-                  </LogoutButton>
-                </NavItem>
-              </>
-            ) : (
-              <>
-                <NavItem>
-                  <NavLink to="/collections" onClick={closeMenu}>
-                    <FaFolder />
-                    <span>Collections</span>
-                  </NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink to="/login" onClick={closeMenu}>
-                    <FaSignInAlt />
-                    <span>Login</span>
-                  </NavLink>
-                </NavItem>
-              </>
+              </SearchContainer>
             )}
-          </Navigation>
+
+            {/* Create New Post button (desktop) */}
+            {isAuthenticated && !searchExpanded && (
+              <CreateNewButtonDesktop to="/create">
+                <FaPlus />
+                <span>Create</span>
+              </CreateNewButtonDesktop>
+            )}
+
+            {/* User Menu or Login Button */}
+            {isAuthenticated ? (
+              <UserMenuContainer ref={userMenuRef}>
+                <UserButton onClick={toggleUserMenu}>
+                  <UserAvatar>
+                    <FaUser />
+                  </UserAvatar>
+                  <FaChevronDown className="arrow-icon" />
+                </UserButton>
+
+                {showUserMenu && (
+                  <UserMenuDropdown>
+                    <UserInfo>
+                      <strong>{user?.username}</strong>
+                      <small>{isAdmin ? "Admin" : "User"}</small>
+                    </UserInfo>
+
+                    <MenuDivider />
+
+                    <UserMenuItem
+                      to="/profile"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <FaUser />
+                      <span>Profile</span>
+                    </UserMenuItem>
+
+                    {isAdmin && (
+                      <UserMenuItem
+                        to="/subscribers"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <FaBell />
+                        <span>Subscribers</span>
+                      </UserMenuItem>
+                    )}
+
+                    <UserMenuItem
+                      to="/collections"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <FaFolder />
+                      <span>Collections</span>
+                    </UserMenuItem>
+
+                    <UserMenuItem
+                      to="/story-archive"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <FaArchive />
+                      <span>Story Archive</span>
+                    </UserMenuItem>
+
+                    <MenuDivider />
+
+                    <UserMenuButton onClick={handleLogout}>
+                      <FaSignOutAlt />
+                      <span>Logout</span>
+                    </UserMenuButton>
+                  </UserMenuDropdown>
+                )}
+              </UserMenuContainer>
+            ) : (
+              <LoginButton to="/login">
+                <FaSignInAlt />
+                <span>Login</span>
+              </LoginButton>
+            )}
+
+            {/* Mobile Menu Toggle */}
+            <MobileMenuButton onClick={toggleMenu}>
+              <FaEllipsisV />
+            </MobileMenuButton>
+          </HeaderActions>
         </HeaderContent>
       </HeaderContainer>
+
+      {/* Mobile Menu Drawer */}
+      <MobileMenu isOpen={isMenuOpen}>
+        <MobileMenuHeader>
+          <MobileMenuLogo>
+            <FaCamera />
+            <span>SoloGram</span>
+          </MobileMenuLogo>
+          <MobileMenuCloseBtn onClick={closeMenu}>
+            <FaTimes />
+          </MobileMenuCloseBtn>
+        </MobileMenuHeader>
+
+        <MobileMenuContent>
+          <MobileMenuItem
+            to="/"
+            onClick={closeMenu}
+            active={location.pathname === "/"}
+          >
+            Home
+          </MobileMenuItem>
+          <MobileMenuItem
+            to="/collections"
+            onClick={closeMenu}
+            active={location.pathname.startsWith("/collections")}
+          >
+            Collections
+          </MobileMenuItem>
+
+          {isAuthenticated && (
+            <>
+              <MobileMenuItem
+                to="/story-archive"
+                onClick={closeMenu}
+                active={location.pathname.startsWith("/story-archive")}
+              >
+                Stories
+              </MobileMenuItem>
+
+              <MobileMenuItem
+                to="/profile"
+                onClick={closeMenu}
+                active={location.pathname.startsWith("/profile")}
+              >
+                Profile
+              </MobileMenuItem>
+
+              {isAdmin && (
+                <MobileMenuItem
+                  to="/subscribers"
+                  onClick={closeMenu}
+                  active={location.pathname.startsWith("/subscribers")}
+                >
+                  Subscribers
+                </MobileMenuItem>
+              )}
+
+              <MobileMenuButton onClick={handleLogout}>
+                <FaSignOutAlt />
+                <span>Logout</span>
+              </MobileMenuButton>
+            </>
+          )}
+
+          {!isAuthenticated && (
+            <MobileMenuItem
+              to="/login"
+              onClick={closeMenu}
+              active={location.pathname.startsWith("/login")}
+            >
+              <FaSignInAlt />
+              <span>Login</span>
+            </MobileMenuItem>
+          )}
+        </MobileMenuContent>
+      </MobileMenu>
 
       {/* Show subscription banner for all users on homepage */}
       {showSubscriptionBanner && <HeaderSubscriptionBanner />}
@@ -306,7 +448,6 @@ const Header = ({ onSearch, onClearSearch }) => {
 };
 
 // Styled Components (updated ones)
-
 const HeaderWrapper = styled.div`
   position: sticky;
   top: 0;
@@ -322,7 +463,7 @@ const HeaderContent = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
+  padding: 0.75rem 2rem;
   max-width: 1200px;
   margin: 0 auto;
   position: relative;
@@ -336,7 +477,7 @@ const HeaderContent = styled.div`
   `}
 
   @media (max-width: 768px) {
-    padding: 1rem;
+    padding: 0.75rem 1rem;
   }
 `;
 
@@ -394,61 +535,56 @@ const Logo = styled(Link)`
   }
 `;
 
-const MobileAuthButton = styled(Link)`
-  display: none; /* Hidden by default */
-  background: none;
-  border: none;
-  color: #4a4a4a;
-  font-size: 1.25rem;
-  padding: 0.5rem;
-  margin-left: auto;
-  z-index: 5;
+const DesktopNavigation = styled.nav`
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
 
-  &:hover {
-    color: #ff7e5f;
-  }
-
-  @media (max-width: 767px) {
-    display: flex; /* Only show on mobile */
-    align-items: center;
-    justify-content: center;
+  @media (max-width: 768px) {
+    display: none;
   }
 `;
 
-const MobileLogoutButton = styled.button`
-  display: none; /* Hidden by default */
-  background: none;
-  border: none;
-  color: #4a4a4a;
-  font-size: 1.25rem;
-  cursor: pointer;
-  padding: 0.5rem;
-  margin-left: auto;
-  z-index: 5;
+const NavLink = styled(Link)`
+  color: ${(props) => (props.active ? "#ff7e5f" : "#4a4a4a")};
+  text-decoration: none;
+  font-weight: 500;
+  position: relative;
+  padding: 0.5rem 0;
+
+  &:after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: ${(props) => (props.active ? "100%" : "0")};
+    height: 2px;
+    background-color: #ff7e5f;
+    transition: width 0.3s ease;
+  }
 
   &:hover {
     color: #ff7e5f;
-  }
 
-  @media (max-width: 767px) {
-    display: flex; /* Only show on mobile */
-    align-items: center;
-    justify-content: center;
+    &:after {
+      width: 100%;
+    }
   }
+`;
+
+const HeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 `;
 
 const SearchContainer = styled.div`
   display: flex;
   align-items: center;
   position: relative;
-  margin-left: auto;
-  margin-right: 1.5rem;
   z-index: 100;
 
   @media (max-width: 767px) {
-    margin-right: 0.5rem;
-    margin-left: 0;
-
     ${(props) =>
       props.expanded &&
       `
@@ -463,18 +599,17 @@ const SearchContainer = styled.div`
   }
 `;
 
-const SearchIconButton = styled.button`
+const ActionButton = styled.button`
   background: none;
   border: none;
-  color: #4a4a4a;
-  font-size: 1.125rem;
-  cursor: pointer;
-  padding: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #4a4a4a;
+  font-size: 1.125rem;
+  padding: 0.5rem;
+  cursor: pointer;
   transition: color 0.3s;
-  z-index: 101;
 
   &:hover {
     color: #ff7e5f;
@@ -566,105 +701,295 @@ const CloseSearchButton = styled.button`
   }
 `;
 
-const Navigation = styled.ul`
-  display: flex;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-
-  ${(props) =>
-    props.searchExpanded &&
-    `
-    @media (max-width: 767px) {
-      display: none;
-    }
-  `}
-
-  @media (max-width: 767px) {
-    display: none; /* Hide navigation on mobile since we have bottom nav */
-  }
-`;
-
-// Rest of your styled components remain the same
-const NavItem = styled.li`
-  margin-left: 1.5rem;
-
-  @media (max-width: 768px) {
-    margin: 0;
-  }
-`;
-
-const NavLink = styled(Link)`
+const CreateNewButtonDesktop = styled(Link)`
   display: flex;
   align-items: center;
+  gap: 0.5rem;
+  background-color: #ff7e5f;
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #ff6347;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const UserMenuContainer = styled.div`
+  position: relative;
+`;
+
+const UserButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+
+  .arrow-icon {
+    font-size: 0.75rem;
+    color: #666;
+    transition: transform 0.2s;
+  }
+
+  &:hover .arrow-icon {
+    color: #ff7e5f;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const UserAvatar = styled.div`
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
+
+const UserMenuDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 200px;
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+  z-index: 100;
+`;
+
+const UserInfo = styled.div`
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #eee;
+
+  strong {
+    display: block;
+    color: #333;
+  }
+
+  small {
+    color: #888;
+    font-size: 0.75rem;
+  }
+`;
+
+const MenuDivider = styled.div`
+  height: 1px;
+  background-color: #eee;
+  margin: 0.5rem 0;
+`;
+
+const UserMenuItem = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
   color: #4a4a4a;
   text-decoration: none;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #f9f9f9;
+    color: #ff7e5f;
+  }
+
+  svg {
+    font-size: 1rem;
+    color: #777;
+  }
+
+  &:hover svg {
+    color: #ff7e5f;
+  }
+`;
+
+const UserMenuButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.75rem 1rem;
+  color: #4a4a4a;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #f9f9f9;
+    color: #ff7e5f;
+  }
+
+  svg {
+    font-size: 1rem;
+    color: #777;
+  }
+
+  &:hover svg {
+    color: #ff7e5f;
+  }
+`;
+
+const LoginButton = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #f0f0f0;
+  color: #4a4a4a;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
   font-weight: 500;
+  transition: all 0.3s;
+
+  &:hover {
+    background-color: #e0e0e0;
+    color: #ff7e5f;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const MobileMenuButton = styled.button`
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #4a4a4a;
+  cursor: pointer;
   padding: 0.5rem;
-  transition: color 0.3s ease;
 
   &:hover {
     color: #ff7e5f;
   }
 
-  svg {
-    margin-right: 0.5rem;
-  }
-
   @media (max-width: 768px) {
-    padding: 0.75rem 2rem;
+    display: block;
   }
 `;
 
-const LogoutButton = styled.button`
+const MobileMenu = styled.div`
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 80%;
+  max-width: 300px;
+  background-color: white;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  transform: ${(props) =>
+    props.isOpen ? "translateX(0)" : "translateX(100%)"};
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+`;
+
+const MobileMenuHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+`;
+
+const MobileMenuLogo = styled.div`
   display: flex;
   align-items: center;
+  color: #ff7e5f;
+  font-weight: 700;
+
+  svg {
+    margin-right: 0.5rem;
+  }
+`;
+
+const MobileMenuCloseBtn = styled.button`
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #777;
+  cursor: pointer;
+
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
+
+const MobileMenuContent = styled.div`
+  padding: 1rem;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const MobileMenuItem = styled(Link)`
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  color: ${(props) => (props.active ? "#ff7e5f" : "#4a4a4a")};
+  text-decoration: none;
+  font-weight: 500;
+  border-radius: 4px;
+  background-color: ${(props) =>
+    props.active ? "rgba(255, 126, 95, 0.1)" : "transparent"};
+
+  &:hover {
+    background-color: rgba(255, 126, 95, 0.1);
+    color: #ff7e5f;
+  }
+
+  svg {
+    margin-right: 0.75rem;
+  }
+`;
+
+const MobileMenuButton = styled.button`
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
   color: #4a4a4a;
   background: none;
   border: none;
   font-size: 1rem;
   font-weight: 500;
-  padding: 0.5rem;
+  text-align: left;
+  border-radius: 4px;
   cursor: pointer;
-  transition: color 0.3s ease;
+  margin-top: auto;
 
   &:hover {
+    background-color: rgba(255, 126, 95, 0.1);
     color: #ff7e5f;
   }
 
   svg {
-    margin-right: 0.5rem;
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.75rem 2rem;
-    width: 100%;
-    text-align: left;
-  }
-`;
-
-const CreatePostButton = styled(Link)`
-  display: flex;
-  align-items: center;
-  color: white;
-  background-color: #ff7e5f;
-  text-decoration: none;
-  font-weight: 600;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: #ff6347;
-    color: white;
-  }
-
-  svg {
-    margin-right: 0.5rem;
-  }
-
-  @media (max-width: 768px) {
-    margin: 0.75rem 2rem;
+    margin-right: 0.75rem;
   }
 `;
 
