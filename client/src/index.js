@@ -4,10 +4,15 @@ import { createGlobalStyle } from "styled-components";
 import App from "./App";
 import axios from "axios";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
+import { initializeOneSignal } from "./utils/oneSignal";
 
 // Set default axios baseURL
 // In production, you would set this to your actual API URL
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || "";
+
+initializeOneSignal().catch((err) =>
+  console.error("OneSignal initialization error:", err)
+);
 
 // Global styles
 const GlobalStyle = createGlobalStyle`

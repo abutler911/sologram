@@ -2,7 +2,11 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { FaBell, FaTimes } from "react-icons/fa";
-import OneSignal from "react-onesignal";
+import {
+  isOneSignalReady,
+  requestNotificationPermission,
+} from "../../utils/oneSignal";
+import { toast } from "react-hot-toast";
 
 const SubscribeBanner = () => {
   const [showBanner, setShowBanner] = useState(false);
@@ -10,79 +14,120 @@ const SubscribeBanner = () => {
 
   useEffect(() => {
     let timer;
-    let checkInterval;
+    let readinessTimer;
 
+    // Function to check if OneSignal is ready
     const checkOneSignalReadiness = () => {
-      if (typeof OneSignal?.isPushNotificationsEnabled === "function") {
+      if (isOneSignalReady()) {
         setOneSignalReady(true);
-        clearInterval(checkInterval);
+        return true;
       }
+      return false;
     };
 
-    // Check if OneSignal is already initialized
-    checkOneSignalReadiness();
+    // Set up a polling mechanism to check if OneSignal is ready
+    readinessTimer = setInterval(() => {
+      if (checkOneSignalReadiness()) {
+        clearInterval(readinessTimer);
+        checkSubscriptionStatus();
+      }
+    }, 1000);
 
-    // Keep checking until OneSignal is ready
-    checkInterval = setInterval(checkOneSignalReadiness, 500);
+    // Clean up the timer after 10 seconds to avoid infinite polling
+    setTimeout(() => {
+      clearInterval(readinessTimer);
+    }, 10000);
 
     const checkSubscriptionStatus = async () => {
-      if (!oneSignalReady) return;
-
       try {
+        const OneSignal = window.OneSignal;
+        if (!OneSignal) return;
+
         const isPushEnabled = await OneSignal.isPushNotificationsEnabled();
         const permission = await OneSignal.getNotificationPermission();
-        const hasDismissed = localStorage.getItem("subscribeBannerDismissed");
 
-        // Show banner if:
-        // 1. User hasn't subscribed to push notifications
-        // 2. User hasn't permanently dismissed the banner
-        // 3. User hasn't denied notification permissions
-        if (!isPushEnabled && !hasDismissed && permission !== "denied") {
+        console.log("[SubscribeBanner] Push enabled:", isPushEnabled);
+        console.log("[SubscribeBanner] Permission status:", permission);
+
+        // Don't show banner if notifications are already enabled
+        if (isPushEnabled) return;
+
+        // Don't show banner if permission is denied (user explicitly blocked)
+        if (permission === "denied") return;
+
+        // Check if user has dismissed the banner before
+        const hasDismissed = localStorage.getItem("subscribeBannerDismissed");
+        const dismissedTimestamp = localStorage.getItem(
+          "subscribeBannerDismissedAt"
+        );
+
+        let shouldShow = !hasDismissed;
+
+        // If it was dismissed more than 7 days ago, show it again
+        if (dismissedTimestamp) {
+          const dismissedDate = new Date(parseInt(dismissedTimestamp));
+          const now = new Date();
+          const daysSinceDismissed =
+            (now - dismissedDate) / (1000 * 60 * 60 * 24);
+
+          if (daysSinceDismissed > 7) {
+            shouldShow = true;
+          }
+        }
+
+        if (shouldShow) {
+          // Set a delay before showing the banner
           timer = setTimeout(() => {
+            console.log("[SubscribeBanner] Showing banner");
             setShowBanner(true);
-          }, 3000);
+          }, 5000); // Show after 5 seconds on the site
         }
       } catch (err) {
         console.error("Error checking notification status:", err);
       }
     };
 
-    if (oneSignalReady) {
-      checkSubscriptionStatus();
-    }
-
     return () => {
       if (timer) clearTimeout(timer);
-      if (checkInterval) clearInterval(checkInterval);
+      if (readinessTimer) clearInterval(readinessTimer);
     };
   }, [oneSignalReady]);
 
   const handleDismiss = () => {
     setShowBanner(false);
-    // Store in localStorage that the user has dismissed the banner
+    // Store current timestamp when dismissed
     localStorage.setItem("subscribeBannerDismissed", "true");
+    localStorage.setItem("subscribeBannerDismissedAt", Date.now().toString());
   };
 
   const handleSubscribeClick = async () => {
-    if (!oneSignalReady) {
-      console.warn("OneSignal not ready yet");
-      return;
-    }
-
     try {
-      // Show the OneSignal permission prompt
-      await OneSignal.showNativePrompt();
+      const result = await requestNotificationPermission();
 
-      // Check if permission was granted after showing prompt
-      const permission = await OneSignal.getNotificationPermission();
-
-      if (permission === "granted") {
-        // Permission was granted, hide the banner
+      if (result) {
         setShowBanner(false);
+        toast.success("Successfully subscribed to notifications!");
         localStorage.setItem("subscribeBannerDismissed", "true");
+        localStorage.setItem(
+          "subscribeBannerDismissedAt",
+          Date.now().toString()
+        );
+      } else {
+        // Check the reason why it failed
+        if (window.OneSignal) {
+          const permission = await window.OneSignal.getNotificationPermission();
+
+          if (permission === "denied") {
+            toast.error(
+              "Notifications are blocked. Please update your browser settings."
+            );
+            setShowBanner(false);
+          }
+        }
       }
     } catch (error) {
       console.error("Error showing notification prompt:", error);
+      toast.error("There was a problem subscribing to notifications.");
     }
   };
 
@@ -115,7 +160,7 @@ const SubscribeBanner = () => {
   );
 };
 
-// Styled Components
+// Styled Components (unchanged)
 const Banner = styled.div`
   display: flex;
   align-items: center;

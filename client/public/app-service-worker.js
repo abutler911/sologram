@@ -1,10 +1,9 @@
-// public/service-worker.js
+// public/app-service-worker.js
 /* eslint-disable no-restricted-globals */
-importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-console.log("[Service Worker] OneSignal SDK imported");
+console.log("[App Service Worker] Initializing");
 
-// Configuration - Fixed the duplicate APP_VERSION declaration
+// Configuration
 const APP_VERSION = "1.0.1"; // Increment this when you want to force an update
 const CACHE_NAME = `sologram-cache-${APP_VERSION}`;
 const MEDIA_CACHE_NAME = `sologram-media-cache-${APP_VERSION}`;
@@ -29,25 +28,25 @@ const STATIC_ASSETS = [
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     console.log(
-      "[Service Worker] Received skip waiting message, activating now"
+      "[App Service Worker] Received skip waiting message, activating now"
     );
     self.skipWaiting();
   }
 });
 
-// Install event handler - Removed skipWaiting() call here
+// Install event handler
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
       .then((cache) => {
         console.log(
-          "[Service Worker] Pre-caching offline page and static assets"
+          "[App Service Worker] Pre-caching offline page and static assets"
         );
         return cache.addAll(STATIC_ASSETS);
       })
       .then(() => {
-        console.log("[Service Worker] Installation completed");
+        console.log("[App Service Worker] Installation completed");
       })
   );
 });
@@ -68,14 +67,14 @@ self.addEventListener("activate", (event) => {
         return Promise.all(
           cachesToDelete.map((cacheToDelete) => {
             console.log(
-              `[Service Worker] Deleting old cache: ${cacheToDelete}`
+              `[App Service Worker] Deleting old cache: ${cacheToDelete}`
             );
             return caches.delete(cacheToDelete);
           })
         );
       })
       .then(() => {
-        console.log("[Service Worker] Activation completed");
+        console.log("[App Service Worker] Activation completed");
         return self.clients.claim();
       })
   );
@@ -85,6 +84,14 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   // Skip cross-origin requests
   if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  // Skip OneSignal paths to avoid conflicts
+  if (
+    event.request.url.includes("/OneSignal") ||
+    event.request.url.includes("OneSignalSDK")
+  ) {
     return;
   }
 
@@ -253,46 +260,6 @@ function syncComments() {
   return Promise.resolve();
 }
 
-// Improved push notification event handler
-self.addEventListener("push", (event) => {
-  console.log("[Service Worker] Push event received", event);
-
-  // Let OneSignal handle push events if it's available
-  if (self.OneSignal) {
-    console.log("[Service Worker] Delegating to OneSignal push handler");
-    return;
-  }
-
-  // Only handle non-OneSignal push events as fallback
-  if (!event.data) return;
-
-  try {
-    const data = event.data.json();
-    console.log("[Service Worker] Processing push data:", data);
-
-    const options = {
-      body: data.body || "New update available",
-      icon: "logo192.png",
-      badge: "favicon.ico",
-      data: { url: data.url || "/" },
-    };
-
-    event.waitUntil(
-      self.registration.showNotification(
-        data.title || "SoloGram Update",
-        options
-      )
-    );
-  } catch (error) {
-    console.error("[Service Worker] Error handling push event:", error);
-  }
-});
-
-// Notification click handler
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-
-  if (event.notification.data && event.notification.data.url) {
-    event.waitUntil(self.clients.openWindow(event.notification.data.url));
-  }
-});
+// NOTE: We're removing push and notificationclick event listeners
+// to avoid conflicts with OneSignal's handlers
+// OneSignal will handle all push notifications

@@ -5,7 +5,9 @@ import styled from "styled-components";
 
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
-import BottomNavigation from "./components/layout/BottomNavigation"; // Add the new component
+import BottomNavigation from "./components/layout/BottomNavigation";
+// Import the SubscribeBanner component
+import SubscribeBanner from "./components/notifications/SubscribeBanner";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -96,10 +98,12 @@ function App() {
                     onClearSearch={handleClearSearch}
                   />
                   <main className="main-content">
+                    {/* Add SubscribeBanner at the top of the main content */}
+                    <SubscribeBanner />
                     <Home ref={homeRef} />
                   </main>
                   <Footer />
-                  <BottomNavigation /> {/* Add the bottom navigation */}
+                  <BottomNavigation />
                 </>
               }
             />
@@ -110,6 +114,8 @@ function App() {
                 <>
                   <Header />
                   <main className="main-content">
+                    {/* Add SubscribeBanner before Routes */}
+                    <SubscribeBanner />
                     <Routes>
                       <Route path="/login" element={<Login />} />
                       <Route path="/post/:id" element={<PostDetail />} />
@@ -214,7 +220,7 @@ function App() {
                     </Routes>
                   </main>
                   <Footer />
-                  <BottomNavigation /> {/* Add the bottom navigation */}
+                  <BottomNavigation />
                 </>
               }
             />

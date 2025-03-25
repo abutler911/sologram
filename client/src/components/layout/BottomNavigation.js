@@ -1,11 +1,13 @@
-/* global OneSignal */
-
 import React, { useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import { FaHome, FaFolder, FaSearch, FaBell, FaUser } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-hot-toast";
+import {
+  requestNotificationPermission,
+  isOneSignalReady,
+} from "../../utils/oneSignal";
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -18,48 +20,49 @@ const BottomNavigation = () => {
   };
 
   const handleSubscribeClick = async () => {
-    if (typeof window.OneSignal === "undefined") {
-      toast.error(
-        "Push notifications not available yet. Please try again shortly."
-      );
-      return;
-    }
-
-    const OneSignal = window.OneSignal;
+    // Show loading toast while we check OneSignal
+    const loadingToast = toast.loading("Preparing subscription...");
 
     try {
-      // Check if push notifications are supported
-      const isPushSupported = await OneSignal.isPushNotificationsSupported?.();
-      if (!isPushSupported) {
-        toast.error("Push notifications are not supported on this device.");
-        return;
+      // Check if OneSignal is ready
+      if (!isOneSignalReady()) {
+        // Wait a bit for OneSignal to initialize
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        // Check again
+        if (!isOneSignalReady()) {
+          toast.error(
+            "Push notifications not available. Please try again later."
+          );
+          toast.dismiss(loadingToast);
+          return;
+        }
       }
 
-      // Check current permission
-      const permission = await OneSignal.getNotificationPermission?.();
-      if (permission === "granted") {
-        const isSubscribed = await OneSignal.isPushNotificationsEnabled?.();
-        if (isSubscribed) {
-          toast.success("You're already subscribed to notifications!");
-        } else {
-          await OneSignal.subscribe?.();
-          toast.success("Subscribed to notifications!");
-        }
-      } else if (permission === "default") {
-        // Show native prompt or slide down if permission is not yet granted
-        await OneSignal.showSlidedownPrompt?.();
-        const updatedPermission = await OneSignal.getNotificationPermission?.();
-        if (updatedPermission === "granted") {
-          toast.success("Subscribed to notifications!");
-        } else {
-          toast("Subscription canceled or blocked.");
-        }
+      // Dismiss the loading toast
+      toast.dismiss(loadingToast);
+
+      // Request notification permission
+      const result = await requestNotificationPermission();
+
+      if (result) {
+        toast.success("Successfully subscribed to notifications!");
       } else {
-        toast("You've blocked notifications. Check your browser settings.");
+        // Check the current permission
+        const permission = await window.OneSignal.getNotificationPermission();
+
+        if (permission === "denied") {
+          toast.error(
+            "Notifications are blocked. Please update your browser settings to allow notifications."
+          );
+        } else {
+          toast("You can subscribe to notifications anytime.");
+        }
       }
     } catch (err) {
-      console.error("Failed to subscribe:", err);
-      toast.error("Subscription failed. Please try again.");
+      console.error("Error in handleSubscribeClick:", err);
+      toast.dismiss(loadingToast);
+      toast.error("There was a problem subscribing to notifications.");
     }
   };
 
@@ -103,6 +106,7 @@ const BottomNavigation = () => {
     </NavContainer>
   );
 };
+
 const NavAction = styled.button`
   all: unset;
   display: flex;
@@ -150,26 +154,6 @@ const NavItem = styled(Link)`
   flex: 1;
   color: ${(props) => (props.active ? "#ff7e5f" : "#aaaaaa")};
   text-decoration: none;
-
-  svg {
-    font-size: 1.25rem;
-    margin-bottom: 0.25rem;
-  }
-
-  &:hover {
-    color: #ff7e5f;
-  }
-`;
-
-const SubscribeButton = styled.button`
-  all: unset;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  color: #aaaaaa;
-  cursor: pointer;
 
   svg {
     font-size: 1.25rem;
