@@ -1,3 +1,4 @@
+// Inside your index.js
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createGlobalStyle } from "styled-components";
@@ -7,12 +8,14 @@ import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { initializeOneSignal } from "./utils/oneSignal";
 
 // Set default axios baseURL
-// In production, you would set this to your actual API URL
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || "";
 
-initializeOneSignal().catch((err) =>
-  console.error("OneSignal initialization error:", err)
-);
+// Initialize OneSignal with a delay to ensure DOM is fully loaded
+setTimeout(() => {
+  initializeOneSignal().catch((err) =>
+    console.error("OneSignal initialization error:", err)
+  );
+}, 2000);
 
 // Global styles
 const GlobalStyle = createGlobalStyle`
@@ -131,6 +134,8 @@ const GlobalStyle = createGlobalStyle`
     body {
       /* Prevent overscroll bounce */
       overscroll-behavior: none;
+      /* Fix for the CSS warning */
+      overscroll-behavior-y: contain;
     }
     
     .app {
@@ -158,9 +163,7 @@ root.render(
   </React.StrictMode>
 );
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://cra.link/PWA
+// Register service worker AFTER OneSignal has a chance to register its own
 serviceWorkerRegistration.register({
   onUpdate: (registration) => {
     // Only show notification if there's actually a new service worker waiting

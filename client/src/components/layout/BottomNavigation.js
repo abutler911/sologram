@@ -4,10 +4,7 @@ import styled from "styled-components";
 import { FaHome, FaFolder, FaSearch, FaBell, FaUser } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-hot-toast";
-import {
-  requestNotificationPermission,
-  isOneSignalReady,
-} from "../../utils/oneSignal";
+import { requestNotificationPermission } from "../../utils/oneSignal";
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -24,17 +21,16 @@ const BottomNavigation = () => {
     const loadingToast = toast.loading("Preparing subscription...");
 
     try {
-      // Check if OneSignal is ready
-      if (!isOneSignalReady()) {
-        // Wait a bit for OneSignal to initialize
+      // Check if OneSignal is available in window object
+      if (!window.OneSignal) {
+        // Try again after a short delay
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        // Check again
-        if (!isOneSignalReady()) {
-          toast.error(
-            "Push notifications not available. Please try again later."
-          );
+        if (!window.OneSignal) {
           toast.dismiss(loadingToast);
+          toast.error(
+            "Notification service isn't ready yet. Please try again in a moment."
+          );
           return;
         }
       }
@@ -42,27 +38,52 @@ const BottomNavigation = () => {
       // Dismiss the loading toast
       toast.dismiss(loadingToast);
 
-      // Request notification permission
-      const result = await requestNotificationPermission();
+      // Check if native API is available (fallback)
+      const useNativeAPI =
+        !window.OneSignal.showSlidedownPrompt &&
+        "Notification" in window &&
+        Notification.permission !== "denied";
 
-      if (result) {
-        toast.success("Successfully subscribed to notifications!");
-      } else {
-        // Check the current permission
-        const permission = await window.OneSignal.getNotificationPermission();
-
-        if (permission === "denied") {
-          toast.error(
-            "Notifications are blocked. Please update your browser settings to allow notifications."
-          );
+      if (useNativeAPI) {
+        // Use the browser's native notification API as fallback
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+          toast.success("Successfully subscribed to notifications!");
         } else {
-          toast("You can subscribe to notifications anytime.");
+          toast(
+            "You can enable notifications anytime from your browser settings."
+          );
         }
+        return;
+      }
+
+      // Try using OneSignal API
+      try {
+        if (typeof window.OneSignal.showSlidedownPrompt === "function") {
+          await window.OneSignal.showSlidedownPrompt();
+          toast.success("Successfully subscribed to notifications!");
+        } else if (
+          typeof window.OneSignal.registerForPushNotifications === "function"
+        ) {
+          await window.OneSignal.registerForPushNotifications();
+          toast.success("Successfully subscribed to notifications!");
+        } else {
+          // Try using our helper function
+          const result = await requestNotificationPermission();
+          if (result) {
+            toast.success("Successfully subscribed to notifications!");
+          } else {
+            toast("You can subscribe to notifications anytime.");
+          }
+        }
+      } catch (oneSignalError) {
+        console.error("OneSignal specific error:", oneSignalError);
+        toast.error("There was a problem subscribing to notifications.");
       }
     } catch (err) {
       console.error("Error in handleSubscribeClick:", err);
       toast.dismiss(loadingToast);
-      toast.error("There was a problem subscribing to notifications.");
+      toast.error("There was a problem with the notification system.");
     }
   };
 
