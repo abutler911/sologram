@@ -94,15 +94,35 @@ const BottomNavigation = () => {
             <NavLabel>About</NavLabel>
           </NavItem>
 
-          <SubscribeButton onClick={handleSubscribeClick}>
+          <NavAction onClick={handleSubscribeClick}>
             <FaBell />
-            <span>Subscribe</span>
-          </SubscribeButton>
+            <NavLabel>Subscribe</NavLabel>
+          </NavAction>
         </>
       )}
     </NavContainer>
   );
 };
+const NavAction = styled.button`
+  all: unset;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0;
+  flex: 1;
+  color: #aaaaaa;
+  cursor: pointer;
+
+  svg {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
 
 const NavContainer = styled.div`
   @media (max-width: 767px) {
