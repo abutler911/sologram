@@ -11,7 +11,7 @@ const Footer = () => {
         <TopSection>
           <LogoSection>
             <div className="logo">
-              <FaCamera />
+              <FaCamera className="icon" />
               <span>SoloGram</span>
             </div>
             <div className="tagline">One Voice. Infinite Moments.</div>
@@ -54,18 +54,12 @@ const Footer = () => {
   );
 };
 
-// Styled Components
 const FooterContainer = styled.footer`
-  background-color: #ffffff;
+  background-color: #fff;
   border-top: 1px solid #e6e6e6;
   padding: 2rem 0;
   padding-bottom: calc(2rem + env(safe-area-inset-bottom));
-  ${"" /* margin-top: 2rem; */}
   margin-bottom: 65px;
-
-  @media (display-mode: standalone) {
-    padding-bottom: calc(2rem + env(safe-area-inset-bottom));
-  }
 `;
 
 const FooterContent = styled.div`
@@ -84,24 +78,29 @@ const TopSection = styled.div`
   align-items: center;
   margin-bottom: 1.5rem;
 
-  @media (max-width: 640px) {
+  @media (max-width: 768px) {
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.5rem;
+    align-items: flex-start;
   }
 `;
 
 const LogoSection = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   color: #ff7e5f;
 
   .logo {
     display: flex;
     align-items: center;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 700;
     margin-bottom: 0.25rem;
+
+    .icon {
+      font-size: 1.5rem;
+      margin-right: 0.5rem;
+    }
   }
 
   .tagline {
@@ -109,20 +108,23 @@ const LogoSection = styled.div`
     font-style: italic;
     color: #666;
   }
-
-  svg {
-    margin-right: 0.5rem;
-  }
 `;
 
 const SocialLinks = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: 1.25rem;
+
+  a {
+    font-size: 1.25rem;
+  }
+
+  @media (max-width: 768px) {
+    margin-top: 0.5rem;
+  }
 `;
 
 const SocialLink = styled.a`
-  color: #666666;
-  font-size: 1.25rem;
+  color: #666;
   transition: color 0.3s;
 
   &:hover {
@@ -133,17 +135,18 @@ const SocialLink = styled.a`
 const Divider = styled.hr`
   border: none;
   border-top: 1px solid #e6e6e6;
-  margin: 0 0 1.5rem 0;
+  margin-bottom: 1.5rem;
 `;
 
 const BottomSection = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 
   @media (max-width: 768px) {
     flex-direction: column;
-    gap: 1rem;
     text-align: center;
   }
 `;
@@ -158,7 +161,6 @@ const CreatedWithLove = styled.p`
   color: #6c757d;
   display: flex;
   align-items: center;
-  justify-content: center;
   font-size: 0.875rem;
   margin: 0;
 `;
