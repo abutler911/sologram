@@ -1,4 +1,4 @@
-// Inside your index.js
+// client/src/index.js
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createGlobalStyle } from "styled-components";
@@ -164,120 +164,120 @@ root.render(
 );
 
 // Register service worker AFTER OneSignal has a chance to register its own
-serviceWorkerRegistration.register({
-  onUpdate: (registration) => {
-    // Only show notification if there's actually a new service worker waiting
-    if (!registration || !registration.waiting) {
-      console.log(
-        "[PWA] Update callback triggered but no waiting worker found"
+const registerServiceWorker = () => {
+  serviceWorkerRegistration.register({
+    onUpdate: (registration) => {
+      // Only show notification if there's actually a new service worker waiting
+      if (!registration || !registration.waiting) {
+        console.log(
+          "[PWA] Update callback triggered but no waiting worker found"
+        );
+        return;
+      }
+
+      // Better version detection logic - hash the scriptURL
+      // This is more reliable than comparing URLs directly
+      const getScriptHash = (url) => {
+        // Extract just the hash part of the URL which changes when the content changes
+        const urlParts = url.split("/");
+        return urlParts[urlParts.length - 1];
+      };
+
+      const newVersion = getScriptHash(registration.waiting.scriptURL);
+      const currentVersion = getScriptHash(
+        registration.active?.scriptURL || ""
       );
-      return;
-    }
 
-    // Compare versions to ensure we're not showing a notification for the initial load
-    // or for the same version being reinstalled
-    const currentVersion = registration.waiting.scriptURL;
-    let previousVersion;
+      // Skip notification if it's the same version
+      if (newVersion === currentVersion) {
+        console.log(
+          "[PWA] Same version detected, skipping update notification"
+        );
+        return;
+      }
 
-    try {
-      previousVersion = localStorage.getItem("pwaVersion");
-    } catch (e) {
-      console.log("[PWA] Could not get previous version");
-    }
+      console.log(
+        `[PWA] New version detected: ${newVersion} vs current: ${currentVersion}`
+      );
 
-    // Skip notification if this is the first install or same version
-    if (!previousVersion) {
-      try {
-        localStorage.setItem("pwaVersion", currentVersion);
-      } catch (e) {}
-      return;
-    }
+      // Prevent duplicate notifications
+      if (document.getElementById("update-notification")) {
+        return;
+      }
 
-    // Skip if versions are the same (reinstall of same version)
-    if (previousVersion === currentVersion) {
-      console.log("[PWA] Same version detected, skipping update notification");
-      return;
-    }
-
-    // Store new version
-    try {
-      localStorage.setItem("pwaVersion", currentVersion);
-    } catch (e) {}
-
-    // Prevent duplicate notifications
-    if (document.getElementById("update-notification")) {
-      return;
-    }
-
-    console.log("[PWA] New version waiting, showing update notification");
-
-    // Create a UI to notify users about the update
-    const updateAvailable = document.createElement("div");
-    updateAvailable.id = "update-notification";
-    updateAvailable.innerHTML = `
-      <div style="
-        position: fixed;
-        bottom: 76px; /* Adjust to be above bottom navigation */
-        right: 20px;
-        background-color: #4a4a4a;
-        color: white;
-        border-radius: 4px;
-        padding: 16px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        z-index: 9999;
-        max-width: 320px;
-      ">
-        <div>
-          <p style="margin: 0 0 8px 0; font-weight: bold;">Update Available</p>
-          <p style="margin: 0; font-size: 14px;">Refresh to see the latest version.</p>
-        </div>
-        <button id="update-app-button" style="
-          background-color: #ff7e5f;
+      // Create update notification UI
+      const updateAvailable = document.createElement("div");
+      updateAvailable.id = "update-notification";
+      updateAvailable.innerHTML = `
+        <div style="
+          position: fixed;
+          bottom: 76px;
+          right: 20px;
+          background-color: #4a4a4a;
           color: white;
-          border: none;
           border-radius: 4px;
-          padding: 8px 16px;
-          cursor: pointer;
-          margin-left: 16px;
+          padding: 16px;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          z-index: 9999;
+          max-width: 320px;
         ">
-          Update
-        </button>
-      </div>
-    `;
+          <div>
+            <p style="margin: 0 0 8px 0; font-weight: bold;">Update Available</p>
+            <p style="margin: 0; font-size: 14px;">Refresh to see the latest version.</p>
+          </div>
+          <button id="update-app-button" style="
+            background-color: #ff7e5f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            margin-left: 16px;
+          ">
+            Update
+          </button>
+        </div>
+      `;
 
-    // Add to body
-    document.body.appendChild(updateAvailable);
+      // Add to body
+      document.body.appendChild(updateAvailable);
 
-    // Set up a global flag to track refresh status
-    window.__refreshing = false;
-
-    // Set up controller change listener BEFORE adding button click handler
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (window.__refreshing) return;
-      window.__refreshing = true;
-      console.log("[PWA] Service worker controller changed, reloading page");
-      window.location.reload();
-    });
-
-    // Add event listener to the update button
-    document
-      .getElementById("update-app-button")
-      .addEventListener("click", () => {
-        console.log("[PWA] Update button clicked");
-
-        // Remove the notification
-        if (updateAvailable.parentNode) {
-          updateAvailable.parentNode.removeChild(updateAvailable);
-        }
-
-        // Tell the service worker to skip waiting and activate
-        if (registration && registration.waiting) {
-          console.log("[PWA] Sending SKIP_WAITING message to waiting worker");
-          registration.waiting.postMessage({ type: "SKIP_WAITING" });
-        }
+      // Set up controller change listener BEFORE adding button click handler
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (window.__refreshing) return;
+        window.__refreshing = true;
+        console.log("[PWA] Service worker controller changed, reloading page");
+        window.location.reload();
       });
-  },
-});
+
+      // Set up a global flag to track refresh status
+      window.__refreshing = false;
+
+      // Add event listener to the update button
+      document
+        .getElementById("update-app-button")
+        .addEventListener("click", () => {
+          console.log("[PWA] Update button clicked");
+
+          // Remove the notification
+          if (updateAvailable.parentNode) {
+            updateAvailable.parentNode.removeChild(updateAvailable);
+          }
+
+          // Tell the service worker to skip waiting and activate
+          if (registration && registration.waiting) {
+            console.log("[PWA] Sending SKIP_WAITING message to waiting worker");
+            registration.waiting.postMessage({ type: "SKIP_WAITING" });
+          }
+        });
+    },
+  });
+};
+
+// Call the service worker registration after a short delay to give OneSignal time to initialize
+setTimeout(() => {
+  registerServiceWorker();
+}, 3000);

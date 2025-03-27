@@ -10,88 +10,76 @@ import { toast } from "react-hot-toast";
 
 const SubscribeBanner = () => {
   const [showBanner, setShowBanner] = useState(false);
-  const [oneSignalReady, setOneSignalReady] = useState(false);
 
   useEffect(() => {
-    let timer;
-    let readinessTimer;
+    // Check if banner was recently dismissed
+    const checkBannerStatus = async () => {
+      // Don't show banner immediately on page load - wait a bit
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    // Function to check if OneSignal is ready
-    const checkOneSignalReadiness = () => {
-      if (isOneSignalReady()) {
-        setOneSignalReady(true);
-        return true;
+      // Check if the banner was dismissed recently
+      const dismissedTimestamp = localStorage.getItem(
+        "subscribeBannerDismissedAt"
+      );
+      const hasDismissed =
+        localStorage.getItem("subscribeBannerDismissed") === "true";
+
+      let shouldShow = !hasDismissed;
+
+      // If it was dismissed more than 7 days ago, show it again
+      if (dismissedTimestamp) {
+        const dismissedDate = new Date(parseInt(dismissedTimestamp, 10));
+        const now = new Date();
+        const daysSinceDismissed =
+          (now - dismissedDate) / (1000 * 60 * 60 * 24);
+
+        if (daysSinceDismissed > 7) {
+          shouldShow = true;
+        }
       }
-      return false;
-    };
 
-    // Set up a polling mechanism to check if OneSignal is ready
-    readinessTimer = setInterval(() => {
-      if (checkOneSignalReadiness()) {
-        clearInterval(readinessTimer);
-        checkSubscriptionStatus();
-      }
-    }, 1000);
+      // Only check subscription status if we're considering showing the banner
+      if (shouldShow) {
+        // Wait until OneSignal is ready before checking subscription status
+        let timeoutCounter = 0;
+        const maxTimeouts = 10; // Maximum number of 1-second intervals to wait
 
-    // Clean up the timer after 10 seconds to avoid infinite polling
-    setTimeout(() => {
-      clearInterval(readinessTimer);
-    }, 10000);
+        const checkOneSignalInterval = setInterval(async () => {
+          timeoutCounter++;
 
-    const checkSubscriptionStatus = async () => {
-      try {
-        const OneSignal = window.OneSignal;
-        if (!OneSignal) return;
+          if (isOneSignalReady()) {
+            clearInterval(checkOneSignalInterval);
 
-        const isPushEnabled = await OneSignal.isPushNotificationsEnabled();
-        const permission = await OneSignal.getNotificationPermission();
+            try {
+              // Check if already subscribed
+              const isPushEnabled =
+                await window.OneSignal.isPushNotificationsEnabled();
 
-        console.log("[SubscribeBanner] Push enabled:", isPushEnabled);
-        console.log("[SubscribeBanner] Permission status:", permission);
+              if (!isPushEnabled) {
+                // Check if permission is denied
+                const permission =
+                  await window.OneSignal.getNotificationPermission();
 
-        // Don't show banner if notifications are already enabled
-        if (isPushEnabled) return;
-
-        // Don't show banner if permission is denied (user explicitly blocked)
-        if (permission === "denied") return;
-
-        // Check if user has dismissed the banner before
-        const hasDismissed = localStorage.getItem("subscribeBannerDismissed");
-        const dismissedTimestamp = localStorage.getItem(
-          "subscribeBannerDismissedAt"
-        );
-
-        let shouldShow = !hasDismissed;
-
-        // If it was dismissed more than 7 days ago, show it again
-        if (dismissedTimestamp) {
-          const dismissedDate = new Date(parseInt(dismissedTimestamp));
-          const now = new Date();
-          const daysSinceDismissed =
-            (now - dismissedDate) / (1000 * 60 * 60 * 24);
-
-          if (daysSinceDismissed > 7) {
-            shouldShow = true;
+                if (permission !== "denied") {
+                  setShowBanner(true);
+                }
+              }
+            } catch (err) {
+              console.error("Error checking OneSignal status:", err);
+            }
+          } else if (timeoutCounter >= maxTimeouts) {
+            // Give up after 10 seconds
+            clearInterval(checkOneSignalInterval);
+            console.log(
+              "OneSignal not available after 10 seconds, not showing banner"
+            );
           }
-        }
-
-        if (shouldShow) {
-          // Set a delay before showing the banner
-          timer = setTimeout(() => {
-            console.log("[SubscribeBanner] Showing banner");
-            setShowBanner(true);
-          }, 5000); // Show after 5 seconds on the site
-        }
-      } catch (err) {
-        console.error("Error checking notification status:", err);
+        }, 1000);
       }
     };
 
-    return () => {
-      if (timer) clearTimeout(timer);
-      if (readinessTimer) clearInterval(readinessTimer);
-    };
-  }, [oneSignalReady]);
+    checkBannerStatus();
+  }, []);
 
   const handleDismiss = () => {
     setShowBanner(false);
@@ -101,8 +89,12 @@ const SubscribeBanner = () => {
   };
 
   const handleSubscribeClick = async () => {
+    const loadingToast = toast.loading("Preparing notifications...");
+
     try {
       const result = await requestNotificationPermission();
+
+      toast.dismiss(loadingToast);
 
       if (result) {
         setShowBanner(false);
@@ -113,21 +105,34 @@ const SubscribeBanner = () => {
           Date.now().toString()
         );
       } else {
-        // Check the reason why it failed
+        // Check if permission is denied
         if (window.OneSignal) {
-          const permission = await window.OneSignal.getNotificationPermission();
-
-          if (permission === "denied") {
-            toast.error(
-              "Notifications are blocked. Please update your browser settings."
-            );
-            setShowBanner(false);
+          try {
+            const permission =
+              await window.OneSignal.getNotificationPermission();
+            if (permission === "denied") {
+              toast.error(
+                "Notifications are blocked by your browser. Please update your browser settings to enable notifications."
+              );
+              setShowBanner(false);
+            } else {
+              toast.error(
+                "Notification subscription failed. Please try again later."
+              );
+            }
+          } catch (err) {
+            toast.error("Could not check notification permission status.");
           }
+        } else {
+          toast.error(
+            "Notification service isn't available right now. Please try again later."
+          );
         }
       }
     } catch (error) {
-      console.error("Error showing notification prompt:", error);
-      toast.error("There was a problem subscribing to notifications.");
+      toast.dismiss(loadingToast);
+      console.error("Error in handleSubscribeClick:", error);
+      toast.error("There was a problem with the notification system.");
     }
   };
 
@@ -160,7 +165,7 @@ const SubscribeBanner = () => {
   );
 };
 
-// Styled Components (unchanged)
+// Styled components remain the same...
 const Banner = styled.div`
   display: flex;
   align-items: center;
