@@ -7,6 +7,7 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+// Image size up to 20MB and video up to 2GB
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const MAX_VIDEO_SIZE = 2 * 1024 * 1024 * 1024;
@@ -46,7 +47,10 @@ const upload = multer({
 
 const uploadMultiple = multer({
   storage: storage,
-  limits: { fileSize: MAX_VIDEO_SIZE, files: 20 },
+  limits: { 
+    fileSize: 100 * 1024 * 1024, 
+    files: 20 
+  },
 });
 
 module.exports = {

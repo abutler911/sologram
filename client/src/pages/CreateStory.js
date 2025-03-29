@@ -34,6 +34,7 @@ const CreateStory = () => {
   );
   const textAreaRef = useRef(null);
   const navigate = useNavigate();
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Check if running as PWA
   React.useEffect(() => {
@@ -60,7 +61,7 @@ const CreateStory = () => {
         rejectedFiles.forEach(({ file, errors }) => {
           if (errors[0]?.code === "file-too-large") {
             toast.error(
-              `File ${file.name} is too large. Max size is 20MB for images and 2GB for videos.`
+              `File ${file.name} is too large. Max size is 20MB for images and 100MB for videos.`
             );
           } else if (errors[0]?.code === "file-invalid-type") {
             toast.error(
@@ -74,6 +75,20 @@ const CreateStory = () => {
         });
       }
 
+       // Check file sizes based on type
+    const validFiles = acceptedFiles.filter((file) => {
+      if (file.type.startsWith("image/") && file.size > 20 * 1024 * 1024) {
+        toast.error(`Image ${file.name} exceeds 20MB limit`);
+        return false;
+      }
+      
+      // Increase this limit to 100MB for 30-second videos
+      if (file.type.startsWith("video/") && file.size > 100 * 1024 * 1024) {
+        toast.error(`Video ${file.name} exceeds 100MB limit`);
+        return false;
+      }
+      return true;
+    });
       // Check if adding these files would exceed the 20 file limit
       if (mediaFiles.length + acceptedFiles.length > 20) {
         toast.error("Maximum 20 media files allowed per story");
@@ -136,7 +151,7 @@ const CreateStory = () => {
       "video/mp4": [".mp4"],
       "video/quicktime": [".mov"],
     },
-    maxSize: 2 * 1024 * 1024 * 1024, // 2GB for videos
+    maxSize: 100 * 1024 * 1024, // 2GB for videos
     maxFiles: 20,
     noClick: isPWA, // Disable click in PWA mode (use buttons instead)
     noKeyboard: false, // Allow keyboard navigation
@@ -202,43 +217,79 @@ const CreateStory = () => {
   const handleGallerySelect = () => {
     open();
   };
-
   // Handle form submission
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
-
+  
     if (mediaFiles.length === 0) {
       toast.error("Please add at least one image or video to your story");
       return;
     }
-
+  
     setLoading(true);
-
+    setUploadProgress(0); // Add this state variable at the top of your component
+  
     try {
       const formData = new FormData();
-      // Use caption as title to maintain compatibility with backend
       formData.append("title", caption || "My Story"); // Provide a default title if caption is empty
       formData.append("caption", caption);
-
+  
       mediaFiles.forEach((file) => {
         formData.append("media", file);
       });
-
+  
+      // Check if any video files exist
+      const hasVideoFiles = mediaFiles.some(file => 
+        file.type.startsWith('video/')
+      );
+  
+      // Add upload progress monitoring
+      const uploadToast = hasVideoFiles ? 
+        toast.loading('Uploading video... 0%') : null;
+  
       await axios.post("/api/stories", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        onUploadProgress: progressEvent => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress(percentCompleted);
+          
+          if (hasVideoFiles && uploadToast) {
+            toast.loading(`Uploading video... ${percentCompleted}%`, 
+              { id: uploadToast });
+          }
+        }
       });
-
+  
+      if (uploadToast) {
+        toast.dismiss(uploadToast);
+      }
+      
       toast.success("Story created successfully!");
       navigate("/");
     } catch (err) {
       console.error("Error creating story:", err);
-      const errorMessage =
-        err.response?.data?.message || "Failed to create story";
-      toast.error(errorMessage);
+      
+      // More specific error messages based on error type
+      if (err.response) {
+        if (err.response.status === 413) {
+          toast.error("Video file is too large for the server to process. Please use a shorter video or reduce the quality.");
+        } else if (err.response.data?.message) {
+          toast.error(err.response.data.message);
+        } else {
+          toast.error(`Upload failed (${err.response.status}). Please try again.`);
+        }
+      } else if (err.message.includes('timeout')) {
+        toast.error("Upload timed out. Please use a shorter video or check your internet connection.");
+      } else {
+        toast.error("Failed to create story. Please try again.");
+      }
     } finally {
       setLoading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -312,6 +363,8 @@ const CreateStory = () => {
       </UploadContainer>
     </>
   );
+
+  
 
   // Render edit step
   const renderEditStep = () => (
@@ -389,7 +442,14 @@ const CreateStory = () => {
       </DetailsContainer>
     </>
   );
-
+  {loading && uploadProgress > 0 && (
+    <UploadProgressContainer>
+      <ProgressBarOuter>
+        <ProgressBarInner width={uploadProgress} />
+      </ProgressBarOuter>
+      <ProgressText>{uploadProgress}% Uploaded</ProgressText>
+    </UploadProgressContainer>
+  )}
   return (
     <PageWrapper>
       <AppHeader>
@@ -422,6 +482,8 @@ const CreateStory = () => {
 };
 
 // Styled Components
+
+
 const PageWrapper = styled.div`
   background-color: #000;
   min-height: 100vh;
@@ -756,5 +818,30 @@ const CaptionTextarea = styled.textarea`
     color: #555;
   }
 `;
+const UploadProgressContainer = styled.div`
+  margin-top: 1rem;
+  width: 100%;
+`;
 
+const ProgressBarOuter = styled.div`
+  width: 100%;
+  height: 8px;
+  background-color: #333;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+`;
+
+const ProgressBarInner = styled.div`
+  height: 100%;
+  width: ${props => props.width}%;
+  background-color: #ff7e5f;
+  transition: width 0.3s ease;
+`;
+
+const ProgressText = styled.div`
+  font-size: 0.75rem;
+  color: #aaa;
+  text-align: center;
+`;
 export default CreateStory;

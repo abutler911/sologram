@@ -94,45 +94,86 @@ exports.getStory = async (req, res) => {
 exports.createStory = async (req, res) => {
   try {
     const { title } = req.body;
-
+    
+    // Validate title
     if (!title || title.trim() === "") {
       return res.status(400).json({
         success: false,
         message: "Title is required",
       });
     }
-
+    
+    // Validate file existence
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
         message: "At least one media file is required",
       });
     }
-
+    
+    // Validate file count
     if (req.files.length > 10) {
       return res.status(400).json({
         success: false,
         message: "Maximum 10 media files allowed per story",
       });
     }
-
+    
+    // Log received files for debugging
+    console.log(`Processing ${req.files.length} files for story upload`);
+    
+    // Add video size validation logic
+    const invalidFiles = req.files.filter(file => {
+      const isVideo = file.mimetype.startsWith('video');
+      const isImage = file.mimetype.startsWith('image');
+      
+      // Log file details for debugging large uploads
+      console.log(`Processing file: ${file.originalname}, type: ${file.mimetype}, size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+      
+      // For videos, limit to 100MB
+      if (isVideo && file.size > 100 * 1024 * 1024) {
+        console.log(`Video file too large: ${file.originalname}, size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+        return true;
+      }
+      
+      // For images, keep the 20MB limit
+      if (isImage && file.size > 20 * 1024 * 1024) {
+        console.log(`Image file too large: ${file.originalname}, size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+        return true;
+      }
+      
+      return false;
+    });
+    
+    // Return specific error message for oversized files
+    if (invalidFiles.length > 0) {
+      const fileNames = invalidFiles.map(f => f.originalname).join(', ');
+      return res.status(400).json({
+        success: false,
+        message: `Files exceed size limit (20MB for images, 100MB for videos): ${fileNames}`,
+      });
+    }
+    
+    // Map files to media objects
     const media = req.files.map((file) => ({
       mediaType: file.mimetype.startsWith("image") ? "image" : "video",
       mediaUrl: file.path,
       cloudinaryId: file.filename || file.public_id || null,
     }));
-
+    
     // Set expiration time to 24 hours from now
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
     // expiresAt.setMinutes(expiresAt.getMinutes() + 2);
-
+    
+    // Create the story
     const story = await Story.create({
       title,
       media,
       expiresAt,
     });
-
+    
+    // Send notification (non-blocking)
     try {
       await notificationService.sendCustomNotification(
         `New story "${title}" has been added!`,
@@ -141,13 +182,24 @@ exports.createStory = async (req, res) => {
       console.log("Story notification sent successfully");
     } catch (notificationError) {
       console.error("Failed to send notification:", notificationError);
+      // Continue even if notification fails
     }
-
+    
+    // Return success response
     res.status(201).json({
       success: true,
       data: story,
     });
   } catch (err) {
+    // Check for specific error types
+    if (err.name === 'PayloadTooLargeError') {
+      return res.status(413).json({
+        success: false,
+        message: "File size too large. Maximum upload size is 100MB for videos and 20MB for images."
+      });
+    }
+    
+    // Use the general error handler for other errors
     handleServerError(res, err, "Error creating story");
   }
 };
