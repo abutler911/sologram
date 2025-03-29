@@ -357,10 +357,12 @@ const Stories = () => {
           </ProgressBarContainer>
 
           <StoryHeader>
-            <StoryTitle>{activeStory.title}</StoryTitle>
-            <StoryTimestamp>
-              {getExpirationTime(activeStory)}
-            </StoryTimestamp>
+            <StoryHeaderContent>
+              <StoryHeaderTitle>{activeStory.title}</StoryHeaderTitle>
+              <StoryTimestamp>
+                {getExpirationTime(activeStory)}
+              </StoryTimestamp>
+            </StoryHeaderContent>
           </StoryHeader>
 
           <ControlsBar>
@@ -582,6 +584,8 @@ const StoryModal = styled.div`
   display: flex;
   flex-direction: column;
   touch-action: none;
+  width: 100vw; /* Force full width */
+  height: 100vh; /* Force full height */
 
   /* iOS Safe Area Support */
   @supports (padding-top: env(safe-area-inset-top)) {
@@ -633,7 +637,7 @@ const ProgressBar = styled.div`
   }
 `;
 
-// New header component for story title/timestamp
+// New header component with improved spacing for title/timestamp
 const StoryHeader = styled.div`
   position: absolute;
   top: 0;
@@ -651,15 +655,23 @@ const StoryHeader = styled.div`
   @supports (padding-top: env(safe-area-inset-top)) {
     padding-top: calc(48px + env(safe-area-inset-top, 0));
   }
-  
-  /* Improved styling for story title and timestamp */
-  & ${StoryTitle} {
-    font-size: 1rem;
-    color: white;
-    margin: 0;
-    font-weight: 600;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-  }
+`;
+
+// New container for header content to control width
+const StoryHeaderContent = styled.div`
+  max-width: 75%; /* Prevent excessive wrapping */
+  padding-right: 40px; /* Give space from close button */
+`;
+
+// Updated title style with more space
+const StoryHeaderTitle = styled.h3`
+  font-size: 1rem;
+  color: white;
+  margin: 0 0 4px 0;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  white-space: normal;
+  line-height: 1.3;
 `;
 
 const StoryTimestamp = styled.span`
@@ -669,9 +681,10 @@ const StoryTimestamp = styled.span`
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 `;
 
+// Adjusted position of controls to be higher and more prominent
 const ControlsBar = styled.div`
   position: absolute;
-  top: 48px;
+  top: 16px; /* Moved up */
   right: 16px;
   z-index: 10;
   display: flex;
@@ -679,12 +692,12 @@ const ControlsBar = styled.div`
 
   /* iOS Safe Area Support */
   @supports (padding-top: env(safe-area-inset-top)) {
-    top: calc(48px + env(safe-area-inset-top, 0));
+    top: calc(16px + env(safe-area-inset-top, 0));
   }
 `;
 
 const CloseButton = styled.button`
-  background: none;
+  background: rgba(0, 0, 0, 0.3); /* Semi-transparent background */
   border: none;
   color: white;
   font-size: 1.5rem;
@@ -698,7 +711,7 @@ const CloseButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(0, 0, 0, 0.5);
   }
 `;
 
@@ -726,7 +739,7 @@ const DeleteButton = styled.button`
   }
 `;
 
-// Content area now fills the screen
+// Content area now fills viewport completely
 const StoryContent = styled.div`
   position: absolute;
   top: 0;
@@ -737,6 +750,8 @@ const StoryContent = styled.div`
   justify-content: center;
   align-items: center;
   background-color: #000;
+  width: 100vw; /* Force full width */
+  height: 100vh; /* Force full height */
 `;
 
 // Image now fills the screen with object-fit: contain
@@ -744,6 +759,7 @@ const FullScreenImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: contain;
+  max-width: 100vw; /* Ensure it never exceeds viewport width */
 `;
 
 // Video now fills the screen with object-fit: contain
@@ -752,6 +768,7 @@ const StoryVideo = styled.video`
   height: 100%;
   object-fit: contain;
   outline: none;
+  max-width: 100vw; /* Ensure it never exceeds viewport width */
 `;
 
 // Navigation overlay now covers the entire screen
