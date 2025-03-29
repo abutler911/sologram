@@ -680,7 +680,7 @@ const NavArea = styled.div`
 
 const StoryInfo = styled.div`
   position: absolute;
-  bottom: ${props => props.isPWA ? '90px' : '60px'};
+  bottom: ${props => props.isPWA ? '60px' : '40px'};
   left: 0;
   right: 0;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
@@ -689,12 +689,12 @@ const StoryInfo = styled.div`
   
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
     bottom: ${props => props.isPWA ? 
-      'calc(90px + env(safe-area-inset-bottom))' : 
-      'calc(60px + env(safe-area-inset-bottom))'};
+      'calc(60px + env(safe-area-inset-bottom))' : 
+      'calc(40px + env(safe-area-inset-bottom))'};
   }
   
   @media (max-width: 768px) {
-    bottom: ${props => props.isPWA ? '100px' : '80px'};
+    bottom: ${props => props.isPWA ? '70px' : '56px'};
     padding: 1rem;
   }
 `;
