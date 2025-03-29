@@ -10,7 +10,7 @@ import {
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import axios from "axios"; // Use direct axios instead of storiesApi for now
+import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
 
 const Stories = () => {
@@ -106,6 +106,29 @@ const Stories = () => {
 
     return () => clearTimeout(timer);
   }, [activeStory, activeStoryIndex, timeLeft, nextStoryItem]);
+
+  // Handle body scroll lock when story is open
+  useEffect(() => {
+    if (activeStory) {
+      // Prevent body scrolling when story is open
+      document.body.style.overflow = 'hidden';
+      
+      // Add extra padding for iOS notch
+      if (isPWA) {
+        document.body.style.paddingTop = 'env(safe-area-inset-top, 0)';
+      }
+    } else {
+      // Restore body scrolling when story is closed
+      document.body.style.overflow = '';
+      document.body.style.paddingTop = '';
+    }
+    
+    return () => {
+      // Clean up when component unmounts
+      document.body.style.overflow = '';
+      document.body.style.paddingTop = '';
+    };
+  }, [activeStory, isPWA]);
 
   const openStory = (story) => {
     setActiveStory(story);
@@ -290,7 +313,6 @@ const Stories = () => {
           const thumbnailUrl = firstMedia
             ? getThumbnailUrl(firstMedia)
             : "/placeholder-image.jpg";
-          const expirationTime = getExpirationTime(story);
 
           return (
             <StoryCircle key={story._id} onClick={() => openStory(story)}>
@@ -318,6 +340,29 @@ const Stories = () => {
 
       {activeStory && (
         <StoryModal>
+          <ProgressBarContainer>
+            {activeStory.media.map((_, index) => (
+              <ProgressBar
+                key={index}
+                active={index === activeStoryIndex}
+                complete={index < activeStoryIndex}
+                progress={
+                  index === activeStoryIndex &&
+                  activeStory.media[index].mediaType !== "video"
+                    ? (10 - timeLeft) / 10
+                    : 0
+                }
+              />
+            ))}
+          </ProgressBarContainer>
+
+          <StoryHeader>
+            <StoryTitle>{activeStory.title}</StoryTitle>
+            <StoryTimestamp>
+              {getExpirationTime(activeStory)}
+            </StoryTimestamp>
+          </StoryHeader>
+
           <ControlsBar>
             <CloseButton onClick={closeStory}>
               <FaTimes />
@@ -335,22 +380,6 @@ const Stories = () => {
             )}
           </ControlsBar>
 
-          <ProgressContainer>
-            {activeStory.media.map((_, index) => (
-              <ProgressBar
-                key={index}
-                active={index === activeStoryIndex}
-                complete={index < activeStoryIndex}
-                progress={
-                  index === activeStoryIndex &&
-                  activeStory.media[index].mediaType !== "video"
-                    ? (10 - timeLeft) / 10
-                    : 0
-                }
-              />
-            ))}
-          </ProgressContainer>
-
           <StoryContent>
             {activeStory.media[activeStoryIndex].mediaType === "video" ? (
               <StoryVideo
@@ -358,6 +387,7 @@ const Stories = () => {
                 controls
                 autoPlay
                 onEnded={handleNext}
+                playsInline
               />
             ) : (
               <FullScreenImage
@@ -365,19 +395,13 @@ const Stories = () => {
                 alt={activeStory.title}
               />
             )}
-
-            <StoryNavigation>
-              <NavArea onClick={handlePrev} side="left" />
-              <NavArea onClick={handleNext} side="right" />
-            </StoryNavigation>
           </StoryContent>
 
-          <StoryInfo isPWA={isPWA}>
-            <StoryInfoTitle>{activeStory.title}</StoryInfoTitle>
-            <StoryInfoExpires>
-              Expires in: {getExpirationTime(activeStory)}
-            </StoryInfoExpires>
-          </StoryInfo>
+          {/* Navigation overlay for left/right swipe */}
+          <StoryNavigation>
+            <NavArea onClick={handlePrev} side="left" />
+            <NavArea onClick={handleNext} side="right" />
+          </StoryNavigation>
         </StoryModal>
       )}
 
@@ -546,25 +570,117 @@ const StoryTitle = styled.span`
   -webkit-box-orient: vertical;
 `;
 
+// Updated full-screen modal for Instagram-like experience
 const StoryModal = styled.div`
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: #000;
   z-index: 1000;
   display: flex;
   flex-direction: column;
+  touch-action: none;
+
+  /* iOS Safe Area Support */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+`;
+
+// Progress bar moved to top
+const ProgressBarContainer = styled.div`
+  display: flex;
+  width: 100%;
+  padding: 12px 8px 8px;
+  gap: 4px;
+  z-index: 10;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  /* iOS Safe Area Support */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    padding-top: calc(12px + env(safe-area-inset-top, 0));
+  }
+`;
+
+const ProgressBar = styled.div`
+  height: 2px;
+  flex: 1;
+  background-color: rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  border-radius: 1px;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: ${(props) =>
+      props.complete
+        ? "100%"
+        : props.active
+        ? `${props.progress * 100}%`
+        : "0"};
+    background-color: white;
+    transition: width 1s linear;
+  }
+`;
+
+// New header component for story title/timestamp
+const StoryHeader = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 48px 16px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 5;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+  pointer-events: none;
+
+  /* iOS Safe Area Support */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    padding-top: calc(48px + env(safe-area-inset-top, 0));
+  }
+  
+  /* Improved styling for story title and timestamp */
+  & ${StoryTitle} {
+    font-size: 1rem;
+    color: white;
+    margin: 0;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+`;
+
+const StoryTimestamp = styled.span`
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 `;
 
 const ControlsBar = styled.div`
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 1001;
+  top: 48px;
+  right: 16px;
+  z-index: 10;
   display: flex;
   gap: 1rem;
+
+  /* iOS Safe Area Support */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    top: calc(48px + env(safe-area-inset-top, 0));
+  }
 `;
 
 const CloseButton = styled.button`
@@ -610,60 +726,35 @@ const DeleteButton = styled.button`
   }
 `;
 
-const ProgressContainer = styled.div`
-  display: flex;
-  width: 100%;
-  padding: 1rem;
-  gap: 4px;
-`;
-
-const ProgressBar = styled.div`
-  height: 3px;
-  flex: 1;
-  background-color: rgba(255, 255, 255, 0.3);
-  position: relative;
-  overflow: hidden;
-
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: ${(props) =>
-      props.complete
-        ? "100%"
-        : props.active
-        ? `${props.progress * 100}%`
-        : "0"};
-    background-color: white;
-    transition: width 1s linear;
-  }
-`;
-
+// Content area now fills the screen
 const StoryContent = styled.div`
-  flex: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative;
+  background-color: #000;
 `;
 
+// Image now fills the screen with object-fit: contain
 const FullScreenImage = styled.img`
-  max-width: 100%;
-  max-height: 90vh;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 `;
 
+// Video now fills the screen with object-fit: contain
 const StoryVideo = styled.video`
-  max-width: 100%;
-  max-height: 90vh;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  outline: none;
 `;
 
+// Navigation overlay now covers the entire screen
 const StoryNavigation = styled.div`
   position: absolute;
   top: 0;
@@ -671,6 +762,7 @@ const StoryNavigation = styled.div`
   right: 0;
   bottom: 0;
   display: flex;
+  z-index: 4;  /* Lower than controls but higher than content */
 `;
 
 const NavArea = styled.div`
@@ -678,50 +770,7 @@ const NavArea = styled.div`
   cursor: pointer;
 `;
 
-const StoryInfo = styled.div`
-  position: absolute;
-  bottom: ${props => props.isPWA ? '60px' : '40px'};
-  left: 0;
-  right: 0;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-  padding: 1.5rem;
-  color: white;
-  
-  @supports (padding-bottom: env(safe-area-inset-bottom)) {
-    bottom: ${props => props.isPWA ? 
-      'calc(60px + env(safe-area-inset-bottom))' : 
-      'calc(40px + env(safe-area-inset-bottom))'};
-  }
-  
-  @media (max-width: 768px) {
-    bottom: ${props => props.isPWA ? '70px' : '56px'};
-    padding: 1rem;
-  }
-`;
-
-const StoryInfoTitle = styled.h3`
-  margin: 0 0 0.5rem 0;
-  font-size: 1.25rem;
-  
-  @media (max-width: 768px) {
-    font-size: 1.1rem;
-  }
-`;
-
-const StoryInfoExpires = styled.p`
-  margin: 0;
-  font-size: 0.875rem;
-  color: #eee;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  
-  @media (max-width: 768px) {
-    font-size: 0.8rem;
-  }
-`;
-
-// Custom delete confirmation modal
+// Modal styling remains largely the same
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -732,7 +781,7 @@ const ModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000; // Higher than the story modal
+  z-index: 2000;
   padding: 1rem;
 `;
 
