@@ -23,7 +23,8 @@ const Stories = () => {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [storyToDelete, setStoryToDelete] = useState(null);
-
+  const [isPWA, setIsPWA] = useState(window.matchMedia("(display-mode: standalone)").matches);
+  
   // Get authentication context to check if user is admin
   const { user, isAuthenticated } = useContext(AuthContext);
   const isAdmin = isAuthenticated && user && user.role === "admin";
@@ -39,6 +40,13 @@ const Stories = () => {
       setActiveStoryIndex(0);
     }
   }, [activeStory, activeStoryIndex]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const handleChange = (e) => setIsPWA(e.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   // Fetch stories when component mounts
   useEffect(() => {
@@ -364,7 +372,7 @@ const Stories = () => {
             </StoryNavigation>
           </StoryContent>
 
-          <StoryInfo>
+          <StoryInfo isPWA={isPWA}>
             <StoryInfoTitle>{activeStory.title}</StoryInfoTitle>
             <StoryInfoExpires>
               Expires in: {getExpirationTime(activeStory)}
@@ -672,17 +680,32 @@ const NavArea = styled.div`
 
 const StoryInfo = styled.div`
   position: absolute;
-  bottom: 0;
+  bottom: ${props => props.isPWA ? '90px' : '60px'};
   left: 0;
   right: 0;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
   padding: 1.5rem;
   color: white;
+  
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    bottom: ${props => props.isPWA ? 
+      'calc(90px + env(safe-area-inset-bottom))' : 
+      'calc(60px + env(safe-area-inset-bottom))'};
+  }
+  
+  @media (max-width: 768px) {
+    bottom: ${props => props.isPWA ? '100px' : '80px'};
+    padding: 1rem;
+  }
 `;
 
 const StoryInfoTitle = styled.h3`
   margin: 0 0 0.5rem 0;
   font-size: 1.25rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+  }
 `;
 
 const StoryInfoExpires = styled.p`
@@ -692,6 +715,10 @@ const StoryInfoExpires = styled.p`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
 `;
 
 // Custom delete confirmation modal
