@@ -35,7 +35,8 @@ const CreateStory = () => {
   const textAreaRef = useRef(null);
   const navigate = useNavigate();
   const [uploadProgress, setUploadProgress] = useState(0);
-
+  const [showCompressOption, setShowCompressOption] = useState(false);
+  const [compressVideo, setCompressVideo] = useState(false);
   // Check if running as PWA
   React.useEffect(() => {
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
@@ -81,10 +82,13 @@ const CreateStory = () => {
         toast.error(`Image ${file.name} exceeds 20MB limit`);
         return false;
       }
-      
-      // Increase this limit to 100MB for 30-second videos
-      if (file.type.startsWith("video/") && file.size > 100 * 1024 * 1024) {
-        toast.error(`Video ${file.name} exceeds 100MB limit`);
+      if (file.type.startsWith("video/") && file.size > 150 * 1024 * 1024) {
+        // Show compress option for large videos
+        setShowCompressOption(true);
+      }
+      // Increase this limit to 300MB for 30-second videos
+      if (file.type.startsWith("video/") && file.size > 300 * 1024 * 1024) {
+        toast.error(`Video ${file.name} exceeds 300MB limit`);
         return false;
       }
       return true;
@@ -201,11 +205,43 @@ const CreateStory = () => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "video/*";
-    input.capture = "environment"; // Use the back camera
+    input.capture = "environment"; 
 
+    if ('mediaCapture' in HTMLInputElement.prototype) {
+      input.mediaCapture = { duration: { max: 30 } };
+    }
+  
+    // Show toast about time limit
+    toast.info("Maximum video length: 30 seconds", {
+      duration: 3000,
+      position: "top-center",
+    });
+  
     input.onchange = (e) => {
       if (e.target.files && e.target.files.length > 0) {
         const file = e.target.files[0];
+        
+        // Additional client-side validation
+        if (file.type.startsWith('video/')) {
+          // Check if we can determine the duration
+          const video = document.createElement('video');
+          video.preload = 'metadata';
+          
+          video.onloadedmetadata = function() {
+            window.URL.revokeObjectURL(video.src);
+            const duration = video.duration;
+            
+            // If video is longer than 30 seconds, show warning
+            if (duration > 30) {
+              toast.warning(`Video is ${Math.round(duration)} seconds long. Only the first 30 seconds will be used.`, {
+                duration: 4000,
+              });
+            }
+          }
+          
+          video.src = URL.createObjectURL(file);
+        }
+        
         onDrop([file], []);
       }
     };
@@ -292,6 +328,28 @@ const CreateStory = () => {
       setUploadProgress(0);
     }
   };
+// client/src/pages/CreateStory.js - Add a helper function
+
+// Add this function to help users understand file size constraints
+const showVideoSizeGuide = () => {
+  const sizeGuide = `
+    Estimated Video Sizes for 30 seconds:
+    - Low quality (480p): ~20-50MB
+    - Medium quality (720p): ~50-100MB
+    - High quality (1080p): ~100-200MB
+    - Very high quality (4K): ~200-300MB
+    
+    Maximum upload size: 300MB
+  `;
+  
+  toast.info(
+    <div style={{ whiteSpace: 'pre-line', textAlign: 'left' }}>
+      {sizeGuide}
+    </div>,
+    { duration: 8000 }
+  );
+};
+
 
   // Go to next step
   const goToNextStep = () => {
@@ -341,7 +399,12 @@ const CreateStory = () => {
                 <p>Drag photos and videos here</p>
               )}
             </DropzoneContent>
+            
           )}
+          <DropzoneSubtext>
+  You can add up to 25 photos and videos. 
+  Max file size: 20MB for images, 300MB for videos (approx. 30 seconds of 4K video)
+</DropzoneSubtext>
         </DropzoneContainer>
 
         <ActionButtonsContainer>
@@ -359,6 +422,13 @@ const CreateStory = () => {
             <FaVideo />
             <span>Video</span>
           </VideoButton>
+          <VideoButton type="button" onClick={handleVideoCapture}>
+  <FaVideo />
+  <span>Video</span>
+</VideoButton>
+<InfoButton type="button" onClick={showVideoSizeGuide} title="Video size info">
+  <FaInfoCircle />
+</InfoButton>
         </ActionButtonsContainer>
       </UploadContainer>
     </>
@@ -429,7 +499,19 @@ const CreateStory = () => {
             <MultipleIndicator>+{previews.length - 1}</MultipleIndicator>
           )}
         </MediaDetailsPreview>
-
+        {showCompressOption && (
+  <CompressOptionContainer>
+    <CompressCheckbox 
+      type="checkbox" 
+      id="compress-video" 
+      checked={compressVideo}
+      onChange={(e) => setCompressVideo(e.target.checked)}
+    />
+    <CompressLabel htmlFor="compress-video">
+      Compress large videos for faster upload (may reduce quality)
+    </CompressLabel>
+  </CompressOptionContainer>
+)}
         <CaptionContainer>
           <CaptionTextarea
             ref={textAreaRef}
@@ -844,4 +926,40 @@ const ProgressText = styled.div`
   color: #aaa;
   text-align: center;
 `;
+
+const CompressOptionContainer = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background-color: rgba(255, 126, 95, 0.1);
+  border-radius: 8px;
+  margin: 1rem 0;
+`;
+
+const CompressCheckbox = styled.input`
+  margin-right: 0.75rem;
+`;
+
+const CompressLabel = styled.label`
+  font-size: 0.875rem;
+  color: #fff;
+`;
+
+const InfoButton = styled.button`
+  background: none;
+  border: none;
+  color: #aaaaaa;
+  font-size: 1rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s;
+
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
+
 export default CreateStory;

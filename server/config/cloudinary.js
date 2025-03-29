@@ -10,7 +10,7 @@ cloudinary.config({
 // Image size up to 20MB and video up to 2GB
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
-const MAX_VIDEO_SIZE = 2 * 1024 * 1024 * 1024;
+const MAX_VIDEO_SIZE = 300 * 1024 * 1024;
 
 const IMAGE_FORMATS = ["jpg", "jpeg", "png", "gif", "webp"];
 const VIDEO_FORMATS = ["mp4", "mov", "avi", "webm"];
@@ -48,7 +48,7 @@ const upload = multer({
 const uploadMultiple = multer({
   storage: storage,
   limits: { 
-    fileSize: 100 * 1024 * 1024, 
+    fileSize: 300 * 1024 * 1024, 
     files: 20 
   },
 });

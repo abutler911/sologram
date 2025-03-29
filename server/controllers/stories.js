@@ -131,7 +131,7 @@ exports.createStory = async (req, res) => {
       console.log(`Processing file: ${file.originalname}, type: ${file.mimetype}, size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
       
       // For videos, limit to 100MB
-      if (isVideo && file.size > 100 * 1024 * 1024) {
+      if (isVideo && file.size > 300 * 1024 * 1024) {
         console.log(`Video file too large: ${file.originalname}, size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
         return true;
       }
