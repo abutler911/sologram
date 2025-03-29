@@ -659,8 +659,9 @@ const StoryHeader = styled.div`
 
 // New container for header content to control width
 const StoryHeaderContent = styled.div`
-  max-width: 75%; /* Prevent excessive wrapping */
-  padding-right: 40px; /* Give space from close button */
+  max-width: 80%;
+  padding-right: 40px;
+  padding-left: 16px;
 `;
 
 // Updated title style with more space
