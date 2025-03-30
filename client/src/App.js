@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
 import styled from "styled-components";
+import ReactGA from "react-ga4";
 
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import BottomNavigation from "./components/layout/BottomNavigation";
-// Import the SubscribeBanner component
 import SubscribeBanner from "./components/notifications/SubscribeBanner";
 
 import Home from "./pages/Home";
@@ -16,19 +16,15 @@ import CreatePost from "./pages/CreatePost";
 import EditPost from "./pages/EditPost";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
-
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
-
 import SubscriberAdmin from "./pages/SubscriberAdmin";
-
 import CollectionsList from "./pages/CollectionsList";
 import CollectionDetail from "./pages/CollectionDetail";
 import CreateCollection from "./pages/CreateCollection";
 import EditCollection from "./pages/EditCollection";
 import AddPostsToCollection from "./pages/AddPostsToCollection";
-
 import CreateStory from "./pages/CreateStory";
 import StoryArchive from "./pages/StoryArchive";
 import ArchivedStoryView from "./pages/ArchivedStoryView";
@@ -38,6 +34,31 @@ import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButt
 
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
+
+// Page Tracking Component (now inside Router)
+const PageTracker = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    ReactGA.send({
+      hitType: "pageview",
+      page: location.pathname + location.search,
+    });
+  }, [location]);
+
+  return null;
+};
+
+const OfflineIndicator = styled.div`
+  background-color: #f8d7da;
+  color: #721c24;
+  text-align: center;
+  padding: 8px;
+  font-size: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 1001;
+`;
 
 function App() {
   const [networkStatus, setNetworkStatus] = useState(navigator.onLine);
@@ -66,13 +87,13 @@ function App() {
   }, [networkStatus]);
 
   const handleSearch = (query) => {
-    if (homeRef.current && homeRef.current.handleHeaderSearch) {
+    if (homeRef.current?.handleHeaderSearch) {
       homeRef.current.handleHeaderSearch(query);
     }
   };
 
   const handleClearSearch = () => {
-    if (homeRef.current && homeRef.current.clearSearch) {
+    if (homeRef.current?.clearSearch) {
       homeRef.current.clearSearch();
     }
   };
@@ -80,6 +101,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <PageTracker />
         <div className="app">
           <Toaster position="top-right" />
           {!networkStatus && (
@@ -87,18 +109,13 @@ function App() {
               You are currently offline. Some features may be limited.
             </OfflineIndicator>
           )}
-
           <Routes>
             <Route
               path="/"
               element={
                 <>
-                  <Header
-                    onSearch={handleSearch}
-                    onClearSearch={handleClearSearch}
-                  />
+                  <Header onSearch={handleSearch} onClearSearch={handleClearSearch} />
                   <main className="main-content">
-                    {/* Add SubscribeBanner at the top of the main content */}
                     <SubscribeBanner />
                     <Home ref={homeRef} />
                   </main>
@@ -107,125 +124,95 @@ function App() {
                 </>
               }
             />
-
+            <Route path="/login" element={<Login />} />
+            <Route path="/post/:id" element={<PostDetail />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
             <Route
-              path="*"
+              path="/subscribers"
               element={
-                <>
-                  <Header />
-                  <main className="main-content">
-                    {/* Add SubscribeBanner before Routes */}
-                    <SubscribeBanner />
-                    <Routes>
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/post/:id" element={<PostDetail />} />
-
-                      <Route path="/about" element={<About />} />
-                      <Route path="/privacy" element={<Privacy />} />
-                      <Route path="/terms" element={<Terms />} />
-
-                      <Route
-                        path="/subscribers"
-                        element={
-                          <PrivateRoute>
-                            <SubscriberAdmin />
-                          </PrivateRoute>
-                        }
-                      />
-
-                      <Route
-                        path="/create"
-                        element={
-                          <PrivateRoute>
-                            <CreatePost />
-                          </PrivateRoute>
-                        }
-                      />
-                      <Route
-                        path="/edit/:id"
-                        element={
-                          <PrivateRoute>
-                            <EditPost />
-                          </PrivateRoute>
-                        }
-                      />
-                      <Route
-                        path="/profile"
-                        element={
-                          <PrivateRoute>
-                            <Profile />
-                          </PrivateRoute>
-                        }
-                      />
-
-                      <Route
-                        path="/create-story"
-                        element={
-                          <PrivateRoute>
-                            <CreateStory />
-                          </PrivateRoute>
-                        }
-                      />
-                      <Route
-                        path="/story-archive"
-                        element={
-                          <PrivateRoute>
-                            <StoryArchive />
-                          </PrivateRoute>
-                        }
-                      />
-                      <Route
-                        path="/story-archive/:id"
-                        element={
-                          <PrivateRoute>
-                            <ArchivedStoryView />
-                          </PrivateRoute>
-                        }
-                      />
-
-                      <Route
-                        path="/collections"
-                        element={<CollectionsList />}
-                      />
-                      <Route
-                        path="/collections/:id"
-                        element={<CollectionDetail />}
-                      />
-                      <Route
-                        path="/collections/create"
-                        element={
-                          <PrivateRoute>
-                            <CreateCollection />
-                          </PrivateRoute>
-                        }
-                      />
-                      <Route
-                        path="/collections/:id/edit"
-                        element={
-                          <PrivateRoute>
-                            <EditCollection />
-                          </PrivateRoute>
-                        }
-                      />
-                      <Route
-                        path="/collections/:id/add-posts"
-                        element={
-                          <PrivateRoute>
-                            <AddPostsToCollection />
-                          </PrivateRoute>
-                        }
-                      />
-
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </main>
-                  <Footer />
-                  <BottomNavigation />
-                </>
+                <PrivateRoute>
+                  <SubscriberAdmin />
+                </PrivateRoute>
               }
             />
+            <Route
+              path="/create"
+              element={
+                <PrivateRoute>
+                  <CreatePost />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/edit/:id"
+              element={
+                <PrivateRoute>
+                  <EditPost />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <PrivateRoute>
+                  <Profile />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/create-story"
+              element={
+                <PrivateRoute>
+                  <CreateStory />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/story-archive"
+              element={
+                <PrivateRoute>
+                  <StoryArchive />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/story-archive/:id"
+              element={
+                <PrivateRoute>
+                  <ArchivedStoryView />
+                </PrivateRoute>
+              }
+            />
+            <Route path="/collections" element={<CollectionsList />} />
+            <Route path="/collections/:id" element={<CollectionDetail />} />
+            <Route
+              path="/collections/create"
+              element={
+                <PrivateRoute>
+                  <CreateCollection />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/collections/:id/edit"
+              element={
+                <PrivateRoute>
+                  <EditCollection />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/collections/:id/add-posts"
+              element={
+                <PrivateRoute>
+                  <AddPostsToCollection />
+                </PrivateRoute>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
           </Routes>
-
           <InstallPrompt />
           <FloatingActionButtonAdjuster />
         </div>
@@ -233,16 +220,5 @@ function App() {
     </AuthProvider>
   );
 }
-
-const OfflineIndicator = styled.div`
-  background-color: #f8d7da;
-  color: #721c24;
-  text-align: center;
-  padding: 8px;
-  font-size: 14px;
-  position: sticky;
-  top: 0;
-  z-index: 1001;
-`;
 
 export default App;

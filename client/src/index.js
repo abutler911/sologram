@@ -6,7 +6,14 @@ import App from "./App";
 import axios from "axios";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { initializeOneSignal } from "./utils/oneSignal";
+import ReactGA from "react-ga4";
 
+// Initialize GA4 with your measurement ID
+if (process.env.NODE_ENV === 'production') {
+  ReactGA.initialize(process.env.REACT_APP_GA_MEASUREMENT_ID, {
+    testMode: process.env.REACT_APP_GA_TEST_MODE === 'true', 
+  }); 
+}
 
 // Set default axios baseURL
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || "";

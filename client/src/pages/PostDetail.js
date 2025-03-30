@@ -15,6 +15,7 @@ import {
 } from "react-icons/fa";
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../context/AuthContext";
+import ReactGA from "react-ga4";
 
 const PostDetail = () => {
   const { id } = useParams();
@@ -58,11 +59,17 @@ const PostDetail = () => {
   useEffect(() => {
     const fetchPost = async () => {
       try {
+
         setLoading(true);
 
         const response = await axios.get(`/api/posts/${id}`);
         setPost(response.data.data);
         setError(null);
+        ReactGA.event("view_post", {
+          post_id: response.data.data._id,
+          post_title: response.data.data.caption,
+        });
+        
       } catch (err) {
         console.error("Error fetching post:", err);
         setError(
