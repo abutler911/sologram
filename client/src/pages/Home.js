@@ -9,7 +9,7 @@ import React, {
 import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { FaCamera, FaFolder, FaImages, FaBookOpen } from "react-icons/fa";
+import { FaCamera, FaBookOpen } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import Stories from "../components/stories/Stories";
 import PostCard from "../components/posts/PostCard";
@@ -24,9 +24,6 @@ const Home = forwardRef((props, ref) => {
   const [searching, setSearching] = useState(false);
   const [showAboutBanner, setShowAboutBanner] = useState(true);
 
-  const [topCollections, setTopCollections] = useState([]);
-  const [collectionsLoading, setCollectionsLoading] = useState(true);
-
   const observer = useRef();
 
   useImperativeHandle(ref, () => ({
@@ -39,24 +36,6 @@ const Home = forwardRef((props, ref) => {
     if (bannerClosed === "true") {
       setShowAboutBanner(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const fetchTopCollections = async () => {
-      try {
-        setCollectionsLoading(true);
-        const response = await axios.get("/api/collections", {
-          params: { limit: 3 },
-        });
-        setTopCollections(response.data.data);
-      } catch (error) {
-        console.error("Error fetching collections:", error);
-      } finally {
-        setCollectionsLoading(false);
-      }
-    };
-
-    fetchTopCollections();
   }, []);
 
   useEffect(() => {
@@ -208,7 +187,6 @@ const Home = forwardRef((props, ref) => {
             <BannerContent>
               <LogoContainer>
                 <FaCamera />
-                {/* <img src={logoSrc} alt="Sologram Logo" /> */}
               </LogoContainer>
               <BannerTextContainer>
                 <BannerTitle>Welcome to Sologram</BannerTitle>
@@ -240,45 +218,6 @@ const Home = forwardRef((props, ref) => {
             </SectionTitle>
           </CompactSectionHeader>
           <Stories />
-        </CompactContentSection>
-
-        {/* Compact Collections Section */}
-        <CompactContentSection className="collections-section">
-          <CompactSectionHeader>
-            <SectionTitle>
-              <FaFolder />
-              <span>Featured Collections</span>
-            </SectionTitle>
-            <ViewAllLink to="/collections">View All</ViewAllLink>
-          </CompactSectionHeader>
-
-          {collectionsLoading ? (
-            <LoadingIndicator>Loading collections...</LoadingIndicator>
-          ) : topCollections.length > 0 ? (
-            <CompactCollectionsRow>
-              {topCollections.map((collection) => (
-                <CompactCollectionCard key={collection._id}>
-                  <CollectionLink to={`/collections/${collection._id}`}>
-                    {collection.coverImage ? (
-                      <CompactCollectionCover
-                        src={collection.coverImage}
-                        alt={collection.name}
-                      />
-                    ) : (
-                      <CompactCollectionCoverPlaceholder>
-                        <FaImages />
-                      </CompactCollectionCoverPlaceholder>
-                    )}
-                    <CompactCollectionName>
-                      {collection.name}
-                    </CompactCollectionName>
-                  </CollectionLink>
-                </CompactCollectionCard>
-              ))}
-            </CompactCollectionsRow>
-          ) : (
-            <EmptyMessage>No collections yet</EmptyMessage>
-          )}
         </CompactContentSection>
 
         <ContentSection>
@@ -336,7 +275,6 @@ const HomeContainer = styled.div`
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     max-width: 100vw;
-    ${"" /* padding: 0rem 0.5rem; */}
     box-sizing: border-box;
   }
 
@@ -399,11 +337,6 @@ const CompactContentSection = styled.section`
   padding: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.03);
-
-  &.collections-section {
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
 `;
 
 // ORIGINAL CONTENT SECTION (kept for Posts section)
@@ -414,11 +347,6 @@ const ContentSection = styled.section`
   padding: 0.75rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.03);
-
-  &.collections-section {
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
 `;
 
 const CompactSectionHeader = styled.div`
@@ -472,118 +400,6 @@ const ViewAllLink = styled(Link)`
   &:hover {
     text-decoration: underline;
   }
-`;
-
-// COMPACT COLLECTIONS STYLES
-const CompactCollectionsRow = styled.div`
-  display: flex;
-  overflow-x: auto;
-  padding: 0.25rem 0;
-  gap: 0.75rem;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-
-  &::after {
-    content: "";
-    padding-right: 0.5rem;
-  }
-
-  -webkit-overflow-scrolling: touch;
-`;
-
-const CompactCollectionCard = styled.div`
-  flex: 0 0 auto;
-  width: 60px; /* Reduced width */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: transform 0.2s;
-
-  &:hover {
-    transform: translateY(-2px);
-  }
-`;
-
-const CollectionLink = styled(Link)`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-decoration: none;
-  color: inherit;
-`;
-
-const CompactCollectionCover = styled.img`
-  width: 50px; /* Reduced size */
-  height: 50px; /* Reduced size */
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #ff7e5f;
-  padding: 2px; /* Reduced padding */
-  background-color: #222;
-  transition: border-color 0.2s;
-
-  ${CompactCollectionCard}:hover & {
-    border-color: #ff6347;
-  }
-`;
-
-const CompactCollectionCoverPlaceholder = styled.div`
-  width: 50px; /* Reduced size */
-  height: 50px; /* Reduced size */
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #222;
-  border: 2px solid #ff7e5f;
-  padding: 2px; /* Reduced padding */
-
-  svg {
-    font-size: 1rem; /* Reduced icon size */
-    color: #555;
-  }
-
-  ${CompactCollectionCard}:hover & {
-    border-color: #ff6347;
-  }
-`;
-
-const CompactCollectionName = styled.h3`
-  font-size: 0.6rem; /* Reduced font size */
-  color: #ddd;
-  margin: 0.35rem 0 0; /* Reduced margin */
-  text-align: center;
-  max-width: 60px; /* Match the card width */
-  white-space: normal;
-  overflow: visible;
-  word-wrap: break-word;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-`;
-
-const EmptyMessage = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #aaa;
-  padding: 0.5rem 0; /* Reduced padding */
-  font-size: 0.7rem; /* Reduced font size */
-  height: 60px; /* Reduced height */
-`;
-
-const LoadingIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #aaa;
-  padding: 0.5rem 0; /* Reduced padding */
-  font-size: 0.7rem; /* Reduced font size */
-  height: 60px; /* Reduced height */
 `;
 
 const PostGrid = styled.div`
