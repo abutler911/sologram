@@ -7,6 +7,7 @@ import axios from "axios";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { initializeOneSignal } from "./utils/oneSignal";
 
+
 // Set default axios baseURL
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || "";
 
