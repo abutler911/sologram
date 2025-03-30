@@ -354,6 +354,9 @@ const CardWrapper = styled.div`
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     justify-content: stretch;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
   }
 `;
 

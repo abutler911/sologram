@@ -23,8 +23,17 @@ const Home = forwardRef((props, ref) => {
   const [hasMore, setHasMore] = useState(true);
   const [searching, setSearching] = useState(false);
   const [showAboutBanner, setShowAboutBanner] = useState(true);
+  const [isPWA, setIsPWA] = useState(window.matchMedia("(display-mode: standalone)").matches);
 
   const observer = useRef();
+
+  // Detect PWA mode
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const handleChange = (e) => setIsPWA(e.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   useImperativeHandle(ref, () => ({
     handleHeaderSearch: (query) => handleSearch(query),
@@ -181,7 +190,7 @@ const Home = forwardRef((props, ref) => {
 
   return (
     <PageWrapper>
-      <HomeContainer>
+      <HomeContainer isPWA={isPWA}>
         {showAboutBanner && (
           <AboutBanner>
             <BannerContent>
@@ -210,7 +219,7 @@ const Home = forwardRef((props, ref) => {
         )}
 
         {/* Compact Stories Section */}
-        <CompactContentSection>
+        <CompactContentSection isPWA={isPWA}>
           <CompactSectionHeader>
             <SectionTitle>
               <FaBookOpen />
@@ -220,7 +229,7 @@ const Home = forwardRef((props, ref) => {
           <Stories />
         </CompactContentSection>
 
-        <ContentSection>
+        <ContentSection isPWA={isPWA}>
           <CompactSectionHeader>
             <SectionTitle>
               <FaCamera />
@@ -231,11 +240,12 @@ const Home = forwardRef((props, ref) => {
           {error ? (
             <ErrorMessage>{error}</ErrorMessage>
           ) : posts.length > 0 ? (
-            <PostGrid>
+            <PostGrid isPWA={isPWA}>
               {posts.map((post, index) => (
                 <GridItem
                   ref={posts.length === index + 1 ? lastPostElementRef : null}
                   key={post._id}
+                  isPWA={isPWA}
                 >
                   <PostCard post={post} />
                 </GridItem>
@@ -273,17 +283,14 @@ const HomeContainer = styled.div`
   margin: 0 auto;
   padding: 0.75rem 2rem;
 
-  @media (max-width: 768px), screen and (display-mode: standalone) {
+  @media (max-width: 768px) {
     max-width: 100vw;
+    padding: ${props => props.isPWA ? '0.5rem 0.5rem' : '0.5rem 1rem'};
     box-sizing: border-box;
   }
 
-  @media (max-width: 640px) {
-    padding: 0.5rem 0.75rem;
-  }
-
   @media (max-width: 480px) {
-    padding: 0.5rem 1rem;
+    padding: ${props => props.isPWA ? '0.25rem 0.25rem' : '0.5rem 0.75rem'};
   }
 
   & > section {
@@ -337,6 +344,11 @@ const CompactContentSection = styled.section`
   padding: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.03);
+  
+  @media (max-width: 768px) {
+    border-radius: ${props => props.isPWA ? '4px' : '8px'};
+    padding: ${props => props.isPWA ? '0.5rem 0.25rem' : '0.5rem'};
+  }
 `;
 
 // ORIGINAL CONTENT SECTION (kept for Posts section)
@@ -347,6 +359,11 @@ const ContentSection = styled.section`
   padding: 0.75rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.03);
+  
+  @media (max-width: 768px) {
+    border-radius: ${props => props.isPWA ? '4px' : '8px'};
+    padding: ${props => props.isPWA ? '0.5rem 0.25rem' : '0.5rem'};
+  }
 `;
 
 const CompactSectionHeader = styled.div`
@@ -404,26 +421,29 @@ const ViewAllLink = styled(Link)`
 
 const PostGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: 1fr;
   gap: 1rem;
-  padding: 0.25rem 0.125rem;
-  background-color: rgba(20, 20, 20, 0.4);
-  border-radius: 6px;
+  padding: 0;
+  margin: 0;
+  width: 100%;
 
-  @media (max-width: 768px), screen and (display-mode: standalone) {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 0.75rem;
-    padding: 0 0.5rem;
+  @media (max-width: 768px) {
+    grid-template-columns: ${props => props.isPWA ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))'};
+    gap: ${props => props.isPWA ? '0.5rem' : '0.75rem'};
+    padding: ${props => props.isPWA ? '0.125rem 0' : '0 0.5rem'};
+    width: 100%;
+    border-radius: ${props => props.isPWA ? '0' : '6px'};
   }
 `;
 
 const GridItem = styled.div`
   display: flex;
   height: 100%;
-  width: 100%;
+  max-width: 100%;
 
-  @media screen and (display-mode: standalone) {
-    width: 100%;
+  @media (max-width: 768px) {
+    width: ${props => props.isPWA ? 'calc(100vw - 1.5rem)' : '100%'};
+    max-width: 100%;
   }
 `;
 
