@@ -9,7 +9,7 @@ import React, {
 import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { FaCamera, FaBookOpen } from "react-icons/fa";
+import { FaCamera } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import Stories from "../components/stories/Stories";
 import PostCard from "../components/posts/PostCard";
@@ -27,7 +27,6 @@ const Home = forwardRef((props, ref) => {
 
   const observer = useRef();
 
-  // Detect PWA mode
   useEffect(() => {
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
     const handleChange = (e) => setIsPWA(e.matches);
@@ -53,55 +52,47 @@ const Home = forwardRef((props, ref) => {
     const lazyVideos = document.querySelectorAll("video[data-src]");
     if (!lazyVideos.length) return;
 
-    const videoObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const video = entry.target;
+    const videoObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const video = entry.target;
 
-            if (video.dataset.src && !video.src) {
-              video.src = video.dataset.src;
+          if (video.dataset.src && !video.src) {
+            video.src = video.dataset.src;
 
-              const sources = video.querySelectorAll("source[data-src]");
-              sources.forEach((source) => {
-                source.src = source.dataset.src;
-              });
+            const sources = video.querySelectorAll("source[data-src]");
+            sources.forEach((source) => {
+              source.src = source.dataset.src;
+            });
 
-              video.load();
-            }
-
-            videoObserver.unobserve(video);
+            video.load();
           }
-        });
-      },
-      {
-        rootMargin: "100px",
-        threshold: 0.1,
-      }
-    );
+
+          videoObserver.unobserve(video);
+        }
+      });
+    }, {
+      rootMargin: "100px",
+      threshold: 0.1,
+    });
 
     lazyVideos.forEach((video) => videoObserver.observe(video));
 
-    return () => {
-      videoObserver.disconnect();
-    };
+    return () => videoObserver.disconnect();
   }, [posts]);
 
-  const lastPostElementRef = useCallback(
-    (node) => {
-      if (loading) return;
-      if (observer.current) observer.current.disconnect();
+  const lastPostElementRef = useCallback((node) => {
+    if (loading) return;
+    if (observer.current) observer.current.disconnect();
 
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          setPage((prevPage) => prevPage + 1);
-        }
-      });
+    observer.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage((prevPage) => prevPage + 1);
+      }
+    });
 
-      if (node) observer.current.observe(node);
-    },
-    [loading, hasMore]
-  );
+    if (node) observer.current.observe(node);
+  }, [loading, hasMore]);
 
   useEffect(() => {
     let isMounted = true;
@@ -109,7 +100,6 @@ const Home = forwardRef((props, ref) => {
     const fetchPosts = async () => {
       try {
         setLoading(true);
-
         const response = await axios.get("/api/posts", {
           params: { page, limit: 6 },
         });
@@ -209,60 +199,37 @@ const Home = forwardRef((props, ref) => {
         {searching && searchQuery && (
           <SearchResultsIndicator>
             <SearchResultsText>
-              Showing results for "{searchQuery}" ({posts.length}{" "}
-              {posts.length === 1 ? "post" : "posts"})
+              Showing results for "{searchQuery}" ({posts.length} {posts.length === 1 ? "post" : "posts"})
             </SearchResultsText>
-            <ClearSearchButton onClick={clearSearch}>
-              Clear Search
-            </ClearSearchButton>
+            <ClearSearchButton onClick={clearSearch}>Clear Search</ClearSearchButton>
           </SearchResultsIndicator>
         )}
 
-        {/* Compact Stories Section */}
-        <CompactContentSection isPWA={isPWA}>
-          <CompactSectionHeader>
-            <SectionTitle>
-              <FaBookOpen />
-              <span>Recent Stories</span>
-            </SectionTitle>
-          </CompactSectionHeader>
-          <Stories />
-        </CompactContentSection>
+        <Stories />
 
-        <ContentSection isPWA={isPWA}>
-          <CompactSectionHeader>
-            <SectionTitle>
-              <FaCamera />
-              <span>Posts</span>
-            </SectionTitle>
-          </CompactSectionHeader>
+        {error ? (
+          <ErrorMessage>{error}</ErrorMessage>
+        ) : posts.length > 0 ? (
+          <PostGrid isPWA={isPWA}>
+            {posts.map((post, index) => (
+              <GridItem
+                ref={posts.length === index + 1 ? lastPostElementRef : null}
+                key={post._id}
+                isPWA={isPWA}
+              >
+                <PostCard post={post} />
+              </GridItem>
+            ))}
+          </PostGrid>
+        ) : loading ? (
+          <LoadingMessage>Loading posts...</LoadingMessage>
+        ) : (
+          <NoPostsMessage>No posts available. Start creating your own content!</NoPostsMessage>
+        )}
 
-          {error ? (
-            <ErrorMessage>{error}</ErrorMessage>
-          ) : posts.length > 0 ? (
-            <PostGrid isPWA={isPWA}>
-              {posts.map((post, index) => (
-                <GridItem
-                  ref={posts.length === index + 1 ? lastPostElementRef : null}
-                  key={post._id}
-                  isPWA={isPWA}
-                >
-                  <PostCard post={post} />
-                </GridItem>
-              ))}
-            </PostGrid>
-          ) : loading ? (
-            <LoadingMessage>Loading posts...</LoadingMessage>
-          ) : (
-            <NoPostsMessage>
-              No posts available. Start creating your own content!
-            </NoPostsMessage>
-          )}
-
-          {loading && posts.length > 0 && (
-            <LoadingMore>Loading more posts...</LoadingMore>
-          )}
-        </ContentSection>
+        {loading && posts.length > 0 && (
+          <LoadingMore>Loading more posts...</LoadingMore>
+        )}
       </HomeContainer>
     </PageWrapper>
   );
