@@ -300,7 +300,7 @@ const Container = styled.div`
   padding: 2rem;
 
   @media (max-width: 768px) {
-    padding: 1rem;
+    padding: 0.5rem;
   }
 `;
 
@@ -346,6 +346,10 @@ const PostContainer = styled.div`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   overflow: hidden;
+
+  @media (max-width: 768px) {
+  margin: 0 -1rem;
+  border-radius: 0;
 `;
 
 const MediaSection = styled.div`
@@ -362,9 +366,12 @@ const MediaContainer = styled.div`
   max-height: 70vh;
 
   @media (max-width: 768px) {
-    aspect-ratio: 1 / 1;
+    aspect-ratio: auto;
+    height: auto;
+    max-height: none;
   }
 `;
+
 
 const MediaTrack = styled.div`
   display: flex;
@@ -387,15 +394,13 @@ const MediaItem = styled.div`
 const PostImage = styled.img`
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  max-height: 70vh;
+  object-fit: cover;
 `;
 
 const PostVideo = styled.video`
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  max-height: 70vh;
+  object-fit: cover;
 `;
 
 const NavButton = styled.button`
