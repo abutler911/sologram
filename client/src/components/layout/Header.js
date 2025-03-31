@@ -9,7 +9,6 @@ import {
   FaBars,
   FaTimes,
   FaFolder,
-  FaPlus,
   FaArchive,
   FaBell,
   FaSearch,
@@ -22,7 +21,6 @@ import HeaderSubscriptionBanner from "../subscription/HeaderSubscriptionBanner";
 const Header = ({ onSearch, onClearSearch }) => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -33,28 +31,23 @@ const Header = ({ onSearch, onClearSearch }) => {
   const searchContainerRef = useRef(null);
   const userMenuRef = useRef(null);
 
-  // Load search query from URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const query = params.get("search") || "";
     setSearchQuery(query);
-
     if (location.pathname === "/" && query && onSearch) {
       onSearch(query);
     }
   }, [location, onSearch]);
 
-  // Focus search input when expanded
   useEffect(() => {
     if (searchExpanded && searchInputRef.current) {
       searchInputRef.current.focus();
     }
   }, [searchExpanded]);
 
-  // Handle clicks outside of search to close it
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Handle search container outside clicks
       if (
         searchExpanded &&
         searchContainerRef.current &&
@@ -63,7 +56,6 @@ const Header = ({ onSearch, onClearSearch }) => {
         handleCloseSearch();
       }
 
-      // Handle user menu outside clicks
       if (
         showUserMenu &&
         userMenuRef.current &&
@@ -85,22 +77,11 @@ const Header = ({ onSearch, onClearSearch }) => {
     navigate("/login");
   };
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const closeMenu = () => setIsMenuOpen(false);
+  const toggleUserMenu = () => setShowUserMenu(!showUserMenu);
 
-  const toggleCreateOptions = () => {
-    setShowCreateOptions(!showCreateOptions);
-  };
-
-  const closeMenu = () => {
-    setIsMenuOpen(false);
-  };
-
-  const handleOpenSearch = () => {
-    setSearchExpanded(true);
-  };
-
+  const handleOpenSearch = () => setSearchExpanded(true);
   const handleCloseSearch = () => {
     setSearchExpanded(false);
     if (searchQuery.trim() === "") {
@@ -112,17 +93,11 @@ const Header = ({ onSearch, onClearSearch }) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       onSearch && onSearch(searchQuery);
-
       if (location.pathname !== "/") {
         navigate("/?search=" + encodeURIComponent(searchQuery));
       }
-
-      // Mobile only: close search after submission
-      if (window.innerWidth <= 768) {
-        handleCloseSearch();
-      }
+      if (window.innerWidth <= 768) handleCloseSearch();
     } else {
-      // If search is empty, close the search bar
       handleCloseSearch();
     }
   };
@@ -130,21 +105,15 @@ const Header = ({ onSearch, onClearSearch }) => {
   const clearSearch = () => {
     setSearchQuery("");
     onClearSearch && onClearSearch();
-    searchInputRef.current.focus(); // Keep focus on input after clearing
+    searchInputRef.current.focus();
   };
 
-  const toggleUserMenu = () => {
-    setShowUserMenu(!showUserMenu);
-  };
-
-  // Show subscription banner to all users on the homepage
   const showSubscriptionBanner = location.pathname === "/";
 
   return (
     <HeaderWrapper>
       <HeaderContainer>
         <HeaderContent searchExpanded={searchExpanded}>
-          {/* Logo */}
           <LogoContainer searchExpanded={searchExpanded}>
             <Logo to="/" onClick={closeMenu}>
               <div className="logo-main">
@@ -155,48 +124,22 @@ const Header = ({ onSearch, onClearSearch }) => {
             </Logo>
           </LogoContainer>
 
-          {/* Central Navigation for Desktop */}
           <DesktopNavigation>
-            <NavLink to="/" active={location.pathname === "/"}>
-              Home
-            </NavLink>
-            <NavLink
-              to="/collections"
-              active={location.pathname.startsWith("/collections")}
-            >
-              Collections
-            </NavLink>
+            <NavLink to="/" active={location.pathname === "/"}>Home</NavLink>
+            <NavLink to="/collections" active={location.pathname.startsWith("/collections")}>Collections</NavLink>
             {isAuthenticated && (
-              <NavLink
-                to="/story-archive"
-                active={location.pathname.startsWith("/story-archive")}
-              >
-                Stories
-              </NavLink>
+              <NavLink to="/story-archive" active={location.pathname.startsWith("/story-archive")}>Stories</NavLink>
             )}
             {isAdmin && (
-              <NavLink
-                to="/subscribers"
-                active={location.pathname.startsWith("/subscribers")}
-              >
-                Subscribers
-              </NavLink>
+              <NavLink to="/subscribers" active={location.pathname.startsWith("/subscribers")}>Subscribers</NavLink>
             )}
           </DesktopNavigation>
 
-          {/* Right side buttons */}
           <HeaderActions>
-            {/* Search Button/Form */}
             {location.pathname === "/" && (
-              <SearchContainer
-                ref={searchContainerRef}
-                expanded={searchExpanded}
-              >
+              <SearchContainer ref={searchContainerRef} expanded={searchExpanded}>
                 {!searchExpanded ? (
-                  <ActionButton
-                    onClick={handleOpenSearch}
-                    aria-label="Open search"
-                  >
+                  <ActionButton onClick={handleOpenSearch} aria-label="Open search">
                     <FaSearch />
                   </ActionButton>
                 ) : (
@@ -208,26 +151,15 @@ const Header = ({ onSearch, onClearSearch }) => {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
-
                     {searchQuery && (
-                      <ClearButton
-                        onClick={clearSearch}
-                        aria-label="Clear search"
-                        type="button"
-                      >
+                      <ClearButton onClick={clearSearch} aria-label="Clear search" type="button">
                         <FaTimes />
                       </ClearButton>
                     )}
-
                     <SearchSubmit type="submit">
                       <FaSearch />
                     </SearchSubmit>
-
-                    <CloseSearchButton
-                      onClick={handleCloseSearch}
-                      aria-label="Close search"
-                      type="button"
-                    >
+                    <CloseSearchButton onClick={handleCloseSearch} aria-label="Close search" type="button">
                       <FaTimes />
                     </CloseSearchButton>
                   </SearchForm>
@@ -235,15 +167,13 @@ const Header = ({ onSearch, onClearSearch }) => {
               </SearchContainer>
             )}
 
-            {/* Create New Post button (desktop) */}
             {isAuthenticated && !searchExpanded && (
               <CreateNewButtonDesktop to="/create">
-                <FaPlus />
+                <FaCamera />
                 <span>Create</span>
               </CreateNewButtonDesktop>
             )}
 
-            {/* User Menu or Login Button */}
             {isAuthenticated ? (
               <UserMenuContainer ref={userMenuRef}>
                 <UserButton onClick={toggleUserMenu}>
@@ -252,67 +182,40 @@ const Header = ({ onSearch, onClearSearch }) => {
                   </UserAvatar>
                   <FaChevronDown className="arrow-icon" />
                 </UserButton>
-
                 {showUserMenu && (
                   <UserMenuDropdown>
                     <UserInfo>
                       <strong>{user?.username}</strong>
                       <small>{isAdmin ? "Admin" : "User"}</small>
                     </UserInfo>
-
                     <MenuDivider />
-
-                    <UserMenuItem
-                      to="/profile"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <FaUser />
-                      <span>Profile</span>
+                    <UserMenuItem to="/profile" onClick={() => setShowUserMenu(false)}>
+                      <FaUser /> <span>Profile</span>
                     </UserMenuItem>
-
                     {isAdmin && (
-                      <UserMenuItem
-                        to="/subscribers"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        <FaBell />
-                        <span>Subscribers</span>
+                      <UserMenuItem to="/subscribers" onClick={() => setShowUserMenu(false)}>
+                        <FaBell /> <span>Subscribers</span>
                       </UserMenuItem>
                     )}
-
-                    <UserMenuItem
-                      to="/collections"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <FaFolder />
-                      <span>Collections</span>
+                    <UserMenuItem to="/collections" onClick={() => setShowUserMenu(false)}>
+                      <FaFolder /> <span>Collections</span>
                     </UserMenuItem>
-
-                    <UserMenuItem
-                      to="/story-archive"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <FaArchive />
-                      <span>Story Archive</span>
+                    <UserMenuItem to="/story-archive" onClick={() => setShowUserMenu(false)}>
+                      <FaArchive /> <span>Story Archive</span>
                     </UserMenuItem>
-
                     <MenuDivider />
-
                     <UserMenuButton onClick={handleLogout}>
-                      <FaSignOutAlt />
-                      <span>Logout</span>
+                      <FaSignOutAlt /> <span>Logout</span>
                     </UserMenuButton>
                   </UserMenuDropdown>
                 )}
               </UserMenuContainer>
             ) : (
               <LoginButton to="/login">
-                <FaSignInAlt />
-                <span>Login</span>
+                <FaSignInAlt /> <span>Login</span>
               </LoginButton>
             )}
 
-            {/* Mobile Menu Toggle */}
             <MobileMenuToggle onClick={toggleMenu}>
               <FaEllipsisV />
             </MobileMenuToggle>
@@ -320,12 +223,10 @@ const Header = ({ onSearch, onClearSearch }) => {
         </HeaderContent>
       </HeaderContainer>
 
-      {/* Mobile Menu Drawer */}
       <MobileMenu isOpen={isMenuOpen}>
         <MobileMenuHeader>
           <MobileMenuLogo>
-            <FaCamera />
-            <span>SoloGram</span>
+            <FaCamera /> <span>SoloGram</span>
           </MobileMenuLogo>
           <MobileMenuCloseBtn onClick={closeMenu}>
             <FaTimes />
@@ -333,117 +234,27 @@ const Header = ({ onSearch, onClearSearch }) => {
         </MobileMenuHeader>
 
         <MobileMenuContent>
-          <MobileMenuItem
-            to="/"
-            onClick={closeMenu}
-            active={location.pathname === "/"}
-          >
-            Home
-          </MobileMenuItem>
-          <MobileMenuItem
-            to="/collections"
-            onClick={closeMenu}
-            active={location.pathname.startsWith("/collections")}
-          >
-            Collections
-          </MobileMenuItem>
-
+          <MobileMenuItem to="/" onClick={closeMenu} active={location.pathname === "/"}>Home</MobileMenuItem>
+          <MobileMenuItem to="/collections" onClick={closeMenu} active={location.pathname.startsWith("/collections")}>Collections</MobileMenuItem>
           {isAuthenticated && (
             <>
-              <MobileMenuItem
-                to="/story-archive"
-                onClick={closeMenu}
-                active={location.pathname.startsWith("/story-archive")}
-              >
-                Stories
-              </MobileMenuItem>
-
-              <MobileMenuItem
-                to="/profile"
-                onClick={closeMenu}
-                active={location.pathname.startsWith("/profile")}
-              >
-                Profile
-              </MobileMenuItem>
-
+              <MobileMenuItem to="/story-archive" onClick={closeMenu} active={location.pathname.startsWith("/story-archive")}>Stories</MobileMenuItem>
+              <MobileMenuItem to="/profile" onClick={closeMenu} active={location.pathname.startsWith("/profile")}>Profile</MobileMenuItem>
               {isAdmin && (
-                <MobileMenuItem
-                  to="/subscribers"
-                  onClick={closeMenu}
-                  active={location.pathname.startsWith("/subscribers")}
-                >
-                  Subscribers
-                </MobileMenuItem>
+                <MobileMenuItem to="/subscribers" onClick={closeMenu} active={location.pathname.startsWith("/subscribers")}>Subscribers</MobileMenuItem>
               )}
-
-              {/* Logout button is now just another item in the list, not pushed to bottom */}
               <MobileMenuLogoutButton onClick={handleLogout}>
-                <FaSignOutAlt />
-                <span>Logout</span>
+                <FaSignOutAlt /> <span>Logout</span>
               </MobileMenuLogoutButton>
             </>
           )}
-
           {!isAuthenticated && (
-            <MobileMenuItem
-              to="/login"
-              onClick={closeMenu}
-              active={location.pathname.startsWith("/login")}
-            >
-              <FaSignInAlt />
-              <span>Login</span>
-            </MobileMenuItem>
+            <MobileMenuItem to="/login" onClick={closeMenu} active={location.pathname.startsWith("/login")}> <FaSignInAlt /> <span>Login</span></MobileMenuItem>
           )}
         </MobileMenuContent>
       </MobileMenu>
 
-      {/* Show subscription banner for all users on homepage */}
       {showSubscriptionBanner && <HeaderSubscriptionBanner />}
-
-      {isAuthenticated && (
-        <FloatingActionButtonContainer>
-          <FloatingActionButton onClick={toggleCreateOptions}>
-            <FaPlus />
-          </FloatingActionButton>
-
-          {showCreateOptions && (
-            <ActionOptions>
-              <ActionOption
-                to="/create"
-                onClick={() => setShowCreateOptions(false)}
-              >
-                <FaCamera />
-                <span>New Post</span>
-              </ActionOption>
-              {isAdmin && (
-                <>
-                  <ActionOption
-                    to="/collections/create"
-                    onClick={() => setShowCreateOptions(false)}
-                  >
-                    <FaFolder />
-                    <span>New Collection</span>
-                  </ActionOption>
-                  <ActionOption
-                    to="/subscribers"
-                    onClick={() => setShowCreateOptions(false)}
-                  >
-                    <FaBell />
-                    <span>Manage Subscribers</span>
-                  </ActionOption>
-                </>
-              )}
-              <ActionOption
-                to="/create-story"
-                onClick={() => setShowCreateOptions(false)}
-              >
-                <FaCamera />
-                <span>New Story</span>
-              </ActionOption>
-            </ActionOptions>
-          )}
-        </FloatingActionButtonContainer>
-      )}
     </HeaderWrapper>
   );
 };
@@ -995,69 +806,5 @@ const MobileMenuLogoutButton = styled.button`
   }
 `;
 
-const FloatingActionButtonContainer = styled.div`
-  position: fixed;
-  bottom: 5rem; /* Positioned above bottom navbar */
-  right: 2rem;
-  z-index: 100;
-`;
-
-const FloatingActionButton = styled.button`
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 50%;
-  background-color: #ff7e5f;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-  font-size: 1.5rem;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-
-  &:hover {
-    background-color: #ff6347;
-    transform: scale(1.05);
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-`;
-
-const ActionOptions = styled.div`
-  position: absolute;
-  bottom: 4.5rem;
-  right: 0;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
-  width: 150px;
-`;
-
-const ActionOption = styled(Link)`
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  color: #4a4a4a;
-  text-decoration: none;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: #f5f5f5;
-    color: #ff7e5f;
-  }
-
-  svg {
-    margin-right: 0.5rem;
-  }
-
-  span {
-    font-weight: 500;
-  }
-`;
 
 export default Header;
