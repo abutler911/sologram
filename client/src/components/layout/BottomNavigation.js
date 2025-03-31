@@ -4,13 +4,13 @@ import styled from "styled-components";
 import { 
   FaHome, 
   FaFolder, 
-  FaSearch, 
   FaBell, 
   FaUser,
   FaPlus,
-  FaPlusCircle,
   FaCamera,
-  FaImages 
+  FaImages,
+  FaSearch,
+  FaUsers
 } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-hot-toast";
@@ -106,21 +106,25 @@ const BottomNavigation = () => {
 
   return (
     <NavContainer className="bottom-nav">
+      {/* First nav item */}
       <NavItem to="/" active={isActive("/")}>
         <FaHome />
         <NavLabel>Home</NavLabel>
       </NavItem>
 
+      {/* Second nav item */}
       <NavItem to="/collections" active={isActive("/collections")}>
         <FaFolder />
         <NavLabel>Collections</NavLabel>
       </NavItem>
 
+      {/* Center create button - only for authenticated users */}
       {isAuthenticated && (
-        <CreateButtonContainer>
+        <CreateButtonWrapper>
           <CreateButton onClick={toggleCreateOptions}>
             <FaPlus />
           </CreateButton>
+          <NavLabel style={{ opacity: 0 }}>Create</NavLabel> {/* Invisible label to maintain spacing */}
           
           {showCreateOptions && (
             <CreateOptionsOverlay onClick={() => setShowCreateOptions(false)}>
@@ -136,41 +140,55 @@ const BottomNavigation = () => {
                 </CreateOptionItem>
                 
                 {isAdmin && (
-                  <CreateOptionItem to="/collections/create" onClick={() => setShowCreateOptions(false)}>
-                    <FaFolder />
-                    <span>New Collection</span>
-                  </CreateOptionItem>
+                  <>
+                    <CreateOptionItem to="/collections/create" onClick={() => setShowCreateOptions(false)}>
+                      <FaFolder />
+                      <span>New Collection</span>
+                    </CreateOptionItem>
+                    <CreateOptionItem to="/subscribers" onClick={() => setShowCreateOptions(false)}>
+                      <FaUsers />
+                      <span>Manage Subscribers</span>
+                    </CreateOptionItem>
+                  </>
                 )}
               </CreateOptions>
             </CreateOptionsOverlay>
           )}
-        </CreateButtonContainer>
+        </CreateButtonWrapper>
       )}
 
+      {/* Non-authenticated users get a placeholder for the center item */}
+      {!isAuthenticated && (
+        <NavItem to="/about" active={isActive("/about")}>
+          <FaSearch />
+          <NavLabel>About</NavLabel>
+        </NavItem>
+      )}
+
+      {/* Fourth nav item */}
       {isAuthenticated ? (
-        <>
-          <NavItem to="/story-archive" active={isActive("/story-archive")}>
-            <FaBell />
-            <NavLabel>Stories</NavLabel>
-          </NavItem>
-
-          <NavItem to="/profile" active={isActive("/profile")}>
-            <FaUser />
-            <NavLabel>Admin</NavLabel>
-          </NavItem>
-        </>
+        <NavItem to="/story-archive" active={isActive("/story-archive")}>
+          <FaBell />
+          <NavLabel>Stories</NavLabel>
+        </NavItem>
       ) : (
-        <>
-          <NavItem to="/about" active={isActive("/about")}>
-            <FaSearch />
-            <NavLabel>About</NavLabel>
-          </NavItem>
+        <NavAction onClick={handleSubscribeClick}>
+          <FaBell />
+          <NavLabel>Subscribe</NavLabel>
+        </NavAction>
+      )}
 
-          <NavAction onClick={handleSubscribeClick}>
-            <FaBell />
-            <NavLabel>Subscribe</NavLabel>
-          </NavAction>
-        </>
+      {/* Fifth nav item */}
+      {isAuthenticated ? (
+        <NavItem to="/profile" active={isActive("/profile")}>
+          <FaUser />
+          <NavLabel>Admin</NavLabel>
+        </NavItem>
+      ) : (
+        <NavItem to="/about" active={isActive("/about")}>
+          <FaUser />
+          <NavLabel>About</NavLabel>
+        </NavItem>
       )}
     </NavContainer>
   );
@@ -208,7 +226,7 @@ const NavContainer = styled.div`
     bottom: 0;
     left: 0;
     right: 0;
-    height: 56px;
+    height: 60px; /* Slightly increased for better touchability */
     background-color: #1e1e1e;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
     z-index: 1000;
@@ -241,38 +259,38 @@ const NavLabel = styled.span`
   font-weight: 500;
 `;
 
-// New styled components for the Create functionality
-const CreateButtonContainer = styled.div`
-  position: relative;
+// Updated styled components for the integrated Create button
+const CreateButtonWrapper = styled.div`
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  z-index: 1001;
+  justify-content: flex-start;
+  flex: 1;
+  position: relative;
+  margin-top: -20px; /* Move button up to be partially above the navbar */
 `;
 
 const CreateButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background-color: #ff7e5f;
   border: none;
   color: white;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   cursor: pointer;
-  transform: translateY(-50%);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  position: absolute;
-  bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  margin-bottom: 0.125rem;
   
   &:hover {
     background-color: #ff6347;
   }
   
   &:active {
-    transform: translateY(-50%) scale(0.95);
+    transform: scale(0.95);
   }
 `;
 
