@@ -1,14 +1,27 @@
-import React, { useContext } from "react";
+import React, { useState, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import styled from "styled-components";
-import { FaHome, FaFolder, FaSearch, FaBell, FaUser } from "react-icons/fa";
+import { 
+  FaHome, 
+  FaFolder, 
+  FaSearch, 
+  FaBell, 
+  FaUser,
+  FaPlus,
+  FaPlusCircle,
+  FaCamera,
+  FaImages 
+} from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-hot-toast";
 import { requestNotificationPermission } from "../../utils/oneSignal";
 
 const BottomNavigation = () => {
   const location = useLocation();
-  const { isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated, user } = useContext(AuthContext);
+  const [showCreateOptions, setShowCreateOptions] = useState(false);
+  
+  const isAdmin = isAuthenticated && user && user.role === "admin";
 
   const isActive = (path) => {
     return path === "/"
@@ -87,6 +100,10 @@ const BottomNavigation = () => {
     }
   };
 
+  const toggleCreateOptions = () => {
+    setShowCreateOptions(!showCreateOptions);
+  };
+
   return (
     <NavContainer className="bottom-nav">
       <NavItem to="/" active={isActive("/")}>
@@ -98,6 +115,37 @@ const BottomNavigation = () => {
         <FaFolder />
         <NavLabel>Collections</NavLabel>
       </NavItem>
+
+      {isAuthenticated && (
+        <CreateButtonContainer>
+          <CreateButton onClick={toggleCreateOptions}>
+            <FaPlus />
+          </CreateButton>
+          
+          {showCreateOptions && (
+            <CreateOptionsOverlay onClick={() => setShowCreateOptions(false)}>
+              <CreateOptions onClick={(e) => e.stopPropagation()}>
+                <CreateOptionItem to="/create" onClick={() => setShowCreateOptions(false)}>
+                  <FaCamera />
+                  <span>New Post</span>
+                </CreateOptionItem>
+                
+                <CreateOptionItem to="/create-story" onClick={() => setShowCreateOptions(false)}>
+                  <FaImages />
+                  <span>New Story</span>
+                </CreateOptionItem>
+                
+                {isAdmin && (
+                  <CreateOptionItem to="/collections/create" onClick={() => setShowCreateOptions(false)}>
+                    <FaFolder />
+                    <span>New Collection</span>
+                  </CreateOptionItem>
+                )}
+              </CreateOptions>
+            </CreateOptionsOverlay>
+          )}
+        </CreateButtonContainer>
+      )}
 
       {isAuthenticated ? (
         <>
@@ -150,6 +198,8 @@ const NavAction = styled.button`
 `;
 
 const NavContainer = styled.div`
+  display: none;
+  
   @media (max-width: 767px) {
     display: flex;
     justify-content: space-around;
@@ -189,6 +239,86 @@ const NavItem = styled(Link)`
 const NavLabel = styled.span`
   font-size: 0.625rem;
   font-weight: 500;
+`;
+
+// New styled components for the Create functionality
+const CreateButtonContainer = styled.div`
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+`;
+
+const CreateButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #ff7e5f;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transform: translateY(-50%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  bottom: 20px;
+  
+  &:hover {
+    background-color: #ff6347;
+  }
+  
+  &:active {
+    transform: translateY(-50%) scale(0.95);
+  }
+`;
+
+const CreateOptionsOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const CreateOptions = styled.div`
+  background-color: #262626;
+  border-radius: 12px;
+  overflow: hidden;
+  width: 80%;
+  max-width: 300px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+`;
+
+const CreateOptionItem = styled(Link)`
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  color: white;
+  text-decoration: none;
+  border-bottom: 1px solid #333;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  svg {
+    margin-right: 12px;
+    font-size: 1.2rem;
+    color: #ff7e5f;
+  }
+  
+  &:hover {
+    background-color: #333;
+  }
 `;
 
 export default BottomNavigation;
