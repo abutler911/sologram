@@ -15,67 +15,68 @@ import {
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
-const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
-  // Navigation between steps
-  const [currentStep, setCurrentStep] = useState(1);
+// Define filters array
+const filters = [
+  { name: "Original", class: "" },
+  { name: "Warm", class: "filter-warm" },
+  { name: "Cool", class: "filter-cool" },
+  { name: "Grayscale", class: "filter-grayscale" },
+  { name: "Vintage", class: "filter-vintage" },
+];
 
-  // Form data
+// Define tag suggestions
+const tagSuggestions = [
+  "travel",
+  "photography",
+  "food",
+  "nature",
+  "fashion",
+  "art",
+  "music",
+  "fitness",
+  "technology",
+  "design",
+];
+
+const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
+  const [currentStep, setCurrentStep] = useState(1);
   const [caption, setCaption] = useState(initialData?.caption || "");
   const [content, setContent] = useState(initialData?.content || "");
   const [tags, setTags] = useState(initialData?.tags?.join(", ") || "");
-
-  // Media handling
   const [mediaFiles, setMediaFiles] = useState([]);
   const [mediaPreviews, setMediaPreviews] = useState([]);
   const [existingMedia, setExistingMedia] = useState([]);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState(0);
-
-  // Define filters as a constant since we don't modify them
-  const filters = [
-    { name: "Original", class: "" },
-    { name: "Warm", class: "filter-warm" },
-    { name: "Cool", class: "filter-cool" },
-    { name: "Grayscale", class: "filter-grayscale" },
-    { name: "Vintage", class: "filter-vintage" },
-  ];
-
-  // UI states
   const [loading, setLoading] = useState(false);
+
+  // Add missing focus state hooks
   const [captionFocused, setCaptionFocused] = useState(false);
   const [contentFocused, setContentFocused] = useState(false);
   const [tagInputFocused, setTagInputFocused] = useState(false);
-  const [tagSuggestions] = useState([
-    "nature",
-    "travel",
-    "food",
-    "art",
-    "photography",
-    "landscape",
-  ]);
 
   const navigate = useNavigate();
 
-  // Initialize existing media if editing
   useEffect(() => {
-    if (isEditing && initialData?.media && initialData.media.length > 0) {
-      setExistingMedia(
-        initialData.media.map((media) => ({
-          id: media._id,
-          mediaUrl: media.mediaUrl,
-          mediaType: media.mediaType,
-          isExisting: true,
-        }))
-      );
+    if (isEditing && initialData?.media?.length > 0) {
+      const mapped = initialData.media.map((media) => ({
+        id: media._id,
+        mediaUrl: media.mediaUrl,
+        mediaType: media.mediaType,
+        isExisting: true,
+      }));
+      setExistingMedia(mapped);
     }
   }, [isEditing, initialData]);
 
-  // Handle file uploads
   const onDrop = useCallback(
-    (acceptedFiles) => {
-      if (acceptedFiles.length === 0) return;
+    (acceptedFiles, rejectedFiles = []) => {
+      if (rejectedFiles && rejectedFiles.length > 0) {
+        rejectedFiles.forEach(({ file, errors }) => {
+          toast.error(`${file.name}: ${errors[0]?.message || "Upload error"}`);
+        });
+      }
 
-      // Check if adding these files would exceed the 25file limit
       const totalFiles =
         mediaFiles.length + existingMedia.length + acceptedFiles.length;
       if (totalFiles > 25) {
@@ -83,26 +84,27 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
         return;
       }
 
-      // Process each dropped file
-      acceptedFiles.forEach((file) => {
-        // Create preview for the file
-        const reader = new FileReader();
-        reader.onload = () => {
-          setMediaPreviews((prev) => [
-            ...prev,
-            {
-              id: Date.now() + Math.random().toString(), // Generate unique id
-              preview: reader.result,
-              type: file.type.startsWith("image") ? "image" : "video",
-              filter: "",
-            },
-          ]);
-        };
-        reader.readAsDataURL(file);
-
-        // Add to media files array
-        setMediaFiles((prev) => [...prev, file]);
+      const validFiles = acceptedFiles.filter((file) => {
+        if (file.size > 25 * 1024 * 1024) {
+          toast.error(`${file.name} exceeds 25MB limit`);
+          return false;
+        }
+        return true;
       });
+
+      const newPreviews = validFiles.map((file) => {
+        const isVideo = file.type.startsWith("video/");
+        return {
+          id: Date.now() + Math.random().toString(),
+          file,
+          preview: URL.createObjectURL(file),
+          type: isVideo ? "video" : "image",
+          filter: "",
+        };
+      });
+
+      setMediaPreviews((prev) => [...prev, ...newPreviews]);
+      setMediaFiles((prev) => [...prev, ...validFiles]);
     },
     [mediaFiles, existingMedia.length]
   );
@@ -113,9 +115,15 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       "image/*": [".jpeg", ".jpg", ".png", ".gif"],
       "video/*": [".mp4", ".mov", ".avi", ".webm"],
     },
-    maxSize: 20 * 1024 * 1024, // 20MB
+    maxSize: 25 * 1024 * 1024,
     multiple: true,
   });
+
+  // Get the current media being displayed
+  const getCurrentMedia = () => {
+    const allMedia = [...existingMedia, ...mediaPreviews];
+    return allMedia[activePreviewIndex] || null;
+  };
 
   // Remove a preview file
   const removePreviewFile = (id) => {
@@ -246,12 +254,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   // Detect if we're on media step with no media
   const isMediaStepEmpty =
     currentStep === 1 && mediaFiles.length === 0 && existingMedia.length === 0;
-
-  // Get the current media being displayed
-  const getCurrentMedia = () => {
-    const allMedia = [...existingMedia, ...mediaPreviews];
-    return allMedia[activePreviewIndex] || null;
-  };
 
   // Add a hashtag from suggestions
   const addTag = (tag) => {
@@ -1066,7 +1068,7 @@ const PostPreviewMedia = styled.div`
   position: relative;
   width: 100%;
   height: 400px;
-  background-color: #f0f0f0;
+  background-color: #2a2a2a;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1137,13 +1139,13 @@ const PaginationDot = styled.div`
 
 const PostPreviewContent = styled.div`
   padding: 1rem;
-  background-color: white;
+  background-color: #2a2a2a;
 `;
 
 const PostPreviewCaption = styled.p`
   font-size: 0.95rem;
   margin-bottom: 0.75rem;
-  color: #333;
+  color: #dddddd;
 `;
 
 const PostPreviewTags = styled.div`
@@ -1154,7 +1156,7 @@ const PostPreviewTags = styled.div`
 
 const PostPreviewTag = styled.span`
   font-size: 0.85rem;
-  color: #1976d2;
+  color: #ff7e5f;
 `;
 
 // Navigation Buttons
