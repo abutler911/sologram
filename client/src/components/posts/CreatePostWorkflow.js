@@ -61,29 +61,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     if (cameraInputRef.current) {
       cameraInputRef.current.click();
     }
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.capture = "environment";
-
-    input.onchange = (e) => {
-      if (e.target.files && e.target.files.length > 0) {
-        const file = e.target.files[0];
-        const isVideo = file.type.startsWith("video/");
-
-        const preview = {
-          id: Date.now() + Math.random().toString(),
-          file,
-          preview: URL.createObjectURL(file),
-          type: isVideo ? "video" : "image",
-          filter: "",
-        };
-
-        setMediaPreviews((prev) => [...prev, preview]);
-      }
-    };
-
-    input.click();
   };
 
   const onDrop = useCallback(
