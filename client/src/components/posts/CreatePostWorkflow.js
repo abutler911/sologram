@@ -36,7 +36,15 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   const [selectedFilter, setSelectedFilter] = useState(0);
   const [loading, setLoading] = useState(false);
   const [captureMode, setCaptureMode] = useState("environment");
-
+  const [captionFocused, setCaptionFocused] = useState(false);
+  const [contentFocused, setContentFocused] = useState(false);
+  const [tagInputFocused, setTagInputFocused] = useState(false);
+  const [tagSuggestions, setTagSuggestions] = useState([
+    "travel",
+    "fitness",
+    "fun",
+    "adventure",
+  ]);
   const navigate = useNavigate();
 
   useEffect(() => {
