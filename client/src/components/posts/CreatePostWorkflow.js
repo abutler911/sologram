@@ -285,12 +285,14 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                 {...getRootProps()}
                 isDragActive={isDragActive}
               >
-                <input
-                  {...getInputProps({
-                    capture: "environment",
-                    accept: "image/*,video/*",
-                  })}
-                />
+                {!mediaPreviews.length && !existingMedia.length && (
+                  <input
+                    {...getInputProps({
+                      capture: "environment",
+                      accept: "image/*,video/*",
+                    })}
+                  />
+                )}
                 <DropzoneIcon>
                   <FaCloudUploadAlt />
                 </DropzoneIcon>
