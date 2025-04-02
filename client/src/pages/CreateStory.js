@@ -9,7 +9,7 @@ import {
   FaVideo,
   FaArrowLeft,
   FaPlusCircle,
-  FaInfoCircle
+  FaInfoCircle,
 } from "react-icons/fa";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
@@ -36,7 +36,7 @@ const CreateStory = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showCompressOption, setShowCompressOption] = useState(false);
   const [compressVideo, setCompressVideo] = useState(false);
-  
+
   const textAreaRef = useRef(null);
   const navigate = useNavigate();
 
@@ -44,7 +44,7 @@ const CreateStory = () => {
   useEffect(() => {
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
     const handleChange = (e) => setIsPWA(e.matches);
-    
+
     // Use the appropriate event listener based on browser support
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener("change", handleChange);
@@ -52,7 +52,7 @@ const CreateStory = () => {
       // For older browsers
       mediaQuery.addListener(handleChange);
     }
-    
+
     return () => {
       if (mediaQuery.removeEventListener) {
         mediaQuery.removeEventListener("change", handleChange);
@@ -107,21 +107,21 @@ const CreateStory = () => {
           toast.error(`Image ${file.name} exceeds 20MB limit`);
           return false;
         }
-        
+
         // Video size check
         if (file.type.startsWith("video/")) {
           // Show compress option for large videos
           if (file.size > 150 * 1024 * 1024) {
             setShowCompressOption(true);
           }
-          
+
           // Hard limit on video size
           if (file.size > 300 * 1024 * 1024) {
             toast.error(`Video ${file.name} exceeds 300MB limit`);
             return false;
           }
         }
-        
+
         return true;
       });
 
@@ -192,29 +192,32 @@ const CreateStory = () => {
 
   // Handle direct camera access
   const handleCameraCapture = () => {
-    if ('mediaDevices' in navigator) {
+    if ("mediaDevices" in navigator) {
       try {
         // Try modern MediaDevices API first
-        navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment",
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }
-        }).then(stream => {
-          // This is just a check if we can access the camera
-          // In a full implementation, you would set up MediaRecorder here
-          // and capture an image or video
-          
-          // Clean up the stream when done
-          stream.getTracks().forEach(track => track.stop());
-          
-          // For now, fall back to the input element approach
-          fallbackToFileInput("image");
-        }).catch(err => {
-          console.log("MediaDevices error:", err);
-          fallbackToFileInput("image");
-        });
+        navigator.mediaDevices
+          .getUserMedia({
+            video: {
+              facingMode: "environment",
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          })
+          .then((stream) => {
+            // This is just a check if we can access the camera
+            // In a full implementation, you would set up MediaRecorder here
+            // and capture an image or video
+
+            // Clean up the stream when done
+            stream.getTracks().forEach((track) => track.stop());
+
+            // For now, fall back to the input element approach
+            fallbackToFileInput("image");
+          })
+          .catch((err) => {
+            console.log("MediaDevices error:", err);
+            fallbackToFileInput("image");
+          });
       } catch (err) {
         fallbackToFileInput("image");
       }
@@ -225,28 +228,31 @@ const CreateStory = () => {
 
   // Handle video recording
   const handleVideoCapture = () => {
-    if ('mediaDevices' in navigator) {
+    if ("mediaDevices" in navigator) {
       try {
         // Try modern MediaDevices API first
-        navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment",
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }
-        }).then(stream => {
-          // This is just a check if we can access the camera
-          // In a full implementation, you would set up MediaRecorder here
-          
-          // Clean up the stream when done
-          stream.getTracks().forEach(track => track.stop());
-          
-          // For now, fall back to the input element approach
-          fallbackToFileInput("video");
-        }).catch(err => {
-          console.log("MediaDevices error:", err);
-          fallbackToFileInput("video");
-        });
+        navigator.mediaDevices
+          .getUserMedia({
+            video: {
+              facingMode: "environment",
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          })
+          .then((stream) => {
+            // This is just a check if we can access the camera
+            // In a full implementation, you would set up MediaRecorder here
+
+            // Clean up the stream when done
+            stream.getTracks().forEach((track) => track.stop());
+
+            // For now, fall back to the input element approach
+            fallbackToFileInput("video");
+          })
+          .catch((err) => {
+            console.log("MediaDevices error:", err);
+            fallbackToFileInput("video");
+          });
       } catch (err) {
         fallbackToFileInput("video");
       }
@@ -259,59 +265,64 @@ const CreateStory = () => {
   const fallbackToFileInput = (mediaType) => {
     const input = document.createElement("input");
     input.type = "file";
-    
+
     if (mediaType === "image") {
       input.accept = "image/*";
       input.capture = "environment"; // Use the back camera
     } else {
       input.accept = "video/*";
       input.capture = "environment";
-      
+
       // Show toast about time limit
       toast.info("Maximum video length: 30 seconds", {
         duration: 3000,
         position: "top-center",
       });
     }
-  
+
     input.onchange = (e) => {
       if (e.target.files && e.target.files.length > 0) {
         const file = e.target.files[0];
-        
+
         // Additional client-side validation for videos
-        if (file.type.startsWith('video/')) {
+        if (file.type.startsWith("video/")) {
           // Check if we can determine the duration
-          const video = document.createElement('video');
-          video.preload = 'metadata';
-          
+          const video = document.createElement("video");
+          video.preload = "metadata";
+
           // Create safe object URL management
           const videoUrl = URL.createObjectURL(file);
           video.src = videoUrl;
-          
+
           // Set timeout to handle case where metadata never loads
           const timeoutId = setTimeout(() => {
             URL.revokeObjectURL(videoUrl);
           }, 5000);
-          
-          video.onloadedmetadata = function() {
+
+          video.onloadedmetadata = function () {
             clearTimeout(timeoutId);
             URL.revokeObjectURL(videoUrl);
             const duration = video.duration;
-            
+
             // If video is longer than 30 seconds, show warning
             if (duration > 30) {
-              toast.warning(`Video is ${Math.round(duration)} seconds long. Only the first 30 seconds will be used.`, {
-                duration: 4000,
-              });
+              toast.warning(
+                `Video is ${Math.round(
+                  duration
+                )} seconds long. Only the first 30 seconds will be used.`,
+                {
+                  duration: 4000,
+                }
+              );
             }
           };
-          
-          video.onerror = function() {
+
+          video.onerror = function () {
             clearTimeout(timeoutId);
             URL.revokeObjectURL(videoUrl);
           };
         }
-        
+
         onDrop([file], []);
       }
     };
@@ -323,7 +334,7 @@ const CreateStory = () => {
   const handleGallerySelect = () => {
     open();
   };
-  
+
   // Show video size guide
   const showVideoSizeGuide = () => {
     const sizeGuide = `
@@ -335,87 +346,93 @@ const CreateStory = () => {
       
       Maximum upload size: 300MB
     `;
-    
+
     toast.info(
-      <div style={{ whiteSpace: 'pre-line', textAlign: 'left' }}>
+      <div style={{ whiteSpace: "pre-line", textAlign: "left" }}>
         {sizeGuide}
       </div>,
       { duration: 8000 }
     );
   };
-  
+
   // Handle form submission
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
-  
+
     if (mediaFiles.length === 0) {
       toast.error("Please add at least one image or video to your story");
       return;
     }
-  
+
     setLoading(true);
     setUploadProgress(0);
-  
+
     const formData = new FormData();
     formData.append("title", caption || "My Story"); // Provide a default title if caption is empty
     formData.append("caption", caption);
-    
+
     // Add compress flag if enabled
     if (compressVideo) {
       formData.append("compress", "true");
     }
-  
+
     mediaFiles.forEach((file) => {
       formData.append("media", file);
     });
 
     // Check if any video files exist
-    const hasVideoFiles = mediaFiles.some(file => 
-      file.type.startsWith('video/')
+    const hasVideoFiles = mediaFiles.some((file) =>
+      file.type.startsWith("video/")
     );
-  
+
     // Add upload progress monitoring
-    const uploadToast = hasVideoFiles ? 
-      toast.loading('Uploading video... 0%') : null;
-  
+    const uploadToast = hasVideoFiles
+      ? toast.loading("Uploading video... 0%")
+      : null;
+
     try {
       await axios.post("/api/stories", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-        onUploadProgress: progressEvent => {
+        onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
             (progressEvent.loaded * 100) / progressEvent.total
           );
           setUploadProgress(percentCompleted);
-          
+
           if (hasVideoFiles && uploadToast) {
-            toast.loading(`Uploading video... ${percentCompleted}%`, 
-              { id: uploadToast });
+            toast.loading(`Uploading video... ${percentCompleted}%`, {
+              id: uploadToast,
+            });
           }
-        }
+        },
       });
-  
+
       if (uploadToast) {
         toast.dismiss(uploadToast);
       }
-      
+
       toast.success("Story created successfully!");
       navigate("/");
     } catch (err) {
       console.error("Error creating story:", err);
-      
+
       if (!navigator.onLine) {
-        toast.error("No internet connection. Please check your network and try again.");
+        toast.error(
+          "No internet connection. Please check your network and try again."
+        );
         return;
       }
-      
+
       // More specific error messages based on error type
       if (err.response) {
         // Handle specific HTTP error codes
         switch (err.response.status) {
           case 413:
-            toast.error("Video file is too large for the server to process. Please use a shorter video or reduce the quality.");
+            toast.error(
+              "Video file is too large for the server to process. Please use a shorter video or reduce the quality."
+            );
             break;
           case 401:
             toast.error("You need to be logged in to create stories.");
@@ -424,13 +441,18 @@ const CreateStory = () => {
             toast.error("Too many requests. Please try again later.");
             break;
           default:
-            toast.error(err.response.data?.message || `Upload failed (${err.response.status}). Please try again.`);
+            toast.error(
+              err.response.data?.message ||
+                `Upload failed (${err.response.status}). Please try again.`
+            );
         }
       } else if (err.request) {
         // Request was made but no response received
         toast.error("Server not responding. Please try again later.");
-      } else if (err.message.includes('timeout')) {
-        toast.error("Upload timed out. Please use a shorter video or check your internet connection.");
+      } else if (err.message.includes("timeout")) {
+        toast.error(
+          "Upload timed out. Please use a shorter video or check your internet connection."
+        );
       } else {
         toast.error("Failed to create story. Please try again.");
       }
@@ -494,14 +516,14 @@ const CreateStory = () => {
             </DropzoneContent>
           )}
           <DropzoneSubtext>
-            You can add up to 20 photos and videos. 
-            Max file size: 20MB for images, 300MB for videos (approx. 30 seconds of 4K video)
+            You can add up to 20 photos and videos. Max file size: 20MB for
+            images, 300MB for videos (approx. 30 seconds of 4K video)
           </DropzoneSubtext>
         </DropzoneContainer>
 
         <ActionButtonsContainer>
-          <GalleryButton 
-            type="button" 
+          <GalleryButton
+            type="button"
             onClick={handleGallerySelect}
             aria-label="Select media from gallery"
           >
@@ -509,8 +531,8 @@ const CreateStory = () => {
             <span>Gallery</span>
           </GalleryButton>
 
-          <CameraButton 
-            type="button" 
+          <CameraButton
+            type="button"
             onClick={handleCameraCapture}
             aria-label="Take a photo with camera"
           >
@@ -518,18 +540,18 @@ const CreateStory = () => {
             <span>Camera</span>
           </CameraButton>
 
-          <VideoButton 
-            type="button" 
+          <VideoButton
+            type="button"
             onClick={handleVideoCapture}
             aria-label="Record a video"
           >
             <FaVideo />
             <span>Video</span>
           </VideoButton>
-          
-          <InfoButton 
-            type="button" 
-            onClick={showVideoSizeGuide} 
+
+          <InfoButton
+            type="button"
+            onClick={showVideoSizeGuide}
             title="Video size info"
             aria-label="Show video size guidelines"
           >
@@ -557,7 +579,7 @@ const CreateStory = () => {
                   </VideoIcon>
                 </PreviewVideo>
               )}
-              <RemoveButton 
+              <RemoveButton
                 onClick={() => removePreview(index)}
                 aria-label={`Remove ${item.type} ${index + 1}`}
               >
@@ -571,10 +593,7 @@ const CreateStory = () => {
         </MediaPreview>
 
         {previews.length > 0 && (
-          <AddMoreButton 
-            onClick={open}
-            aria-label="Add more media"
-          >
+          <AddMoreButton onClick={open} aria-label="Add more media">
             <FaPlusCircle />
             <span>Add More</span>
           </AddMoreButton>
@@ -609,12 +628,12 @@ const CreateStory = () => {
             <MultipleIndicator>+{previews.length - 1}</MultipleIndicator>
           )}
         </MediaDetailsPreview>
-        
+
         {showCompressOption && (
           <CompressOptionContainer>
-            <CompressCheckbox 
-              type="checkbox" 
-              id="compress-video" 
+            <CompressCheckbox
+              type="checkbox"
+              id="compress-video"
               checked={compressVideo}
               onChange={(e) => setCompressVideo(e.target.checked)}
               aria-label="Compress video"
@@ -624,7 +643,7 @@ const CreateStory = () => {
             </CompressLabel>
           </CompressOptionContainer>
         )}
-        
+
         <CaptionContainer>
           <CaptionTextarea
             ref={textAreaRef}
@@ -638,14 +657,11 @@ const CreateStory = () => {
       </DetailsContainer>
     </>
   );
-  
+
   return (
     <PageWrapper>
       <AppHeader>
-        <BackButton 
-          onClick={goToPreviousStep}
-          aria-label="Go back"
-        >
+        <BackButton onClick={goToPreviousStep} aria-label="Go back">
           <FaArrowLeft />
         </BackButton>
         <HeaderTitle>
@@ -654,10 +670,16 @@ const CreateStory = () => {
           {currentStep === "details" && "New Story"}
         </HeaderTitle>
         {currentStep !== "upload" && (
-          <NextButton 
-            onClick={goToNextStep} 
+          <NextButton
+            onClick={goToNextStep}
             disabled={loading}
-            aria-label={currentStep === "details" ? (loading ? "Posting..." : "Share") : "Next"}
+            aria-label={
+              currentStep === "details"
+                ? loading
+                  ? "Posting..."
+                  : "Share"
+                : "Next"
+            }
           >
             {currentStep === "details"
               ? loading
@@ -672,7 +694,7 @@ const CreateStory = () => {
         {currentStep === "upload" && renderUploadStep()}
         {currentStep === "edit" && renderEditStep()}
         {currentStep === "details" && renderDetailsStep()}
-        
+
         {loading && uploadProgress > 0 && (
           <UploadProgressContainer aria-live="polite">
             <ProgressBarOuter>
@@ -866,7 +888,7 @@ const VideoButton = styled(ActionButton)`
 // const InfoButton = styled(ActionButton)`
 //   background-color: #262626;
 //   color: #aaaaaa;
-  
+
 //   &:hover {
 //     color: #ff7e5f;
 //     background-color: #363636;
@@ -1005,7 +1027,6 @@ const VideoThumbnail = styled.div`
   }
 `;
 
-
 const MultipleIndicator = styled.div`
   position: absolute;
   top: 8px;
@@ -1056,7 +1077,7 @@ const ProgressBarOuter = styled.div`
 
 const ProgressBarInner = styled.div`
   height: 100%;
-  width: ${props => props.width}%;
+  width: ${(props) => props.width}%;
   background-color: #ff7e5f;
   transition: width 0.3s ease;
 `;
