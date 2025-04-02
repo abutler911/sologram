@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
 
 // Define filters array
 const filters = [
@@ -196,34 +197,31 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     setLoading(true);
 
     try {
-      const postFormData = new FormData();
-      postFormData.append("caption", caption);
-      postFormData.append("content", content);
-      postFormData.append("tags", tags);
+      // Upload all new media files to Cloudinary first
+      const uploadedMedia = [];
 
-      const filters = [];
-
-      mediaPreviews.forEach((preview) => {
-        postFormData.append("media", preview.file);
-        filters.push(preview.filter || "");
-      });
-
-      postFormData.append("filters", JSON.stringify(filters)); // ✅ as one field
-
-      if (isEditing && existingMedia.length > 0) {
-        const mediaIdsToKeep = existingMedia.map((media) => media.id).join(",");
-        postFormData.append("keepMedia", mediaIdsToKeep);
+      for (let i = 0; i < mediaPreviews.length; i++) {
+        const preview = mediaPreviews[i];
+        const uploaded = await uploadToCloudinary(preview.file);
+        uploaded.filter = preview.filter || "";
+        uploadedMedia.push(uploaded);
       }
+
+      // Construct payload
+      const payload = {
+        caption,
+        content,
+        tags,
+        media: [...existingMedia, ...uploadedMedia], // merge both
+      };
 
       let response;
       if (isEditing) {
-        response = await axios.put(
-          `/api/posts/${initialData._id}`,
-          postFormData
-        );
+        payload.keepMedia = existingMedia.map((m) => m.id).join(",");
+        response = await axios.put(`/api/posts/${initialData._id}`, payload);
         toast.success("Post updated successfully!");
       } else {
-        response = await axios.post("/api/posts", postFormData);
+        response = await axios.post("/api/posts", payload);
         toast.success("Post created successfully!");
       }
 

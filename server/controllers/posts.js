@@ -67,49 +67,33 @@ exports.getPost = async (req, res) => {
 
 exports.createPost = async (req, res) => {
   try {
-    const { caption, content, tags } = req.body;
+    const { caption, content, tags, media = [] } = req.body;
 
-    let newPost = {
+    if (!caption || !Array.isArray(media)) {
+      return res.status(400).json({
+        success: false,
+        message: "Caption and media are required",
+      });
+    }
+
+    const newPost = {
       caption,
       content,
       tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
-      media: [],
+      media: media.map((item) => ({
+        mediaType: item.mediaType || "image",
+        mediaUrl: item.mediaUrl,
+        cloudinaryId: item.cloudinaryId,
+        filter: item.filter || "",
+      })),
     };
-
-    if (req.files && req.files.length > 0) {
-      let rawFilters = req.body.filters || "[]";
-      let filters = [];
-      try {
-        filters = JSON.parse(req.body.filters);
-        if (!Array.isArray(filters)) filters = [];
-      } catch (err) {
-        console.warn("Invalid filters JSON:", req.body.filters);
-        filters = [];
-      }
-
-      newPost.media = req.files.map((file, index) => {
-        let mediaType = "none";
-        if (file.mimetype.startsWith("image")) {
-          mediaType = "image";
-        } else if (file.mimetype.startsWith("video")) {
-          mediaType = "video";
-        }
-
-        return {
-          mediaType,
-          mediaUrl: file.path,
-          cloudinaryId: file.filename,
-          filter: filters[index] || "",
-        };
-      });
-    }
 
     const post = await Post.create(newPost);
 
     notificationService
       .sendCustomNotification(`New post "${caption}" has been added!`, null)
       .catch((error) => {
-        console.error("Error sending notifications:", error);
+        console.error("Notification error:", error.message);
       });
 
     res.status(201).json({
@@ -117,133 +101,63 @@ exports.createPost = async (req, res) => {
       data: post,
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    console.error("Post creation failed:", err);
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
 exports.updatePost = async (req, res) => {
   try {
-    let post = await Post.findById(req.params.id);
-
+    const post = await Post.findById(req.params.id);
     if (!post) {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Post not found" });
     }
 
-    const { caption, content, tags, keepMedia } = req.body;
-    const keepMediaIds = keepMedia ? keepMedia.split(",") : [];
+    const { caption, content, tags, media = [], keepMedia = [] } = req.body;
 
+    // Update basic fields
     post.caption = caption || post.caption;
     post.content = content || post.content;
     post.tags = tags ? tags.split(",").map((tag) => tag.trim()) : post.tags;
     post.updatedAt = Date.now();
 
-    if (req.files && req.files.length > 0) {
-      let updatedMedia = [];
+    // Filter media to keep
+    const keepMediaIds = Array.isArray(keepMedia)
+      ? keepMedia
+      : keepMedia.split(",");
+    const kept = post.media.filter((m) =>
+      keepMediaIds.includes(m._id.toString())
+    );
 
-      if (post.media && post.media.length > 0 && keepMediaIds.length > 0) {
-        const mediaToKeep = post.media.filter((media) =>
-          keepMediaIds.includes(media._id.toString())
-        );
-        updatedMedia = [...mediaToKeep];
+    // Destroy media that was removed
+    const toDelete = post.media.filter(
+      (m) => !keepMediaIds.includes(m._id.toString())
+    );
+    for (const media of toDelete) {
+      if (media.cloudinaryId) {
+        await cloudinary.uploader.destroy(media.cloudinaryId);
       }
-      let rawFilters = req.body.filters || "[]";
-      let filters = [];
-      try {
-        filters = JSON.parse(req.body.filters);
-        if (!Array.isArray(filters)) filters = [];
-      } catch (err) {
-        console.warn("Invalid filters JSON:", req.body.filters);
-        filters = [];
-      }
-
-      console.log("Filters received:", filters);
-      console.log("Files received:", req.files.length);
-
-      const newMedia = req.files.map((file, index) => {
-        let mediaType = "none";
-        if (file.mimetype.startsWith("image")) {
-          mediaType = "image";
-        } else if (file.mimetype.startsWith("video")) {
-          mediaType = "video";
-        }
-
-        return {
-          mediaType,
-          mediaUrl: file.path,
-          cloudinaryId: file.filename,
-          filter: filters[index] || "",
-        };
-      });
-
-      post.media = [...updatedMedia, ...newMedia];
-
-      if (post.media && post.media.length > 0) {
-        const mediaToDelete = post.media.filter(
-          (media) => !keepMediaIds.includes(media._id.toString())
-        );
-
-        for (const media of mediaToDelete) {
-          if (media.cloudinaryId) {
-            await cloudinary.uploader.destroy(media.cloudinaryId);
-          }
-        }
-      }
-    } else if (keepMediaIds.length > 0 && post.media && post.media.length > 0) {
-      const mediaToKeep = post.media.filter((media) =>
-        keepMediaIds.includes(media._id.toString())
-      );
-
-      const mediaToDelete = post.media.filter(
-        (media) => !keepMediaIds.includes(media._id.toString())
-      );
-
-      for (const media of mediaToDelete) {
-        if (media.cloudinaryId) {
-          await cloudinary.uploader.destroy(media.cloudinaryId);
-        }
-      }
-
-      post.media = mediaToKeep;
-    } else if (
-      keepMediaIds.length === 0 &&
-      post.media &&
-      post.media.length > 0
-    ) {
-      for (const media of post.media) {
-        if (media.cloudinaryId) {
-          await cloudinary.uploader.destroy(media.cloudinaryId);
-        }
-      }
-      post.media = [];
     }
 
+    // Add new media from frontend
+    const newMedia = Array.isArray(media)
+      ? media.map((item) => ({
+          mediaType: item.mediaType || "image",
+          mediaUrl: item.mediaUrl,
+          cloudinaryId: item.cloudinaryId,
+          filter: item.filter || "",
+        }))
+      : [];
+
+    post.media = [...kept, ...newMedia];
     await post.save();
 
-    res.status(200).json({
-      success: true,
-      data: post,
-    });
+    res.status(200).json({ success: true, data: post });
   } catch (err) {
-    console.error(err);
-
-    if (err.kind === "ObjectId") {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found",
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    console.error("Post update failed:", err);
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
