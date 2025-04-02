@@ -64,6 +64,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
         mediaUrl: media.mediaUrl,
         mediaType: media.mediaType,
         isExisting: true,
+        filter: media.filter || "",
       }));
       setExistingMedia(mapped);
     }
@@ -209,8 +210,9 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
       // Add all media files
       if (mediaFiles.length > 0) {
-        mediaFiles.forEach((file) => {
-          postFormData.append("media", file);
+        mediaFiles.forEach((preview, i) => {
+          postFormData.append("media", preview.file);
+          postFormData.append("filters", preview.filter || "");
         });
       }
 

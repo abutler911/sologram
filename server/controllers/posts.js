@@ -77,6 +77,10 @@ exports.createPost = async (req, res) => {
     };
 
     if (req.files && req.files.length > 0) {
+      const filters = Array.isArray(req.body.filters)
+        ? req.body.filters
+        : [req.body.filters];
+
       newPost.media = req.files.map((file) => {
         let mediaType = "none";
         if (file.mimetype.startsWith("image")) {
@@ -89,6 +93,7 @@ exports.createPost = async (req, res) => {
           mediaType,
           mediaUrl: file.path,
           cloudinaryId: file.filename,
+          filter: filters[index] || "",
         };
       });
     }
@@ -142,6 +147,9 @@ exports.updatePost = async (req, res) => {
         );
         updatedMedia = [...mediaToKeep];
       }
+      const filters = Array.isArray(req.body.filters)
+        ? req.body.filters
+        : [req.body.filters];
 
       const newMedia = req.files.map((file) => {
         let mediaType = "none";
@@ -155,6 +163,7 @@ exports.updatePost = async (req, res) => {
           mediaType,
           mediaUrl: file.path,
           cloudinaryId: file.filename,
+          filter: filters[index] || "",
         };
       });
 
