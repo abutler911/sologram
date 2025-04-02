@@ -204,12 +204,14 @@ const PostCard = ({ post: initialPost, onDelete }) => {
                         src={media.mediaUrl}
                         alt={post.caption}
                         loading="lazy"
+                        className={media.filter}
                       />
                     ) : (
                       <PostVideo
                         src={media.mediaUrl}
                         controls
                         preload="metadata"
+                        className={media.filter}
                       />
                     )}
                   </MediaItem>
@@ -518,12 +520,44 @@ const PostImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+
+  &.filter-warm {
+    filter: saturate(1.5) sepia(0.2) contrast(1.1);
+  }
+
+  &.filter-cool {
+    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
+  }
+
+  &.filter-grayscale {
+    filter: grayscale(1);
+  }
+
+  &.filter-vintage {
+    filter: sepia(0.4) saturate(1.3) contrast(1.2);
+  }
 `;
 
 const PostVideo = styled.video`
   width: 100%;
   height: 100%;
   object-fit: cover;
+
+  &.filter-warm {
+    filter: saturate(1.5) sepia(0.2) contrast(1.1);
+  }
+
+  &.filter-cool {
+    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
+  }
+
+  &.filter-grayscale {
+    filter: grayscale(1);
+  }
+
+  &.filter-vintage {
+    filter: sepia(0.4) saturate(1.3) contrast(1.2);
+  }
 `;
 
 const NavigationArrow = styled.button`
