@@ -11,6 +11,7 @@ import {
   FaArrowLeft,
   FaCheck,
   FaHashtag,
+  FaCamera,
 } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -39,6 +40,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   const [contentFocused, setContentFocused] = useState(false);
   const [tagInputFocused, setTagInputFocused] = useState(false);
   const [tagSuggestions] = useState(["travel", "fitness", "fun", "adventure"]);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -54,26 +56,72 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     }
   }, [isEditing, initialData]);
 
-  const fallbackToFileInput = (mediaType) => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = mediaType === "image" ? "image/*" : "video/*";
-    input.capture = captureMode;
-    input.onchange = (e) => {
-      if (e.target.files && e.target.files.length > 0) {
-        const file = e.target.files[0];
-        const isVideo = file.type.startsWith("video/");
-        const preview = {
-          id: Date.now() + Math.random().toString(),
-          file,
-          preview: URL.createObjectURL(file),
-          type: isVideo ? "video" : "image",
-          filter: "",
-        };
-        setMediaPreviews((prev) => [...prev, preview]);
+  const handleCameraCapture = () => {
+    if ("mediaDevices" in navigator) {
+      try {
+        // Try modern MediaDevices API first
+        navigator.mediaDevices
+          .getUserMedia({
+            video: {
+              facingMode: captureMode, // Use "environment" for back camera, "user" for front
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          })
+          .then((stream) => {
+            // Clean up the stream when done with testing
+            stream.getTracks().forEach((track) => track.stop());
+
+            // Fall back to the input element approach
+            fallbackToFileInput("image");
+          })
+          .catch((err) => {
+            console.log("MediaDevices error:", err);
+            fallbackToFileInput("image");
+          });
+      } catch (err) {
+        fallbackToFileInput("image");
       }
-    };
-    input.click();
+    } else {
+      fallbackToFileInput("image");
+    }
+  };
+
+  const fallbackToFileInput = (mediaType) => {
+    try {
+      const input = document.createElement("input");
+      input.type = "file";
+
+      if (mediaType === "image") {
+        input.accept = "image/*";
+        // Try to use the selected camera
+        try {
+          input.capture = captureMode;
+        } catch (e) {
+          console.warn("Capture attribute not supported:", e);
+        }
+      }
+
+      input.onchange = (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          const file = e.target.files[0];
+
+          // Validate file size and type
+          const isImage = file.type.startsWith("image/");
+          if (isImage && file.size > 25 * 1024 * 1024) {
+            toast.error(`Image ${file.name} exceeds 25MB limit`);
+            return;
+          }
+
+          onDrop([file], []);
+        }
+      };
+
+      input.click();
+    } catch (err) {
+      console.error("Error creating file input:", err);
+      toast.error("Camera access failed. Please try uploading files directly.");
+    }
   };
 
   useEffect(() => {
@@ -305,6 +353,25 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                 <DropzoneSubtext>
                   You can add up to 25 photos and videos. Max file size: 25MB
                 </DropzoneSubtext>
+
+                <CameraControlsContainer>
+                  <div>
+                    <label htmlFor="camera-select">Camera:</label>
+                    <CameraSelect
+                      id="camera-select"
+                      value={captureMode}
+                      onChange={(e) => setCaptureMode(e.target.value)}
+                    >
+                      <option value="environment">Rear Camera</option>
+                      <option value="user">Front Camera</option>
+                    </CameraSelect>
+                  </div>
+
+                  <CameraButton onClick={handleCameraCapture}>
+                    <FaCamera />
+                    <span>Take Photo</span>
+                  </CameraButton>
+                </CameraControlsContainer>
               </DropzoneContainer>
             ) : (
               <MediaPreviewSection>
@@ -356,7 +423,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                     <input
                       type="file"
                       id="camera-capture"
-                      accept="image/*,video/*"
+                      accept="image/*"
                       capture={captureMode}
                       style={{ display: "block", width: "100%" }}
                       onChange={(e) => {
@@ -1325,4 +1392,47 @@ const CameraSelect = styled.select`
   padding: 0.5rem;
 `;
 
+const CameraButton = styled.button`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: #333;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  margin-top: 1rem;
+
+  &:hover {
+    background-color: #444;
+  }
+
+  svg {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+`;
+
+const CameraControlsContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #444444;
+
+  > div {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  label {
+    color: #bbbbbb;
+    font-size: 0.875rem;
+  }
+`;
 export default CreatePostWorkflow;
