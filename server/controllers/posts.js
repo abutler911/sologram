@@ -81,7 +81,7 @@ exports.createPost = async (req, res) => {
         ? req.body.filters
         : [req.body.filters];
 
-      newPost.media = req.files.map((file) => {
+      newPost.media = req.files.map((file, index) => {
         let mediaType = "none";
         if (file.mimetype.startsWith("image")) {
           mediaType = "image";
@@ -151,7 +151,7 @@ exports.updatePost = async (req, res) => {
         ? req.body.filters
         : [req.body.filters];
 
-      const newMedia = req.files.map((file) => {
+      const newMedia = req.files.map((file, index) => {
         let mediaType = "none";
         if (file.mimetype.startsWith("image")) {
           mediaType = "image";
