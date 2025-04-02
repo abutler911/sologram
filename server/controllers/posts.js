@@ -77,9 +77,15 @@ exports.createPost = async (req, res) => {
     };
 
     if (req.files && req.files.length > 0) {
-      const filters = Array.isArray(req.body.filters)
-        ? req.body.filters
-        : [req.body.filters];
+      let rawFilters = req.body.filters || "[]";
+      let filters = [];
+      try {
+        filters = JSON.parse(req.body.filters);
+        if (!Array.isArray(filters)) filters = [];
+      } catch (err) {
+        console.warn("Invalid filters JSON:", req.body.filters);
+        filters = [];
+      }
 
       newPost.media = req.files.map((file, index) => {
         let mediaType = "none";
@@ -147,12 +153,15 @@ exports.updatePost = async (req, res) => {
         );
         updatedMedia = [...mediaToKeep];
       }
-      const filters = Object.keys(req.body)
-        .filter((key) => key.startsWith("filters["))
-        .sort((a, b) => {
-          return parseInt(a.match(/\d+/)[0]) - parseInt(b.match(/\d+/)[0]);
-        })
-        .map((key) => req.body[key]);
+      let rawFilters = req.body.filters || "[]";
+      let filters = [];
+      try {
+        filters = JSON.parse(req.body.filters);
+        if (!Array.isArray(filters)) filters = [];
+      } catch (err) {
+        console.warn("Invalid filters JSON:", req.body.filters);
+        filters = [];
+      }
 
       console.log("Filters received:", filters);
       console.log("Files received:", req.files.length);

@@ -196,51 +196,44 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     setLoading(true);
 
     try {
-      // Create form data for submission
       const postFormData = new FormData();
       postFormData.append("caption", caption);
       postFormData.append("content", content);
       postFormData.append("tags", tags);
 
-      if (mediaPreviews.length > 0) {
-        mediaPreviews.forEach((preview, index) => {
-          postFormData.append("media", preview.file);
-          postFormData.append(`filters[${index}]`, preview.filter || "");
-        });
-      }
+      const filters = [];
 
-      // Add IDs of existing media to keep (when editing)
+      mediaPreviews.forEach((preview) => {
+        postFormData.append("media", preview.file);
+        filters.push(preview.filter || "");
+      });
+
+      postFormData.append("filters", JSON.stringify(filters)); // ✅ as one field
+
       if (isEditing && existingMedia.length > 0) {
         const mediaIdsToKeep = existingMedia.map((media) => media.id).join(",");
         postFormData.append("keepMedia", mediaIdsToKeep);
       }
 
       let response;
-
       if (isEditing) {
-        // Update existing post
         response = await axios.put(
           `/api/posts/${initialData._id}`,
           postFormData
         );
         toast.success("Post updated successfully!");
       } else {
-        // Create new post
         response = await axios.post("/api/posts", postFormData);
         toast.success("Post created successfully!");
       }
 
-      // Redirect to the post detail page
       navigate(`/post/${response.data.data._id}`);
     } catch (err) {
-      const errorMessage =
-        err.response && err.response.data.message
-          ? err.response.data.message
-          : isEditing
-          ? "Failed to update post"
-          : "Failed to create post";
-
-      toast.error(errorMessage);
+      console.error("Post submit failed:", err);
+      const message =
+        err.response?.data?.message ||
+        (isEditing ? "Update failed" : "Create failed");
+      toast.error(message);
     } finally {
       setLoading(false);
     }
