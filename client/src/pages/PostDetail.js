@@ -59,7 +59,6 @@ const PostDetail = () => {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-
         setLoading(true);
 
         const response = await axios.get(`/api/posts/${id}`);
@@ -69,7 +68,6 @@ const PostDetail = () => {
           post_id: response.data.data._id,
           post_title: response.data.data.caption,
         });
-        
       } catch (err) {
         console.error("Error fetching post:", err);
         setError(
@@ -173,9 +171,17 @@ const PostDetail = () => {
                   {post.media.map((media, index) => (
                     <MediaItem key={index}>
                       {media.mediaType === "image" ? (
-                        <PostImage src={media.mediaUrl} alt={post.caption} />
+                        <PostImage
+                          src={media.mediaUrl}
+                          alt={post.caption}
+                          className={media.filter}
+                        />
                       ) : (
-                        <PostVideo src={media.mediaUrl} controls />
+                        <PostVideo
+                          src={media.mediaUrl}
+                          controls
+                          className={media.filter}
+                        />
                       )}
                     </MediaItem>
                   ))}
@@ -372,7 +378,6 @@ const MediaContainer = styled.div`
   }
 `;
 
-
 const MediaTrack = styled.div`
   display: flex;
   width: 100%;
@@ -395,12 +400,44 @@ const PostImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+
+  &.filter-warm {
+    filter: saturate(1.5) sepia(0.2) contrast(1.1);
+  }
+
+  &.filter-cool {
+    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
+  }
+
+  &.filter-grayscale {
+    filter: grayscale(1);
+  }
+
+  &.filter-vintage {
+    filter: sepia(0.4) saturate(1.3) contrast(1.2);
+  }
 `;
 
 const PostVideo = styled.video`
   width: 100%;
   height: 100%;
   object-fit: cover;
+
+  &.filter-warm {
+    filter: saturate(1.5) sepia(0.2) contrast(1.1);
+  }
+
+  &.filter-cool {
+    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
+  }
+
+  &.filter-grayscale {
+    filter: grayscale(1);
+  }
+
+  &.filter-vintage {
+    filter: sepia(0.4) saturate(1.3) contrast(1.2);
+  }
 `;
 
 const NavButton = styled.button`
