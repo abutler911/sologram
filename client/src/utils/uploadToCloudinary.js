@@ -1,25 +1,35 @@
 export const uploadToCloudinary = async (file) => {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", "unsigned_post_upload");
+  try {
+    const clonedFile = new File([file], file.name, { type: file.type });
 
-  const res = await fetch(
-    "https://api.cloudinary.com/v1_1/ds5rxplmr/auto/upload",
-    {
-      method: "POST",
-      body: formData,
+    const formData = new FormData();
+    formData.append("file", clonedFile);
+    formData.append("upload_preset", "unsigned_post_upload");
+
+    const res = await fetch(
+      "https://api.cloudinary.com/v1_1/ds5rxplmr/auto/upload",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok || !data.secure_url) {
+      console.error("Cloudinary upload failed:", data);
+      throw new Error(
+        data.error?.message || "Upload failed - no URL returned."
+      );
     }
-  );
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error?.message || "Upload failed");
+    return {
+      mediaUrl: data.secure_url,
+      cloudinaryId: data.public_id,
+      mediaType: file.type.startsWith("video") ? "video" : "image",
+    };
+  } catch (err) {
+    console.error("Upload error:", err);
+    throw err;
   }
-
-  return {
-    mediaUrl: data.secure_url,
-    cloudinaryId: data.public_id,
-    mediaType: file.type.startsWith("video") ? "video" : "image",
-  };
 };
