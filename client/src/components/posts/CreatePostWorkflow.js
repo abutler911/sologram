@@ -11,6 +11,7 @@ import {
   FaArrowLeft,
   FaCheck,
   FaHashtag,
+  FaCamera,
 } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -55,6 +56,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   const [captionFocused, setCaptionFocused] = useState(false);
   const [contentFocused, setContentFocused] = useState(false);
   const [tagInputFocused, setTagInputFocused] = useState(false);
+  const [captureMode, setCaptureMode] = useState("environment");
 
   const navigate = useNavigate();
 
@@ -270,7 +272,12 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                 {...getRootProps()}
                 isDragActive={isDragActive}
               >
-                <input {...getInputProps()} />
+                <input
+                  {...getInputProps({
+                    capture: "environment",
+                    accept: "image/*,video/*",
+                  })}
+                />
                 <DropzoneIcon>
                   <FaCloudUploadAlt />
                 </DropzoneIcon>
@@ -321,7 +328,44 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                       <FaTimes />
                     </RemoveMediaButton>
                   </CurrentMediaPreview>
+                  <UseCameraButton>
+                    <div style={{ marginBottom: "0.5rem" }}>
+                      <label htmlFor="camera-select">Camera:</label>
+                      <CameraSelect
+                        id="camera-select"
+                        value={captureMode}
+                        onChange={(e) => setCaptureMode(e.target.value)}
+                      >
+                        <option value="environment">Rear</option>
+                        <option value="user">Selfie</option>
+                      </CameraSelect>
+                    </div>
 
+                    <label>
+                      <FaCamera />
+                      <span>Take Photo</span>
+                      <input
+                        type="file"
+                        accept="image/*,video/*"
+                        capture={captureMode}
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const isVideo = file.type.startsWith("video/");
+                            const preview = {
+                              id: Date.now() + Math.random().toString(),
+                              file,
+                              preview: URL.createObjectURL(file),
+                              type: isVideo ? "video" : "image",
+                              filter: "",
+                            };
+                            setMediaPreviews((prev) => [...prev, preview]);
+                          }
+                        }}
+                      />
+                    </label>
+                  </UseCameraButton>
                   {existingMedia.length + mediaPreviews.length > 1 && (
                     <>
                       <NavButtons>
@@ -1235,6 +1279,41 @@ const CancelButton = styled.button`
     color: #dddddd;
     text-decoration: underline;
   }
+`;
+
+const UseCameraButton = styled.div`
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background-color: #333;
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background-color: #444;
+    }
+
+    svg {
+      font-size: 1.25rem;
+    }
+  }
+`;
+
+const CameraSelect = styled.select`
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background-color: #222;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 4px;
 `;
 
 export default CreatePostWorkflow;
