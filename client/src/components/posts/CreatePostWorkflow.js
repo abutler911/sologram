@@ -35,7 +35,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [captureMode, setCaptureMode] = useState("environment");
+
   const [captionFocused, setCaptionFocused] = useState(false);
   const [contentFocused, setContentFocused] = useState(false);
   const [tagInputFocused, setTagInputFocused] = useState(false);
@@ -57,81 +57,30 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   }, [isEditing, initialData]);
 
   const handleCameraCapture = () => {
-    if ("mediaDevices" in navigator) {
-      try {
-        // Try modern MediaDevices API first
-        navigator.mediaDevices
-          .getUserMedia({
-            video: {
-              facingMode: captureMode, // Use "environment" for back camera, "user" for front
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            },
-          })
-          .then((stream) => {
-            // Clean up the stream when done with testing
-            stream.getTracks().forEach((track) => track.stop());
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.capture = "environment"; // Hardcode back camera
 
-            // Fall back to the input element approach
-            fallbackToFileInput("image");
-          })
-          .catch((err) => {
-            console.log("MediaDevices error:", err);
-            fallbackToFileInput("image");
-          });
-      } catch (err) {
-        fallbackToFileInput("image");
+    input.onchange = (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        const file = e.target.files[0];
+        const isVideo = file.type.startsWith("video/");
+
+        const preview = {
+          id: Date.now() + Math.random().toString(),
+          file,
+          preview: URL.createObjectURL(file),
+          type: isVideo ? "video" : "image",
+          filter: "",
+        };
+
+        setMediaPreviews((prev) => [...prev, preview]);
       }
-    } else {
-      fallbackToFileInput("image");
-    }
+    };
+
+    input.click();
   };
-
-  const fallbackToFileInput = (mediaType) => {
-    try {
-      const input = document.createElement("input");
-      input.type = "file";
-
-      if (mediaType === "image") {
-        input.accept = "image/*";
-        // Try to use the selected camera
-        try {
-          input.capture = captureMode;
-        } catch (e) {
-          console.warn("Capture attribute not supported:", e);
-        }
-      }
-
-      input.onchange = (e) => {
-        if (e.target.files && e.target.files.length > 0) {
-          const file = e.target.files[0];
-
-          // Validate file size and type
-          const isImage = file.type.startsWith("image/");
-          if (isImage && file.size > 25 * 1024 * 1024) {
-            toast.error(`Image ${file.name} exceeds 25MB limit`);
-            return;
-          }
-
-          onDrop([file], []);
-        }
-      };
-
-      input.click();
-    } catch (err) {
-      console.error("Error creating file input:", err);
-      toast.error("Camera access failed. Please try uploading files directly.");
-    }
-  };
-
-  useEffect(() => {
-    const input = document.querySelector("#camera-capture");
-    if (!input) {
-      console.warn("Camera input not found");
-    } else {
-      console.log("Camera input detected");
-    }
-  }, []);
 
   const onDrop = useCallback(
     (acceptedFiles, rejectedFiles = []) => {
@@ -355,18 +304,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                 </DropzoneSubtext>
 
                 <CameraControlsContainer>
-                  <div>
-                    <label htmlFor="camera-select">Camera:</label>
-                    <CameraSelect
-                      id="camera-select"
-                      value={captureMode}
-                      onChange={(e) => setCaptureMode(e.target.value)}
-                    >
-                      <option value="environment">Rear Camera</option>
-                      <option value="user">Front Camera</option>
-                    </CameraSelect>
-                  </div>
-
                   <CameraButton onClick={handleCameraCapture}>
                     <FaCamera />
                     <span>Take Photo</span>
@@ -408,23 +345,11 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                     </RemoveMediaButton>
                   </CurrentMediaPreview>
                   <UseCameraButton>
-                    <div style={{ marginBottom: "0.5rem" }}>
-                      <label htmlFor="camera-select">Camera:</label>
-                      <CameraSelect
-                        id="camera-select"
-                        value={captureMode}
-                        onChange={(e) => setCaptureMode(e.target.value)}
-                      >
-                        <option value="environment">Rear</option>
-                        <option value="user">Selfie</option>
-                      </CameraSelect>
-                    </div>
-
                     <input
                       type="file"
                       id="camera-capture"
                       accept="image/*"
-                      capture={captureMode}
+                      capture="environment"
                       style={{ display: "block", width: "100%" }}
                       onChange={(e) => {
                         const file = e.target.files[0];
@@ -1382,14 +1307,6 @@ const UseCameraButton = styled.div`
       font-size: 1.25rem;
     }
   }
-`;
-
-const CameraSelect = styled.select`
-  background-color: #222;
-  color: white;
-  border: 1px solid #444;
-  border-radius: 4px;
-  padding: 0.5rem;
 `;
 
 const CameraButton = styled.button`
