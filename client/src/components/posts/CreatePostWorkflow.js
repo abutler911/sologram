@@ -11,7 +11,6 @@ import {
   FaArrowLeft,
   FaCheck,
   FaHashtag,
-  FaCamera,
 } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -39,12 +38,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   const [captionFocused, setCaptionFocused] = useState(false);
   const [contentFocused, setContentFocused] = useState(false);
   const [tagInputFocused, setTagInputFocused] = useState(false);
-  const [tagSuggestions, setTagSuggestions] = useState([
-    "travel",
-    "fitness",
-    "fun",
-    "adventure",
-  ]);
+  const [tagSuggestions] = useState(["travel", "fitness", "fun", "adventure"]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -59,29 +53,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       setExistingMedia(mapped);
     }
   }, [isEditing, initialData]);
-
-  const handleCameraCapture = () => {
-    if ("mediaDevices" in navigator) {
-      navigator.mediaDevices
-        .getUserMedia({
-          video: {
-            facingMode: captureMode,
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-        })
-        .then((stream) => {
-          stream.getTracks().forEach((track) => track.stop());
-          fallbackToFileInput("image");
-        })
-        .catch((err) => {
-          console.warn("MediaDevices error:", err);
-          fallbackToFileInput("image");
-        });
-    } else {
-      fallbackToFileInput("image");
-    }
-  };
 
   const fallbackToFileInput = (mediaType) => {
     const input = document.createElement("input");
@@ -113,21 +84,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       console.log("Camera input detected");
     }
   }, []);
-
-  const handleCapture = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const isVideo = file.type.startsWith("video/");
-      const preview = {
-        id: Date.now() + Math.random().toString(),
-        file,
-        preview: URL.createObjectURL(file),
-        type: isVideo ? "video" : "image",
-        filter: "",
-      };
-      setMediaPreviews((prev) => [...prev, preview]);
-    }
-  };
 
   const onDrop = useCallback(
     (acceptedFiles, rejectedFiles = []) => {
@@ -178,22 +134,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     multiple: true,
   });
 
-  const CameraCapture = () => (
-    <CameraWrapper>
-      <label htmlFor="camera-select">Camera:</label>
-      <CameraSelect
-        id="camera-select"
-        value={captureMode}
-        onChange={(e) => setCaptureMode(e.target.value)}
-      >
-        <option value="environment">Rear</option>
-        <option value="user">Selfie</option>
-      </CameraSelect>
-      <CameraButton onClick={handleCameraCapture}>
-        <FaCamera /> <span style={{ marginLeft: "0.5rem" }}>Take Photo</span>
-      </CameraButton>
-    </CameraWrapper>
-  );
   // Get the current media being displayed
   const getCurrentMedia = () => {
     const allMedia = [...existingMedia, ...mediaPreviews];
@@ -633,7 +573,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       </StepIndicator>
 
       {renderStepContent()}
-      {currentStep === 1 && <CameraCapture />}
 
       <NavigationButtons>
         {currentStep > 1 && (
@@ -1378,14 +1317,6 @@ const UseCameraButton = styled.div`
   }
 `;
 
-const CameraWrapper = styled.div`
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-`;
-
 const CameraSelect = styled.select`
   background-color: #222;
   color: white;
@@ -1394,19 +1325,4 @@ const CameraSelect = styled.select`
   padding: 0.5rem;
 `;
 
-const CameraButton = styled.button`
-  background-color: #444;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 0.75rem 1.5rem;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: #555;
-  }
-`;
 export default CreatePostWorkflow;
