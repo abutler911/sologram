@@ -73,6 +73,57 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     }
   }, [isEditing, initialData]);
 
+  useEffect(() => {
+    const input = document.querySelector("#camera-capture");
+    if (!input) {
+      console.warn("Camera input not found");
+    } else {
+      console.log("Camera input detected");
+    }
+  }, []);
+
+  const handleCapture = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const isVideo = file.type.startsWith("video/");
+      const preview = {
+        id: Date.now() + Math.random().toString(),
+        file,
+        preview: URL.createObjectURL(file),
+        type: isVideo ? "video" : "image",
+        filter: "",
+      };
+      setMediaPreviews((prev) => [...prev, preview]);
+    }
+  };
+
+  const CameraCapture = () => (
+    <CameraWrapper>
+      <div style={{ marginBottom: "0.5rem" }}>
+        <label htmlFor="camera-select">Camera:</label>
+        <CameraSelect
+          id="camera-select"
+          value={captureMode}
+          onChange={(e) => setCaptureMode(e.target.value)}
+        >
+          <option value="environment">Rear</option>
+          <option value="user">Selfie</option>
+        </CameraSelect>
+      </div>
+      <label>
+        <FaCamera />
+        <span style={{ marginLeft: "0.5rem" }}>Take Photo</span>
+        <CameraInput
+          id="camera-capture"
+          type="file"
+          accept="image/*,video/*"
+          capture={captureMode}
+          onChange={handleCapture}
+        />
+      </label>
+    </CameraWrapper>
+  );
+
   const onDrop = useCallback(
     (acceptedFiles, rejectedFiles = []) => {
       if (rejectedFiles && rejectedFiles.length > 0) {
@@ -341,31 +392,29 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                       </CameraSelect>
                     </div>
 
-                    <label>
-                      <FaCamera />
-                      <span>Take Photo</span>
-                      <input
-                        type="file"
-                        accept="image/*,video/*"
-                        capture={captureMode}
-                        style={{ display: "none" }}
-                        onChange={(e) => {
-                          const file = e.target.files[0];
-                          if (file) {
-                            const isVideo = file.type.startsWith("video/");
-                            const preview = {
-                              id: Date.now() + Math.random().toString(),
-                              file,
-                              preview: URL.createObjectURL(file),
-                              type: isVideo ? "video" : "image",
-                              filter: "",
-                            };
-                            setMediaPreviews((prev) => [...prev, preview]);
-                          }
-                        }}
-                      />
-                    </label>
+                    <input
+                      type="file"
+                      id="camera-capture"
+                      accept="image/*,video/*"
+                      capture={captureMode}
+                      style={{ display: "block", width: "100%" }}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const isVideo = file.type.startsWith("video/");
+                          const preview = {
+                            id: Date.now() + Math.random().toString(),
+                            file,
+                            preview: URL.createObjectURL(file),
+                            type: isVideo ? "video" : "image",
+                            filter: "",
+                          };
+                          setMediaPreviews((prev) => [...prev, preview]);
+                        }
+                      }}
+                    />
                   </UseCameraButton>
+
                   {existingMedia.length + mediaPreviews.length > 1 && (
                     <>
                       <NavButtons>
@@ -563,6 +612,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       </StepIndicator>
 
       {renderStepContent()}
+      {currentStep === 1 && <CameraCapture />}
 
       <NavigationButtons>
         {currentStep > 1 && (
@@ -1307,13 +1357,30 @@ const UseCameraButton = styled.div`
   }
 `;
 
+const CameraWrapper = styled.div`
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+`;
+
 const CameraSelect = styled.select`
-  margin-left: 0.5rem;
-  padding: 0.25rem 0.5rem;
   background-color: #222;
-  color: #fff;
+  color: white;
   border: 1px solid #444;
   border-radius: 4px;
+  padding: 0.5rem;
+`;
+
+const CameraInput = styled.input`
+  opacity: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
 `;
 
 export default CreatePostWorkflow;
