@@ -203,9 +203,9 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       postFormData.append("tags", tags);
 
       if (mediaPreviews.length > 0) {
-        mediaPreviews.forEach((preview) => {
+        mediaPreviews.forEach((preview, index) => {
           postFormData.append("media", preview.file);
-          postFormData.append("filters", preview.filter || "");
+          postFormData.append(`filters[${index}]`, preview.filter || "");
         });
       }
 

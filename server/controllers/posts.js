@@ -147,9 +147,15 @@ exports.updatePost = async (req, res) => {
         );
         updatedMedia = [...mediaToKeep];
       }
-      const filters = Array.isArray(req.body.filters)
-        ? req.body.filters
-        : [req.body.filters];
+      const filters = Object.keys(req.body)
+        .filter((key) => key.startsWith("filters["))
+        .sort((a, b) => {
+          return parseInt(a.match(/\d+/)[0]) - parseInt(b.match(/\d+/)[0]);
+        })
+        .map((key) => req.body[key]);
+
+      console.log("Filters received:", filters);
+      console.log("Files received:", req.files.length);
 
       const newMedia = req.files.map((file, index) => {
         let mediaType = "none";
