@@ -23,7 +23,9 @@ const Home = forwardRef((props, ref) => {
   const [hasMore, setHasMore] = useState(true);
   const [searching, setSearching] = useState(false);
   const [showAboutBanner, setShowAboutBanner] = useState(true);
-  const [isPWA, setIsPWA] = useState(window.matchMedia("(display-mode: standalone)").matches);
+  const [isPWA, setIsPWA] = useState(
+    window.matchMedia("(display-mode: standalone)").matches
+  );
 
   const observer = useRef();
 
@@ -52,47 +54,53 @@ const Home = forwardRef((props, ref) => {
     const lazyVideos = document.querySelectorAll("video[data-src]");
     if (!lazyVideos.length) return;
 
-    const videoObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const video = entry.target;
+    const videoObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const video = entry.target;
 
-          if (video.dataset.src && !video.src) {
-            video.src = video.dataset.src;
+            if (video.dataset.src && !video.src) {
+              video.src = video.dataset.src;
 
-            const sources = video.querySelectorAll("source[data-src]");
-            sources.forEach((source) => {
-              source.src = source.dataset.src;
-            });
+              const sources = video.querySelectorAll("source[data-src]");
+              sources.forEach((source) => {
+                source.src = source.dataset.src;
+              });
 
-            video.load();
+              video.load();
+            }
+
+            videoObserver.unobserve(video);
           }
-
-          videoObserver.unobserve(video);
-        }
-      });
-    }, {
-      rootMargin: "100px",
-      threshold: 0.1,
-    });
+        });
+      },
+      {
+        rootMargin: "100px",
+        threshold: 0.1,
+      }
+    );
 
     lazyVideos.forEach((video) => videoObserver.observe(video));
 
     return () => videoObserver.disconnect();
   }, [posts]);
 
-  const lastPostElementRef = useCallback((node) => {
-    if (loading) return;
-    if (observer.current) observer.current.disconnect();
+  const lastPostElementRef = useCallback(
+    (node) => {
+      if (loading) return;
+      if (observer.current) observer.current.disconnect();
 
-    observer.current = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && hasMore) {
-        setPage((prevPage) => prevPage + 1);
-      }
-    });
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          setPage((prevPage) => prevPage + 1);
+        }
+      });
 
-    if (node) observer.current.observe(node);
-  }, [loading, hasMore]);
+      if (node) observer.current.observe(node);
+    },
+    [loading, hasMore]
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -199,9 +207,12 @@ const Home = forwardRef((props, ref) => {
         {searching && searchQuery && (
           <SearchResultsIndicator>
             <SearchResultsText>
-              Showing results for "{searchQuery}" ({posts.length} {posts.length === 1 ? "post" : "posts"})
+              Showing results for "{searchQuery}" ({posts.length}{" "}
+              {posts.length === 1 ? "post" : "posts"})
             </SearchResultsText>
-            <ClearSearchButton onClick={clearSearch}>Clear Search</ClearSearchButton>
+            <ClearSearchButton onClick={clearSearch}>
+              Clear Search
+            </ClearSearchButton>
           </SearchResultsIndicator>
         )}
 
@@ -217,14 +228,23 @@ const Home = forwardRef((props, ref) => {
                 key={post._id}
                 isPWA={isPWA}
               >
-                <PostCard post={post} />
+                <PostCard
+                  post={post}
+                  onDelete={(deletedId) => {
+                    setPosts((prevPosts) =>
+                      prevPosts.filter((p) => p._id !== deletedId)
+                    );
+                  }}
+                />
               </GridItem>
             ))}
           </PostGrid>
         ) : loading ? (
           <LoadingMessage>Loading posts...</LoadingMessage>
         ) : (
-          <NoPostsMessage>No posts available. Start creating your own content!</NoPostsMessage>
+          <NoPostsMessage>
+            No posts available. Start creating your own content!
+          </NoPostsMessage>
         )}
 
         {loading && posts.length > 0 && (
@@ -252,12 +272,12 @@ const HomeContainer = styled.div`
 
   @media (max-width: 768px) {
     max-width: 100vw;
-    padding: ${props => props.isPWA ? '0.5rem 0.5rem' : '0.5rem 1rem'};
+    padding: ${(props) => (props.isPWA ? "0.5rem 0.5rem" : "0.5rem 1rem")};
     box-sizing: border-box;
   }
 
   @media (max-width: 480px) {
-    padding: ${props => props.isPWA ? '0.25rem 0.25rem' : '0.5rem 0.75rem'};
+    padding: ${(props) => (props.isPWA ? "0.25rem 0.25rem" : "0.5rem 0.75rem")};
   }
 
   & > section {
@@ -311,10 +331,10 @@ const CompactContentSection = styled.section`
   padding: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.03);
-  
+
   @media (max-width: 768px) {
-    border-radius: ${props => props.isPWA ? '4px' : '8px'};
-    padding: ${props => props.isPWA ? '0.5rem 0.25rem' : '0.5rem'};
+    border-radius: ${(props) => (props.isPWA ? "4px" : "8px")};
+    padding: ${(props) => (props.isPWA ? "0.5rem 0.25rem" : "0.5rem")};
   }
 `;
 
@@ -326,10 +346,10 @@ const ContentSection = styled.section`
   padding: 0.75rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.03);
-  
+
   @media (max-width: 768px) {
-    border-radius: ${props => props.isPWA ? '4px' : '8px'};
-    padding: ${props => props.isPWA ? '0.5rem 0.25rem' : '0.5rem'};
+    border-radius: ${(props) => (props.isPWA ? "4px" : "8px")};
+    padding: ${(props) => (props.isPWA ? "0.5rem 0.25rem" : "0.5rem")};
   }
 `;
 
@@ -395,11 +415,12 @@ const PostGrid = styled.div`
   width: 100%;
 
   @media (max-width: 768px) {
-    grid-template-columns: ${props => props.isPWA ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))'};
-    gap: ${props => props.isPWA ? '0.5rem' : '0.75rem'};
-    padding: ${props => props.isPWA ? '0.125rem 0' : '0 0.5rem'};
+    grid-template-columns: ${(props) =>
+      props.isPWA ? "1fr" : "repeat(auto-fit, minmax(240px, 1fr))"};
+    gap: ${(props) => (props.isPWA ? "0.5rem" : "0.75rem")};
+    padding: ${(props) => (props.isPWA ? "0.125rem 0" : "0 0.5rem")};
     width: 100%;
-    border-radius: ${props => props.isPWA ? '0' : '6px'};
+    border-radius: ${(props) => (props.isPWA ? "0" : "6px")};
   }
 `;
 
@@ -409,7 +430,7 @@ const GridItem = styled.div`
   max-width: 100%;
 
   @media (max-width: 768px) {
-    width: ${props => props.isPWA ? 'calc(100vw - 1.5rem)' : '100%'};
+    width: ${(props) => (props.isPWA ? "calc(100vw - 1.5rem)" : "100%")};
     max-width: 100%;
   }
 `;
