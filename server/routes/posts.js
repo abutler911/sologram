@@ -27,7 +27,7 @@ router.put(
   "/:id",
   protect,
   authorize(["admin", "creator"]),
-  uploadMultiple.array("media", 20),
+  uploadMultiple.array("media", 25),
   updatePost
 );
 router.delete("/:id", protect, authorize(["admin", "creator"]), deletePost);
