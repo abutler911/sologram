@@ -43,7 +43,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   const [caption, setCaption] = useState(initialData?.caption || "");
   const [content, setContent] = useState(initialData?.content || "");
   const [tags, setTags] = useState(initialData?.tags?.join(", ") || "");
-  const [mediaFiles, setMediaFiles] = useState([]);
+
   const [mediaPreviews, setMediaPreviews] = useState([]);
   const [existingMedia, setExistingMedia] = useState([]);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
@@ -79,7 +79,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       }
 
       const totalFiles =
-        mediaFiles.length + existingMedia.length + acceptedFiles.length;
+        mediaPreviews.length + existingMedia.length + acceptedFiles.length;
       if (totalFiles > 25) {
         toast.error("Maximum 25 media files allowed per post");
         return;
@@ -105,9 +105,8 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       });
 
       setMediaPreviews((prev) => [...prev, ...newPreviews]);
-      setMediaFiles((prev) => [...prev, ...validFiles]);
     },
-    [mediaFiles, existingMedia.length]
+    [mediaPreviews.length, existingMedia.length]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -132,11 +131,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     if (previewIndex !== -1) {
       // Remove the preview
       setMediaPreviews((prev) => prev.filter((p) => p.id !== id));
-
-      // Remove the corresponding file
-      setMediaFiles((prev) =>
-        prev.filter((_, index) => index !== previewIndex)
-      );
 
       // Adjust active preview index if needed
       if (activePreviewIndex >= mediaPreviews.length - 1) {
@@ -194,7 +188,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       return;
     }
 
-    if (mediaFiles.length === 0 && existingMedia.length === 0) {
+    if (mediaPreviews.length === 0 && existingMedia.length === 0) {
       toast.error("Please add at least one image or video to your post");
       return;
     }
@@ -208,9 +202,8 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       postFormData.append("content", content);
       postFormData.append("tags", tags);
 
-      // Add all media files
-      if (mediaFiles.length > 0) {
-        mediaFiles.forEach((preview, i) => {
+      if (mediaPreviews.length > 0) {
+        mediaPreviews.forEach((preview) => {
           postFormData.append("media", preview.file);
           postFormData.append("filters", preview.filter || "");
         });
@@ -255,7 +248,9 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
   // Detect if we're on media step with no media
   const isMediaStepEmpty =
-    currentStep === 1 && mediaFiles.length === 0 && existingMedia.length === 0;
+    currentStep === 1 &&
+    mediaPreviews.length === 0 &&
+    existingMedia.length === 0;
 
   // Add a hashtag from suggestions
   const addTag = (tag) => {
@@ -555,7 +550,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
             disabled={
               loading ||
               !caption.trim() ||
-              (mediaFiles.length === 0 && existingMedia.length === 0)
+              (mediaPreviews.length === 0 && existingMedia.length === 0)
             }
           >
             <FaCheck />
