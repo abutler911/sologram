@@ -344,29 +344,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                       <FaTimes />
                     </RemoveMediaButton>
                   </CurrentMediaPreview>
-                  <UseCameraButton>
-                    <input
-                      type="file"
-                      id="camera-capture"
-                      accept="image/*"
-                      capture="environment"
-                      style={{ display: "block", width: "100%" }}
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          const isVideo = file.type.startsWith("video/");
-                          const preview = {
-                            id: Date.now() + Math.random().toString(),
-                            file,
-                            preview: URL.createObjectURL(file),
-                            type: isVideo ? "video" : "image",
-                            filter: "",
-                          };
-                          setMediaPreviews((prev) => [...prev, preview]);
-                        }
-                      }}
-                    />
-                  </UseCameraButton>
 
                   {existingMedia.length + mediaPreviews.length > 1 && (
                     <>
@@ -417,6 +394,10 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                   <FaImage />
                   <span>Add More</span>
                 </AddMoreMediaButton>
+                <AddPhotoButton onClick={handleCameraCapture}>
+                  <FaCamera />
+                  <span>Add Photo</span>
+                </AddPhotoButton>
               </MediaPreviewSection>
             )}
           </StepContainer>
@@ -1283,31 +1264,31 @@ const CancelButton = styled.button`
   }
 `;
 
-const UseCameraButton = styled.div`
-  margin-top: 1rem;
-  display: flex;
-  justify-content: center;
+// const UseCameraButton = styled.div`
+//   margin-top: 1rem;
+//   display: flex;
+//   justify-content: center;
 
-  label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background-color: #333;
-    color: #fff;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s ease;
+//   label {
+//     display: flex;
+//     align-items: center;
+//     gap: 0.5rem;
+//     padding: 0.75rem 1.5rem;
+//     background-color: #333;
+//     color: #fff;
+//     border-radius: 6px;
+//     cursor: pointer;
+//     transition: all 0.3s ease;
 
-    &:hover {
-      background-color: #444;
-    }
+//     &:hover {
+//       background-color: #444;
+//     }
 
-    svg {
-      font-size: 1.25rem;
-    }
-  }
-`;
+//     svg {
+//       font-size: 1.25rem;
+//     }
+//   }
+// `;
 
 const CameraButton = styled.button`
   display: flex;
@@ -1352,4 +1333,29 @@ const CameraControlsContainer = styled.div`
     font-size: 0.875rem;
   }
 `;
+
+const AddPhotoButton = styled.button`
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: #333333;
+  color: #cccccc;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+
+  &:hover {
+    background-color: #444444;
+    color: #ffffff;
+  }
+
+  svg {
+    font-size: 1.2rem;
+  }
+`;
+
 export default CreatePostWorkflow;
