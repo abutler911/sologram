@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useDropzone } from "react-dropzone";
@@ -42,6 +42,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   const [tagSuggestions] = useState(["travel", "fitness", "fun", "adventure"]);
 
   const navigate = useNavigate();
+  const cameraInputRef = useRef(null);
 
   useEffect(() => {
     if (isEditing && initialData?.media?.length > 0) {
@@ -57,10 +58,13 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   }, [isEditing, initialData]);
 
   const handleCameraCapture = () => {
+    if (cameraInputRef.current) {
+      cameraInputRef.current.click();
+    }
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
-    input.capture = "environment"; // Hardcode back camera
+    input.capture = "environment";
 
     input.onchange = (e) => {
       if (e.target.files && e.target.files.length > 0) {
@@ -398,6 +402,30 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                   <FaCamera />
                   <span>Add Photo</span>
                 </AddPhotoButton>
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const isVideo = file.type.startsWith("video/");
+                      const preview = {
+                        id: Date.now() + Math.random().toString(),
+                        file,
+                        preview: URL.createObjectURL(file),
+                        type: isVideo ? "video" : "image",
+                        filter: "",
+                      };
+                      setMediaPreviews((prev) => [...prev, preview]);
+                    }
+
+                    // Reset the input so it can be reused
+                    e.target.value = null;
+                  }}
+                />
               </MediaPreviewSection>
             )}
           </StepContainer>
@@ -1263,32 +1291,6 @@ const CancelButton = styled.button`
     text-decoration: underline;
   }
 `;
-
-// const UseCameraButton = styled.div`
-//   margin-top: 1rem;
-//   display: flex;
-//   justify-content: center;
-
-//   label {
-//     display: flex;
-//     align-items: center;
-//     gap: 0.5rem;
-//     padding: 0.75rem 1.5rem;
-//     background-color: #333;
-//     color: #fff;
-//     border-radius: 6px;
-//     cursor: pointer;
-//     transition: all 0.3s ease;
-
-//     &:hover {
-//       background-color: #444;
-//     }
-
-//     svg {
-//       font-size: 1.25rem;
-//     }
-//   }
-// `;
 
 const CameraButton = styled.button`
   display: flex;
