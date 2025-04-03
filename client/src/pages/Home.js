@@ -13,7 +13,7 @@ import { FaCamera } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import Stories from "../components/stories/Stories";
 import PostCard from "../components/posts/PostCard";
-import PreloadImage from "../components/PreloadImage";
+import PreloadImage from "../components/PreLoadImage";
 
 const Home = forwardRef((props, ref) => {
   const [posts, setPosts] = useState([]);
