@@ -362,6 +362,23 @@ const BrandText = styled.span`
   color: #ff7e5f;
   letter-spacing: 0.5px;
   user-select: none;
+  animation: pulse 2.8s ease-in-out infinite;
+  opacity: 0.9;
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.9;
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0.9;
+    }
+  }
 `;
 
 export default BottomNavigation;
