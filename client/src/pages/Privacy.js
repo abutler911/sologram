@@ -3,14 +3,14 @@ import styled from "styled-components";
 import { PortableText } from "@portabletext/react";
 import { Link } from "react-router-dom";
 import { FaArrowLeft, FaShieldAlt } from "react-icons/fa";
-import sanityClient from "@/sanityClient";
+import { sanity } from "../lib/sanityClient";
 import MainLayout from "../components/layout/MainLayout";
 
 const Privacy = () => {
   const [policy, setPolicy] = useState(null);
 
   useEffect(() => {
-    sanityClient
+    sanity
       .fetch(`*[_type == "privacyPolicy"][0]`)
       .then((data) => setPolicy(data));
   }, []);
@@ -231,15 +231,6 @@ const List = styled.ul`
 const ListItem = styled.li`
   margin-bottom: 0.5rem;
   line-height: 1.6;
-`;
-
-const EmailLink = styled.a`
-  color: #ff7e5f;
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
 `;
 
 export default Privacy;
