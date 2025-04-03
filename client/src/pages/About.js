@@ -4,10 +4,10 @@ import PortableTextComponent from "../components/PortableTextComponent";
 import styled from "styled-components";
 import MainLayout from "../components/layout/MainLayout";
 
-const query = `*[_type == "about"][0]{
+const query = `*[_type == "aboutPage"][0]{
   title,
   content,
-  _updatedAt,
+  lastUpdated,
   "profileImageUrl": profileImage.asset->url
 }`;
 
@@ -38,7 +38,7 @@ const About = () => {
         <PortableTextComponent value={aboutData.content} />
 
         <LastUpdated>
-          Last updated: {new Date(aboutData._updatedAt).toLocaleDateString()}
+          Last updated: {new Date(aboutData.lastUpdated).toLocaleDateString()}
         </LastUpdated>
       </Container>
     </MainLayout>
