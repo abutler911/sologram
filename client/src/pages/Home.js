@@ -230,6 +230,7 @@ const Home = forwardRef((props, ref) => {
               >
                 <PostCard
                   post={post}
+                  index={index}
                   onDelete={(deletedId) => {
                     setPosts((prevPosts) =>
                       prevPosts.filter((p) => p._id !== deletedId)

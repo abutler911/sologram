@@ -17,7 +17,7 @@ import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../../context/AuthContext";
 
-const PostCard = ({ post: initialPost, onDelete }) => {
+const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
   const [post, setPost] = useState(initialPost);
   const { isAuthenticated } = useContext(AuthContext);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
@@ -203,7 +203,14 @@ const PostCard = ({ post: initialPost, onDelete }) => {
                       <PostImage
                         src={media.mediaUrl}
                         alt={post.caption}
-                        loading="lazy"
+                        width="614"
+                        height="614"
+                        loading={
+                          index === 0 && currentMediaIndex === 0
+                            ? "eager"
+                            : "lazy"
+                        }
+                        decoding="async"
                         className={media.filter}
                       />
                     ) : (
