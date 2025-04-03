@@ -8,44 +8,41 @@ const StyledParagraph = styled.p`
   margin-bottom: 1rem;
 `;
 
-// Orange bold text
+// Bold (orange) text
 const Strong = styled.strong`
   font-weight: 700;
   color: #ff7e5f;
 `;
 
-// Emphasized (italic) text
+// Emphasized (italic/orange) text
 const Emphasis = styled.span`
   color: #ff7e5f;
   font-weight: 600;
 `;
 
-// Heading 2 styling
+// Heading 2
 const StyledHeading2 = styled.h2`
   color: #ddd;
   font-size: 1.8rem;
   margin: 2rem 0 1rem;
 `;
 
-// Responsive image + text wrapper
-const ImageTextWrapper = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
-
-// Styled image
-const StyledImage = styled.img`
+// Image that wraps text
+const WrappedImage = styled.img`
+  float: left;
+  margin: 0 1rem 1rem 0;
   width: 300px;
   max-width: 100%;
   height: auto;
   border-radius: 12px;
-  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    float: none;
+    display: block;
+    margin: 0 auto 1rem;
+  }
 `;
 
-// Portable Text component overrides
 const components = {
   block: {
     normal: ({ children }) => <StyledParagraph>{children}</StyledParagraph>,
@@ -57,10 +54,7 @@ const components = {
   },
   types: {
     image: ({ value }) => (
-      <ImageTextWrapper>
-        <StyledImage src={value.asset.url} alt={value.alt || "Image"} />
-        {/* You can optionally add more text here if you want text beside the image */}
-      </ImageTextWrapper>
+      <WrappedImage src={value.asset.url} alt={value.alt || "Image"} />
     ),
   },
 };
