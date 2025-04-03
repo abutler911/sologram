@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone";
 import { FaCamera, FaEdit, FaCheck, FaTimes, FaBell } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import { AuthContext } from "../context/AuthContext";
+import MainLayout from "../components/layout/MainLayout";
 
 const Profile = () => {
   const { user, updateProfile, updateBio } = useContext(AuthContext);
@@ -118,146 +119,148 @@ const Profile = () => {
 
   if (!user) {
     return (
-      <PageWrapper>
-        <Container>
-          <LoadingMessage>Loading profile...</LoadingMessage>
-        </Container>
-      </PageWrapper>
+      <MainLayout>
+        <PageWrapper>
+          <Container>
+            <LoadingMessage>Loading profile...</LoadingMessage>
+          </Container>
+        </PageWrapper>
+      </MainLayout>
     );
   }
 
   return (
-    <PageWrapper>
-      <Container>
-        <ProfileHeader>
-          <ProfileImageContainer>
-            {isEditing ? (
-              <DropzoneContainer {...getRootProps()}>
-                <input {...getInputProps()} />
-                {imagePreview ? (
-                  <ProfileImage src={imagePreview} alt={user.username} />
-                ) : (
-                  <ProfilePlaceholder>
+    <MainLayout>
+      <PageWrapper>
+        <Container>
+          <ProfileHeader>
+            <ProfileImageContainer>
+              {isEditing ? (
+                <DropzoneContainer {...getRootProps()}>
+                  <input {...getInputProps()} />
+                  {imagePreview ? (
+                    <ProfileImage src={imagePreview} alt={user.username} />
+                  ) : (
+                    <ProfilePlaceholder>
+                      <FaCamera />
+                    </ProfilePlaceholder>
+                  )}
+                  <UploadOverlay>
                     <FaCamera />
-                  </ProfilePlaceholder>
-                )}
-                <UploadOverlay>
+                    <span>Change Photo</span>
+                  </UploadOverlay>
+                </DropzoneContainer>
+              ) : imagePreview ? (
+                <ProfileImage src={imagePreview} alt={user.username} />
+              ) : (
+                <ProfilePlaceholder>
                   <FaCamera />
-                  <span>Change Photo</span>
-                </UploadOverlay>
-              </DropzoneContainer>
-            ) : imagePreview ? (
-              <ProfileImage src={imagePreview} alt={user.username} />
-            ) : (
-              <ProfilePlaceholder>
-                <FaCamera />
-              </ProfilePlaceholder>
-            )}
-          </ProfileImageContainer>
+                </ProfilePlaceholder>
+              )}
+            </ProfileImageContainer>
 
-          <ProfileInfo>
-            <ProfileName>{user.username}</ProfileName>
-            <ProfileEmail>{user.email}</ProfileEmail>
+            <ProfileInfo>
+              <ProfileName>{user.username}</ProfileName>
+              <ProfileEmail>{user.email}</ProfileEmail>
 
-            {!isEditing && (
-              <EditButton onClick={() => setIsEditing(true)}>
-                <FaEdit />
-                <span>Edit Profile</span>
-              </EditButton>
-            )}
-          </ProfileInfo>
-        </ProfileHeader>
+              {!isEditing && (
+                <EditButton onClick={() => setIsEditing(true)}>
+                  <FaEdit />
+                  <span>Edit Profile</span>
+                </EditButton>
+              )}
+            </ProfileInfo>
+          </ProfileHeader>
 
-        {isEditing ? (
-          <ProfileForm onSubmit={handleSubmit}>
-            <FormGroup>
-              <Label htmlFor="username">Username</Label>
-              <Input
-                type="text"
-                id="username"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                required
-              />
-            </FormGroup>
+          {isEditing ? (
+            <ProfileForm onSubmit={handleSubmit}>
+              <FormGroup>
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  required
+                />
+              </FormGroup>
 
-            <FormGroup>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </FormGroup>
+              <FormGroup>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
+              </FormGroup>
 
-            <FormGroup>
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                name="bio"
-                value={formData.bio}
-                onChange={handleChange}
-                rows={4}
-                placeholder="Tell us about yourself..."
-                maxLength={500}
-              />
-              <CharacterCount>
-                {formData.bio ? formData.bio.length : 0}/500 characters
-              </CharacterCount>
-            </FormGroup>
+              <FormGroup>
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  name="bio"
+                  value={formData.bio}
+                  onChange={handleChange}
+                  rows={4}
+                  placeholder="Tell us about yourself..."
+                  maxLength={500}
+                />
+                <CharacterCount>
+                  {formData.bio ? formData.bio.length : 0}/500 characters
+                </CharacterCount>
+              </FormGroup>
 
-            <ButtonGroup>
-              <CancelButton
-                type="button"
-                onClick={handleCancel}
-                disabled={loading}
-              >
-                <FaTimes />
-                <span>Cancel</span>
-              </CancelButton>
+              <ButtonGroup>
+                <CancelButton
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={loading}
+                >
+                  <FaTimes />
+                  <span>Cancel</span>
+                </CancelButton>
 
-              <SaveButton type="submit" disabled={loading}>
-                <FaCheck />
-                <span>{loading ? "Saving..." : "Save Changes"}</span>
-              </SaveButton>
-            </ButtonGroup>
-          </ProfileForm>
-        ) : (
-          <>
-            <ProfileBio>
-              <BioLabel>Bio</BioLabel>
-              <BioContent>
-                {user.bio ? user.bio : "No bio added yet."}
-              </BioContent>
-            </ProfileBio>
+                <SaveButton type="submit" disabled={loading}>
+                  <FaCheck />
+                  <span>{loading ? "Saving..." : "Save Changes"}</span>
+                </SaveButton>
+              </ButtonGroup>
+            </ProfileForm>
+          ) : (
+            <>
+              <ProfileBio>
+                <BioLabel>Bio</BioLabel>
+                <BioContent>
+                  {user.bio ? user.bio : "No bio added yet."}
+                </BioContent>
+              </ProfileBio>
 
-            {/* Add admin dashboard links if user is admin */}
-            {isAdmin && (
-              <AdminDashboard>
-                <DashboardTitle>Admin Dashboard</DashboardTitle>
-                <DashboardLinks>
-                  <DashboardLink to="/subscribers">
-                    <FaBell />
-                    <span>Manage Subscribers</span>
-                  </DashboardLink>
+              {/* Add admin dashboard links if user is admin */}
+              {isAdmin && (
+                <AdminDashboard>
+                  <DashboardTitle>Admin Dashboard</DashboardTitle>
+                  <DashboardLinks>
+                    <DashboardLink to="/subscribers">
+                      <FaBell />
+                      <span>Manage Subscribers</span>
+                    </DashboardLink>
 
-                  {/* Add other admin links here if needed */}
-                </DashboardLinks>
-              </AdminDashboard>
-            )}
-          </>
-        )}
-      </Container>
-    </PageWrapper>
+                    {/* Add other admin links here if needed */}
+                  </DashboardLinks>
+                </AdminDashboard>
+              )}
+            </>
+          )}
+        </Container>
+      </PageWrapper>
+    </MainLayout>
   );
 };
 
-// Styled Components
-// New dark theme wrapper
 const PageWrapper = styled.div`
   background-color: #121212;
   min-height: 100vh;
