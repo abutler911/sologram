@@ -1,7 +1,7 @@
 import { PortableText } from "@portabletext/react";
 import styled from "styled-components";
 
-// Styled text blocks
+// Paragraph styling
 const StyledParagraph = styled.p`
   color: #bbb;
   line-height: 1.6;
@@ -14,37 +14,42 @@ const Strong = styled.strong`
   color: #ff7e5f;
 `;
 
-// Emphasized text
+// Emphasized (italic) text
 const Emphasis = styled.span`
   color: #ff7e5f;
   font-weight: 600;
 `;
 
-// Image with float and text wrap
-const StyledImageWrapper = styled.div`
-  float: left;
-  margin: 0 1rem 1rem 0;
-  max-width: 300px;
-
-  img {
-    width: 100%;
-    height: auto;
-    border-radius: 12px;
-  }
+// Heading 2 styling
+const StyledHeading2 = styled.h2`
+  color: #ddd;
+  font-size: 1.8rem;
+  margin: 2rem 0 1rem;
 `;
 
-// Utility to strip orange hearts 🧡
-const stripHearts = (text) => text.replace(/🧡/g, "");
+// Responsive image + text wrapper
+const ImageTextWrapper = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 2rem;
+`;
 
+// Styled image
+const StyledImage = styled.img`
+  width: 300px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  flex-shrink: 0;
+`;
+
+// Portable Text component overrides
 const components = {
   block: {
-    normal: ({ children }) => (
-      <StyledParagraph>
-        {children.map((child) =>
-          typeof child === "string" ? stripHearts(child) : child
-        )}
-      </StyledParagraph>
-    ),
+    normal: ({ children }) => <StyledParagraph>{children}</StyledParagraph>,
+    h2: ({ children }) => <StyledHeading2>{children}</StyledHeading2>,
   },
   marks: {
     strong: ({ children }) => <Strong>{children}</Strong>,
@@ -52,9 +57,10 @@ const components = {
   },
   types: {
     image: ({ value }) => (
-      <StyledImageWrapper>
-        <img src={value.asset.url} alt={value.alt || "Image"} />
-      </StyledImageWrapper>
+      <ImageTextWrapper>
+        <StyledImage src={value.asset.url} alt={value.alt || "Image"} />
+        {/* You can optionally add more text here if you want text beside the image */}
+      </ImageTextWrapper>
     ),
   },
 };
