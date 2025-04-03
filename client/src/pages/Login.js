@@ -33,7 +33,7 @@ const Login = () => {
   };
 
   return (
-    <MainLayout>
+    <MainLayout noNav noFooter>
       <PageWrapper>
         <LoginContainer>
           <FormContainer>
