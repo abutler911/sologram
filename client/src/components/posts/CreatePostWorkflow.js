@@ -58,9 +58,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   }, [isEditing, initialData]);
 
   const handleCameraCapture = () => {
-    if (cameraInputRef.current) {
-      cameraInputRef.current.click();
-    }
+    cameraInputRef.current?.click();
   };
 
   const onDrop = useCallback(
@@ -246,6 +244,23 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       setTags(newTags.join(", "));
     }
   };
+  const handleCameraFile = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const isVideo = file.type.startsWith("video/");
+      const preview = {
+        id: Date.now() + Math.random().toString(),
+        file,
+        preview: URL.createObjectURL(file),
+        type: isVideo ? "video" : "image",
+        filter: "",
+      };
+      setMediaPreviews((prev) => [...prev, preview]);
+    }
+
+    // ✅ Reset input so camera can be triggered again
+    e.target.value = null;
+  };
 
   // Render the appropriate step content
   const renderStepContent = () => {
@@ -387,23 +402,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                   accept="image/*"
                   capture="environment"
                   style={{ display: "none" }}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const isVideo = file.type.startsWith("video/");
-                      const preview = {
-                        id: Date.now() + Math.random().toString(),
-                        file,
-                        preview: URL.createObjectURL(file),
-                        type: isVideo ? "video" : "image",
-                        filter: "",
-                      };
-                      setMediaPreviews((prev) => [...prev, preview]);
-                    }
-
-                    // Reset the input so it can be reused
-                    e.target.value = null;
-                  }}
+                  onChange={handleCameraFile}
                 />
               </MediaPreviewSection>
             )}
