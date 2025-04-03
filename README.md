@@ -205,11 +205,9 @@ SoloGram supports uploading multiple images and videos per post:
 
 ## Roadmap
 
-- [ ] Like/comment functionality for visitors
+- [ ] Like functionality for visitors
 - [ ] Analytics dashboard
-- [ ] Custom themes
 - [ ] Collections/albums feature
-- [ ] Social sharing options
 - [ ] Automated deployment pipeline
 
 ## License
