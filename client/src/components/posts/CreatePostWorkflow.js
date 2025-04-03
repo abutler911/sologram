@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useDropzone } from "react-dropzone";
@@ -42,7 +42,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   const [tagSuggestions] = useState(["travel", "fitness", "fun", "adventure"]);
 
   const navigate = useNavigate();
-  const cameraInputRef = useRef(null);
 
   useEffect(() => {
     if (isEditing && initialData?.media?.length > 0) {
@@ -56,10 +55,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       setExistingMedia(mapped);
     }
   }, [isEditing, initialData]);
-
-  const handleCameraCapture = () => {
-    cameraInputRef.current?.click();
-  };
 
   const onDrop = useCallback(
     (acceptedFiles, rejectedFiles = []) => {
@@ -298,10 +293,20 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
                 {/* Camera trigger outside the Dropzone */}
                 <CameraControlsContainer>
-                  <CameraButton onClick={handleCameraCapture}>
-                    <FaCamera />
-                    <span>Take Photo</span>
-                  </CameraButton>
+                  <label htmlFor="camera-input">
+                    <CameraButton as="div">
+                      <FaCamera />
+                      <span>Take Photo</span>
+                    </CameraButton>
+                  </label>
+                  <input
+                    id="camera-input"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    style={{ display: "none" }}
+                    onChange={handleCameraFile}
+                  />
                 </CameraControlsContainer>
               </>
             ) : (
@@ -388,12 +393,16 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                   <FaImage />
                   <span>Add More</span>
                 </AddMoreMediaButton>
-                <AddPhotoButton onClick={handleCameraCapture}>
-                  <FaCamera />
-                  <span>Add Photo</span>
-                </AddPhotoButton>
+
+                {/* Take Photo (opens camera on mobile) */}
+                <label htmlFor="camera-input">
+                  <AddPhotoButton as="div">
+                    <FaCamera />
+                    <span>Add Photo</span>
+                  </AddPhotoButton>
+                </label>
                 <input
-                  ref={cameraInputRef}
+                  id="camera-input"
                   type="file"
                   accept="image/*"
                   capture="environment"
