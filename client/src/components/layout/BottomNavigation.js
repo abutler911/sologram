@@ -168,8 +168,11 @@ const BottomNavigation = () => {
           )}
         </CreateButtonWrapper>
       )}
-      {/* Leave middle slot empty for unauthenticated users */}
-      {!isAuthenticated && <div style={{ flex: 1 }} />}
+      {!isAuthenticated && (
+        <BrandCenter>
+          <BrandText>SoloGram</BrandText>
+        </BrandCenter>
+      )}
 
       {/* Fourth nav item */}
       {isAuthenticated ? (
@@ -343,6 +346,22 @@ const CreateOptionItem = styled(Link)`
   &:hover {
     background-color: #333;
   }
+`;
+
+const BrandCenter = styled.div`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+`;
+
+const BrandText = styled.span`
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ff7e5f;
+  letter-spacing: 0.5px;
+  user-select: none;
 `;
 
 export default BottomNavigation;
