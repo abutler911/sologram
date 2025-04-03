@@ -19,7 +19,7 @@ import { AuthContext } from "../../context/AuthContext";
 
 const PostCard = ({ post: initialPost, onDelete }) => {
   const [post, setPost] = useState(initialPost);
-  const { user, isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated } = useContext(AuthContext);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showActions, setShowActions] = useState(false);
@@ -851,7 +851,6 @@ const PostLink = styled(Link)`
 
   &:hover ${PostTitle}, &:hover ${Content} {
     transform: translateX(2px);
-    text-decoration: underline;
   }
 `;
 

@@ -1,16 +1,16 @@
 import React, { useState, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import styled from "styled-components";
-import { 
-  FaHome, 
-  FaFolder, 
-  FaBell, 
+import {
+  FaHome,
+  FaFolder,
+  FaBell,
   FaUser,
   FaPlus,
   FaCamera,
   FaImages,
   FaSearch,
-  FaUsers
+  FaUsers,
 } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-hot-toast";
@@ -20,7 +20,7 @@ const BottomNavigation = () => {
   const location = useLocation();
   const { isAuthenticated, user } = useContext(AuthContext);
   const [showCreateOptions, setShowCreateOptions] = useState(false);
-  
+
   const isAdmin = isAuthenticated && user && user.role === "admin";
 
   const isActive = (path) => {
@@ -124,28 +124,40 @@ const BottomNavigation = () => {
           <CreateButton onClick={toggleCreateOptions}>
             <FaPlus />
           </CreateButton>
-          <NavLabel style={{ opacity: 0 }}>Create</NavLabel> {/* Invisible label to maintain spacing */}
-          
+          <NavLabel style={{ opacity: 0 }}>Create</NavLabel>{" "}
+          {/* Invisible label to maintain spacing */}
           {showCreateOptions && (
             <CreateOptionsOverlay onClick={() => setShowCreateOptions(false)}>
               <CreateOptions onClick={(e) => e.stopPropagation()}>
-                <CreateOptionItem to="/create" onClick={() => setShowCreateOptions(false)}>
+                <CreateOptionItem
+                  to="/create"
+                  onClick={() => setShowCreateOptions(false)}
+                >
                   <FaCamera />
                   <span>New Post</span>
                 </CreateOptionItem>
-                
-                <CreateOptionItem to="/create-story" onClick={() => setShowCreateOptions(false)}>
+
+                <CreateOptionItem
+                  to="/create-story"
+                  onClick={() => setShowCreateOptions(false)}
+                >
                   <FaImages />
                   <span>New Story</span>
                 </CreateOptionItem>
-                
+
                 {isAdmin && (
                   <>
-                    <CreateOptionItem to="/collections/create" onClick={() => setShowCreateOptions(false)}>
+                    <CreateOptionItem
+                      to="/collections/create"
+                      onClick={() => setShowCreateOptions(false)}
+                    >
                       <FaFolder />
                       <span>New Collection</span>
                     </CreateOptionItem>
-                    <CreateOptionItem to="/subscribers" onClick={() => setShowCreateOptions(false)}>
+                    <CreateOptionItem
+                      to="/subscribers"
+                      onClick={() => setShowCreateOptions(false)}
+                    >
                       <FaUsers />
                       <span>Manage Subscribers</span>
                     </CreateOptionItem>
@@ -156,14 +168,8 @@ const BottomNavigation = () => {
           )}
         </CreateButtonWrapper>
       )}
-
-      {/* Non-authenticated users get a placeholder for the center item */}
-      {!isAuthenticated && (
-        <NavItem to="/about" active={isActive("/about")}>
-          <FaSearch />
-          <NavLabel>About</NavLabel>
-        </NavItem>
-      )}
+      {/* Leave middle slot empty for unauthenticated users */}
+      {!isAuthenticated && <div style={{ flex: 1 }} />}
 
       {/* Fourth nav item */}
       {isAuthenticated ? (
@@ -217,7 +223,7 @@ const NavAction = styled.button`
 
 const NavContainer = styled.div`
   display: none;
-  
+
   @media (max-width: 767px) {
     display: flex;
     justify-content: space-around;
@@ -284,11 +290,11 @@ const CreateButton = styled.button`
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   margin-bottom: 0.125rem;
-  
+
   &:hover {
     background-color: #ff6347;
   }
-  
+
   &:active {
     transform: scale(0.95);
   }
@@ -323,17 +329,17 @@ const CreateOptionItem = styled(Link)`
   color: white;
   text-decoration: none;
   border-bottom: 1px solid #333;
-  
+
   &:last-child {
     border-bottom: none;
   }
-  
+
   svg {
     margin-right: 12px;
     font-size: 1.2rem;
     color: #ff7e5f;
   }
-  
+
   &:hover {
     background-color: #333;
   }
