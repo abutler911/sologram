@@ -23,8 +23,10 @@ const Stories = () => {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [storyToDelete, setStoryToDelete] = useState(null);
-  const [isPWA, setIsPWA] = useState(window.matchMedia("(display-mode: standalone)").matches);
-  
+  const [isPWA, setIsPWA] = useState(
+    window.matchMedia("(display-mode: standalone)").matches
+  );
+
   // Get authentication context to check if user is admin
   const { user, isAuthenticated } = useContext(AuthContext);
   const isAdmin = isAuthenticated && user && user.role === "admin";
@@ -57,7 +59,11 @@ const Stories = () => {
         const response = await axios.get("/api/stories");
 
         if (response.data.success) {
-          setStories(response.data.data);
+          const now = new Date();
+          const activeStories = response.data.data.filter(
+            (story) => new Date(story.expiresAt) > now
+          );
+          setStories(activeStories);
           setError(null);
         } else {
           throw new Error(response.data.message || "Failed to fetch stories");
@@ -71,12 +77,6 @@ const Stories = () => {
     };
 
     fetchStories();
-
-    // Set up a refresh interval to check for expired stories every minute
-    const refreshInterval = setInterval(fetchStories, 60000);
-
-    // Clean up the interval on component unmount
-    return () => clearInterval(refreshInterval);
   }, []);
 
   // Handle story auto-progression timer
@@ -111,22 +111,22 @@ const Stories = () => {
   useEffect(() => {
     if (activeStory) {
       // Prevent body scrolling when story is open
-      document.body.style.overflow = 'hidden';
-      
+      document.body.style.overflow = "hidden";
+
       // Add extra padding for iOS notch
       if (isPWA) {
-        document.body.style.paddingTop = 'env(safe-area-inset-top, 0)';
+        document.body.style.paddingTop = "env(safe-area-inset-top, 0)";
       }
     } else {
       // Restore body scrolling when story is closed
-      document.body.style.overflow = '';
-      document.body.style.paddingTop = '';
+      document.body.style.overflow = "";
+      document.body.style.paddingTop = "";
     }
-    
+
     return () => {
       // Clean up when component unmounts
-      document.body.style.overflow = '';
-      document.body.style.paddingTop = '';
+      document.body.style.overflow = "";
+      document.body.style.paddingTop = "";
     };
   }, [activeStory, isPWA]);
 
@@ -359,9 +359,7 @@ const Stories = () => {
           <StoryHeader>
             <StoryHeaderContent>
               <StoryHeaderTitle>{activeStory.title}</StoryHeaderTitle>
-              <StoryTimestamp>
-                {getExpirationTime(activeStory)}
-              </StoryTimestamp>
+              <StoryTimestamp>{getExpirationTime(activeStory)}</StoryTimestamp>
             </StoryHeaderContent>
           </StoryHeader>
 
@@ -648,7 +646,11 @@ const StoryHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   z-index: 5;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
   pointer-events: none;
 
   /* iOS Safe Area Support */
@@ -670,7 +672,7 @@ const StoryHeaderTitle = styled.h3`
   color: white;
   margin: 0 0 4px 0;
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   white-space: normal;
   line-height: 1.3;
 `;
@@ -679,7 +681,7 @@ const StoryTimestamp = styled.span`
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.875rem;
   font-weight: 500;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 `;
 
 // Adjusted position of controls to be higher and more prominent
@@ -780,7 +782,7 @@ const StoryNavigation = styled.div`
   right: 0;
   bottom: 0;
   display: flex;
-  z-index: 4;  /* Lower than controls but higher than content */
+  z-index: 4; /* Lower than controls but higher than content */
 `;
 
 const NavArea = styled.div`

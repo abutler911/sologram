@@ -1311,8 +1311,8 @@ const MediaActionButton = styled.button`
   background-color: #2e2e2e;
   color: #ffffff;
   border: 1px solid #444;
-  border-radius: 8px;
-  padding: 0.75rem 1.25rem;
+  border-radius: 999px;
+  padding: 0.65rem 1.5rem;
   font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
@@ -1330,7 +1330,7 @@ const MediaActionButton = styled.button`
   }
 
   @media (max-width: 480px) {
-    width: 100%;
+    width: auto;
   }
 `;
 
