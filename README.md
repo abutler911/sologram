@@ -1,6 +1,22 @@
 # SoloGram
 
+![Lighthouse Performance](https://img.shields.io/badge/Performance-75-yellowgreen)
+![Accessibility](https://img.shields.io/badge/Accessibility-87-green)
+![Best Practices](https://img.shields.io/badge/Best%20Practices-92-brightgreen)
+![SEO](https://img.shields.io/badge/SEO-100-brightgreen)
+![PWA](https://img.shields.io/badge/PWA-Ready-blue)
+
 SoloGram is a personal Instagram-like platform where only you can post content (images, videos, text) while allowing others to view your posts. It's built with modern web technologies and has a focus on visual appeal and mobile responsiveness.
+
+## 📊 Lighthouse Report
+
+| Category       | Score    |
+| -------------- | -------- |
+| Performance    | 75       |
+| Accessibility  | 87       |
+| Best Practices | 92       |
+| SEO            | 100      |
+| PWA            | ✅ Ready |
 
 ## Features
 
@@ -20,6 +36,7 @@ SoloGram is a personal Instagram-like platform where only you can post content (
 ## Tech Stack
 
 ### Backend
+
 - Node.js
 - Express.js
 - MongoDB (with Mongoose)
@@ -27,6 +44,7 @@ SoloGram is a personal Instagram-like platform where only you can post content (
 - Cloudinary (for media storage)
 
 ### Frontend
+
 - React.js
 - React Router
 - Styled Components
@@ -37,6 +55,7 @@ SoloGram is a personal Instagram-like platform where only you can post content (
 ## Setup Instructions
 
 ### Prerequisites
+
 - Node.js (v14 or later)
 - MongoDB (local instance or MongoDB Atlas)
 - Cloudinary account
@@ -44,18 +63,21 @@ SoloGram is a personal Instagram-like platform where only you can post content (
 ### Backend Setup
 
 1. Clone the repository
+
    ```
    git clone https://github.com/abutler911/sologram.git
    cd sologram
    ```
 
 2. Install backend dependencies
+
    ```
    cd server
    npm install
    ```
 
 3. Create a `.env` file in the server directory with the following variables
+
    ```
    PORT=5000
    NODE_ENV=development
@@ -64,7 +86,7 @@ SoloGram is a personal Instagram-like platform where only you can post content (
    CLOUDINARY_CLOUD_NAME=<your-cloudinary-cloud-name>
    CLOUDINARY_API_KEY=<your-cloudinary-api-key>
    CLOUDINARY_API_SECRET=<your-cloudinary-api-secret>
-   
+
    # Admin account credentials
    ADMIN_USERNAME=<your-admin-username>
    ADMIN_EMAIL=<your-admin-email>
@@ -72,6 +94,7 @@ SoloGram is a personal Instagram-like platform where only you can post content (
    ```
 
 4. Create your admin account
+
    ```
    npm run create-admin
    ```
@@ -84,17 +107,20 @@ SoloGram is a personal Instagram-like platform where only you can post content (
 ### Frontend Setup
 
 1. Install frontend dependencies
+
    ```
    cd ../client
    npm install
    ```
 
 2. Create a `.env` file in the client directory with the following variable (if your backend is not running on the default port)
+
    ```
    REACT_APP_API_URL=http://localhost:5000
    ```
 
 3. Start the frontend development server
+
    ```
    npm start
    ```
@@ -132,17 +158,20 @@ This project follows a standard Git workflow:
 ### Contributing
 
 1. Create a new branch from `development`
+
    ```
    git checkout -b feature/your-feature-name development
    ```
 
 2. Make your changes and commit them
+
    ```
    git add .
    git commit -m "Description of changes"
    ```
 
 3. Push to GitHub
+
    ```
    git push -u origin feature/your-feature-name
    ```
@@ -161,10 +190,12 @@ SoloGram supports uploading multiple images and videos per post:
 ## Deployment
 
 ### Backend Deployment
+
 1. Set up environment variables on your hosting platform
 2. Deploy the server directory to your preferred hosting service (e.g., Heroku, Render, Digital Ocean)
 
 ### Frontend Deployment
+
 1. Build the production version of the frontend
    ```
    cd client
@@ -180,7 +211,6 @@ SoloGram supports uploading multiple images and videos per post:
 - [ ] Collections/albums feature
 - [ ] Social sharing options
 - [ ] Automated deployment pipeline
-
 
 ## License
 
