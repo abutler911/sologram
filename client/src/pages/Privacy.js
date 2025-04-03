@@ -11,7 +11,6 @@ const Privacy = () => {
 
   useEffect(() => {
     sanity.fetch(`*[_type == "privacyPolicy"][0]`).then((data) => {
-      console.log("Fetched privacyPolicy from Sanity:", data);
       setPolicy(data);
     });
   }, []);
