@@ -302,7 +302,12 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                 </DropzoneSubtext>
 
                 <CameraControlsContainer>
-                  <CameraButton onClick={handleCameraCapture}>
+                  <CameraButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCameraCapture();
+                    }}
+                  >
                     <FaCamera />
                     <span>Take Photo</span>
                   </CameraButton>
