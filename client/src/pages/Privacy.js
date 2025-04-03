@@ -10,9 +10,7 @@ const Privacy = () => {
   const [policy, setPolicy] = useState(null);
 
   useEffect(() => {
-    sanity
-      .fetch(`*[_type == "privacyPolicy"][0]`)
-      .then((data) => setPolicy(data));
+    sanity.fetch(`*[_type == "privacy"][0]`).then((data) => setPolicy(data));
   }, []);
 
   if (!policy)
