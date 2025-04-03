@@ -5,6 +5,7 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import { FaPlus, FaFolder, FaImages } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
+import MainLayout from "../components/layout/MainLayout";
 
 const CollectionsList = () => {
   const [collections, setCollections] = useState([]);
@@ -54,69 +55,71 @@ const CollectionsList = () => {
   }
 
   return (
-    <PageWrapper>
-      <Container>
-        <PageHeader>
-          <PageTitle>
-            <FaFolder />
-            <span>Collections</span>
-          </PageTitle>
+    <MainLayout>
+      <PageWrapper>
+        <Container>
+          <PageHeader>
+            <PageTitle>
+              <FaFolder />
+              <span>Collections</span>
+            </PageTitle>
 
-          {isAuthenticated && (
-            <CreateButton to="/collections/create">
-              <FaPlus />
-              <span>Create Collection</span>
-            </CreateButton>
-          )}
-        </PageHeader>
-
-        {collections.length === 0 ? (
-          <EmptyState>
-            <EmptyIcon>
-              <FaImages />
-            </EmptyIcon>
-            <EmptyText>No collections yet</EmptyText>
             {isAuthenticated && (
-              <EmptyActionLink to="/collections/create">
-                Create your first collection
-              </EmptyActionLink>
+              <CreateButton to="/collections/create">
+                <FaPlus />
+                <span>Create Collection</span>
+              </CreateButton>
             )}
-          </EmptyState>
-        ) : (
-          <CollectionsGrid>
-            {collections.map((collection) => (
-              <CollectionCard key={collection._id}>
-                <CollectionLink to={`/collections/${collection._id}`}>
-                  {collection.coverImage ? (
-                    <CollectionCover
-                      src={collection.coverImage}
-                      alt={collection.name}
-                    />
-                  ) : (
-                    <CollectionCoverPlaceholder>
-                      <FaImages />
-                    </CollectionCoverPlaceholder>
-                  )}
-                  <CollectionDetails>
-                    <CollectionName>{collection.name}</CollectionName>
-                    {collection.posts && (
-                      <PostCount>{collection.posts.length} posts</PostCount>
+          </PageHeader>
+
+          {collections.length === 0 ? (
+            <EmptyState>
+              <EmptyIcon>
+                <FaImages />
+              </EmptyIcon>
+              <EmptyText>No collections yet</EmptyText>
+              {isAuthenticated && (
+                <EmptyActionLink to="/collections/create">
+                  Create your first collection
+                </EmptyActionLink>
+              )}
+            </EmptyState>
+          ) : (
+            <CollectionsGrid>
+              {collections.map((collection) => (
+                <CollectionCard key={collection._id}>
+                  <CollectionLink to={`/collections/${collection._id}`}>
+                    {collection.coverImage ? (
+                      <CollectionCover
+                        src={collection.coverImage}
+                        alt={collection.name}
+                      />
+                    ) : (
+                      <CollectionCoverPlaceholder>
+                        <FaImages />
+                      </CollectionCoverPlaceholder>
                     )}
-                    {collection.description && (
-                      <CollectionDescription>
-                        {collection.description.length > 100
-                          ? `${collection.description.substring(0, 100)}...`
-                          : collection.description}
-                      </CollectionDescription>
-                    )}
-                  </CollectionDetails>
-                </CollectionLink>
-              </CollectionCard>
-            ))}
-          </CollectionsGrid>
-        )}
-      </Container>
-    </PageWrapper>
+                    <CollectionDetails>
+                      <CollectionName>{collection.name}</CollectionName>
+                      {collection.posts && (
+                        <PostCount>{collection.posts.length} posts</PostCount>
+                      )}
+                      {collection.description && (
+                        <CollectionDescription>
+                          {collection.description.length > 100
+                            ? `${collection.description.substring(0, 100)}...`
+                            : collection.description}
+                        </CollectionDescription>
+                      )}
+                    </CollectionDetails>
+                  </CollectionLink>
+                </CollectionCard>
+              ))}
+            </CollectionsGrid>
+          )}
+        </Container>
+      </PageWrapper>
+    </MainLayout>
   );
 };
 
