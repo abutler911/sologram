@@ -321,7 +321,6 @@ const Stories = () => {
                   src={thumbnailUrl}
                   alt={story.title}
                   onError={(e) => {
-                    // Fallback to a styled container if image fails to load
                     e.target.style.display = "none";
                     e.target.parentNode.classList.add("image-fallback");
                   }}
@@ -332,7 +331,6 @@ const Stories = () => {
                   </VideoIndicator>
                 )}
               </StoryImageWrapper>
-              <StoryTitle>{story.title}</StoryTitle>
             </StoryCircle>
           );
         })}
@@ -500,37 +498,11 @@ const EmptyMessage = styled.p`
 
 const StoryCircle = styled.div`
   flex: 0 0 auto;
-  width: 80px;
   display: flex;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-`;
-
-const StoryImageWrapper = styled.div`
-  position: relative;
-  width: 65px;
-  height: 65px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid #ff7e5f;
-  padding: 3px;
-  background-color: #333;
-
-  &.image-fallback {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #444;
-
-    &:before {
-      content: "\\f03e"; /* Image icon in Font Awesome */
-      font-family: "Font Awesome 5 Free";
-      font-weight: 900;
-      font-size: 1.5rem;
-      color: rgba(255, 255, 255, 0.7);
-    }
-  }
+  padding: 0 4px;
 `;
 
 const ThumbnailImage = styled.img`
@@ -556,21 +528,6 @@ const VideoIndicator = styled.div`
   font-size: 0.8rem;
 `;
 
-const StoryTitle = styled.span`
-  font-size: 0.65rem;
-  color: #ddd;
-  margin: 0.5rem 0 0;
-  text-align: center;
-  max-width: 80px;
-  white-space: normal;
-  overflow: visible;
-  word-wrap: break-word;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-`;
-
-// Updated full-screen modal for Instagram-like experience
 const StoryModal = styled.div`
   position: fixed;
   top: 0;
@@ -582,10 +539,9 @@ const StoryModal = styled.div`
   display: flex;
   flex-direction: column;
   touch-action: none;
-  width: 100vw; /* Force full width */
-  height: 100vh; /* Force full height */
+  width: 100vw;
+  height: 100vh;
 
-  /* iOS Safe Area Support */
   @supports (padding-top: env(safe-area-inset-top)) {
     padding-top: env(safe-area-inset-top, 0);
     padding-bottom: env(safe-area-inset-bottom, 0);
@@ -895,6 +851,39 @@ const CancelButton = styled.button`
 
   @media (max-width: 480px) {
     order: 2;
+  }
+`;
+
+const StoryImageWrapper = styled.div`
+  position: relative;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #ff7e5f;
+  padding: 3px;
+  background-color: #333;
+  transition: transform 0.3s ease;
+
+  @media (hover: hover) {
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  &.image-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #444;
+
+    &:before {
+      content: "\\f03e";
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      font-size: 1.5rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
   }
 `;
 
