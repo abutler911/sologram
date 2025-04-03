@@ -1,4 +1,6 @@
 import React, {
+  lazy,
+  Suspense,
   useState,
   useEffect,
   useRef,
@@ -11,8 +13,9 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import { FaCamera } from "react-icons/fa";
 import Stories from "../components/stories/Stories";
-import PostCard from "../components/posts/PostCard";
 import PreloadImage from "../components/PreLoadImage";
+
+const PostCard = lazy(() => import("../components/posts/PostCard"));
 
 const Home = forwardRef((props, ref) => {
   const [posts, setPosts] = useState([]);
@@ -236,23 +239,31 @@ const Home = forwardRef((props, ref) => {
             <ErrorMessage>{error}</ErrorMessage>
           ) : posts.length > 0 ? (
             <PostGrid isPWA={isPWA}>
-              {posts.map((post, index) => (
-                <GridItem
-                  ref={posts.length === index + 1 ? lastPostElementRef : null}
-                  key={post._id}
-                  isPWA={isPWA}
-                >
-                  <PostCard
-                    post={post}
-                    index={index}
-                    onDelete={(deletedId) => {
-                      setPosts((prevPosts) =>
-                        prevPosts.filter((p) => p._id !== deletedId)
-                      );
-                    }}
-                  />
-                </GridItem>
-              ))}
+              <Suspense
+                fallback={
+                  <div style={{ color: "#aaa", textAlign: "center" }}>
+                    Loading posts...
+                  </div>
+                }
+              >
+                {posts.map((post, index) => (
+                  <GridItem
+                    ref={posts.length === index + 1 ? lastPostElementRef : null}
+                    key={post._id}
+                    isPWA={isPWA}
+                  >
+                    <PostCard
+                      post={post}
+                      index={index}
+                      onDelete={(deletedId) => {
+                        setPosts((prevPosts) =>
+                          prevPosts.filter((p) => p._id !== deletedId)
+                        );
+                      }}
+                    />
+                  </GridItem>
+                ))}
+              </Suspense>
             </PostGrid>
           ) : loading ? (
             <LoadingMessage>Loading posts...</LoadingMessage>
