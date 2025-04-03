@@ -23,7 +23,7 @@ const Privacy = () => {
       </MainLayout>
     );
 
-  const formattedDate = new Date(policy.lastUpdated).toLocaleDateString(
+  const formattedDate = new Date(policy._updatedAt).toLocaleDateString(
     "en-US",
     {
       year: "numeric",
