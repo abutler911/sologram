@@ -40,6 +40,17 @@ import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButt
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 
+import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
+
+serviceWorkerRegistration.register({
+  onUpdate: () => {
+    console.log("🆕 New version available!");
+  },
+  onSuccess: () => {
+    console.log("✅ App is ready for offline use.");
+  },
+});
+
 // Page Tracking Component (now inside Router)
 const PageTracker = () => {
   const location = useLocation();
