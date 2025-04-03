@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
 import styled from "styled-components";
 import ReactGA from "react-ga4";
@@ -14,7 +19,7 @@ import Login from "./pages/Login";
 import PostDetail from "./pages/PostDetail";
 import CreatePost from "./pages/CreatePost";
 import EditPost from "./pages/EditPost";
-import Profile from "./pages/Profile";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
@@ -114,7 +119,10 @@ function App() {
               path="/"
               element={
                 <>
-                  <Header onSearch={handleSearch} onClearSearch={handleClearSearch} />
+                  <Header
+                    onSearch={handleSearch}
+                    onClearSearch={handleClearSearch}
+                  />
                   <main className="main-content">
                     <SubscribeBanner />
                     <Home ref={homeRef} />
@@ -154,10 +162,10 @@ function App() {
               }
             />
             <Route
-              path="/profile"
+              path="/admin"
               element={
                 <PrivateRoute>
-                  <Profile />
+                  <AdminDashboard />
                 </PrivateRoute>
               }
             />

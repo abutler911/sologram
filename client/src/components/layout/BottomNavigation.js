@@ -188,7 +188,7 @@ const BottomNavigation = () => {
 
       {/* Fifth nav item */}
       {isAuthenticated ? (
-        <NavItem to="/profile" active={isActive("/profile")}>
+        <NavItem to="/admin" active={isActive("/admin")}>
           <FaUser />
           <NavLabel>Admin</NavLabel>
         </NavItem>

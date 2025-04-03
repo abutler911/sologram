@@ -117,9 +117,9 @@ const SubscriberAdmin = () => {
     <PageWrapper>
       <Container>
         <Header>
-          <BackLink to="/profile">
+          <BackLink to="/admin">
             <FaArrowLeft />
-            <span>Back to Profile</span>
+            <span>Back to Admin Dashboard</span>
           </BackLink>
 
           <PageTitle>

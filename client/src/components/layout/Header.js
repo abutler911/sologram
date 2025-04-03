@@ -125,21 +125,44 @@ const Header = ({ onSearch, onClearSearch }) => {
           </LogoContainer>
 
           <DesktopNavigation>
-            <NavLink to="/" active={location.pathname === "/"}>Home</NavLink>
-            <NavLink to="/collections" active={location.pathname.startsWith("/collections")}>Collections</NavLink>
+            <NavLink to="/" active={location.pathname === "/"}>
+              Home
+            </NavLink>
+            <NavLink
+              to="/collections"
+              active={location.pathname.startsWith("/collections")}
+            >
+              Collections
+            </NavLink>
             {isAuthenticated && (
-              <NavLink to="/story-archive" active={location.pathname.startsWith("/story-archive")}>Stories</NavLink>
+              <NavLink
+                to="/story-archive"
+                active={location.pathname.startsWith("/story-archive")}
+              >
+                Stories
+              </NavLink>
             )}
             {isAdmin && (
-              <NavLink to="/subscribers" active={location.pathname.startsWith("/subscribers")}>Subscribers</NavLink>
+              <NavLink
+                to="/subscribers"
+                active={location.pathname.startsWith("/subscribers")}
+              >
+                Subscribers
+              </NavLink>
             )}
           </DesktopNavigation>
 
           <HeaderActions>
             {location.pathname === "/" && (
-              <SearchContainer ref={searchContainerRef} expanded={searchExpanded}>
+              <SearchContainer
+                ref={searchContainerRef}
+                expanded={searchExpanded}
+              >
                 {!searchExpanded ? (
-                  <ActionButton onClick={handleOpenSearch} aria-label="Open search">
+                  <ActionButton
+                    onClick={handleOpenSearch}
+                    aria-label="Open search"
+                  >
                     <FaSearch />
                   </ActionButton>
                 ) : (
@@ -152,14 +175,22 @@ const Header = ({ onSearch, onClearSearch }) => {
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                     {searchQuery && (
-                      <ClearButton onClick={clearSearch} aria-label="Clear search" type="button">
+                      <ClearButton
+                        onClick={clearSearch}
+                        aria-label="Clear search"
+                        type="button"
+                      >
                         <FaTimes />
                       </ClearButton>
                     )}
                     <SearchSubmit type="submit">
                       <FaSearch />
                     </SearchSubmit>
-                    <CloseSearchButton onClick={handleCloseSearch} aria-label="Close search" type="button">
+                    <CloseSearchButton
+                      onClick={handleCloseSearch}
+                      aria-label="Close search"
+                      type="button"
+                    >
                       <FaTimes />
                     </CloseSearchButton>
                   </SearchForm>
@@ -189,18 +220,30 @@ const Header = ({ onSearch, onClearSearch }) => {
                       <small>{isAdmin ? "Admin" : "User"}</small>
                     </UserInfo>
                     <MenuDivider />
-                    <UserMenuItem to="/profile" onClick={() => setShowUserMenu(false)}>
-                      <FaUser /> <span>Profile</span>
+                    <UserMenuItem
+                      to="/admin"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <FaUser /> <span>Admin</span>
                     </UserMenuItem>
                     {isAdmin && (
-                      <UserMenuItem to="/subscribers" onClick={() => setShowUserMenu(false)}>
+                      <UserMenuItem
+                        to="/subscribers"
+                        onClick={() => setShowUserMenu(false)}
+                      >
                         <FaBell /> <span>Subscribers</span>
                       </UserMenuItem>
                     )}
-                    <UserMenuItem to="/collections" onClick={() => setShowUserMenu(false)}>
+                    <UserMenuItem
+                      to="/collections"
+                      onClick={() => setShowUserMenu(false)}
+                    >
                       <FaFolder /> <span>Collections</span>
                     </UserMenuItem>
-                    <UserMenuItem to="/story-archive" onClick={() => setShowUserMenu(false)}>
+                    <UserMenuItem
+                      to="/story-archive"
+                      onClick={() => setShowUserMenu(false)}
+                    >
                       <FaArchive /> <span>Story Archive</span>
                     </UserMenuItem>
                     <MenuDivider />
@@ -234,14 +277,44 @@ const Header = ({ onSearch, onClearSearch }) => {
         </MobileMenuHeader>
 
         <MobileMenuContent>
-          <MobileMenuItem to="/" onClick={closeMenu} active={location.pathname === "/"}>Home</MobileMenuItem>
-          <MobileMenuItem to="/collections" onClick={closeMenu} active={location.pathname.startsWith("/collections")}>Collections</MobileMenuItem>
+          <MobileMenuItem
+            to="/"
+            onClick={closeMenu}
+            active={location.pathname === "/"}
+          >
+            Home
+          </MobileMenuItem>
+          <MobileMenuItem
+            to="/collections"
+            onClick={closeMenu}
+            active={location.pathname.startsWith("/collections")}
+          >
+            Collections
+          </MobileMenuItem>
           {isAuthenticated && (
             <>
-              <MobileMenuItem to="/story-archive" onClick={closeMenu} active={location.pathname.startsWith("/story-archive")}>Stories</MobileMenuItem>
-              <MobileMenuItem to="/profile" onClick={closeMenu} active={location.pathname.startsWith("/profile")}>Profile</MobileMenuItem>
+              <MobileMenuItem
+                to="/story-archive"
+                onClick={closeMenu}
+                active={location.pathname.startsWith("/story-archive")}
+              >
+                Stories
+              </MobileMenuItem>
+              <MobileMenuItem
+                to="/admin"
+                onClick={closeMenu}
+                active={location.pathname.startsWith("/admin")}
+              >
+                Profile
+              </MobileMenuItem>
               {isAdmin && (
-                <MobileMenuItem to="/subscribers" onClick={closeMenu} active={location.pathname.startsWith("/subscribers")}>Subscribers</MobileMenuItem>
+                <MobileMenuItem
+                  to="/subscribers"
+                  onClick={closeMenu}
+                  active={location.pathname.startsWith("/subscribers")}
+                >
+                  Subscribers
+                </MobileMenuItem>
               )}
               <MobileMenuLogoutButton onClick={handleLogout}>
                 <FaSignOutAlt /> <span>Logout</span>
@@ -249,7 +322,14 @@ const Header = ({ onSearch, onClearSearch }) => {
             </>
           )}
           {!isAuthenticated && (
-            <MobileMenuItem to="/login" onClick={closeMenu} active={location.pathname.startsWith("/login")}> <FaSignInAlt /> <span>Login</span></MobileMenuItem>
+            <MobileMenuItem
+              to="/login"
+              onClick={closeMenu}
+              active={location.pathname.startsWith("/login")}
+            >
+              {" "}
+              <FaSignInAlt /> <span>Login</span>
+            </MobileMenuItem>
           )}
         </MobileMenuContent>
       </MobileMenu>
@@ -805,6 +885,5 @@ const MobileMenuLogoutButton = styled.button`
     margin-right: 0.75rem;
   }
 `;
-
 
 export default Header;
