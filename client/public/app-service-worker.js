@@ -1,10 +1,8 @@
 // public/app-service-worker.js
 /* eslint-disable no-restricted-globals */
 
-console.log("[App Service Worker] Initializing");
-
 // Configuration
-const APP_VERSION = "1.0.1"; // Increment this when you want to force an update
+const APP_VERSION = "1.0.1";
 const CACHE_NAME = `sologram-cache-${APP_VERSION}`;
 const MEDIA_CACHE_NAME = `sologram-media-cache-${APP_VERSION}`;
 
@@ -27,9 +25,6 @@ const STATIC_ASSETS = [
 // Message event handler for SKIP_WAITING
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
-    console.log(
-      "[App Service Worker] Received skip waiting message, activating now"
-    );
     self.skipWaiting();
   }
 });
@@ -40,14 +35,9 @@ self.addEventListener("install", (event) => {
     caches
       .open(CACHE_NAME)
       .then((cache) => {
-        console.log(
-          "[App Service Worker] Pre-caching offline page and static assets"
-        );
         return cache.addAll(STATIC_ASSETS);
       })
-      .then(() => {
-        console.log("[App Service Worker] Installation completed");
-      })
+      .then(() => {})
   );
 });
 
@@ -66,15 +56,11 @@ self.addEventListener("activate", (event) => {
       .then((cachesToDelete) => {
         return Promise.all(
           cachesToDelete.map((cacheToDelete) => {
-            console.log(
-              `[App Service Worker] Deleting old cache: ${cacheToDelete}`
-            );
             return caches.delete(cacheToDelete);
           })
         );
       })
       .then(() => {
-        console.log("[App Service Worker] Activation completed");
         return self.clients.claim();
       })
   );

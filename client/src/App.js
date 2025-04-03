@@ -43,14 +43,7 @@ import PrivateRoute from "./components/PrivateRoute";
 
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 
-serviceWorkerRegistration.register({
-  onUpdate: () => {
-    console.log("🆕 New version available!");
-  },
-  onSuccess: () => {
-    console.log("✅ App is ready for offline use.");
-  },
-});
+serviceWorkerRegistration.register();
 
 // Page Tracking Component (now inside Router)
 const PageTracker = () => {

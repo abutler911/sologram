@@ -17,4 +17,3 @@ ${urls
 </urlset>`;
 
 fs.writeFileSync(path.resolve(__dirname, "../public/sitemap.xml"), sitemap);
-console.log("✅ Sitemap generated");
