@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { FaCamera, FaLock, FaEnvelope } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
+import MainLayout from "../components/layout/MainLayout";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -32,56 +33,58 @@ const Login = () => {
   };
 
   return (
-    <PageWrapper>
-      <LoginContainer>
-        <FormContainer>
-          <LogoContainer>
-            <FaCamera />
-            <LogoText>SoloGram</LogoText>
-          </LogoContainer>
+    <MainLayout>
+      <PageWrapper>
+        <LoginContainer>
+          <FormContainer>
+            <LogoContainer>
+              <FaCamera />
+              <LogoText>SoloGram</LogoText>
+            </LogoContainer>
 
-          <Tagline>One Voice. Infinite Moments.</Tagline>
+            <Tagline>One Voice. Infinite Moments.</Tagline>
 
-          <FormTitle>Login to your account</FormTitle>
+            <FormTitle>Login to your account</FormTitle>
 
-          <Form onSubmit={handleSubmit}>
-            <FormGroup>
-              <InputIcon>
-                <FaEnvelope />
-              </InputIcon>
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </FormGroup>
+            <Form onSubmit={handleSubmit}>
+              <FormGroup>
+                <InputIcon>
+                  <FaEnvelope />
+                </InputIcon>
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </FormGroup>
 
-            <FormGroup>
-              <InputIcon>
-                <FaLock />
-              </InputIcon>
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </FormGroup>
+              <FormGroup>
+                <InputIcon>
+                  <FaLock />
+                </InputIcon>
+                <Input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </FormGroup>
 
-            <SubmitButton type="submit" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
-            </SubmitButton>
-          </Form>
+              <SubmitButton type="submit" disabled={loading}>
+                {loading ? "Logging in..." : "Login"}
+              </SubmitButton>
+            </Form>
 
-          <AdminNoteText>
-            This login is for site administration only
-          </AdminNoteText>
-        </FormContainer>
-      </LoginContainer>
-    </PageWrapper>
+            <AdminNoteText>
+              This login is for site administration only
+            </AdminNoteText>
+          </FormContainer>
+        </LoginContainer>
+      </PageWrapper>
+    </MainLayout>
   );
 };
 
