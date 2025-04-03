@@ -10,7 +10,6 @@ import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { FaCamera } from "react-icons/fa";
-import { Link } from "react-router-dom";
 import Stories from "../components/stories/Stories";
 import PostCard from "../components/posts/PostCard";
 import PreloadImage from "../components/PreLoadImage";

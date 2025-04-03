@@ -210,6 +210,11 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
                             ? "eager"
                             : "lazy"
                         }
+                        fetchpriority={
+                          index === 0 && currentMediaIndex === 0
+                            ? "high"
+                            : "auto"
+                        }
                         decoding="async"
                         className={media.filter}
                       />
