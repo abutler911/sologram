@@ -273,46 +273,37 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
             </StepTitle>
 
             {isMediaStepEmpty ? (
-              <DropzoneContainer
-                {...getRootProps()}
-                isDragActive={isDragActive}
-              >
-                {!mediaPreviews.length && !existingMedia.length && (
-                  <input
-                    {...getInputProps({
-                      capture: "environment",
-                      accept: "image/*,video/*",
-                    })}
-                  />
-                )}
-                <DropzoneIcon>
-                  <FaCloudUploadAlt />
-                </DropzoneIcon>
-                <DropzoneText>
-                  {isDragActive
-                    ? "Drop your files here"
-                    : "Drag photos and videos here, or click to browse"}
-                </DropzoneText>
-                <MediaTypeIcons>
-                  <FaImage />
-                  <FaVideo />
-                </MediaTypeIcons>
-                <DropzoneSubtext>
-                  You can add up to 25 photos and videos. Max file size: 25MB
-                </DropzoneSubtext>
+              <>
+                <DropzoneContainer
+                  {...getRootProps()}
+                  isDragActive={isDragActive}
+                >
+                  <input {...getInputProps({ capture: "environment" })} />
+                  <DropzoneIcon>
+                    <FaCloudUploadAlt />
+                  </DropzoneIcon>
+                  <DropzoneText>
+                    {isDragActive
+                      ? "Drop your files here"
+                      : "Drag photos and videos here, or click to browse"}
+                  </DropzoneText>
+                  <MediaTypeIcons>
+                    <FaImage />
+                    <FaVideo />
+                  </MediaTypeIcons>
+                  <DropzoneSubtext>
+                    You can add up to 25 photos and videos. Max file size: 25MB
+                  </DropzoneSubtext>
+                </DropzoneContainer>
 
+                {/* Camera trigger outside the Dropzone */}
                 <CameraControlsContainer>
-                  <CameraButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCameraCapture();
-                    }}
-                  >
+                  <CameraButton onClick={handleCameraCapture}>
                     <FaCamera />
                     <span>Take Photo</span>
                   </CameraButton>
                 </CameraControlsContainer>
-              </DropzoneContainer>
+              </>
             ) : (
               <MediaPreviewSection>
                 <MediaCarousel>
