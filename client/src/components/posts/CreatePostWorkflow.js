@@ -388,27 +388,31 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                   </FilterList>
                 </FilterSection>
 
-                <AddMoreMediaButton {...getRootProps()}>
-                  <input {...getInputProps()} />
-                  <FaImage />
-                  <span>Add More</span>
-                </AddMoreMediaButton>
+                <ActionButtonsRow>
+                  <AddMoreWrapper {...getRootProps()}>
+                    <MediaActionButton as="div">
+                      <FaImage />
+                      <span>Add More</span>
+                    </MediaActionButton>
+                    <input {...getInputProps()} />
+                  </AddMoreWrapper>
 
-                {/* Take Photo (opens camera on mobile) */}
-                <label htmlFor="camera-input">
-                  <AddPhotoButton as="div">
-                    <FaCamera />
-                    <span>Add Photo</span>
-                  </AddPhotoButton>
-                </label>
-                <input
-                  id="camera-input"
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  style={{ display: "none" }}
-                  onChange={handleCameraFile}
-                />
+                  <label htmlFor="camera-input">
+                    <MediaActionButton as="div">
+                      <FaCamera />
+                      <span>Add Photo</span>
+                    </MediaActionButton>
+                  </label>
+
+                  <input
+                    id="camera-input"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    style={{ display: "none" }}
+                    onChange={handleCameraFile}
+                  />
+                </ActionButtonsRow>
               </MediaPreviewSection>
             )}
           </StepContainer>
@@ -938,26 +942,6 @@ const FilterName = styled.span`
   color: #bbbbbb;
 `;
 
-const AddMoreMediaButton = styled.button`
-  align-self: center;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background-color: #333333;
-  color: #cccccc;
-  border: none;
-  border-radius: 4px;
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 1rem;
-
-  &:hover {
-    background-color: #444444;
-    color: #ffffff;
-  }
-`;
-
 // Details Step
 const FormSection = styled.div`
   display: flex;
@@ -1319,28 +1303,47 @@ const CameraControlsContainer = styled.div`
   }
 `;
 
-const AddPhotoButton = styled.button`
-  align-self: center;
+const MediaActionButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  background-color: #333333;
-  color: #cccccc;
-  border: none;
-  border-radius: 4px;
-  padding: 0.75rem 1.5rem;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #2e2e2e;
+  color: #ffffff;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 1rem;
+  min-width: 140px;
 
   &:hover {
-    background-color: #444444;
-    color: #ffffff;
+    background-color: #ff7e5f;
+    color: #fff;
+    border-color: #ff7e5f;
   }
 
   svg {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
   }
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
+`;
+
+const ActionButtonsRow = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+`;
+
+const AddMoreWrapper = styled.div`
+  position: relative;
 `;
 
 export default CreatePostWorkflow;
