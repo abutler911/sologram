@@ -305,7 +305,7 @@ const Header = ({ onSearch, onClearSearch }) => {
                 onClick={closeMenu}
                 active={location.pathname.startsWith("/admin")}
               >
-                Profile
+                Admin
               </MobileMenuItem>
               {isAdmin && (
                 <MobileMenuItem
