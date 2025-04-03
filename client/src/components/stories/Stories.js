@@ -709,8 +709,8 @@ const StoryContent = styled.div`
   justify-content: center;
   align-items: center;
   background-color: #000;
-  width: 100vw; /* Force full width */
-  height: 100vh; /* Force full height */
+  width: 100vw;
+  height: 100vh;
 `;
 
 // Image now fills the screen with object-fit: contain
@@ -718,7 +718,7 @@ const FullScreenImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: contain;
-  max-width: 100vw; /* Ensure it never exceeds viewport width */
+  max-width: 100vw;
 `;
 
 // Video now fills the screen with object-fit: contain
@@ -727,7 +727,7 @@ const StoryVideo = styled.video`
   height: 100%;
   object-fit: contain;
   outline: none;
-  max-width: 100vw; /* Ensure it never exceeds viewport width */
+  max-width: 100vw;
 `;
 
 // Navigation overlay now covers the entire screen
@@ -738,12 +738,19 @@ const StoryNavigation = styled.div`
   right: 0;
   bottom: 0;
   display: flex;
-  z-index: 4; /* Lower than controls but higher than content */
+  z-index: 4;
 `;
 
 const NavArea = styled.div`
   flex: 1;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  user-select: none;
+
+  &:focus {
+    outline: none;
+  }
 `;
 
 // Modal styling remains largely the same

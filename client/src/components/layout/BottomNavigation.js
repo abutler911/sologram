@@ -9,7 +9,6 @@ import {
   FaPlus,
   FaCamera,
   FaImages,
-  FaSearch,
   FaUsers,
 } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
