@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { client } from "../lib/sanity";
+import { sanity } from "../lib/sanityClient";
 import PortableTextComponent from "../components/PortableTextComponent";
 import styled from "styled-components";
 import MainLayout from "../components/layout/MainLayout";
@@ -16,7 +16,7 @@ const About = () => {
 
   useEffect(() => {
     const fetchAbout = async () => {
-      const data = await client.fetch(query);
+      const data = await sanity.fetch(query);
       setAboutData(data);
     };
     fetchAbout();
