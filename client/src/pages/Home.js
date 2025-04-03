@@ -13,6 +13,7 @@ import { FaCamera } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import Stories from "../components/stories/Stories";
 import PostCard from "../components/posts/PostCard";
+import PreloadImage from "../components/PreloadImage";
 
 const Home = forwardRef((props, ref) => {
   const [posts, setPosts] = useState([]);
@@ -186,73 +187,88 @@ const Home = forwardRef((props, ref) => {
     localStorage.setItem("aboutBannerClosed", "true");
   };
 
+  const firstPostImage =
+    posts.length > 0 &&
+    posts[0].media?.length > 0 &&
+    posts[0].media[0].mediaType === "image"
+      ? posts[0].media[0].mediaUrl.replace(
+          "/upload/",
+          "/upload/w_614,h_614,f_auto,q_auto/"
+        )
+      : null;
+
   return (
-    <PageWrapper>
-      <HomeContainer isPWA={isPWA}>
-        {showAboutBanner && (
-          <AboutBanner>
-            <BannerContent>
-              <LogoContainer>
-                <FaCamera />
-              </LogoContainer>
-              <BannerTextContainer>
-                <BannerTitle>Welcome to Sologram</BannerTitle>
-                <BannerTagline>One Voice. Infinite Moments.</BannerTagline>
-              </BannerTextContainer>
-            </BannerContent>
-            <CloseButton onClick={closeBanner}>×</CloseButton>
-          </AboutBanner>
-        )}
+    <>
+      {firstPostImage && (
+        <PreloadImage src={firstPostImage} type="image/webp" />
+      )}
+      <PageWrapper>
+        <HomeContainer isPWA={isPWA}>
+          {showAboutBanner && (
+            <AboutBanner>
+              <BannerContent>
+                <LogoContainer>
+                  <FaCamera />
+                </LogoContainer>
+                <BannerTextContainer>
+                  <BannerTitle>Welcome to Sologram</BannerTitle>
+                  <BannerTagline>One Voice. Infinite Moments.</BannerTagline>
+                </BannerTextContainer>
+              </BannerContent>
+              <CloseButton onClick={closeBanner}>×</CloseButton>
+            </AboutBanner>
+          )}
 
-        {searching && searchQuery && (
-          <SearchResultsIndicator>
-            <SearchResultsText>
-              Showing results for "{searchQuery}" ({posts.length}{" "}
-              {posts.length === 1 ? "post" : "posts"})
-            </SearchResultsText>
-            <ClearSearchButton onClick={clearSearch}>
-              Clear Search
-            </ClearSearchButton>
-          </SearchResultsIndicator>
-        )}
+          {searching && searchQuery && (
+            <SearchResultsIndicator>
+              <SearchResultsText>
+                Showing results for "{searchQuery}" ({posts.length}{" "}
+                {posts.length === 1 ? "post" : "posts"})
+              </SearchResultsText>
+              <ClearSearchButton onClick={clearSearch}>
+                Clear Search
+              </ClearSearchButton>
+            </SearchResultsIndicator>
+          )}
 
-        <Stories />
+          <Stories />
 
-        {error ? (
-          <ErrorMessage>{error}</ErrorMessage>
-        ) : posts.length > 0 ? (
-          <PostGrid isPWA={isPWA}>
-            {posts.map((post, index) => (
-              <GridItem
-                ref={posts.length === index + 1 ? lastPostElementRef : null}
-                key={post._id}
-                isPWA={isPWA}
-              >
-                <PostCard
-                  post={post}
-                  index={index}
-                  onDelete={(deletedId) => {
-                    setPosts((prevPosts) =>
-                      prevPosts.filter((p) => p._id !== deletedId)
-                    );
-                  }}
-                />
-              </GridItem>
-            ))}
-          </PostGrid>
-        ) : loading ? (
-          <LoadingMessage>Loading posts...</LoadingMessage>
-        ) : (
-          <NoPostsMessage>
-            No posts available. Start creating your own content!
-          </NoPostsMessage>
-        )}
+          {error ? (
+            <ErrorMessage>{error}</ErrorMessage>
+          ) : posts.length > 0 ? (
+            <PostGrid isPWA={isPWA}>
+              {posts.map((post, index) => (
+                <GridItem
+                  ref={posts.length === index + 1 ? lastPostElementRef : null}
+                  key={post._id}
+                  isPWA={isPWA}
+                >
+                  <PostCard
+                    post={post}
+                    index={index}
+                    onDelete={(deletedId) => {
+                      setPosts((prevPosts) =>
+                        prevPosts.filter((p) => p._id !== deletedId)
+                      );
+                    }}
+                  />
+                </GridItem>
+              ))}
+            </PostGrid>
+          ) : loading ? (
+            <LoadingMessage>Loading posts...</LoadingMessage>
+          ) : (
+            <NoPostsMessage>
+              No posts available. Start creating your own content!
+            </NoPostsMessage>
+          )}
 
-        {loading && posts.length > 0 && (
-          <LoadingMore>Loading more posts...</LoadingMore>
-        )}
-      </HomeContainer>
-    </PageWrapper>
+          {loading && posts.length > 0 && (
+            <LoadingMore>Loading more posts...</LoadingMore>
+          )}
+        </HomeContainer>
+      </PageWrapper>
+    </>
   );
 });
 

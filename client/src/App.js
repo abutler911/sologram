@@ -8,6 +8,7 @@ import {
 import { Toaster, toast } from "react-hot-toast";
 import styled from "styled-components";
 import ReactGA from "react-ga4";
+import { HelmetProvider } from "react-helmet-async";
 
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
@@ -116,126 +117,128 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router>
-        <PageTracker />
-        <div className="app">
-          <Toaster position="top-right" />
-          {!networkStatus && (
-            <OfflineIndicator>
-              You are currently offline. Some features may be limited.
-            </OfflineIndicator>
-          )}
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <>
-                  <Header
-                    onSearch={handleSearch}
-                    onClearSearch={handleClearSearch}
-                  />
-                  <main className="main-content">
-                    <SubscribeBanner />
-                    <Home ref={homeRef} />
-                  </main>
-                  <Footer />
-                  <BottomNavigation />
-                </>
-              }
-            />
-            <Route path="/login" element={<Login />} />
-            <Route path="/post/:id" element={<PostDetail />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route
-              path="/subscribers"
-              element={
-                <PrivateRoute>
-                  <SubscriberAdmin />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/create"
-              element={
-                <PrivateRoute>
-                  <CreatePost />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/edit/:id"
-              element={
-                <PrivateRoute>
-                  <EditPost />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <PrivateRoute>
-                  <AdminDashboard />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/create-story"
-              element={
-                <PrivateRoute>
-                  <CreateStory />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/story-archive"
-              element={
-                <PrivateRoute>
-                  <StoryArchive />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/story-archive/:id"
-              element={
-                <PrivateRoute>
-                  <ArchivedStoryView />
-                </PrivateRoute>
-              }
-            />
-            <Route path="/collections" element={<CollectionsList />} />
-            <Route path="/collections/:id" element={<CollectionDetail />} />
-            <Route
-              path="/collections/create"
-              element={
-                <PrivateRoute>
-                  <CreateCollection />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/collections/:id/edit"
-              element={
-                <PrivateRoute>
-                  <EditCollection />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/collections/:id/add-posts"
-              element={
-                <PrivateRoute>
-                  <AddPostsToCollection />
-                </PrivateRoute>
-              }
-            />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <InstallPrompt />
-          <FloatingActionButtonAdjuster />
-        </div>
-      </Router>
+      <HelmetProvider>
+        <Router>
+          <PageTracker />
+          <div className="app">
+            <Toaster position="top-right" />
+            {!networkStatus && (
+              <OfflineIndicator>
+                You are currently offline. Some features may be limited.
+              </OfflineIndicator>
+            )}
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <>
+                    <Header
+                      onSearch={handleSearch}
+                      onClearSearch={handleClearSearch}
+                    />
+                    <main className="main-content">
+                      <SubscribeBanner />
+                      <Home ref={homeRef} />
+                    </main>
+                    <Footer />
+                    <BottomNavigation />
+                  </>
+                }
+              />
+              <Route path="/login" element={<Login />} />
+              <Route path="/post/:id" element={<PostDetail />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route
+                path="/subscribers"
+                element={
+                  <PrivateRoute>
+                    <SubscriberAdmin />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/create"
+                element={
+                  <PrivateRoute>
+                    <CreatePost />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/edit/:id"
+                element={
+                  <PrivateRoute>
+                    <EditPost />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <PrivateRoute>
+                    <AdminDashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/create-story"
+                element={
+                  <PrivateRoute>
+                    <CreateStory />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/story-archive"
+                element={
+                  <PrivateRoute>
+                    <StoryArchive />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/story-archive/:id"
+                element={
+                  <PrivateRoute>
+                    <ArchivedStoryView />
+                  </PrivateRoute>
+                }
+              />
+              <Route path="/collections" element={<CollectionsList />} />
+              <Route path="/collections/:id" element={<CollectionDetail />} />
+              <Route
+                path="/collections/create"
+                element={
+                  <PrivateRoute>
+                    <CreateCollection />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/collections/:id/edit"
+                element={
+                  <PrivateRoute>
+                    <EditCollection />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/collections/:id/add-posts"
+                element={
+                  <PrivateRoute>
+                    <AddPostsToCollection />
+                  </PrivateRoute>
+                }
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <InstallPrompt />
+            <FloatingActionButtonAdjuster />
+          </div>
+        </Router>
+      </HelmetProvider>
     </AuthProvider>
   );
 }
