@@ -285,10 +285,10 @@ const PostCard = ({ post: initialPost, onDelete }) => {
         </LikesCounter>
 
         <CardContent>
-          {/* Post Title (Caption) is now bigger and bolder, without the author name */}
-          <PostTitle>{post.caption}</PostTitle>
-
-          {post.content && <Content>{post.content}</Content>}
+          <PostLink to={`/post/${post._id}`}>
+            <PostTitle>{post.caption}</PostTitle>
+            {post.content && <Content>{post.content}</Content>}
+          </PostLink>
 
           {post.tags && post.tags.length > 0 && (
             <TagsContainer>
@@ -715,7 +715,6 @@ const CardContent = styled.div`
   }
 `;
 
-// New styled component for the post title
 const PostTitle = styled.h2`
   font-size: 1.25rem;
   font-weight: 700;
@@ -723,6 +722,7 @@ const PostTitle = styled.h2`
   margin: 0 0 12px 0;
   line-height: 1.3;
   word-break: break-word;
+  transition: transform 0.2s ease;
 `;
 
 const Content = styled.p`
@@ -735,6 +735,7 @@ const Content = styled.p`
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  transition: transform 0.2s ease;
 `;
 
 const TagsContainer = styled.div`
@@ -841,6 +842,17 @@ const Backdrop = styled.div`
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.65);
   z-index: 1000;
+`;
+
+const PostLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+  display: block;
+
+  &:hover ${PostTitle}, &:hover ${Content} {
+    transform: translateX(2px);
+    text-decoration: underline;
+  }
 `;
 
 export default PostCard;
