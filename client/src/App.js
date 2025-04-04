@@ -14,6 +14,7 @@ import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import BottomNavigation from "./components/layout/BottomNavigation";
 import SubscribeBanner from "./components/notifications/SubscribeBanner";
+import ScrollToTop from "./components/ScrollToTop";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -45,7 +46,6 @@ import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 
 serviceWorkerRegistration.register();
 
-// Page Tracking Component (now inside Router)
 const PageTracker = () => {
   const location = useLocation();
 
@@ -112,6 +112,7 @@ function App() {
     <AuthProvider>
       <HelmetProvider>
         <Router>
+          <ScrollToTop />
           <PageTracker />
           <div className="app">
             <Toaster position="top-right" />
