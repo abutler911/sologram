@@ -16,6 +16,7 @@ import {
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
+import pandaImg from "../../assets/panda.jpg";
 
 const filters = [
   { name: "None", class: "" },
@@ -381,7 +382,16 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                         onClick={() => applyFilter(index)}
                         className={selectedFilter === index ? "active" : ""}
                       >
-                        <FilterPreview className={filter.class} />
+                        <FilterPreviewImage
+                          src={
+                            getCurrentMedia()?.preview ||
+                            getCurrentMedia()?.mediaUrl ||
+                            pandaImg
+                          }
+                          alt={filter.name}
+                          className={filter.class}
+                        />
+
                         <FilterName>{filter.name}</FilterName>
                       </FilterItem>
                     ))}
@@ -912,31 +922,6 @@ const FilterItem = styled.div`
   }
 `;
 
-const FilterPreview = styled.div`
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
-  background-color: #333333;
-  background-image: url("https://via.placeholder.com/60");
-  margin-bottom: 0.5rem;
-
-  &.filter-warm {
-    filter: saturate(1.5) sepia(0.2) contrast(1.1);
-  }
-
-  &.filter-cool {
-    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
-  }
-
-  &.filter-grayscale {
-    filter: grayscale(1);
-  }
-
-  &.filter-vintage {
-    filter: sepia(0.4) saturate(1.3) contrast(1.2);
-  }
-`;
-
 const FilterName = styled.span`
   font-size: 0.875rem;
   color: #bbbbbb;
@@ -1344,6 +1329,29 @@ const ActionButtonsRow = styled.div`
 
 const AddMoreWrapper = styled.div`
   position: relative;
+`;
+
+const FilterPreviewImage = styled.img`
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+
+  &.filter-warm {
+    filter: saturate(1.5) sepia(0.2) contrast(1.1);
+  }
+
+  &.filter-cool {
+    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
+  }
+
+  &.filter-grayscale {
+    filter: grayscale(1);
+  }
+
+  &.filter-vintage {
+    filter: sepia(0.4) saturate(1.3) contrast(1.2);
+  }
 `;
 
 export default CreatePostWorkflow;
