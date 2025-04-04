@@ -274,7 +274,7 @@ const CreateStory = () => {
       input.capture = "environment";
 
       // Show toast about time limit
-      toast.info("Maximum video length: 30 seconds", {
+      toast("Maximum video length: 30 seconds", {
         duration: 3000,
         position: "top-center",
       });
@@ -347,7 +347,7 @@ const CreateStory = () => {
       Maximum upload size: 300MB
     `;
 
-    toast.info(
+    toast(
       <div style={{ whiteSpace: "pre-line", textAlign: "left" }}>
         {sizeGuide}
       </div>,
