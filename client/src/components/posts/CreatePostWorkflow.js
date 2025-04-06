@@ -183,22 +183,52 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     setLoading(true);
 
     try {
-      // Upload all new media files to Cloudinary first
+      const concurrencyLimit = 3;
       const uploadedMedia = [];
 
-      for (let i = 0; i < mediaPreviews.length; i++) {
-        const preview = mediaPreviews[i];
-        const uploaded = await uploadToCloudinary(preview.file);
-        uploaded.filter = preview.filter || "";
-        uploadedMedia.push(uploaded);
+      let currentIndex = 0;
+      const uploadTasks = [];
+
+      const uploadNext = async () => {
+        if (currentIndex >= mediaPreviews.length) return;
+        const preview = mediaPreviews[currentIndex++];
+        const id = preview.id;
+
+        try {
+          const onProgress = (percent) => {
+            setMediaPreviews((prev) =>
+              prev.map((item) =>
+                item.id === id ? { ...item, progress: percent } : item
+              )
+            );
+          };
+
+          const uploaded = await uploadToCloudinary(preview.file, onProgress);
+          uploaded.filter = preview.filter || "";
+          uploadedMedia.push(uploaded);
+        } catch (err) {
+          setMediaPreviews((prev) =>
+            prev.map((item) =>
+              item.id === id ? { ...item, error: true } : item
+            )
+          );
+          toast.error(`Failed to upload ${preview.file.name}`);
+        }
+
+        await uploadNext(); // proceed to next file
+      };
+
+      for (let i = 0; i < concurrencyLimit; i++) {
+        uploadTasks.push(uploadNext());
       }
 
-      // Construct payload
+      await Promise.all(uploadTasks);
+
       const payload = {
         caption,
         content,
         tags,
-        media: [...existingMedia, ...uploadedMedia], // merge both
+        media: [...existingMedia, ...uploadedMedia],
       };
 
       let response;
@@ -220,6 +250,38 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       toast.error(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const retryUpload = async (filePreview) => {
+    try {
+      setMediaPreviews((prev) =>
+        prev.map((item) =>
+          item.id === filePreview.id
+            ? { ...item, error: false, progress: 0 }
+            : item
+        )
+      );
+
+      const onProgress = (percent) => {
+        setMediaPreviews((prev) =>
+          prev.map((item) =>
+            item.id === filePreview.id ? { ...item, progress: percent } : item
+          )
+        );
+      };
+
+      const uploaded = await uploadToCloudinary(filePreview.file, onProgress);
+      uploaded.filter = filePreview.filter || "";
+
+      // Replace the errored one with the successfully uploaded
+      setMediaPreviews((prev) =>
+        prev.filter((item) => item.id !== filePreview.id)
+      );
+      setExistingMedia((prev) => [...prev, uploaded]);
+      toast.success("Upload succeeded!");
+    } catch (err) {
+      toast.error("Retry failed. Try again later.");
     }
   };
 
@@ -314,6 +376,14 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
               <MediaPreviewSection>
                 <MediaCarousel>
                   <CurrentMediaPreview>
+                    {getCurrentMedia()?.error && (
+                      <RetryButton
+                        onClick={() => retryUpload(getCurrentMedia())}
+                      >
+                        Retry Upload
+                      </RetryButton>
+                    )}
+
                     {getCurrentMedia()?.mediaType === "video" ||
                     getCurrentMedia()?.type === "video" ? (
                       <PreviewVideo
@@ -1351,6 +1421,21 @@ const FilterPreviewImage = styled.img`
 
   &.filter-vintage {
     filter: sepia(0.4) saturate(1.3) contrast(1.2);
+  }
+`;
+
+const RetryButton = styled.button`
+  background-color: #ff7e5f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: #ff6a4b;
   }
 `;
 

@@ -1,33 +1,38 @@
-export const uploadToCloudinary = async (file) => {
+export const uploadToCloudinary = async (file, onProgress) => {
   try {
-    const clonedFile = new File([file], file.name, { type: file.type });
-
     const formData = new FormData();
-    formData.append("file", clonedFile);
+    formData.append("file", file);
     formData.append("upload_preset", "unsigned_post_upload");
 
-    const res = await fetch(
-      "https://api.cloudinary.com/v1_1/ds5rxplmr/auto/upload",
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
+    return await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "https://api.cloudinary.com/v1_1/ds5rxplmr/auto/upload");
 
-    const data = await res.json();
+      xhr.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable && onProgress) {
+          const percent = Math.round((event.loaded * 100) / event.total);
+          onProgress(percent);
+        }
+      });
 
-    if (!res.ok || !data.secure_url) {
-      console.error("Cloudinary upload failed:", data);
-      throw new Error(
-        data.error?.message || "Upload failed - no URL returned."
-      );
-    }
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === 4) {
+          const res = JSON.parse(xhr.responseText);
+          if (xhr.status === 200 && res.secure_url) {
+            resolve({
+              mediaUrl: res.secure_url,
+              cloudinaryId: res.public_id,
+              mediaType: file.type.startsWith("video") ? "video" : "image",
+            });
+          } else {
+            reject(new Error(res.error?.message || "Upload failed"));
+          }
+        }
+      };
 
-    return {
-      mediaUrl: data.secure_url,
-      cloudinaryId: data.public_id,
-      mediaType: file.type.startsWith("video") ? "video" : "image",
-    };
+      xhr.onerror = () => reject(new Error("Upload network error"));
+      xhr.send(formData);
+    });
   } catch (err) {
     console.error("Upload error:", err);
     throw err;
