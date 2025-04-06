@@ -44,6 +44,10 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
   const navigate = useNavigate();
 
+  const hasPendingUploads = mediaPreviews.some(
+    (media) => media.uploading || !media.mediaUrl
+  );
+
   useEffect(() => {
     if (isEditing && initialData?.media?.length > 0) {
       const mapped = initialData.media.map((media) => ({
@@ -136,6 +140,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   // Get the current media being displayed
   const getCurrentMedia = () => {
     const allMedia = [...existingMedia, ...mediaPreviews];
+
     return allMedia[activePreviewIndex] || null;
   };
 
@@ -392,6 +397,13 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                         }
                         className={getCurrentMedia()?.filter || ""}
                       />
+                    )}
+                    {getCurrentMedia()?.uploading && (
+                      <ProgressOverlay>
+                        <ProgressText>
+                          Uploading... {getCurrentMedia()?.progress || 0}%
+                        </ProgressText>
+                      </ProgressOverlay>
                     )}
 
                     <RemoveMediaButton
@@ -652,6 +664,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
             onClick={handleSubmit}
             disabled={
               loading ||
+              hasPendingUploads ||
               !caption.trim() ||
               (mediaPreviews.length === 0 && existingMedia.length === 0)
             }
@@ -664,6 +677,8 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                   : "Publishing..."
                 : isEditing
                 ? "Update"
+                : hasPendingUploads
+                ? "Uploading..."
                 : "Publish"}
             </span>
           </PublishButton>
@@ -1427,6 +1442,25 @@ const RetryButton = styled.button`
   &:hover {
     background-color: #ff6a4b;
   }
+`;
+
+const ProgressOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+`;
+
+const ProgressText = styled.div`
+  color: white;
+  font-size: 1.25rem;
+  font-weight: bold;
 `;
 
 export default CreatePostWorkflow;
