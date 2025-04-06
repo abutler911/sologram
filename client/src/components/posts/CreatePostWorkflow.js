@@ -58,8 +58,9 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   }, [isEditing, initialData]);
 
   const onDrop = useCallback(
-    (acceptedFiles, rejectedFiles = []) => {
-      if (rejectedFiles && rejectedFiles.length > 0) {
+    async (acceptedFiles, rejectedFiles = []) => {
+      // Show errors for rejected
+      if (rejectedFiles.length > 0) {
         rejectedFiles.forEach(({ file, errors }) => {
           toast.error(`${file.name}: ${errors[0]?.message || "Upload error"}`);
         });
@@ -68,32 +69,58 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       const totalFiles =
         mediaPreviews.length + existingMedia.length + acceptedFiles.length;
       if (totalFiles > 25) {
-        toast.error("Maximum 25 media files allowed per post");
+        toast.error("Maximum 25 media files allowed");
         return;
       }
 
-      const validFiles = acceptedFiles.filter((file) => {
-        if (file.size > 25 * 1024 * 1024) {
-          toast.error(`${file.name} exceeds 25MB limit`);
-          return false;
-        }
-        return true;
-      });
-
-      const newPreviews = validFiles.map((file) => {
+      for (const file of acceptedFiles) {
+        const id = Date.now() + Math.random().toString();
         const isVideo = file.type.startsWith("video/");
-        return {
-          id: Date.now() + Math.random().toString(),
+
+        const preview = {
+          id,
           file,
           preview: URL.createObjectURL(file),
           type: isVideo ? "video" : "image",
           filter: "",
+          uploading: true,
+          progress: 0,
+          error: false,
         };
-      });
 
-      setMediaPreviews((prev) => [...prev, ...newPreviews]);
+        setMediaPreviews((prev) => [...prev, preview]);
+
+        try {
+          const onProgress = (percent) => {
+            setMediaPreviews((prev) =>
+              prev.map((p) => (p.id === id ? { ...p, progress: percent } : p))
+            );
+          };
+
+          const uploaded = await uploadToCloudinary(file, onProgress);
+
+          setMediaPreviews((prev) =>
+            prev.map((p) =>
+              p.id === id
+                ? {
+                    ...p,
+                    uploading: false,
+                    mediaUrl: uploaded.mediaUrl,
+                    cloudinaryId: uploaded.cloudinaryId,
+                    mediaType: uploaded.mediaType,
+                  }
+                : p
+            )
+          );
+        } catch (err) {
+          toast.error(`Upload failed: ${file.name}`);
+          setMediaPreviews((prev) =>
+            prev.map((p) => (p.id === id ? { ...p, error: true } : p))
+          );
+        }
+      }
     },
-    [mediaPreviews.length, existingMedia.length]
+    [mediaPreviews, existingMedia]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -170,59 +197,25 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
   // Handle form submission
   const handleSubmit = async () => {
-    if (!caption.trim()) {
-      toast.error("Please add a caption for your post");
-      return;
-    }
-
-    if (mediaPreviews.length === 0 && existingMedia.length === 0) {
-      toast.error("Please add at least one image or video to your post");
-      return;
+    if (!caption.trim()) return toast.error("Please add a caption");
+    if (
+      mediaPreviews.filter((m) => m.mediaUrl && !m.error).length === 0 &&
+      existingMedia.length === 0
+    ) {
+      return toast.error("Add at least one uploaded image or video");
     }
 
     setLoading(true);
 
     try {
-      const concurrencyLimit = 3;
-      const uploadedMedia = [];
-
-      let currentIndex = 0;
-      const uploadTasks = [];
-
-      const uploadNext = async () => {
-        if (currentIndex >= mediaPreviews.length) return;
-        const preview = mediaPreviews[currentIndex++];
-        const id = preview.id;
-
-        try {
-          const onProgress = (percent) => {
-            setMediaPreviews((prev) =>
-              prev.map((item) =>
-                item.id === id ? { ...item, progress: percent } : item
-              )
-            );
-          };
-
-          const uploaded = await uploadToCloudinary(preview.file, onProgress);
-          uploaded.filter = preview.filter || "";
-          uploadedMedia.push(uploaded);
-        } catch (err) {
-          setMediaPreviews((prev) =>
-            prev.map((item) =>
-              item.id === id ? { ...item, error: true } : item
-            )
-          );
-          toast.error(`Failed to upload ${preview.file.name}`);
-        }
-
-        await uploadNext(); // proceed to next file
-      };
-
-      for (let i = 0; i < concurrencyLimit; i++) {
-        uploadTasks.push(uploadNext());
-      }
-
-      await Promise.all(uploadTasks);
+      const uploadedMedia = mediaPreviews
+        .filter((m) => m.mediaUrl && !m.error)
+        .map((m) => ({
+          mediaUrl: m.mediaUrl,
+          cloudinaryId: m.cloudinaryId,
+          mediaType: m.mediaType,
+          filter: m.filter || "",
+        }));
 
       const payload = {
         caption,
@@ -235,19 +228,16 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       if (isEditing) {
         payload.keepMedia = existingMedia.map((m) => m.id).join(",");
         response = await axios.put(`/api/posts/${initialData._id}`, payload);
-        toast.success("Post updated successfully!");
+        toast.success("Post updated!");
       } else {
         response = await axios.post("/api/posts", payload);
-        toast.success("Post created successfully!");
+        toast.success("Post created!");
       }
 
       navigate(`/post/${response.data.data._id}`);
     } catch (err) {
-      console.error("Post submit failed:", err);
-      const message =
-        err.response?.data?.message ||
-        (isEditing ? "Update failed" : "Create failed");
-      toast.error(message);
+      console.error("Post failed:", err);
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
