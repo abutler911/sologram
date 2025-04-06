@@ -67,7 +67,19 @@ exports.getPost = async (req, res) => {
 
 exports.createPost = async (req, res) => {
   try {
-    const { caption, content, tags, media = [] } = req.body;
+    let { caption, content, tags, media = [] } = req.body;
+
+    // Defensive: handle media if it comes as a JSON string
+    if (typeof media === "string") {
+      try {
+        media = JSON.parse(media);
+      } catch (err) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid media format. Must be a valid JSON array.",
+        });
+      }
+    }
 
     if (!caption || !Array.isArray(media)) {
       return res.status(400).json({
@@ -76,30 +88,36 @@ exports.createPost = async (req, res) => {
       });
     }
 
-    const newPost = {
-      caption,
-      content,
-      tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
-      media: media.map((item) => ({
+    // Validate media items
+    const formattedMedia = media.map((item) => {
+      if (!item.mediaUrl || !item.cloudinaryId) {
+        throw new Error(
+          "Each media item must include mediaUrl and cloudinaryId"
+        );
+      }
+
+      return {
         mediaType: item.mediaType || "image",
         mediaUrl: item.mediaUrl,
         cloudinaryId: item.cloudinaryId,
         filter: item.filter || "",
-      })),
-    };
+        uploadedAt: new Date(),
+      };
+    });
 
-    const post = await Post.create(newPost);
+    const newPost = await Post.create({
+      caption,
+      content,
+      tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
+      media: formattedMedia,
+    });
 
+    // Optional: Notify subscribers
     notificationService
       .sendCustomNotification(`New post "${caption}" has been added!`, null)
-      .catch((error) => {
-        console.error("Notification error:", error.message);
-      });
+      .catch((error) => console.warn("Notification error:", error.message));
 
-    res.status(201).json({
-      success: true,
-      data: post,
-    });
+    res.status(201).json({ success: true, data: newPost });
   } catch (err) {
     console.error("Post creation failed:", err);
     res.status(500).json({ success: false, message: "Server Error" });
@@ -115,43 +133,73 @@ exports.updatePost = async (req, res) => {
         .json({ success: false, message: "Post not found" });
     }
 
-    const { caption, content, tags, media = [], keepMedia = [] } = req.body;
+    let { caption, content, tags, media = [], keepMedia = [] } = req.body;
 
-    // Update basic fields
-    post.caption = caption || post.caption;
-    post.content = content || post.content;
-    post.tags = tags ? tags.split(",").map((tag) => tag.trim()) : post.tags;
-    post.updatedAt = Date.now();
-
-    // Filter media to keep
-    const keepMediaIds = Array.isArray(keepMedia)
-      ? keepMedia
-      : keepMedia.split(",");
-    const kept = post.media.filter((m) =>
-      keepMediaIds.includes(m._id.toString())
-    );
-
-    // Destroy media that was removed
-    const toDelete = post.media.filter(
-      (m) => !keepMediaIds.includes(m._id.toString())
-    );
-    for (const media of toDelete) {
-      if (media.cloudinaryId) {
-        await cloudinary.uploader.destroy(media.cloudinaryId);
+    // Handle possible stringified media
+    if (typeof media === "string") {
+      try {
+        media = JSON.parse(media);
+      } catch {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid media JSON" });
       }
     }
 
-    // Add new media from frontend
+    // Handle possible stringified keepMedia
+    const keepMediaIds = Array.isArray(keepMedia)
+      ? keepMedia.map((id) => id.toString().trim())
+      : keepMedia.split(",").map((id) => id.trim());
+
+    const keptMedia = post.media.filter((m) =>
+      keepMediaIds.includes(m._id.toString())
+    );
+
+    const removedMedia = post.media.filter(
+      (m) => !keepMediaIds.includes(m._id.toString())
+    );
+
+    // Delete media from Cloudinary
+    for (const media of removedMedia) {
+      if (media.cloudinaryId) {
+        try {
+          await cloudinary.uploader.destroy(media.cloudinaryId);
+        } catch (err) {
+          console.warn(
+            "Failed to delete Cloudinary asset:",
+            media.cloudinaryId,
+            err
+          );
+        }
+      }
+    }
+
+    // Process new media
     const newMedia = Array.isArray(media)
-      ? media.map((item) => ({
-          mediaType: item.mediaType || "image",
-          mediaUrl: item.mediaUrl,
-          cloudinaryId: item.cloudinaryId,
-          filter: item.filter || "",
-        }))
+      ? media.map((item) => {
+          if (!item.mediaUrl || !item.cloudinaryId) {
+            throw new Error(
+              "Each new media item must have mediaUrl and cloudinaryId"
+            );
+          }
+
+          return {
+            mediaType: item.mediaType || "image",
+            mediaUrl: item.mediaUrl,
+            cloudinaryId: item.cloudinaryId,
+            filter: item.filter || "",
+            uploadedAt: new Date(),
+          };
+        })
       : [];
 
-    post.media = [...kept, ...newMedia];
+    // Update post fields
+    post.caption = caption || post.caption;
+    post.content = content || post.content;
+    post.tags = tags ? tags.split(",").map((tag) => tag.trim()) : post.tags;
+    post.media = [...keptMedia, ...newMedia];
+    post.updatedAt = Date.now();
+
     await post.save();
 
     res.status(200).json({ success: true, data: post });
