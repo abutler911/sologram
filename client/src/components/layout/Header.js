@@ -6,7 +6,7 @@ import {
   FaUser,
   FaSignOutAlt,
   FaSignInAlt,
-  FaBars,
+  FaExternalLinkAlt,
   FaTimes,
   FaFolder,
   FaArchive,
@@ -15,6 +15,7 @@ import {
   FaChevronDown,
   FaEllipsisV,
 } from "react-icons/fa";
+
 import { AuthContext } from "../../context/AuthContext";
 import HeaderSubscriptionBanner from "../subscription/HeaderSubscriptionBanner";
 
@@ -340,10 +341,14 @@ const Header = ({ onSearch, onClearSearch }) => {
               <FaSignInAlt /> <span>Login</span>
             </MobileMenuItem>
           )}
-          <ExternalMenuItem>
-            href="https://solounderground.com" target="_blank" rel="noopener
-            noreferrer" >
-            <FaCamera style={{ marginRight: "0.75rem" }} />
+          <MenuDivider />
+          <ExternalMenuItem
+            href="https://solounderground.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={closeMenu}
+          >
+            <FaExternalLinkAlt style={{ marginRight: "0.75rem" }} />
             SoloUnderground
           </ExternalMenuItem>
         </MobileMenuContent>
