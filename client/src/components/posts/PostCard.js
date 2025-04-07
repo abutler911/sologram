@@ -441,17 +441,13 @@ const UserAvatar = styled.div`
 
 const Username = styled.span`
   font-weight: 700;
-  color: #ffffff;
-  font-size: 1.5rem;
+  color: #ff7e5f;
+  font-size: 1.8rem;
   font-family: "Caveat", cursive;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
   letter-spacing: 0.5px;
   line-height: 1.3;
   margin-top: 2px;
-
-  background: linear-gradient(135deg, #f5d442, #ff7e5f);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 
   transition: transform 0.2s ease;
   &:hover {
