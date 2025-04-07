@@ -166,10 +166,7 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
         <CardHeader>
           <UserInfo>
             <UserAvatarImage src={AUTHOR_IMAGE} alt="Andrew's avatar" />
-            <Username>
-              {AUTHOR_NAME}
-              <VerifiedBadge>Admin</VerifiedBadge>
-            </Username>
+            <Username>{AUTHOR_NAME}</Username>
           </UserInfo>
           {isAuthenticated && (
             <ActionsContainer ref={actionsRef}>
@@ -445,7 +442,7 @@ const UserAvatar = styled.div`
 const Username = styled.span`
   font-weight: 600;
   color: #ffffff;
-  font-size: 0.875rem;
+  font-size: 1.2rem;
   font-family: "Shadows Into Light", cursive;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
 `;
@@ -874,8 +871,8 @@ const PostLink = styled(Link)`
 `;
 
 const UserAvatarImage = styled.img`
-  width: 32px;
-  height: 32px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   object-fit: cover;
   margin-right: 12px;
@@ -883,10 +880,10 @@ const UserAvatarImage = styled.img`
 `;
 
 const VerifiedBadge = styled.span`
-  font-size: 0.7rem;
+  font-size: 0.5rem;
   background: #ff7e5f;
   color: white;
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 10px;
   margin-left: 8px;
   font-weight: 600;
