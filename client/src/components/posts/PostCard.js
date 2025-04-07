@@ -16,7 +16,7 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../../context/AuthContext";
-import pandaImg from "../../assets/panda.jpg";
+import pandaImg from "../../assets/andy.jpg";
 const AUTHOR_IMAGE = pandaImg;
 
 const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
@@ -446,6 +446,8 @@ const Username = styled.span`
   font-weight: 600;
   color: #ffffff;
   font-size: 0.875rem;
+  font-family: "Shadows Into Light", cursive;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
 `;
 
 const ActionsButton = styled.button`
