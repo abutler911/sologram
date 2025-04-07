@@ -150,6 +150,15 @@ const Header = ({ onSearch, onClearSearch }) => {
                 Subscribers
               </NavLink>
             )}
+            {/* 🔥 SoloUnderground external link */}
+            <NavLink
+              as="a"
+              href="https://solounderground.com"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              SoloUnderground
+            </NavLink>
           </DesktopNavigation>
 
           <HeaderActions>
@@ -331,6 +340,12 @@ const Header = ({ onSearch, onClearSearch }) => {
               <FaSignInAlt /> <span>Login</span>
             </MobileMenuItem>
           )}
+          <ExternalMenuItem>
+            href="https://solounderground.com" target="_blank" rel="noopener
+            noreferrer" >
+            <FaCamera style={{ marginRight: "0.75rem" }} />
+            SoloUnderground
+          </ExternalMenuItem>
         </MobileMenuContent>
       </MobileMenu>
 
@@ -875,6 +890,25 @@ const MobileMenuLogoutButton = styled.button`
   text-align: left;
   border-radius: 4px;
   cursor: pointer;
+
+  &:hover {
+    background-color: rgba(255, 126, 95, 0.1);
+    color: #ff7e5f;
+  }
+
+  svg {
+    margin-right: 0.75rem;
+  }
+`;
+
+const ExternalMenuItem = styled.a`
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  color: #4a4a4a;
+  font-weight: 500;
+  border-radius: 4px;
+  text-decoration: none;
 
   &:hover {
     background-color: rgba(255, 126, 95, 0.1);
