@@ -16,6 +16,8 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../../context/AuthContext";
+import pandaImg from "../../assets/panda.jpg";
+const AUTHOR_IMAGE = pandaImg;
 
 const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
   const [post, setPost] = useState(initialPost);
@@ -163,8 +165,11 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
       <Card>
         <CardHeader>
           <UserInfo>
-            <UserAvatar>{AUTHOR_INITIAL}</UserAvatar>
-            <Username>{AUTHOR_NAME}</Username>
+            <UserAvatarImage src={AUTHOR_IMAGE} alt="Andrew's avatar" />
+            <Username>
+              {AUTHOR_NAME}
+              <VerifiedBadge>Admin</VerifiedBadge>
+            </Username>
           </UserInfo>
           {isAuthenticated && (
             <ActionsContainer ref={actionsRef}>
@@ -864,6 +869,26 @@ const PostLink = styled(Link)`
   &:hover ${PostTitle}, &:hover ${Content} {
     transform: translateX(2px);
   }
+`;
+
+const UserAvatarImage = styled.img`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 12px;
+  border: 2px solid #ff7e5f;
+`;
+
+const VerifiedBadge = styled.span`
+  font-size: 0.7rem;
+  background: #ff7e5f;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
 `;
 
 export default PostCard;
