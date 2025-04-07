@@ -910,18 +910,18 @@ const ExternalMenuItem = styled.a`
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem;
-  color: #4a4a4a;
-  font-weight: 500;
+  color: #ff7e5f;
+  font-weight: 600;
   border-radius: 4px;
   text-decoration: none;
 
   &:hover {
     background-color: rgba(255, 126, 95, 0.1);
-    color: #ff7e5f;
   }
 
   svg {
     margin-right: 0.75rem;
+    color: #ff7e5f;
   }
 `;
 
