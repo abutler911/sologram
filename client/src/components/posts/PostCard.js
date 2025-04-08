@@ -32,7 +32,6 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
 
   // Constants for personalization
   const AUTHOR_NAME = "Andrew";
-  const AUTHOR_INITIAL = "A";
 
   const hasMultipleMedia = post.media && post.media.length > 1;
 
@@ -443,7 +442,7 @@ const Username = styled.span`
   font-weight: 700;
   color: #ff7e5f;
   font-size: 1.8rem;
-  font-family: "Caveat", cursive;
+  font-family: "ParadiseSignature", cursive;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
   letter-spacing: 0.5px;
   line-height: 1.3;

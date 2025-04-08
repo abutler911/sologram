@@ -8,11 +8,13 @@ import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { initializeOneSignal } from "./utils/oneSignal";
 import ReactGA from "react-ga4";
 
+import CustomFont from "./assets/fonts/Paradise Signature.otf";
+
 // Initialize GA4 with your measurement ID
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === "production") {
   ReactGA.initialize(process.env.REACT_APP_GA_MEASUREMENT_ID, {
-    testMode: process.env.REACT_APP_GA_TEST_MODE === 'true', 
-  }); 
+    testMode: process.env.REACT_APP_GA_TEST_MODE === "true",
+  });
 }
 
 // Set default axios baseURL
@@ -27,6 +29,16 @@ setTimeout(() => {
 
 // Global styles
 const GlobalStyle = createGlobalStyle`
+
+@font-face {
+    font-family: 'ParadiseSignature'; 
+    src: url(${CustomFont}) format('opentype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap; 
+  }
+
+
   * {
     margin: 0;
     padding: 0;
@@ -34,7 +46,7 @@ const GlobalStyle = createGlobalStyle`
   }
   
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'ParadiseSignature', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: #f7f7f7;
