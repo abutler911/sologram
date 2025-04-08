@@ -406,13 +406,15 @@ const LogoContainer = styled.div`
 const Logo = styled(Link)`
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   text-decoration: none;
+  color: inherit;
 
   .logo-main {
     display: flex;
     align-items: center;
     font-family: "Sora", sans-serif;
-    font-size: 2.3rem;
+    font-size: 2.2rem;
     font-weight: 600;
     background: linear-gradient(90deg, #ff7e5f, #feb47b);
     -webkit-background-clip: text;
@@ -422,8 +424,8 @@ const Logo = styled(Link)`
     transition: transform 0.3s ease;
 
     svg {
-      font-size: 2rem;
-      margin-right: 0.5rem;
+      font-size: 2.6rem;
+      margin-right: 0.75rem;
     }
 
     &:hover {
@@ -433,12 +435,14 @@ const Logo = styled(Link)`
 
   .tagline {
     font-family: "Inter", sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     font-style: italic;
     font-weight: 400;
     color: #666;
-    margin-left: 2.2rem;
-    margin-top: 0.2rem;
+    margin-top: 0.4rem;
+    margin-left: 0; /* override previous indent */
+    text-align: left;
+    line-height: 1.2;
     opacity: 0.85;
     animation: fadeInUp 0.6s ease-out;
   }
@@ -456,16 +460,16 @@ const Logo = styled(Link)`
 
   @media (max-width: 767px) {
     .logo-main {
-      font-size: 1.4rem;
+      font-size: 1.5rem;
 
       svg {
-        font-size: 1.2rem;
+        font-size: 2rem;
       }
     }
 
     .tagline {
-      font-size: 0.7rem;
-      margin-left: 2rem;
+      font-size: 0.75rem;
+      text-align: left;
     }
   }
 `;
