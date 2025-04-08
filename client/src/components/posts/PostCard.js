@@ -438,18 +438,23 @@ const ActionsContainer = styled.div`
 `;
 
 const Username = styled.span`
-  font-weight: 700;
-  color: #ff7e5f;
-  font-size: 1.8rem;
   font-family: "Autography", cursive;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+  font-size: 2.2rem;
+  font-weight: 700;
   letter-spacing: 0.5px;
   line-height: 1.3;
   margin-top: 2px;
-  transition: transform 0.2s ease;
+
+  background: linear-gradient(90deg, #ff7e5f, #feb47b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s ease, filter 0.3s ease;
 
   &:hover {
-    transform: scale(1.05);
+    transform: scale(1.07);
+    filter: brightness(1.1);
   }
 `;
 
