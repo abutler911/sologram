@@ -17,6 +17,7 @@ import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../../context/AuthContext";
 import pandaImg from "../../assets/andy.jpg";
+import ParadiseSignatureFont from "../../assets/fonts/Paradise Signature.otf";
 const AUTHOR_IMAGE = pandaImg;
 
 const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
@@ -442,13 +443,13 @@ const Username = styled.span`
   font-weight: 700;
   color: #ff7e5f;
   font-size: 1.8rem;
-  font-family: "ParadiseSignature", cursive;
+  font-family: "ParadiseSignature", cursive !important;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
   letter-spacing: 0.5px;
   line-height: 1.3;
   margin-top: 2px;
-
   transition: transform 0.2s ease;
+
   &:hover {
     transform: scale(1.05);
   }
