@@ -8,7 +8,7 @@ import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { initializeOneSignal } from "./utils/oneSignal";
 import ReactGA from "react-ga4";
 
-import CustomFont from "./assets/fonts/Paradise Signature.otf";
+import CustomFont from "./assets/fonts/Paradise-Signature.otf";
 
 // Initialize GA4 with your measurement ID
 if (process.env.NODE_ENV === "production") {
