@@ -406,43 +406,66 @@ const LogoContainer = styled.div`
 const Logo = styled(Link)`
   display: flex;
   flex-direction: column;
-  color: #ff7e5f;
   text-decoration: none;
 
   .logo-main {
     display: flex;
     align-items: center;
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-family: "Sora", sans-serif;
+    font-size: 2rem;
+    font-weight: 600;
+    background: linear-gradient(90deg, #ff7e5f, #feb47b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+
+    svg {
+      font-size: 2rem;
+      margin-right: 0.5rem;
+    }
+
+    &:hover {
+      transform: scale(1.05);
+    }
   }
 
   .tagline {
-    font-size: 0.7rem;
+    font-family: "Inter", sans-serif;
+    font-size: 0.85rem;
     font-style: italic;
     font-weight: 400;
     color: #666;
-    margin-left: 0;
+    margin-left: 2.2rem;
+    margin-top: 0.2rem;
+    opacity: 0.85;
+    animation: fadeInUp 0.6s ease-out;
   }
 
-  span {
-    margin-left: 0.5rem;
-  }
-
-  svg {
-    font-size: 1.8rem;
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 0.85;
+      transform: translateY(0);
+    }
   }
 
   @media (max-width: 767px) {
     .logo-main {
-      font-size: 1.2rem;
-    }
-
-    svg {
       font-size: 1.4rem;
+
+      svg {
+        font-size: 1.2rem;
+      }
     }
 
     .tagline {
-      font-size: 0.6rem;
+      font-size: 0.7rem;
+      margin-left: 2rem;
     }
   }
 `;
