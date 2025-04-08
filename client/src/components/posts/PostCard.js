@@ -1,6 +1,6 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import styled, { keyframes } from "styled-components";
+import styled, { keyframes, css } from "styled-components";
 import {
   FaHeart,
   FaRegHeart,
@@ -17,8 +17,44 @@ import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../../context/AuthContext";
 import pandaImg from "../../assets/andy.jpg";
-import ParadiseSignatureFont from "../../assets/fonts/Paradise Signature.otf";
+
+// Constants for personalization
 const AUTHOR_IMAGE = pandaImg;
+const AUTHOR_NAME = "Andrew";
+
+// Animation keyframes
+const scaleIn = keyframes`
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  15% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  30% {
+    transform: scale(0.95);
+  }
+  45%, 80% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+`;
+
+// Define the font-face directly in the styles
+const fontFaceStyles = css`
+  @font-face {
+    font-family: "ParadiseSignature";
+    src: url("/src/assets/fonts/Paradise Signature.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+`;
 
 const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
   const [post, setPost] = useState(initialPost);
@@ -30,9 +66,6 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
   const [hasLiked, setHasLiked] = useState(false);
   const [isDoubleTapLiking, setIsDoubleTapLiking] = useState(false);
   const actionsRef = useRef(null);
-
-  // Constants for personalization
-  const AUTHOR_NAME = "Andrew";
 
   const hasMultipleMedia = post.media && post.media.length > 1;
 
@@ -166,7 +199,7 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
         <CardHeader>
           <UserInfo>
             <UserAvatarImage src={AUTHOR_IMAGE} alt="Andrew's avatar" />
-            <Username>{AUTHOR_NAME}</Username>
+            <Username className="paradise-font">{AUTHOR_NAME}</Username>
           </UserInfo>
           {isAuthenticated && (
             <ActionsContainer ref={actionsRef}>
@@ -339,31 +372,9 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
   );
 };
 
-// Animation keyframes
-const scaleIn = keyframes`
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  15% {
-    transform: scale(1.3);
-    opacity: 1;
-  }
-  30% {
-    transform: scale(0.95);
-  }
-  45%, 80% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0);
-    opacity: 0;
-  }
-`;
-
 // New wrapper component to handle mobile layout
 const CardWrapper = styled.div`
+  ${fontFaceStyles}
   width: 100%;
   display: flex;
   justify-content: center;
@@ -426,24 +437,11 @@ const ActionsContainer = styled.div`
   position: relative;
 `;
 
-const UserAvatar = styled.div`
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: #ff7e5f;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  margin-right: 12px;
-`;
-
 const Username = styled.span`
   font-weight: 700;
   color: #ff7e5f;
   font-size: 1.8rem;
-  font-family: "ParadiseSignature", cursive !important;
+  font-family: "ParadiseSignature", sans-serif;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
   letter-spacing: 0.5px;
   line-height: 1.3;
@@ -885,17 +883,6 @@ const UserAvatarImage = styled.img`
   object-fit: cover;
   margin-right: 12px;
   border: 2px solid #ff7e5f;
-`;
-
-const VerifiedBadge = styled.span`
-  font-size: 0.5rem;
-  background: #ff7e5f;
-  color: white;
-  padding: 1px 5px;
-  border-radius: 10px;
-  margin-left: 8px;
-  font-weight: 600;
-  text-transform: uppercase;
 `;
 
 export default PostCard;
