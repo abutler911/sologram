@@ -9,6 +9,7 @@ import { initializeOneSignal } from "./utils/oneSignal";
 import ReactGA from "react-ga4";
 
 import CustomFont from "./assets/fonts/Paradise-Signature.otf";
+import "@fontsource/inter/variable.css";
 
 // Initialize GA4 with your measurement ID
 if (process.env.NODE_ENV === "production") {
@@ -46,7 +47,7 @@ const GlobalStyle = createGlobalStyle`
   }
   
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: #f7f7f7;
