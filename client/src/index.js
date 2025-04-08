@@ -8,7 +8,7 @@ import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { initializeOneSignal } from "./utils/oneSignal";
 import ReactGA from "react-ga4";
 
-import CustomFont from "./assets/fonts/Paradise-Signature.otf";
+import AutographyFont from "./assets/fonts/Autography.otf";
 
 // Initialize GA4 with your measurement ID
 if (process.env.NODE_ENV === "production") {
@@ -31,12 +31,13 @@ setTimeout(() => {
 const GlobalStyle = createGlobalStyle`
 
 @font-face {
-    font-family: 'ParadiseSignature'; 
-    src: url(${CustomFont}) format('opentype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap; 
-  }
+  font-family: 'Autography';
+  src: url(${AutographyFont}) format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 
 
   * {

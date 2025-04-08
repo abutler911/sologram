@@ -441,7 +441,7 @@ const Username = styled.span`
   font-weight: 700;
   color: #ff7e5f;
   font-size: 1.8rem;
-  font-family: "ParadiseSignature", sans-serif;
+  font-family: "Autography", cursive;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
   letter-spacing: 0.5px;
   line-height: 1.3;
