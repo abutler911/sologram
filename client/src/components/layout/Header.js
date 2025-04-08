@@ -412,7 +412,7 @@ const Logo = styled(Link)`
     display: flex;
     align-items: center;
     font-family: "Sora", sans-serif;
-    font-size: 2rem;
+    font-size: 2.3rem;
     font-weight: 600;
     background: linear-gradient(90deg, #ff7e5f, #feb47b);
     -webkit-background-clip: text;
