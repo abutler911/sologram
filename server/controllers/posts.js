@@ -4,6 +4,7 @@ const { cloudinary } = require("../config/cloudinary");
 const notificationService = require("../services/notificationService");
 
 exports.getPosts = async (req, res) => {
+  console.log("[DEBUG] getPosts controller hit");
   console.log("[POSTS] Fetching posts...");
   try {
     const page = parseInt(req.query.page) || 1;
@@ -121,6 +122,7 @@ exports.createPost = async (req, res) => {
     // Enhanced notification handling
     try {
       // Use the dedicated new post notification method
+      const notificationService = require("../services/notificationService");
       const notificationResult = await notificationService.notifyNewPost(
         newPost
       );
