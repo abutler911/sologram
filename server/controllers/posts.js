@@ -65,6 +65,8 @@ exports.getPost = async (req, res) => {
   }
 };
 
+// In server/controllers/posts.js - Update the createPost function
+
 exports.createPost = async (req, res) => {
   try {
     let { caption, content, tags, media = [] } = req.body;
@@ -112,10 +114,27 @@ exports.createPost = async (req, res) => {
       media: formattedMedia,
     });
 
-    // Optional: Notify subscribers
-    notificationService
-      .sendCustomNotification(`New post "${caption}" has been added!`, null)
-      .catch((error) => console.warn("Notification error:", error.message));
+    // Enhanced notification handling
+    try {
+      // Use the dedicated new post notification method
+      const notificationResult = await notificationService.notifyNewPost(
+        newPost
+      );
+
+      // Log notification result but don't block the response
+      console.log("Notification result:", notificationResult);
+
+      // If notification failed, log error but continue
+      if (!notificationResult.success) {
+        console.error(
+          "Failed to send post notification:",
+          notificationResult.error
+        );
+      }
+    } catch (notifyError) {
+      // Log error but don't let it affect the post creation response
+      console.error("Notification error during post creation:", notifyError);
+    }
 
     res.status(201).json({ success: true, data: newPost });
   } catch (err) {

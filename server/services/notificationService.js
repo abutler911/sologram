@@ -1,69 +1,133 @@
+// server/services/notificationService.js (enhanced version)
 const axios = require("axios");
-const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID;
+const logger = require("winston"); // Import winston for better logging
+
+// Get OneSignal credentials from environment variables
 const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
+const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID;
 
-exports.sendCustomNotification = async (message, userIds = null) => {
-  console.log("sendCustomNotification called with:", { message, userIds });
-  console.log("OneSignal configuration:", {
-    appId: ONESIGNAL_APP_ID ? "Defined" : "UNDEFINED",
-    apiKey: ONESIGNAL_API_KEY ? "Defined" : "UNDEFINED",
-  });
+// Validate credentials at startup
+if (!ONESIGNAL_API_KEY || !ONESIGNAL_APP_ID) {
+  console.warn(
+    "OneSignal credentials missing. Notification service will be simulated."
+  );
+}
 
+// Base headers for all OneSignal API requests
+const getHeaders = () => ({
+  "Content-Type": "application/json",
+  Authorization: `Basic ${ONESIGNAL_API_KEY}`,
+});
+
+/**
+ * Send a notification to all subscribers
+ * @param {string} message - The notification message
+ * @param {string} title - The notification title (optional)
+ * @param {string} url - URL to open when clicked (optional)
+ * @param {object} additionalData - Additional data to include (optional)
+ * @returns {Promise} - Result object with success status and details
+ */
+exports.sendNotification = async (
+  message,
+  title = "SoloGram Update",
+  url = null,
+  additionalData = {}
+) => {
   try {
-    const headers = {
-      "Content-Type": "application/json",
-      Authorization: `Basic ${ONESIGNAL_API_KEY}`,
-    };
+    if (!ONESIGNAL_API_KEY || !ONESIGNAL_APP_ID) {
+      console.log("[NOTIFICATION SIMULATED]", { message, title });
+      return {
+        success: true,
+        simulated: true,
+        message: "Notification simulated due to missing credentials",
+      };
+    }
 
+    console.log("Sending notification:", { message, title });
+
+    // Build notification payload
     const payload = {
       app_id: ONESIGNAL_APP_ID,
       contents: { en: message },
-      headings: { en: "SoloGram Update" },
+      headings: { en: title },
+      included_segments: ["All"], // Send to all subscribers
+      content_available: true, // Deliver even if app is in background
+      priority: 10, // High priority
     };
 
-    if (userIds && userIds.length > 0) {
-      payload.include_external_user_ids = userIds;
-      console.log("Sending to specific users:", userIds);
-    } else {
-      // Try "All" segment instead of "Subscribed Users"
-      payload.included_segments = ["All"];
-      console.log("Sending to segment: All");
+    // Add URL if provided
+    if (url) {
+      payload.url = url;
     }
 
-    console.log(
-      "Sending notification payload:",
-      JSON.stringify(payload, null, 2)
-    );
+    // Add additional data if provided
+    if (Object.keys(additionalData).length > 0) {
+      payload.data = additionalData;
+    }
 
+    // Send the notification
     const response = await axios.post(
       "https://onesignal.com/api/v1/notifications",
       payload,
-      { headers }
+      { headers: getHeaders() }
     );
 
-    console.log("OneSignal API response:", {
-      status: response.status,
-      statusText: response.statusText,
-      data: response.data,
+    console.log("OneSignal notification sent successfully:", {
+      id: response.data.id,
+      recipients: response.data.recipients,
     });
 
     return {
       success: true,
-      notified: response.data.recipients,
-      failed: 0,
-      total: response.data.recipients,
+      notificationId: response.data.id,
+      recipients: response.data.recipients,
+      message: `Notification sent to ${response.data.recipients} subscribers`,
     };
   } catch (error) {
-    console.error("OneSignal API error details:");
-    console.error("- Status:", error.response?.status);
-    console.error("- Status Text:", error.response?.statusText);
-    console.error("- Response Data:", error.response?.data);
-    console.error("- Error Message:", error.message);
+    console.error(
+      "OneSignal notification error:",
+      error.response?.data || error.message
+    );
 
+    // Enhanced error reporting
     return {
       success: false,
+      error: error.response?.data || error.message,
+      code: error.response?.status,
       message: "Failed to send notification",
-      error: error?.response?.data || error.message,
     };
   }
+};
+
+/**
+ * Send a notification specifically for a new post
+ * @param {object} post - The post object
+ * @returns {Promise} - Notification result
+ */
+exports.notifyNewPost = async (post) => {
+  const title = "New Post on SoloGram";
+  const message = `Check out the new post: "${post.caption}"`;
+  const url = `${process.env.CLIENT_URL || "https://thesologram.com"}/post/${
+    post._id
+  }`;
+
+  return this.sendNotification(message, title, url, {
+    type: "post",
+    postId: post._id,
+  });
+};
+
+/**
+ * Send a notification specifically for a new story
+ * @param {object} story - The story object
+ * @returns {Promise} - Notification result
+ */
+exports.notifyNewStory = async (story) => {
+  const title = "New Story on SoloGram";
+  const message = `A new story has been added: "${story.title}"`;
+
+  return this.sendNotification(message, title, null, {
+    type: "story",
+    storyId: story._id,
+  });
 };

@@ -5,6 +5,8 @@ import { FaBell, FaTimes } from "react-icons/fa";
 import {
   isOneSignalReady,
   requestNotificationPermission,
+  checkNotificationCompatibility,
+  getNotificationDiagnostics,
 } from "../../utils/oneSignal";
 import { toast } from "react-hot-toast";
 
@@ -92,46 +94,41 @@ const SubscribeBanner = () => {
     const loadingToast = toast.loading("Preparing notifications...");
 
     try {
+      // Check browser compatibility first
+      const isCompatible = checkNotificationCompatibility();
+
+      if (!isCompatible) {
+        toast.dismiss(loadingToast);
+        toast.error(
+          "Your browser doesn't support notifications. Please try a different browser like Chrome or Firefox.",
+          { duration: 5000 }
+        );
+        return;
+      }
+
+      // Try to request permission
       const result = await requestNotificationPermission();
 
       toast.dismiss(loadingToast);
 
       if (result) {
         setShowBanner(false);
-        toast.success("Successfully subscribed to notifications!");
         localStorage.setItem("subscribeBannerDismissed", "true");
         localStorage.setItem(
           "subscribeBannerDismissedAt",
           Date.now().toString()
         );
       } else {
-        // Check if permission is denied
-        if (window.OneSignal) {
-          try {
-            const permission =
-              await window.OneSignal.getNotificationPermission();
-            if (permission === "denied") {
-              toast.error(
-                "Notifications are blocked by your browser. Please update your browser settings to enable notifications."
-              );
-              setShowBanner(false);
-            } else {
-              toast.error(
-                "Notification subscription failed. Please try again later."
-              );
-            }
-          } catch (err) {
-            toast.error("Could not check notification permission status.");
-          }
-        } else {
-          toast.error(
-            "Notification service isn't available right now. Please try again later."
-          );
-        }
+        // Permission failure already shows a toast from the requestNotificationPermission function
       }
     } catch (error) {
       toast.dismiss(loadingToast);
       console.error("Error in handleSubscribeClick:", error);
+
+      // Show diagnostics for debugging
+      const diagnostics = getNotificationDiagnostics();
+      console.debug("Notification diagnostics:", diagnostics);
+
       toast.error("There was a problem with the notification system.");
     }
   };

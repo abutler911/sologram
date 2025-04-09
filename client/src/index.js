@@ -22,11 +22,20 @@ axios.defaults.baseURL = process.env.REACT_APP_API_URL || "";
 
 // Initialize OneSignal with a delay to ensure DOM is fully loaded
 setTimeout(() => {
-  initializeOneSignal().catch((err) =>
-    console.error("OneSignal initialization error:", err)
-  );
+  initializeOneSignal()
+    .then((success) => {
+      if (success) {
+        console.log("[OneSignal] Initialization complete and successful");
+      } else {
+        console.warn(
+          "[OneSignal] Initialization unsuccessful, some notification features may not work"
+        );
+      }
+    })
+    .catch((err) => {
+      console.error("[OneSignal] Initialization error:", err);
+    });
 }, 2000);
-
 // Global styles
 const GlobalStyle = createGlobalStyle`
 

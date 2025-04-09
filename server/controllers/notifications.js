@@ -154,3 +154,46 @@ exports.getNotificationStats = async (req, res) => {
     });
   }
 };
+
+// server/controllers/notifications.js - Add a test endpoint
+
+/**
+ * Send a test notification
+ * @route POST /api/notifications/test
+ * @access Private (Admin only)
+ */
+exports.sendTestNotification = async (req, res) => {
+  try {
+    const { message = "This is a test notification!" } = req.body;
+
+    const result = await notificationService.sendNotification(
+      message,
+      "SoloGram Test",
+      null,
+      { type: "test", timestamp: Date.now() }
+    );
+
+    if (result.success) {
+      return res.status(200).json({
+        success: true,
+        message: "Test notification sent successfully",
+        recipients: result.recipients || 0,
+        details: result,
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send test notification",
+        error: result.error,
+        details: result,
+      });
+    }
+  } catch (err) {
+    console.error("Test notification error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: err.message,
+    });
+  }
+};

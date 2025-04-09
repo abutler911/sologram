@@ -1,38 +1,67 @@
-// src/utils/oneSignal.js
-import OneSignal from "react-onesignal";
+// client/src/utils/oneSignal.js (enhanced)
+
+import { toast } from "react-hot-toast";
 
 // Track initialization state globally
 let isInitialized = false;
 let isInitializing = false;
 let initPromise = null;
+let initAttempts = 0;
+const MAX_INIT_ATTEMPTS = 3;
 
+/**
+ * Initialize OneSignal with better error handling and retry logic
+ */
 export const initializeOneSignal = async () => {
   try {
     // Check if we're in a browser environment
     if (typeof window === "undefined") return false;
 
-    // Check if OneSignal is already initialized to prevent duplicate initializations
+    // Check if OneSignal is already initialized or initializing
     if (isInitialized) {
-      console.log("[OneSignal] Already initialized");
+      console.log("[OneSignal] Already initialized successfully");
       return true;
     }
 
-    // If initialization is in progress, return the existing promise
     if (isInitializing && initPromise) {
+      console.log("[OneSignal] Initialization already in progress");
       return initPromise;
     }
 
-    // Set initializing flag and create promise
+    // Track initialization state
     isInitializing = true;
+    initAttempts++;
+
+    console.log(
+      `[OneSignal] Starting initialization (attempt ${initAttempts}/${MAX_INIT_ATTEMPTS})`
+    );
+
+    const appId = process.env.REACT_APP_ONESIGNAL_APP_ID;
+
+    if (!appId) {
+      console.error("[OneSignal] Missing APP_ID environment variable");
+      isInitializing = false;
+      return false;
+    }
+
+    // Create the initialization promise
     initPromise = new Promise(async (resolve) => {
       try {
-        // Basic initialization with minimal options first
+        // Dynamic import to avoid SSR issues and reduce initial bundle size
+        const OneSignal = (await import("react-onesignal")).default;
+
+        // Initialize with improved options
         await OneSignal.init({
-          appId: process.env.REACT_APP_ONESIGNAL_APP_ID || "",
+          appId,
           allowLocalhostAsSecureOrigin: true,
+          serviceWorkerPath: "/OneSignalSDKWorker.js",
+          serviceWorkerUpdaterPath: "/OneSignalSDKUpdaterWorker.js",
+          autoRegister: false,
+          autoResubscribe: true,
           notifyButton: {
             enable: false,
           },
+          persistNotification: false,
           promptOptions: {
             slidedown: {
               prompts: [
@@ -41,7 +70,7 @@ export const initializeOneSignal = async () => {
                   autoPrompt: false,
                   text: {
                     actionMessage:
-                      "Stay updated with the latest content from SoloGram",
+                      "Get notified when new photos and stories are posted!",
                     acceptButton: "Allow",
                     cancelButton: "Maybe Later",
                   },
@@ -53,30 +82,49 @@ export const initializeOneSignal = async () => {
 
         console.log("[OneSignal] Initialized successfully");
 
-        // Wait for OneSignal to actually be ready using the built-in event
-        if (window.OneSignal) {
-          // Set external user ID if available
-          const userId = localStorage.getItem("userId");
-          if (
-            userId &&
-            typeof window.OneSignal.setExternalUserId === "function"
-          ) {
-            await window.OneSignal.setExternalUserId(userId);
+        // Set up a timer to verify OneSignal is actually ready
+        const verifyTimeout = setTimeout(() => {
+          if (!window.OneSignal) {
+            console.warn(
+              "[OneSignal] Window.OneSignal not available after init"
+            );
+            isInitializing = false;
+            resolve(false);
           }
+        }, 5000);
+
+        // Wait for OneSignal to be ready
+        await OneSignal.on("initialized", (isOptedIn) => {
+          clearTimeout(verifyTimeout);
+          console.log(
+            `[OneSignal] Initialization event received, opted in: ${isOptedIn}`
+          );
 
           isInitialized = true;
+          isInitializing = false;
           resolve(true);
+        });
+      } catch (error) {
+        console.error("[OneSignal] Initialization error:", error);
+
+        // Retry logic
+        isInitializing = false;
+
+        if (initAttempts < MAX_INIT_ATTEMPTS) {
+          console.log(`[OneSignal] Will retry initialization in 3 seconds`);
+
+          // Wait 3 seconds before retry
+          setTimeout(() => {
+            initPromise = null; // Clear the promise for next attempt
+          }, 3000);
+
+          resolve(false);
         } else {
           console.error(
-            "[OneSignal] Failed to initialize - window.OneSignal not available"
+            `[OneSignal] Max initialization attempts (${MAX_INIT_ATTEMPTS}) reached`
           );
           resolve(false);
         }
-      } catch (error) {
-        console.error("[OneSignal] Initialization error:", error);
-        resolve(false);
-      } finally {
-        isInitializing = false;
       }
     });
 
@@ -89,7 +137,9 @@ export const initializeOneSignal = async () => {
   }
 };
 
-// Helper function to check if OneSignal is ready
+/**
+ * Helper function to check if OneSignal is ready
+ */
 export const isOneSignalReady = () => {
   return (
     isInitialized &&
@@ -98,87 +148,148 @@ export const isOneSignalReady = () => {
   );
 };
 
-// Function to request notification permission with safety checks
+/**
+ * Request notification permission with improved UX and error handling
+ */
 export const requestNotificationPermission = async () => {
-  // Ensure OneSignal is initialized first
-  if (!isInitialized) {
-    const initialized = await initializeOneSignal();
-    if (!initialized) {
-      console.warn(
-        "[OneSignal] Failed to initialize before requesting permission"
+  try {
+    // Ensure OneSignal is initialized first
+    if (!isInitialized) {
+      const initialized = await initializeOneSignal();
+      if (!initialized) {
+        console.warn(
+          "[OneSignal] Failed to initialize before requesting permission"
+        );
+        toast.error(
+          "Notification system is temporarily unavailable. Please try again later."
+        );
+        return false;
+      }
+    }
+
+    // Check if OneSignal is available
+    if (!window.OneSignal) {
+      console.warn("[OneSignal] OneSignal not available in window");
+      toast.error(
+        "Notification system is not ready yet. Please try again in a moment."
       );
       return false;
     }
-  }
 
-  try {
-    // Check if OneSignal is available in window object
-    if (!window.OneSignal) {
-      console.warn("[OneSignal] OneSignal not available in window");
-      return false;
-    }
-
-    // Check notification permission first to avoid showing prompt if already denied
+    // Check current permission
     const permission = await window.OneSignal.getNotificationPermission();
+
+    // If already denied by browser, show a helpful message
     if (permission === "denied") {
       console.log("[OneSignal] Notifications already denied by browser");
+      toast.error(
+        "Notifications are blocked by your browser. Please update your browser settings to enable notifications.",
+        { duration: 6000 }
+      );
       return false;
     }
 
-    // Track if permission was already granted
+    // Check if already subscribed
     const alreadyEnabled = await window.OneSignal.isPushNotificationsEnabled();
     if (alreadyEnabled) {
+      console.log("[OneSignal] User already subscribed to notifications");
+      toast.success("You're already subscribed to notifications!");
       return true;
     }
 
-    // Check if required methods exist
-    if (typeof window.OneSignal.showSlidedownPrompt === "function") {
-      await window.OneSignal.showSlidedownPrompt();
-    } else if (
-      typeof window.OneSignal.registerForPushNotifications === "function"
-    ) {
-      await window.OneSignal.registerForPushNotifications();
-    } else {
-      console.warn("[OneSignal] No method available to prompt for permission");
+    // Try to show the slidedown prompt first (better UX)
+    try {
+      if (typeof window.OneSignal.showSlidedownPrompt === "function") {
+        console.log("[OneSignal] Showing slidedown prompt");
+        await window.OneSignal.showSlidedownPrompt();
+      } else if (
+        typeof window.OneSignal.registerForPushNotifications === "function"
+      ) {
+        console.log("[OneSignal] Showing registration prompt");
+        await window.OneSignal.registerForPushNotifications();
+      } else {
+        console.warn(
+          "[OneSignal] No method available to prompt for permission"
+        );
+        return false;
+      }
+
+      // Check if permission was granted (after a short delay for user interaction)
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      const isEnabled = await window.OneSignal.isPushNotificationsEnabled();
+
+      if (isEnabled) {
+        toast.success("Successfully subscribed to notifications!");
+      } else {
+        // No error, but user probably dismissed the prompt
+        toast.info(
+          "You can enable notifications anytime from the Subscribe button."
+        );
+      }
+
+      return isEnabled;
+    } catch (error) {
+      console.error("[OneSignal] Error requesting permission:", error);
+      toast.error(
+        "There was a problem enabling notifications. Please try again later."
+      );
       return false;
     }
-
-    // Wait a moment for user to interact with prompt
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Check if permission was granted
-    let enabled = false;
-    if (typeof window.OneSignal.isPushNotificationsEnabled === "function") {
-      enabled = await window.OneSignal.isPushNotificationsEnabled();
-    }
-
-    return enabled;
   } catch (error) {
-    console.error("[OneSignal] Error requesting permission:", error);
+    console.error("[OneSignal] Unexpected error in requestPermission:", error);
+    toast.error(
+      "Something went wrong with the notification system. Please try again later."
+    );
     return false;
   }
 };
 
-// For sending notifications from client (if needed)
-export const sendNotification = async (title, message, url = null) => {
+// client/src/utils/oneSignal.js - Add this function
+
+/**
+ * Check if the browser supports web push notifications
+ * @returns {boolean} - True if supported, false otherwise
+ */
+export const checkNotificationCompatibility = () => {
+  return (
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window
+  );
+};
+
+/**
+ * Get helpful diagnostic information about notification support
+ * @returns {Object} - Diagnostic information
+ */
+export const getNotificationDiagnostics = () => {
   try {
-    // We'll call our backend API that will use OneSignal REST API
-    const response = await fetch("/api/notifications/custom", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        title,
-        message,
-        url,
-      }),
-    });
-    const data = await response.json();
-    return data;
+    const isSecureContext = window.isSecureContext;
+    const notificationPermission = Notification.permission;
+    const serviceWorkerSupported = "serviceWorker" in navigator;
+    const pushManagerSupported = "PushManager" in window;
+
+    // Check Service Worker registration
+    let hasServiceWorker = false;
+    if (serviceWorkerSupported) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        hasServiceWorker = registrations.length > 0;
+      });
+    }
+
+    return {
+      isSecureContext,
+      notificationPermission,
+      serviceWorkerSupported,
+      pushManagerSupported,
+      hasServiceWorker,
+      browser: navigator.userAgent,
+    };
   } catch (error) {
-    console.error("Error sending notification:", error);
-    throw error;
+    return {
+      error: error.message,
+      browser: navigator.userAgent,
+    };
   }
 };

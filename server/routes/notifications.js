@@ -10,5 +10,11 @@ const { protect, authorize } = require("../middleware/auth");
 // Admin-only routes
 router.post("/custom", protect, authorize("admin"), sendCustomNotification);
 router.get("/stats", protect, authorize("admin"), getNotificationStats);
+router.post(
+  "/test",
+  protect,
+  authorize("admin"),
+  notificationsController.sendTestNotification
+);
 
 module.exports = router;
