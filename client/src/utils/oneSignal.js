@@ -4,6 +4,7 @@ let isInitialized = false;
 let isInitializing = false;
 let initPromise = null;
 let initAttempts = 0;
+let OneSignalSDK = null;
 const MAX_INIT_ATTEMPTS = 3;
 
 export const initializeOneSignal = async () => {
@@ -37,6 +38,7 @@ export const initializeOneSignal = async () => {
   initPromise = new Promise(async (resolve) => {
     try {
       const OneSignal = (await import("react-onesignal")).default;
+      OneSignalSDK = OneSignal;
 
       await OneSignal.init({
         appId,
@@ -67,13 +69,11 @@ export const initializeOneSignal = async () => {
 
       console.log("[OneSignal] Initialized successfully");
 
-      // Check push support (optional, diagnostic)
       if (
-        window.OneSignal &&
-        typeof window.OneSignal.isPushNotificationsSupported === "function"
+        OneSignal &&
+        typeof OneSignal.isPushNotificationsSupported === "function"
       ) {
-        const isSupported =
-          await window.OneSignal.isPushNotificationsSupported();
+        const isSupported = await OneSignal.isPushNotificationsSupported();
         console.log("[OneSignal] Push supported:", isSupported);
       } else {
         console.warn("[OneSignal] isPushNotificationsSupported not available");
@@ -83,7 +83,6 @@ export const initializeOneSignal = async () => {
       isInitializing = false;
       resolve(true);
 
-      // Final safety check
       setTimeout(() => {
         if (!window.OneSignal) {
           console.warn("[OneSignal] Window.OneSignal not available after init");
@@ -91,10 +90,6 @@ export const initializeOneSignal = async () => {
           resolve(false);
         }
       }, 5000);
-
-      isInitialized = true;
-      isInitializing = false;
-      resolve(true);
     } catch (error) {
       console.error("[OneSignal] Initialization error:", error);
       isInitializing = false;
@@ -120,7 +115,8 @@ export const initializeOneSignal = async () => {
 export const isOneSignalReady = () => {
   return (
     isInitialized &&
-    typeof window.OneSignal?.isPushNotificationsEnabled === "function"
+    OneSignalSDK &&
+    typeof OneSignalSDK.isPushNotificationsEnabled === "function"
   );
 };
 
@@ -172,12 +168,12 @@ export const requestNotificationPermission = async () => {
       }
     }
 
-    if (!window.OneSignal) {
+    if (!OneSignalSDK) {
       toast.error("Notification system unavailable.");
       return false;
     }
 
-    const permission = await window.OneSignal.getNotificationPermission();
+    const permission = await OneSignalSDK.getNotificationPermission();
     if (permission === "denied") {
       toast.error("Notifications are blocked in your browser settings.", {
         duration: 6000,
@@ -185,23 +181,23 @@ export const requestNotificationPermission = async () => {
       return false;
     }
 
-    const alreadyEnabled = await window.OneSignal.isPushNotificationsEnabled();
+    const alreadyEnabled = await OneSignalSDK.isPushNotificationsEnabled();
     if (alreadyEnabled) {
       toast.success("You're already subscribed to notifications!");
       return true;
     }
 
-    if (typeof window.OneSignal.showSlidedownPrompt === "function") {
-      await window.OneSignal.showSlidedownPrompt();
+    if (typeof OneSignalSDK.showSlidedownPrompt === "function") {
+      await OneSignalSDK.showSlidedownPrompt();
     } else if (
-      typeof window.OneSignal.registerForPushNotifications === "function"
+      typeof OneSignalSDK.registerForPushNotifications === "function"
     ) {
-      await window.OneSignal.registerForPushNotifications();
+      await OneSignalSDK.registerForPushNotifications();
     }
 
     await new Promise((res) => setTimeout(res, 2000));
 
-    const isEnabled = await window.OneSignal.isPushNotificationsEnabled();
+    const isEnabled = await OneSignalSDK.isPushNotificationsEnabled();
     if (isEnabled) {
       toast.success("Subscribed to notifications!");
     } else {
