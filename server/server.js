@@ -62,24 +62,28 @@ const apiLimiter = rateLimit({
   max: 100,
 });
 app.use(cors(corsOptions));
-
-const postRoutes = require("./routes/posts");
-const storyRoutes = require("./routes/stories");
-const authRoutes = require("./routes/auth");
-const collectionRoutes = require("./routes/collections");
-
-app.use("/api/posts", postRoutes);
-app.use("/api/stories", storyRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/collections", collectionRoutes);
-
-app.set("trust proxy", 1);
 app.use(express.json({ limit: "300mb" }));
 app.use(express.urlencoded({ extended: true, limit: "300mb" }));
 app.use(mongoSanitize());
 app.use(cors(corsOptions));
 app.use(helmet());
 app.use(morgan("dev"));
+
+const postRoutes = require("./routes/posts");
+const storyRoutes = require("./routes/stories");
+const authRoutes = require("./routes/auth");
+const collectionRoutes = require("./routes/collections");
+const archivedStoryRoutes = require("./routes/archivedStories");
+const subscriberRoutes = require("./routes/subscribers");
+
+app.use("/api/posts", postRoutes);
+app.use("/api/stories", storyRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/collections", collectionRoutes);
+app.use("/api/archived-stories", archivedStoryRoutes);
+app.use("/api/subscribers", subscriberRoutes);
+
+app.set("trust proxy", 1);
 
 app.use((req, res, next) => {
   const start = Date.now();
