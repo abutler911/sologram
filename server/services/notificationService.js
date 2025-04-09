@@ -1,6 +1,7 @@
 // Enhanced server/services/notificationService.js
 const OneSignal = require("@onesignal/node-onesignal");
 const Subscriber = require("../models/Subscriber");
+const logger = require("../utils/logger");
 
 // OneSignal configuration
 const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID;
