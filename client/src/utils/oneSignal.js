@@ -95,7 +95,7 @@ export const initializeOneSignal = async () => {
 
         // Wait for OneSignal to be ready
         try {
-          await OneSignal.on("initialized", (isOptedIn) => {
+          OneSignal.on("initialized", (isOptedIn) => {
             clearTimeout(verifyTimeout);
             console.log(
               `[OneSignal] Initialization event received, opted in: ${isOptedIn}`
