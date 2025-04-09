@@ -62,6 +62,14 @@ const apiLimiter = rateLimit({
   max: 100,
 });
 
+const postRoutes = require("./routes/posts");
+const storyRoutes = require("./routes/stories");
+const authRoutes = require("./routes/auth");
+
+app.use("/api/posts", postRoutes);
+app.use("/api/stories", storyRoutes);
+app.use("/api/auth", authRoutes);
+
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "300mb" }));
 app.use(express.urlencoded({ extended: true, limit: "300mb" }));
