@@ -16,6 +16,7 @@ require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const Post = require("./models/Post");
 
 // Error handling
 process.on("uncaughtException", (err) => {
@@ -138,6 +139,15 @@ async function startServer() {
 
     app.get("/", (req, res) => {
       res.send("🚀 SoloGram backend is live!");
+    });
+
+    app.get("/api/test-db", async (req, res) => {
+      try {
+        const count = await Post.countDocuments();
+        res.status(200).json({ connected: true, posts: count });
+      } catch (err) {
+        res.status(500).json({ connected: false, error: err.message });
+      }
     });
 
     if (process.env.NODE_ENV === "production") {

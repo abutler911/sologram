@@ -4,6 +4,7 @@ const { cloudinary } = require("../config/cloudinary");
 const notificationService = require("../services/notificationService");
 
 exports.getPosts = async (req, res) => {
+  console.log("[POSTS] Fetching posts...");
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -16,6 +17,8 @@ exports.getPosts = async (req, res) => {
 
     const totalPosts = await Post.countDocuments();
 
+    console.log(`[POSTS] Found ${posts.length} posts out of ${totalPosts}`);
+
     res.status(200).json({
       success: true,
       count: posts.length,
@@ -25,10 +28,11 @@ exports.getPosts = async (req, res) => {
       data: posts,
     });
   } catch (err) {
-    console.error(err);
+    console.error("[POSTS ERROR]", err);
     res.status(500).json({
       success: false,
       message: "Server Error",
+      error: err.message,
     });
   }
 };
