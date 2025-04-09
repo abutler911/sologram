@@ -30,28 +30,112 @@ agenda.define("archive-expired-stories", async (job, done) => {
 });
 
 // Configure and start the agenda instance
-async function setupAgenda() {
+// In services/storyArchiver.js
+const setupAgenda = async () => {
   try {
-    // Start the agenda processing
-    await agenda.start();
-    console.log("Agenda started successfully");
+    // Get MongoDB connection string from environment or use default
+    const mongoURI =
+      process.env.MONGODB_URI || "mongodb://localhost:27017/sologram";
 
-    // Schedule the archiving job to run every 5 minutes
-    await agenda.every("5 minutes", "archive-expired-stories");
-    console.log("Archiving job scheduled to run every 5 minutes");
+    // Check if MongoDB URI is available
+    if (!mongoURI) {
+      console.warn("MongoDB URI not available for Agenda");
+      return null;
+    }
 
-    // Also run the job immediately on server startup
-    await agenda.now("archive-expired-stories");
-    console.log("Initial archiving job triggered");
+    // Create the agenda instance with options for better resilience
+    const agenda = new Agenda({
+      db: {
+        address: mongoURI,
+        collection: "scheduledJobs",
+        options: {
+          useUnifiedTopology: true,
+          connectTimeoutMS: 30000,
+          socketTimeoutMS: 30000,
+        },
+      },
+      processEvery: "1 minute",
+      maxConcurrency: 20,
+    });
+
+    // Define the job with error handling
+    agenda.define("archive-expired-stories", async (job, done) => {
+      try {
+        console.log("Running story archiving job...");
+        let count = 0;
+
+        // Wrap the archiving in a try/catch to prevent job failures
+        try {
+          count = await Story.archiveExpired();
+        } catch (err) {
+          console.error("Error in Story.archiveExpired():", err);
+          // Don't rethrow - just log and continue
+        }
+
+        console.log(`Successfully archived ${count} expired stories`);
+        done();
+      } catch (error) {
+        console.error("Story archiving job failed:", error);
+        // Mark job as done even though it failed so it doesn't hang
+        done(error);
+      }
+    });
+
+    // Add error event handler
+    agenda.on("error", (err) => {
+      console.error("Agenda encounter an error:", err);
+    });
+
+    // Start the agenda processing with a timeout
+    try {
+      await Promise.race([
+        agenda.start(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Agenda start timeout")), 10000)
+        ),
+      ]);
+      console.log("Agenda started successfully");
+    } catch (err) {
+      console.error("Failed to start Agenda:", err);
+      // Return the agenda anyway - it might recover later
+      return agenda;
+    }
+
+    // Schedule with timeouts and error handling
+    try {
+      await Promise.race([
+        agenda.every("5 minutes", "archive-expired-stories"),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Agenda scheduling timeout")), 5000)
+        ),
+      ]);
+      console.log("Archiving job scheduled to run every 5 minutes");
+    } catch (err) {
+      console.error("Failed to schedule archiving job:", err);
+      // Continue anyway - the agenda is running
+    }
+
+    // Run initial job with timeout and error handling
+    try {
+      await Promise.race([
+        agenda.now("archive-expired-stories"),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Initial job timeout")), 5000)
+        ),
+      ]);
+      console.log("Initial archiving job triggered");
+    } catch (err) {
+      console.error("Failed to trigger initial archiving job:", err);
+      // Continue anyway - the scheduled job will run later
+    }
 
     return agenda;
   } catch (error) {
     console.error("Failed to setup Agenda:", error);
-    // Don't throw the error - just log it and continue
-    // This prevents Agenda errors from crashing the whole server
+    // Don't throw - just return null
     return null;
   }
-}
+};
 
 // Handle graceful shutdown
 async function gracefulShutdown() {

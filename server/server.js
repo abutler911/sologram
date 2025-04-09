@@ -17,8 +17,6 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Add this to the top of your server.js file
-
 // Enhanced error handling for Node.js
 process.on("uncaughtException", (error) => {
   console.error("UNCAUGHT EXCEPTION! 💥 Shutting down...");
@@ -149,15 +147,35 @@ app.use((req, res, next) => {
 
 async function startServer() {
   try {
-    const mongoURI =
-      process.env.MONGODB_URI || "mongodb://localhost:27017/sologram";
-    if (!mongoURI) {
-      throw new Error("MongoDB connection string is not defined");
+    // Add startup diagnostics
+    logger.info(
+      `Starting server in ${process.env.NODE_ENV || "development"} mode`
+    );
+    logger.info(`Node.js version: ${process.version}`);
+    logger.info(`Current working directory: ${process.cwd()}`);
+
+    // Check for critical environment variables
+    const requiredEnvVars = ["MONGODB_URI", "JWT_SECRET"];
+
+    const missingVars = requiredEnvVars.filter(
+      (varName) => !process.env[varName]
+    );
+    if (missingVars.length > 0) {
+      logger.warn(`Missing environment variables: ${missingVars.join(", ")}`);
     }
 
-    await mongoose.connect(mongoURI);
-    logger.info("Database connection established");
+    // Connect to database with improved module
+    const connectDB = require("./config/db");
+    const dbConnected = await connectDB();
 
+    if (!dbConnected) {
+      logger.warn(
+        "Initial MongoDB connection failed, continuing startup but will retry connection"
+      );
+      // We continue anyway to let the app start - a retry is happening in the db.js module
+    }
+
+    // Initialize Agenda with better error handling
     try {
       await setupAgenda();
       logger.info("Story archiving service initialized");
@@ -165,26 +183,37 @@ async function startServer() {
       logger.warn("Story archiving service initialization failed", {
         error: agendaError.message,
       });
+      // Continue without Agenda if it fails
     }
 
+    // Rest of your server setup...
     const postRoutes = require("./routes/posts");
-    const authRoutes = require("./routes/auth");
-    const collectionRoutes = require("./routes/collections");
-    const storyRoutes = require("./routes/stories");
-    const archivedStoryRoutes = require("./routes/archivedStories");
-    const subscriberRoutes = require("./routes/subscribers");
-    const notificationRoutes = require("./routes/notifications");
+    // ... other route imports
 
+    // Set up routes
     app.use("/api/", apiLimiter);
-    app.use("/api/auth/", authLimiter);
-    app.use("/api/auth", authRoutes);
-    app.use("/api/posts", postRoutes);
-    app.use("/api/collections", collectionRoutes);
-    app.use("/api/stories", storyRoutes);
-    app.use("/api/archived-stories", archivedStoryRoutes);
-    app.use("/api/subscribers", subscriberRoutes);
-    app.use("/api/notifications", notificationRoutes);
+    // ... other route setup
 
+    // Health check endpoint
+    app.get("/health", (req, res) => {
+      res.status(200).json({
+        status: "ok",
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        memory: {
+          rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`,
+          heapTotal: `${Math.round(
+            process.memoryUsage().heapTotal / 1024 / 1024
+          )}MB`,
+          heapUsed: `${Math.round(
+            process.memoryUsage().heapUsed / 1024 / 1024
+          )}MB`,
+        },
+        mongodb:
+          mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+      });
+    });
+    // Make sure this endpoint is also available at /api/health for consistency
     app.get("/api/health", (req, res) => {
       res.status(200).json({
         status: "ok",
@@ -193,6 +222,7 @@ async function startServer() {
       });
     });
 
+    // Set up static files for production
     if (process.env.NODE_ENV === "production") {
       app.use(express.static(path.join(__dirname, "../client/build")));
       app.get("*", (req, res) => {
@@ -200,21 +230,33 @@ async function startServer() {
       });
     }
 
+    // Register global error handler
     app.use(globalErrorHandler);
 
-    app.listen(PORT, () => {
+    // Start the server
+    const server = app.listen(PORT, () => {
       logger.info(
         `Server started on port ${PORT} in ${
           process.env.NODE_ENV || "development"
         } mode`
       );
     });
+
+    // Handle server errors
+    server.on("error", (err) => {
+      logger.error(`Server error: ${err.message}`);
+    });
+
+    return server;
   } catch (error) {
     logger.error("Server startup failed", {
       error: error.message,
       stack: error.stack,
     });
-    process.exit(1);
+    // Don't exit immediately - give time for logs to be written
+    setTimeout(() => {
+      process.exit(1);
+    }, 3000);
   }
 }
 

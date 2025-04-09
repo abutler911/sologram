@@ -1,46 +1,79 @@
+// server/config/db.js
 const mongoose = require("mongoose");
+const winston = require("winston");
+
+// Use the existing logger or create a new one
+const logger = winston.createLogger({
+  level: "info",
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.File({ filename: "error.log", level: "error" }),
+    new winston.transports.File({ filename: "combined.log" }),
+  ],
+});
+
+// Add console transport for direct output
+if (process.env.NODE_ENV !== "production") {
+  logger.add(
+    new winston.transports.Console({
+      format: winston.format.simple(),
+    })
+  );
+}
 
 const connectDB = async () => {
+  const mongoURI =
+    process.env.MONGODB_URI || "mongodb://localhost:27017/sologram";
+
+  logger.info(
+    `Attempting to connect to MongoDB at ${mongoURI.replace(
+      /\/\/([^:]+):[^@]+@/,
+      "//***:***@"
+    )}`
+  );
+
+  // Handle options based on mongoose version
+  const options = {
+    serverSelectionTimeoutMS: 30000, // 30 seconds
+    socketTimeoutMS: 45000, // 45 seconds
+    connectTimeoutMS: 30000, // 30 seconds
+    // Family 4 = prefer IPv4
+    family: 4,
+  };
+
   try {
-    // Define connection options
-    const options = {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      family: 4,
-      maxPoolSize: 10,
-    };
+    const connection = await mongoose.connect(mongoURI, options);
 
-    // Establish connection
-    const conn = await mongoose.connect(
-      process.env.MONGODB_URI || "mongodb://localhost:27017/sologram",
-      options
-    );
+    logger.info(`MongoDB Connected: ${connection.connection.host}`);
 
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-
-    // Set up event listeners AFTER connection is established
+    // Set up connection event listeners
     mongoose.connection.on("error", (err) => {
-      console.error(`MongoDB connection error: ${err}`);
+      logger.error(`MongoDB connection error: ${err.message}`);
     });
 
     mongoose.connection.on("disconnected", () => {
-      console.warn("MongoDB disconnected, attempting to reconnect...");
+      logger.warn("MongoDB disconnected, attempting to reconnect...");
     });
 
     mongoose.connection.on("reconnected", () => {
-      console.log("MongoDB reconnected successfully");
+      logger.info("MongoDB reconnected successfully");
     });
-  } catch (error) {
-    console.error(`Error: ${error.message}`);
-    console.error("MongoDB connection failed. Will retry...");
 
-    // Don't exit the process immediately - instead, let's retry after a delay
-    setTimeout(() => {
-      console.log("Attempting to reconnect to MongoDB...");
-      connectDB();
-    }, 5000);
+    return true;
+  } catch (error) {
+    logger.error(`MongoDB connection error: ${error.message}`);
+
+    // Log detailed error info
+    if (error.name === "MongoServerSelectionError") {
+      logger.error("Failed to select a MongoDB server", {
+        error: error.message,
+        reason: error.reason,
+      });
+    }
+
+    // Don't exit the process, just return false to indicate failure
+    // The caller can decide what to do
+    return false;
   }
 };
 
