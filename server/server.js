@@ -17,6 +17,43 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Add this to the top of your server.js file
+
+// Enhanced error handling for Node.js
+process.on("uncaughtException", (error) => {
+  console.error("UNCAUGHT EXCEPTION! 💥 Shutting down...");
+  console.error(error.name, error.message, error.stack);
+  // Give the server time to log the error before exiting
+  setTimeout(() => {
+    process.exit(1);
+  }, 1000);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("UNHANDLED REJECTION! 💥");
+  console.error("Reason:", reason);
+  // Give the server time to log the error before exiting
+  setTimeout(() => {
+    process.exit(1);
+  }, 1000);
+});
+
+// Add proper signal handling
+process.on("SIGTERM", () => {
+  console.log("👋 SIGTERM RECEIVED. Shutting down gracefully");
+  // Give time for existing connections to finish
+  setTimeout(() => {
+    console.log("💥 Process terminated!");
+    process.exit(0);
+  }, 2000);
+});
+
+// Add memory monitoring (optional)
+setInterval(() => {
+  const used = process.memoryUsage();
+  console.log(`Memory usage: ${Math.round(used.rss / 1024 / 1024)}MB`);
+}, 60000); // Log memory usage every minute
+
 const logger = winston.createLogger({
   level: "info",
   format: winston.format.json(),

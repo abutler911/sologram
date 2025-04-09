@@ -35,19 +35,21 @@ async function setupAgenda() {
     // Start the agenda processing
     await agenda.start();
     console.log("Agenda started successfully");
-    
+
     // Schedule the archiving job to run every 5 minutes
     await agenda.every("5 minutes", "archive-expired-stories");
     console.log("Archiving job scheduled to run every 5 minutes");
-    
+
     // Also run the job immediately on server startup
     await agenda.now("archive-expired-stories");
     console.log("Initial archiving job triggered");
-    
+
     return agenda;
   } catch (error) {
     console.error("Failed to setup Agenda:", error);
-    throw error;
+    // Don't throw the error - just log it and continue
+    // This prevents Agenda errors from crashing the whole server
+    return null;
   }
 }
 
@@ -55,22 +57,24 @@ async function setupAgenda() {
 async function gracefulShutdown() {
   try {
     console.log("Stopping Agenda jobs...");
-    await agenda.stop();
+    // Add a timeout to ensure it doesn't hang
+    const shutdownPromise = agenda.stop();
+    const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 5000));
+
+    // Race the promises to ensure we don't hang
+    await Promise.race([shutdownPromise, timeoutPromise]);
     console.log("Agenda jobs stopped successfully");
-    process.exit(0);
   } catch (error) {
-    console.error("Error during graceful shutdown:", error);
-    process.exit(1);
+    console.error("Error during Agenda shutdown:", error);
   }
 }
-
 
 async function monitorExpiredStories() {
   const expiredCount = await Story.countDocuments({
     archived: false,
-    expiresAt: { $lt: new Date() }
+    expiresAt: { $lt: new Date() },
   });
-  
+
   if (expiredCount > 0) {
     console.log(`Found ${expiredCount} expired stories that need archiving`);
   }
@@ -82,5 +86,5 @@ process.on("SIGINT", gracefulShutdown);
 module.exports = {
   agenda,
   setupAgenda,
-  gracefulShutdown
+  gracefulShutdown,
 };
