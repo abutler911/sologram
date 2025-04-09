@@ -1,76 +1,65 @@
+// New server/controllers/subscribers.js (replacing the old one)
 const Subscriber = require("../models/Subscriber");
-const crypto = require("crypto");
-const { sendSMS } = require("../services/smsService");
+const notificationService = require("../services/notificationService");
 
-// Subscribe to notifications
-exports.subscribe = async (req, res) => {
+// Register a OneSignal subscriber
+exports.registerSubscriber = async (req, res) => {
   try {
-    const { phone, name } = req.body;
+    const { oneSignalId, email, name, deviceType } = req.body;
 
-    // Check if already subscribed
-    let subscriber = await Subscriber.findOne({ phone });
-
-    if (subscriber) {
-      // If subscriber exists but inactive, reactivate
-      if (!subscriber.isActive) {
-        subscriber.isActive = true;
-        subscriber.name = name;
-        await subscriber.save();
-        return res.status(200).json({
-          success: true,
-          message: "Your subscription has been reactivated",
-          data: {
-            phone: subscriber.phone,
-            name: subscriber.name,
-          },
-        });
-      }
-
-      // Already subscribed and active
+    if (!oneSignalId) {
       return res.status(400).json({
         success: false,
-        message: "This phone number is already subscribed",
+        message: "OneSignal ID is required",
       });
     }
 
-    // Generate verification code
-    const verificationCode = crypto.randomInt(100000, 999999).toString();
-    const verificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    // Check if subscriber already exists
+    let subscriber = await Subscriber.findOne({ oneSignalId });
+
+    if (subscriber) {
+      // Update existing subscriber
+      subscriber.email = email || subscriber.email;
+      subscriber.name = name || subscriber.name;
+      subscriber.deviceType = deviceType || subscriber.deviceType;
+      subscriber.isActive = true;
+
+      await subscriber.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Subscriber updated successfully",
+        data: {
+          id: subscriber._id,
+          oneSignalId: subscriber.oneSignalId,
+          email: subscriber.email,
+          name: subscriber.name,
+        },
+      });
+    }
 
     // Create new subscriber
-    subscriber = await Subscriber.create({
-      phone,
+    subscriber = new Subscriber({
+      oneSignalId,
+      email,
       name,
-      verificationCode,
-      verificationExpires,
-      isVerified: false,
+      deviceType,
     });
 
-    // Send verification SMS
-    try {
-      await sendSMS(
-        phone,
-        `Your SoloGram verification code is: ${verificationCode}. It expires in 10 minutes.`
-      );
-    } catch (smsError) {
-      console.error("Error sending verification SMS:", smsError);
-      await Subscriber.findByIdAndDelete(subscriber._id);
-
-      return res.status(500).json({
-        success: false,
-        message: "Failed to send verification SMS. Please try again later.",
-      });
-    }
+    await subscriber.save();
 
     res.status(201).json({
       success: true,
-      message: "Please verify your phone number with the code sent via SMS",
+      message: "Subscriber registered successfully",
       data: {
-        phone: subscriber.phone,
+        id: subscriber._id,
+        oneSignalId: subscriber.oneSignalId,
+        email: subscriber.email,
+        name: subscriber.name,
       },
     });
   } catch (err) {
-    console.error("Subscription error:", err);
+    console.error("Subscriber registration error:", err);
     res.status(500).json({
       success: false,
       message: "Server Error",
@@ -78,82 +67,78 @@ exports.subscribe = async (req, res) => {
   }
 };
 
-// Verify phone number
-exports.verifyPhone = async (req, res) => {
+// Update notification preferences
+exports.updatePreferences = async (req, res) => {
   try {
-    const { phone, code } = req.body;
+    const { oneSignalId, preferences } = req.body;
 
-    const subscriber = await Subscriber.findOne({
-      phone,
-      verificationCode: code,
-      verificationExpires: { $gt: new Date() },
-    });
-
-    if (!subscriber) {
+    if (!oneSignalId) {
       return res.status(400).json({
         success: false,
-        message: "Invalid or expired verification code",
+        message: "OneSignal ID is required",
       });
     }
 
-    // Mark as verified and clear verification data
-    subscriber.isVerified = true;
-    subscriber.verificationCode = undefined;
-    subscriber.verificationExpires = undefined;
-    await subscriber.save();
-
-    // Send welcome message
-    try {
-      await sendSMS(
-        phone,
-        `Welcome to SoloGram notifications! You'll now receive updates when new content is posted. Reply STOP at any time to unsubscribe.`
-      );
-    } catch (smsError) {
-      console.error("Error sending welcome SMS:", smsError);
-      // Not critical, continue even if welcome SMS fails
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Phone number verified successfully",
-    });
-  } catch (err) {
-    console.error("Verification error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
-  }
-};
-
-// Unsubscribe from notifications
-exports.unsubscribe = async (req, res) => {
-  try {
-    const { phone } = req.body;
-
-    const subscriber = await Subscriber.findOne({ phone });
+    const subscriber = await Subscriber.findOne({ oneSignalId });
 
     if (!subscriber) {
       return res.status(404).json({
         success: false,
-        message: "Subscription not found",
+        message: "Subscriber not found",
       });
     }
 
-    // Mark as inactive instead of deleting to preserve history
-    subscriber.isActive = false;
+    // Update preferences
+    if (preferences) {
+      subscriber.notificationPreferences = {
+        ...subscriber.notificationPreferences,
+        ...preferences,
+      };
+    }
+
     await subscriber.save();
 
-    // Send confirmation SMS
-    try {
-      await sendSMS(
-        phone,
-        "You've been unsubscribed from SoloGram notifications. We hope to see you again soon!"
-      );
-    } catch (smsError) {
-      console.error("Error sending unsubscribe confirmation SMS:", smsError);
-      // Not critical, continue even if SMS fails
+    res.status(200).json({
+      success: true,
+      message: "Preferences updated successfully",
+      data: {
+        id: subscriber._id,
+        preferences: subscriber.notificationPreferences,
+      },
+    });
+  } catch (err) {
+    console.error("Update preferences error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+// Unsubscribe
+exports.unsubscribe = async (req, res) => {
+  try {
+    const { oneSignalId } = req.body;
+
+    if (!oneSignalId) {
+      return res.status(400).json({
+        success: false,
+        message: "OneSignal ID is required",
+      });
     }
+
+    const subscriber = await Subscriber.findOne({ oneSignalId });
+
+    if (!subscriber) {
+      return res.status(404).json({
+        success: false,
+        message: "Subscriber not found",
+      });
+    }
+
+    // Mark as inactive instead of deleting
+    subscriber.isActive = false;
+    await subscriber.save();
 
     res.status(200).json({
       success: true,
@@ -168,61 +153,14 @@ exports.unsubscribe = async (req, res) => {
   }
 };
 
-// Resend verification code
-exports.resendVerification = async (req, res) => {
-  try {
-    const { phone } = req.body;
-
-    const subscriber = await Subscriber.findOne({ phone, isVerified: false });
-
-    if (!subscriber) {
-      return res.status(404).json({
-        success: false,
-        message: "Subscriber not found or already verified",
-      });
-    }
-
-    // Generate new verification code
-    const verificationCode = crypto.randomInt(100000, 999999).toString();
-    const verificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    subscriber.verificationCode = verificationCode;
-    subscriber.verificationExpires = verificationExpires;
-    await subscriber.save();
-
-    // Send verification SMS
-    try {
-      await sendSMS(
-        phone,
-        `Your SoloGram verification code is: ${verificationCode}. It expires in 10 minutes.`
-      );
-    } catch (smsError) {
-      console.error("Error sending verification SMS:", smsError);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to send verification SMS. Please try again later.",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Verification code resent",
-    });
-  } catch (err) {
-    console.error("Resend verification error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
-  }
-};
-
 // Admin only: Get all subscribers
 exports.getAllSubscribers = async (req, res) => {
   try {
-    const subscribers = await Subscriber.find({ isVerified: true })
+    const subscribers = await Subscriber.find()
       .sort({ createdAt: -1 })
-      .select("phone name isActive lastNotified createdAt");
+      .select(
+        "oneSignalId email name deviceType isActive lastNotified createdAt"
+      );
 
     res.status(200).json({
       success: true,

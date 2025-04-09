@@ -106,7 +106,7 @@ const Privacy = () => {
                   <strong>MongoDB:</strong> For database services
                 </ListItem>
                 <ListItem>
-                  <strong>Twilio:</strong> For SMS notification delivery
+                  <strong>OneSignal:</strong> For notification delivery
                 </ListItem>
               </List>
               <Paragraph>

@@ -1,18 +1,20 @@
+// Updated server/routes/subscribers.js
 const express = require("express");
 const router = express.Router();
 const {
-  subscribe,
-  verifyPhone,
+  registerSubscriber,
+  updatePreferences,
   unsubscribe,
-  resendVerification,
   getAllSubscribers,
 } = require("../controllers/subscribers");
 const { protect, authorize } = require("../middleware/auth");
 
-router.post("/subscribe", subscribe);
-router.post("/verify", verifyPhone);
+// Public routes
+router.post("/register", registerSubscriber);
+router.post("/preferences", updatePreferences);
 router.post("/unsubscribe", unsubscribe);
-router.post("/resend-verification", resendVerification);
+
+// Admin only routes
 router.get("/", protect, authorize("admin"), getAllSubscribers);
 
 module.exports = router;

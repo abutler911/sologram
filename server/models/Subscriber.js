@@ -1,21 +1,8 @@
+// Updated server/models/Subscriber.js
 const mongoose = require("mongoose");
 
 const SubscriberSchema = new mongoose.Schema({
-  phone: {
-    type: String,
-    required: [true, "Phone number is required"],
-    unique: true,
-    trim: true,
-    match: [
-      /^\+?[1-9]\d{1,14}$/,
-      "Please provide a valid phone number in E.164 format (e.g., +15551234567)",
-    ],
-  },
-  name: {
-    type: String,
-    required: [true, "Name is required"],
-    trim: true,
-  },
+  // Keep basic info
   email: {
     type: String,
     trim: true,
@@ -25,49 +12,36 @@ const SubscriberSchema = new mongoose.Schema({
       "Please provide a valid email address",
     ],
   },
-  pushId: {
+  name: {
     type: String,
-    default: null,
+    trim: true,
   },
-  // Phone verification fields
-  isVerified: {
-    type: Boolean,
-    default: false,
-  },
-  verificationCode: {
+  // OneSignal specific fields
+  oneSignalId: {
     type: String,
-    select: false,
+    unique: true,
+    sparse: true, // Allow null/undefined values to not trigger uniqueness
   },
-  verificationExpires: {
-    type: Date,
-    select: false,
-  },
-  // Email verification fields
-  isEmailVerified: {
-    type: Boolean,
-    default: false,
-  },
-  emailVerificationToken: {
+  deviceType: {
     type: String,
-    select: false,
-  },
-  emailVerificationExpires: {
-    type: Date,
-    select: false,
+    enum: ["web", "ios", "android"],
+    default: "web",
   },
   // Notification preferences
   notificationPreferences: {
-    push: {
+    enabled: {
       type: Boolean,
       default: true,
     },
-    email: {
-      type: Boolean,
-      default: true,
-    },
-    sms: {
-      type: Boolean,
-      default: true,
+    categories: {
+      posts: {
+        type: Boolean,
+        default: true,
+      },
+      stories: {
+        type: Boolean,
+        default: true,
+      },
     },
   },
   isActive: {
@@ -82,6 +56,16 @@ const SubscriberSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// Auto-update the updatedAt field
+SubscriberSchema.pre("save", function (next) {
+  this.updatedAt = new Date();
+  next();
 });
 
 module.exports = mongoose.model("Subscriber", SubscriberSchema);
