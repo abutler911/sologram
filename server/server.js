@@ -81,7 +81,12 @@ app.use((req, res, next) => {
   });
   next();
 });
-
+app.use((req, res, next) => {
+  if (!req.originalUrl.includes("/health")) {
+    console.log(`${req.method} ${req.originalUrl}`);
+  }
+  next();
+});
 const globalErrorHandler = (err, req, res, next) => {
   logger.error({
     message: "Server error",
@@ -129,6 +134,10 @@ async function startServer() {
         mongodb:
           mongoose.connection.readyState === 1 ? "connected" : "disconnected",
       });
+    });
+
+    app.get("/", (req, res) => {
+      res.send("🚀 SoloGram backend is live!");
     });
 
     if (process.env.NODE_ENV === "production") {
