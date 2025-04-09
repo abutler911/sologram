@@ -446,10 +446,6 @@ const Username = styled.span`
   margin-top: 2px;
   color: #ff7e5f;
 
-  ${"" /* background: linear-gradient(90deg, #ff7e5f, #feb47b); */}
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
   transition: transform 0.3s ease, filter 0.3s ease;
 

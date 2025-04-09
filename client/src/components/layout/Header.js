@@ -417,9 +417,7 @@ const Logo = styled(Link)`
     font-size: 2.2rem;
     font-weight: 600;
     color: #ff7e5f;
-    ${"" /* background: linear-gradient(90deg, #ff7e5f, #feb47b); */}
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+
     letter-spacing: 1px;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
