@@ -61,6 +61,7 @@ const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
 });
+app.use(cors(corsOptions));
 
 const postRoutes = require("./routes/posts");
 const storyRoutes = require("./routes/stories");
