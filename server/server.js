@@ -11,47 +11,33 @@ const {
   setupAgenda,
   gracefulShutdown: agendaShutdown,
 } = require("./services/storyArchiver");
-
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Enhanced error handling for Node.js
+// Graceful error and shutdown handling
 process.on("uncaughtException", (error) => {
   console.error("UNCAUGHT EXCEPTION! 💥 Shutting down...");
-  console.error(error.name, error.message, error.stack);
-  // Give the server time to log the error before exiting
-  setTimeout(() => {
-    process.exit(1);
-  }, 1000);
+  console.error(error.stack);
+  setTimeout(() => process.exit(1), 1000);
 });
-
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("UNHANDLED REJECTION! 💥");
-  console.error("Reason:", reason);
-  // Give the server time to log the error before exiting
-  setTimeout(() => {
-    process.exit(1);
-  }, 1000);
+process.on("unhandledRejection", (reason) => {
+  console.error("UNHANDLED REJECTION! 💥", reason);
+  setTimeout(() => process.exit(1), 1000);
 });
-
-// Add proper signal handling
 process.on("SIGTERM", () => {
   console.log("👋 SIGTERM RECEIVED. Shutting down gracefully");
-  // Give time for existing connections to finish
-  setTimeout(() => {
-    console.log("💥 Process terminated!");
-    process.exit(0);
-  }, 2000);
+  setTimeout(() => process.exit(0), 2000);
 });
 
-// Add memory monitoring (optional)
+// Memory usage logging (optional)
 setInterval(() => {
   const used = process.memoryUsage();
   console.log(`Memory usage: ${Math.round(used.rss / 1024 / 1024)}MB`);
-}, 60000); // Log memory usage every minute
+}, 60000);
 
+// Logger setup
 const logger = winston.createLogger({
   level: "info",
   format: winston.format.json(),
@@ -61,6 +47,7 @@ const logger = winston.createLogger({
   ],
 });
 
+// Security and optimization middlewares
 const corsOptions = {
   origin:
     process.env.NODE_ENV === "production"
@@ -70,49 +57,24 @@ const corsOptions = {
           "https://sologram.onrender.com",
         ]
       : ["http://localhost:3000"],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
-  maxAge: 86400,
 };
-
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  trustProxy: false,
 });
-
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   message: "Too many authentication attempts, please try again later",
 });
 
-const globalErrorHandler = (err, req, res, next) => {
-  logger.error({
-    message: "Server error",
-    url: req.originalUrl,
-    method: req.method,
-    error: err.message,
-    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
-  });
-
-  res.status(500).json({
-    success: false,
-    message: "Server error",
-    error: process.env.NODE_ENV === "development" ? err.message : undefined,
-    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
-  });
-};
-
+// Express setup
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "300mb" }));
 app.use(express.urlencoded({ extended: true, limit: "300mb" }));
 app.use(mongoSanitize());
 app.use(cors(corsOptions));
-
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -128,9 +90,9 @@ app.use(
     referrerPolicy: { policy: "same-origin" },
   })
 );
-
 app.use(morgan("dev"));
 
+// Request logger
 app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
@@ -145,143 +107,113 @@ app.use((req, res, next) => {
   next();
 });
 
+// Global error handler
+app.use((err, req, res, next) => {
+  logger.error({
+    message: "Server error",
+    url: req.originalUrl,
+    method: req.method,
+    error: err.message,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+  });
+  res.status(500).json({
+    success: false,
+    message: "Server error",
+    error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+  });
+});
+
 async function startServer() {
   try {
-    // Add startup diagnostics
     logger.info(
       `Starting server in ${process.env.NODE_ENV || "development"} mode`
     );
-    logger.info(`Node.js version: ${process.version}`);
-    logger.info(`Current working directory: ${process.cwd()}`);
 
     // Check for critical environment variables
-    const requiredEnvVars = ["MONGODB_URI", "JWT_SECRET"];
-
-    const missingVars = requiredEnvVars.filter(
-      (varName) => !process.env[varName]
-    );
-    if (missingVars.length > 0) {
-      logger.warn(`Missing environment variables: ${missingVars.join(", ")}`);
+    const requiredEnv = ["MONGODB_URI", "JWT_SECRET"];
+    const missing = requiredEnv.filter((key) => !process.env[key]);
+    if (missing.length > 0) {
+      logger.warn(`Missing env vars: ${missing.join(", ")}`);
     }
 
-    // Connect to database with improved module
+    // Connect to DB
     const connectDB = require("./config/db");
     const dbConnected = await connectDB();
-
     if (!dbConnected) {
-      logger.warn(
-        "Initial MongoDB connection failed, continuing startup but will retry connection"
-      );
-      // We continue anyway to let the app start - a retry is happening in the db.js module
+      logger.warn("MongoDB failed initially, retry will be attempted.");
     }
 
-    // Initialize Agenda with better error handling
+    // Setup background jobs (agenda)
     try {
       await setupAgenda();
-      logger.info("Story archiving service initialized");
-    } catch (agendaError) {
-      logger.warn("Story archiving service initialization failed", {
-        error: agendaError.message,
-      });
-      // Continue without Agenda if it fails
+      logger.info("✅ Story archiver ready");
+    } catch (agendaErr) {
+      logger.warn("⚠️ Agenda failed to init:", agendaErr.message);
     }
 
-    // Rest of your server setup...
-    const postRoutes = require("./routes/posts");
-    // ... other route imports
+    // Routes setup
+    app.use("/api/posts", require("./routes/posts"));
+    app.use("/api/test-cron", require("./routes/testCron"));
+    app.use("/api/auth", authLimiter, require("./routes/auth"));
+    // ... add more routes as needed
 
-    // Set up routes
-    app.use("/api/", apiLimiter);
-    // ... other route setup
-
-    // Health check endpoint
+    // Health checks
     app.get("/health", (req, res) => {
       res.status(200).json({
         status: "ok",
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(),
         memory: {
           rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`,
-          heapTotal: `${Math.round(
-            process.memoryUsage().heapTotal / 1024 / 1024
-          )}MB`,
-          heapUsed: `${Math.round(
-            process.memoryUsage().heapUsed / 1024 / 1024
-          )}MB`,
         },
-        mongodb:
+        mongo:
           mongoose.connection.readyState === 1 ? "connected" : "disconnected",
       });
     });
-    // Make sure this endpoint is also available at /api/health for consistency
     app.get("/api/health", (req, res) => {
-      res.status(200).json({
-        status: "ok",
-        message: "Server is running",
-        timestamp: new Date(),
-      });
+      res.status(200).json({ status: "ok", timestamp: new Date() });
     });
 
-    // Set up static files for production
+    // Serve frontend in production
     if (process.env.NODE_ENV === "production") {
       app.use(express.static(path.join(__dirname, "../client/build")));
       app.get("*", (req, res) => {
-        res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
+        res.sendFile(path.resolve(__dirname, "../client/build/index.html"));
       });
     }
 
-    // Register global error handler
-    app.use(globalErrorHandler);
-
-    // Start the server
     const server = app.listen(PORT, () => {
-      logger.info(
-        `Server started on port ${PORT} in ${
-          process.env.NODE_ENV || "development"
-        } mode`
-      );
+      logger.info(`🚀 Server running on port ${PORT}`);
     });
 
-    // Handle server errors
     server.on("error", (err) => {
-      logger.error(`Server error: ${err.message}`);
+      logger.error("Server error", err.message);
     });
 
     return server;
-  } catch (error) {
-    logger.error("Server startup failed", {
-      error: error.message,
-      stack: error.stack,
+  } catch (err) {
+    logger.error("Startup failure", {
+      error: err.message,
+      stack: err.stack,
     });
-    // Don't exit immediately - give time for logs to be written
-    setTimeout(() => {
-      process.exit(1);
-    }, 3000);
+    setTimeout(() => process.exit(1), 3000);
   }
 }
 
 const gracefulShutdown = async () => {
-  logger.info("Graceful shutdown initiated");
+  logger.info("Graceful shutdown started...");
   try {
-    try {
-      await agendaShutdown();
-      logger.info("Story archiving service stopped");
-    } catch (agendaError) {
-      logger.error("Agenda shutdown error", { error: agendaError.message });
-    }
-
+    await agendaShutdown();
     await mongoose.connection.close();
-    logger.info("Database connection closed");
-
-    logger.info("Server shutdown complete");
+    logger.info("💾 DB and jobs closed");
     process.exit(0);
   } catch (err) {
-    logger.error("Error during shutdown", { error: err.message });
+    logger.error("Shutdown error", err.message);
     process.exit(1);
   }
 };
 
-process.on("SIGTERM", gracefulShutdown);
 process.on("SIGINT", gracefulShutdown);
+process.on("SIGTERM", gracefulShutdown);
 
 startServer();
