@@ -67,18 +67,21 @@ export const initializeOneSignal = async () => {
 
       console.log("[OneSignal] Initialized successfully");
 
-      // Check push support
+      // Check push support (optional, diagnostic)
       if (
         window.OneSignal &&
-        window.OneSignal.Notifications &&
-        typeof window.OneSignal.Notifications.isPushSupported === "function"
+        typeof window.OneSignal.isPushNotificationsSupported === "function"
       ) {
         const isSupported =
-          await window.OneSignal.Notifications.isPushSupported();
+          await window.OneSignal.isPushNotificationsSupported();
         console.log("[OneSignal] Push supported:", isSupported);
       } else {
-        console.warn("[OneSignal] isPushSupported not available or not loaded");
+        console.warn("[OneSignal] isPushNotificationsSupported not available");
       }
+
+      isInitialized = true;
+      isInitializing = false;
+      resolve(true);
 
       // Final safety check
       setTimeout(() => {
