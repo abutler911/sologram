@@ -66,10 +66,12 @@ app.use(cors(corsOptions));
 const postRoutes = require("./routes/posts");
 const storyRoutes = require("./routes/stories");
 const authRoutes = require("./routes/auth");
+const collectionRoutes = require("./routes/collections");
 
 app.use("/api/posts", postRoutes);
 app.use("/api/stories", storyRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/collections", collectionRoutes);
 
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "300mb" }));
