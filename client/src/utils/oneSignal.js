@@ -1,4 +1,4 @@
-// client/src/utils/oneSignal.js (enhanced)
+// client/src/utils/oneSignal.js
 
 import { toast } from "react-hot-toast";
 
@@ -94,16 +94,26 @@ export const initializeOneSignal = async () => {
         }, 5000);
 
         // Wait for OneSignal to be ready
-        await OneSignal.on("initialized", (isOptedIn) => {
-          clearTimeout(verifyTimeout);
-          console.log(
-            `[OneSignal] Initialization event received, opted in: ${isOptedIn}`
-          );
+        try {
+          await OneSignal.on("initialized", (isOptedIn) => {
+            clearTimeout(verifyTimeout);
+            console.log(
+              `[OneSignal] Initialization event received, opted in: ${isOptedIn}`
+            );
 
-          isInitialized = true;
+            isInitialized = true;
+            isInitializing = false;
+            resolve(true);
+          });
+        } catch (eventError) {
+          console.error(
+            "[OneSignal] Error setting up event listener:",
+            eventError
+          );
+          clearTimeout(verifyTimeout);
           isInitializing = false;
-          resolve(true);
-        });
+          resolve(false);
+        }
       } catch (error) {
         console.error("[OneSignal] Initialization error:", error);
 
@@ -149,6 +159,57 @@ export const isOneSignalReady = () => {
 };
 
 /**
+ * Check if the browser supports web push notifications
+ * @returns {boolean} - True if supported, false otherwise
+ */
+export const checkNotificationCompatibility = () => {
+  return (
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window
+  );
+};
+
+/**
+ * Get helpful diagnostic information about notification support
+ * @returns {Object} - Diagnostic information
+ */
+export const getNotificationDiagnostics = () => {
+  try {
+    const isSecureContext = window.isSecureContext;
+    const notificationPermission = Notification.permission;
+    const serviceWorkerSupported = "serviceWorker" in navigator;
+    const pushManagerSupported = "PushManager" in window;
+
+    // Check Service Worker registration
+    let hasServiceWorker = false;
+    try {
+      if (serviceWorkerSupported) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          hasServiceWorker = registrations.length > 0;
+        });
+      }
+    } catch (swError) {
+      console.error("Error checking service worker registrations:", swError);
+    }
+
+    return {
+      isSecureContext,
+      notificationPermission,
+      serviceWorkerSupported,
+      pushManagerSupported,
+      hasServiceWorker,
+      browser: navigator.userAgent,
+    };
+  } catch (error) {
+    return {
+      error: error.message,
+      browser: navigator.userAgent,
+    };
+  }
+};
+
+/**
  * Request notification permission with improved UX and error handling
  */
 export const requestNotificationPermission = async () => {
@@ -176,25 +237,31 @@ export const requestNotificationPermission = async () => {
       return false;
     }
 
-    // Check current permission
-    const permission = await window.OneSignal.getNotificationPermission();
+    try {
+      // Check current permission
+      const permission = await window.OneSignal.getNotificationPermission();
 
-    // If already denied by browser, show a helpful message
-    if (permission === "denied") {
-      console.log("[OneSignal] Notifications already denied by browser");
-      toast.error(
-        "Notifications are blocked by your browser. Please update your browser settings to enable notifications.",
-        { duration: 6000 }
-      );
-      return false;
-    }
+      // If already denied by browser, show a helpful message
+      if (permission === "denied") {
+        console.log("[OneSignal] Notifications already denied by browser");
+        toast.error(
+          "Notifications are blocked by your browser. Please update your browser settings to enable notifications.",
+          { duration: 6000 }
+        );
+        return false;
+      }
 
-    // Check if already subscribed
-    const alreadyEnabled = await window.OneSignal.isPushNotificationsEnabled();
-    if (alreadyEnabled) {
-      console.log("[OneSignal] User already subscribed to notifications");
-      toast.success("You're already subscribed to notifications!");
-      return true;
+      // Check if already subscribed
+      const alreadyEnabled =
+        await window.OneSignal.isPushNotificationsEnabled();
+      if (alreadyEnabled) {
+        console.log("[OneSignal] User already subscribed to notifications");
+        toast.success("You're already subscribed to notifications!");
+        return true;
+      }
+    } catch (permError) {
+      console.error("[OneSignal] Error checking permission:", permError);
+      // Continue anyway to try the registration
     }
 
     // Try to show the slidedown prompt first (better UX)
@@ -217,7 +284,15 @@ export const requestNotificationPermission = async () => {
       // Check if permission was granted (after a short delay for user interaction)
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      const isEnabled = await window.OneSignal.isPushNotificationsEnabled();
+      let isEnabled = false;
+      try {
+        isEnabled = await window.OneSignal.isPushNotificationsEnabled();
+      } catch (checkError) {
+        console.error(
+          "[OneSignal] Error checking if push enabled:",
+          checkError
+        );
+      }
 
       if (isEnabled) {
         toast.success("Successfully subscribed to notifications!");
@@ -242,54 +317,5 @@ export const requestNotificationPermission = async () => {
       "Something went wrong with the notification system. Please try again later."
     );
     return false;
-  }
-};
-
-// client/src/utils/oneSignal.js - Add this function
-
-/**
- * Check if the browser supports web push notifications
- * @returns {boolean} - True if supported, false otherwise
- */
-export const checkNotificationCompatibility = () => {
-  return (
-    "serviceWorker" in navigator &&
-    "PushManager" in window &&
-    "Notification" in window
-  );
-};
-
-/**
- * Get helpful diagnostic information about notification support
- * @returns {Object} - Diagnostic information
- */
-export const getNotificationDiagnostics = () => {
-  try {
-    const isSecureContext = window.isSecureContext;
-    const notificationPermission = Notification.permission;
-    const serviceWorkerSupported = "serviceWorker" in navigator;
-    const pushManagerSupported = "PushManager" in window;
-
-    // Check Service Worker registration
-    let hasServiceWorker = false;
-    if (serviceWorkerSupported) {
-      navigator.serviceWorker.getRegistrations().then((registrations) => {
-        hasServiceWorker = registrations.length > 0;
-      });
-    }
-
-    return {
-      isSecureContext,
-      notificationPermission,
-      serviceWorkerSupported,
-      pushManagerSupported,
-      hasServiceWorker,
-      browser: navigator.userAgent,
-    };
-  } catch (error) {
-    return {
-      error: error.message,
-      browser: navigator.userAgent,
-    };
   }
 };
