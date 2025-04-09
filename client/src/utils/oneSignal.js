@@ -81,7 +81,17 @@ export const initializeOneSignal = async () => {
         });
 
         console.log("[OneSignal] Initialized successfully");
-
+        if (
+          window.OneSignal &&
+          typeof window.OneSignal.isPushNotificationsSupported === "function"
+        ) {
+          const isSupported = window.OneSignal.isPushNotificationsSupported();
+          console.log("[OneSignal] Push supported:", isSupported);
+        } else {
+          console.warn(
+            "[OneSignal] isPushNotificationsSupported not available"
+          );
+        }
         // Set up a timer to verify OneSignal is actually ready
         const verifyTimeout = setTimeout(() => {
           if (!window.OneSignal) {
@@ -95,7 +105,7 @@ export const initializeOneSignal = async () => {
 
         // Wait for OneSignal to be ready
         try {
-          OneSignal.on("initialized", (isOptedIn) => {
+          await OneSignal.on("initialized", (isOptedIn) => {
             clearTimeout(verifyTimeout);
             console.log(
               `[OneSignal] Initialization event received, opted in: ${isOptedIn}`
