@@ -444,8 +444,9 @@ const Username = styled.span`
   letter-spacing: 0.5px;
   line-height: 1.3;
   margin-top: 2px;
+  color: #ff7e5f;
 
-  background: linear-gradient(90deg, #ff7e5f, #feb47b);
+  ${"" /* background: linear-gradient(90deg, #ff7e5f, #feb47b); */}
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 

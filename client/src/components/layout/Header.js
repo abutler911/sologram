@@ -416,7 +416,8 @@ const Logo = styled(Link)`
     font-family: "Sora", sans-serif;
     font-size: 2.2rem;
     font-weight: 600;
-    background: linear-gradient(90deg, #ff7e5f, #feb47b);
+    color: #ff7e5f;
+    ${"" /* background: linear-gradient(90deg, #ff7e5f, #feb47b); */}
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: 1px;
