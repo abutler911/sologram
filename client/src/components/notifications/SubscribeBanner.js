@@ -1,8 +1,10 @@
 // components/notifications/SubscribeBanner.js
+
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { FaBell, FaTimes } from "react-icons/fa";
 import {
+  initializeOneSignal,
   isOneSignalReady,
   requestNotificationPermission,
   checkNotificationCompatibility,
@@ -14,69 +16,37 @@ const SubscribeBanner = () => {
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    // Check if banner was recently dismissed
     const checkBannerStatus = async () => {
-      // Don't show banner immediately on page load - wait a bit
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait before showing
 
-      // Check if the banner was dismissed recently
-      const dismissedTimestamp = localStorage.getItem(
-        "subscribeBannerDismissedAt"
-      );
-      const hasDismissed =
+      const dismissed =
         localStorage.getItem("subscribeBannerDismissed") === "true";
+      const dismissedAt = localStorage.getItem("subscribeBannerDismissedAt");
 
-      let shouldShow = !hasDismissed;
-
-      // If it was dismissed more than 7 days ago, show it again
-      if (dismissedTimestamp) {
-        const dismissedDate = new Date(parseInt(dismissedTimestamp, 10));
-        const now = new Date();
+      if (dismissed && dismissedAt) {
         const daysSinceDismissed =
-          (now - dismissedDate) / (1000 * 60 * 60 * 24);
-
-        if (daysSinceDismissed > 7) {
-          shouldShow = true;
-        }
+          (Date.now() - parseInt(dismissedAt, 10)) / (1000 * 60 * 60 * 24);
+        if (daysSinceDismissed <= 7) return;
       }
 
-      // Only check subscription status if we're considering showing the banner
-      if (shouldShow) {
-        // Wait until OneSignal is ready before checking subscription status
-        let timeoutCounter = 0;
-        const maxTimeouts = 10; // Maximum number of 1-second intervals to wait
+      const oneSignalReady = await initializeOneSignal();
 
-        const checkOneSignalInterval = setInterval(async () => {
-          timeoutCounter++;
+      if (!oneSignalReady || !isOneSignalReady()) {
+        console.log(
+          "[SubscribeBanner] OneSignal not available, skipping banner"
+        );
+        return;
+      }
 
-          if (isOneSignalReady()) {
-            clearInterval(checkOneSignalInterval);
+      try {
+        const isEnabled = await window.OneSignal.isPushNotificationsEnabled();
+        const permission = await window.OneSignal.getNotificationPermission();
 
-            try {
-              // Check if already subscribed
-              const isPushEnabled =
-                await window.OneSignal.isPushNotificationsEnabled();
-
-              if (!isPushEnabled) {
-                // Check if permission is denied
-                const permission =
-                  await window.OneSignal.getNotificationPermission();
-
-                if (permission !== "denied") {
-                  setShowBanner(true);
-                }
-              }
-            } catch (err) {
-              console.error("Error checking OneSignal status:", err);
-            }
-          } else if (timeoutCounter >= maxTimeouts) {
-            // Give up after 10 seconds
-            clearInterval(checkOneSignalInterval);
-            console.log(
-              "OneSignal not available after 10 seconds, not showing banner"
-            );
-          }
-        }, 1000);
+        if (!isEnabled && permission !== "denied") {
+          setShowBanner(true);
+        }
+      } catch (err) {
+        console.error("Error checking OneSignal status:", err);
       }
     };
 
@@ -85,7 +55,6 @@ const SubscribeBanner = () => {
 
   const handleDismiss = () => {
     setShowBanner(false);
-    // Store current timestamp when dismissed
     localStorage.setItem("subscribeBannerDismissed", "true");
     localStorage.setItem("subscribeBannerDismissedAt", Date.now().toString());
   };
@@ -94,21 +63,15 @@ const SubscribeBanner = () => {
     const loadingToast = toast.loading("Preparing notifications...");
 
     try {
-      // Check browser compatibility first
       const isCompatible = checkNotificationCompatibility();
 
       if (!isCompatible) {
         toast.dismiss(loadingToast);
-        toast.error(
-          "Your browser doesn't support notifications. Please try a different browser like Chrome or Firefox.",
-          { duration: 5000 }
-        );
+        toast.error("Your browser doesn't support notifications.");
         return;
       }
 
-      // Try to request permission
       const result = await requestNotificationPermission();
-
       toast.dismiss(loadingToast);
 
       if (result) {
@@ -118,22 +81,16 @@ const SubscribeBanner = () => {
           "subscribeBannerDismissedAt",
           Date.now().toString()
         );
-      } else {
-        // Permission failure already shows a toast from the requestNotificationPermission function
       }
     } catch (error) {
       toast.dismiss(loadingToast);
       console.error("Error in handleSubscribeClick:", error);
-
-      // Show diagnostics for debugging
       const diagnostics = getNotificationDiagnostics();
       console.debug("Notification diagnostics:", diagnostics);
-
-      toast.error("There was a problem with the notification system.");
+      toast.error("Notification system failed. Try again later.");
     }
   };
 
-  // Only render the banner if we should show it
   if (!showBanner) return null;
 
   return (
