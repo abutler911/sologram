@@ -120,8 +120,7 @@ export const initializeOneSignal = async () => {
 export const isOneSignalReady = () => {
   return (
     isInitialized &&
-    window.OneSignal &&
-    typeof window.OneSignal.isPushNotificationsEnabled === "function"
+    typeof window.OneSignal?.isPushNotificationsEnabled === "function"
   );
 };
 
