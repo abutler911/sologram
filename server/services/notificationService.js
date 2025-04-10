@@ -49,26 +49,22 @@ class NotificationService {
    */
   async getStats() {
     try {
-      // Get app info from OneSignal
       const appResponse = await axios.get(
         `${ONESIGNAL_API_URL}/apps/${this.appId}`,
         { headers: this.getHeaders() }
       );
 
-      // Get recent notifications
       const notificationsResponse = await axios.get(
         `${ONESIGNAL_API_URL}/notifications?app_id=${this.appId}&limit=20`,
         { headers: this.getHeaders() }
       );
 
-      // Calculate stats
       const totalSubscribers = appResponse.data.players || 0;
-      const activeSubscribers = Math.floor(totalSubscribers * 0.9); // Estimate based on typical engagement
+      const activeSubscribers = appResponse.data.messageable_players || 0;
 
       const notifications = notificationsResponse.data.notifications || [];
       const totalNotifications = notifications.length;
 
-      // Calculate average open rate
       let totalOpenRate = 0;
       let notificationsWithStats = 0;
       let lastSent = null;
@@ -94,8 +90,7 @@ class NotificationService {
       const openRate =
         notificationsWithStats > 0 ? totalOpenRate / notificationsWithStats : 0;
 
-      // Estimate growth (in a real implementation, you'd track this over time)
-      const recentGrowth = 5.2; // Placeholder
+      const recentGrowth = 5.2; // still placeholder
 
       return {
         totalSubscribers,
@@ -107,7 +102,6 @@ class NotificationService {
       };
     } catch (err) {
       console.error("Error fetching OneSignal stats:", err);
-      // Fallback data
       return {
         totalSubscribers: 0,
         activeSubscribers: 0,
