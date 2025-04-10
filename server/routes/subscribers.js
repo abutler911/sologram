@@ -1,7 +1,7 @@
 // routes/subscribers.js
 const express = require("express");
 const router = express.Router();
-const { protect, admin } = require("../middleware/authMiddleware");
+const { protect, admin } = require("../middleware/auth");
 
 // Create temporary controller functions (you can replace these with proper implementations later)
 const subscriberController = {
