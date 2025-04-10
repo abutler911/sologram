@@ -5,6 +5,7 @@ const {
   getAnalytics,
   getPostEngagement,
   getSubscriberAnalytics,
+  getOpenRateAnalytics,
 } = require("../controllers/analytics");
 const { protect, authorize } = require("../middleware/auth");
 
