@@ -1,38 +1,94 @@
-// Enhanced server/services/notificationService.js
-const OneSignal = require("@onesignal/node-onesignal");
+// Updated server/services/notificationService.js
+const axios = require("axios");
 const Subscriber = require("../models/Subscriber");
-const logger = require("../utils/logger");
 
 // OneSignal configuration
 const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID;
-const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
+const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_API_KEY; // Rename your env var to be explicit
+const ONESIGNAL_USER_AUTH_KEY = process.env.ONESIGNAL_USER_AUTH_KEY; // Add this new env var
 
-// Initialize OneSignal client
-let client = null;
-
-try {
-  if (ONESIGNAL_APP_ID && ONESIGNAL_API_KEY) {
-    console.log("Initializing OneSignal with App ID:", ONESIGNAL_APP_ID);
-
-    // Create configuration with just the API key
-    const configuration = OneSignal.createConfiguration({
-      appKey: ONESIGNAL_API_KEY,
+/**
+ * Send a notification using direct HTTP request to OneSignal API
+ * This method uses the REST API which is more reliable for server-side sending
+ */
+const sendNotificationViaREST = async (message, title, url, additionalData) => {
+  try {
+    console.log("Sending OneSignal notification via REST API:", {
+      title,
+      message,
+      hasUrl: !!url,
+      additionalData: Object.keys(additionalData || {}),
     });
 
-    client = new OneSignal.DefaultApi(configuration);
-    console.log("OneSignal client initialized successfully");
-  } else {
-    console.warn(
-      "OneSignal credentials missing. Notification service will be simulated.",
+    // Build the notification payload according to OneSignal's REST API format
+    const payload = {
+      app_id: ONESIGNAL_APP_ID,
+      headings: { en: title },
+      contents: { en: message },
+      included_segments: ["All"],
+    };
+
+    // Add URL if provided
+    if (url) {
+      payload.url = url;
+    }
+
+    // Add additional data if provided
+    if (additionalData && Object.keys(additionalData).length > 0) {
+      payload.data = additionalData;
+    }
+
+    // Make the API request
+    const response = await axios.post(
+      "https://onesignal.com/api/v1/notifications",
+      payload,
       {
-        hasAppId: !!ONESIGNAL_APP_ID,
-        hasApiKey: !!ONESIGNAL_API_KEY,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${ONESIGNAL_REST_API_KEY}`,
+        },
       }
     );
+
+    console.log("OneSignal API response:", response.data);
+
+    // Track notification in database
+    try {
+      await Subscriber.updateMany(
+        { isActive: true },
+        { lastNotified: new Date() }
+      );
+    } catch (dbError) {
+      console.error("Error updating subscribers lastNotified:", dbError);
+    }
+
+    return {
+      success: true,
+      notificationId: response.data.id,
+      recipients: response.data.recipients,
+      message: `Notification sent to ${response.data.recipients} subscribers`,
+    };
+  } catch (error) {
+    console.error("OneSignal notification error:", error.message);
+
+    // Log more details if available
+    if (error.response) {
+      console.error("Error details:", {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+      });
+    }
+
+    return {
+      success: false,
+      error: error.message,
+      code: error.response?.status,
+      message: "Failed to send notification",
+      details: error.response?.data,
+    };
   }
-} catch (error) {
-  console.error("Error initializing OneSignal client:", error);
-}
+};
 
 /**
  * Send a notification to all subscribers
@@ -49,7 +105,8 @@ exports.sendNotification = async (
   additionalData = {}
 ) => {
   try {
-    if (!client) {
+    // Check if we have the required configuration
+    if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
       console.log("[NOTIFICATION SIMULATED]", { message, title });
       return {
         success: true,
@@ -58,61 +115,14 @@ exports.sendNotification = async (
       };
     }
 
-    // Log the payload being sent
-    console.log("Sending OneSignal notification:", {
-      appId: ONESIGNAL_APP_ID,
-      title,
-      message,
-      hasUrl: !!url,
-      additionalData: Object.keys(additionalData),
-    });
-
-    // Build notification payload
-    const notification = new OneSignal.Notification();
-    notification.app_id = ONESIGNAL_APP_ID;
-    notification.contents = { en: message };
-    notification.headings = { en: title };
-    notification.included_segments = ["All"];
-
-    // Add URL if provided
-    if (url) {
-      notification.url = url;
-    }
-
-    // Add additional data if provided
-    if (Object.keys(additionalData).length > 0) {
-      notification.data = additionalData;
-    }
-
-    // Send the notification
-    const response = await client.createNotification(notification);
-    console.log("OneSignal API response:", response);
-
-    // Track notification in database
-    try {
-      await Subscriber.updateMany(
-        { isActive: true },
-        { lastNotified: new Date() }
-      );
-    } catch (dbError) {
-      console.error("Error updating subscribers lastNotified:", dbError);
-    }
-
-    return {
-      success: true,
-      notificationId: response.id,
-      recipients: response.recipients,
-      message: `Notification sent to ${response.recipients} subscribers`,
-    };
+    // Always use the direct REST API method - it's more reliable for server-side
+    return sendNotificationViaREST(message, title, url, additionalData);
   } catch (error) {
-    console.error("OneSignal notification error:", error);
-    console.error("Error details:", error.response?.data || error);
-
+    console.error("Fatal notification error:", error);
     return {
       success: false,
       error: error.message,
-      code: error.statusCode,
-      message: "Failed to send notification",
+      message: "Fatal error in notification service",
     };
   }
 };
