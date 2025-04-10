@@ -1,7 +1,7 @@
 // routes/subscribers.js
 const express = require("express");
 const router = express.Router();
-const { protect, admin } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 
 // Create temporary controller functions (you can replace these with proper implementations later)
 const subscriberController = {
@@ -214,32 +214,47 @@ const subscriberController = {
   },
 };
 
-// Routes
-router.get("/stats", protect, admin, subscriberController.getStats);
+// Routes - use authorize('admin') instead of admin
+router.get(
+  "/stats",
+  protect,
+  authorize("admin"),
+  subscriberController.getStats
+);
 router.post(
   "/custom",
   protect,
-  admin,
+  authorize("admin"),
   subscriberController.sendCustomNotification
 );
 router.get(
   "/notifications",
   protect,
-  admin,
+  authorize("admin"),
   subscriberController.getNotificationHistory
 );
-router.get("/templates", protect, admin, subscriberController.getTemplates);
-router.post("/templates", protect, admin, subscriberController.saveTemplate);
+router.get(
+  "/templates",
+  protect,
+  authorize("admin"),
+  subscriberController.getTemplates
+);
+router.post(
+  "/templates",
+  protect,
+  authorize("admin"),
+  subscriberController.saveTemplate
+);
 router.delete(
   "/templates/:id",
   protect,
-  admin,
+  authorize("admin"),
   subscriberController.deleteTemplate
 );
 router.patch(
   "/notifications/:id/cancel",
   protect,
-  admin,
+  authorize("admin"),
   subscriberController.cancelScheduledNotification
 );
 
