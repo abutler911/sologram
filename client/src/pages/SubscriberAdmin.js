@@ -281,7 +281,10 @@ const SubscriberAdmin = () => {
 
   const fetchOpenRates = useCallback(async () => {
     try {
-      const res = await axiosWithRetry("get", "/api/subscribers/open-rates");
+      const res = await axiosWithRetry(
+        "get",
+        "/api/analytics/subscribers/open-rates"
+      );
       if (res.data.success) {
         setOpenRateTrend(res.data.data);
       }
