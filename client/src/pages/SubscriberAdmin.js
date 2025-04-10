@@ -281,10 +281,19 @@ const SubscriberAdmin = () => {
 
   const fetchOpenRates = useCallback(async () => {
     try {
+      const token = localStorage.getItem("token"); // or use context/auth hook if available
+
       const res = await axiosWithRetry(
         "get",
-        "/api/analytics/subscribers/open-rates"
+        "/api/analytics/subscribers/open-rates",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
       );
+
       if (res.data.success) {
         setOpenRateTrend(res.data.data);
       }
