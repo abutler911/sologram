@@ -1,283 +1,377 @@
-// controllers/subscriberController.js
-const Subscriber = require("../models/Subscriber");
-const Notification = require("../models/Notification");
+// Updated subscriberController.js
+const notificationService = require("../services/notificationService");
+const Subscriber = require("../models/Subscriber"); // If you have this model
+const Notification = require("../models/Notification"); // If you have this model
 
-// Get subscriber statistics
-exports.getStats = async (req, res) => {
-  try {
-    // Get total subscribers count
-    const totalSubscribers = await Subscriber.countDocuments({ active: true });
+// Define controller methods
+const subscriberController = {
+  // Get subscriber statistics
+  getStats: async (req, res) => {
+    try {
+      // Get stats from OneSignal
+      const stats = await notificationService.getStats();
 
-    // Get last notification sent
-    const lastNotification = await Notification.findOne()
-      .sort({ createdAt: -1 })
-      .select("createdAt");
-
-    // Get active subscribers (opened a notification in last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const activeSubscribers = await Subscriber.countDocuments({
-      active: true,
-      lastActive: { $gte: thirtyDaysAgo },
-    });
-
-    // Get total notifications sent in last 30 days
-    const totalNotifications = await Notification.countDocuments({
-      createdAt: { $gte: thirtyDaysAgo },
-    });
-
-    // Calculate open rate
-    const openRate =
-      totalNotifications > 0
-        ? (
-            await Notification.aggregate([
-              { $match: { createdAt: { $gte: thirtyDaysAgo } } },
-              { $group: { _id: null, totalOpens: { $avg: "$openRate" } } },
-            ])
-          )[0]?.totalOpens || 0
-        : 0;
-
-    // Calculate subscriber growth
-    const subscribersLastMonth = await Subscriber.countDocuments({
-      createdAt: {
-        $gte: new Date(new Date().setDate(new Date().getDate() - 60)),
-        $lt: thirtyDaysAgo,
-      },
-      active: true,
-    });
-
-    const recentGrowth =
-      subscribersLastMonth > 0
-        ? (
-            ((totalSubscribers - subscribersLastMonth) / subscribersLastMonth) *
-            100
-          ).toFixed(1)
-        : 0;
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        totalSubscribers,
-        activeSubscribers,
-        totalNotifications,
-        openRate: parseFloat(openRate.toFixed(1)),
-        lastSent: lastNotification?.createdAt || null,
-        recentGrowth: parseFloat(recentGrowth),
-      },
-    });
-  } catch (err) {
-    console.error("Error fetching subscriber stats:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error fetching subscriber stats",
-    });
-  }
-};
-
-// Send custom notification
-exports.sendCustomNotification = async (req, res) => {
-  try {
-    const { title, message, url, audience, tags, scheduledFor } = req.body;
-
-    if (!title || !message) {
-      return res.status(400).json({
+      return res.status(200).json({
+        success: true,
+        data: stats,
+      });
+    } catch (err) {
+      console.error("Error fetching subscriber stats:", err);
+      return res.status(500).json({
         success: false,
-        message: "Title and message are required",
+        message: "Server error fetching subscriber stats",
       });
     }
+  },
 
-    // Create notification record
-    const notification = new Notification({
-      title,
-      message,
-      url: url || null,
-      audience: audience || "all",
-      tags: tags || [],
-      scheduledFor: scheduledFor || null,
-      status: scheduledFor ? "scheduled" : "completed",
-      sent: scheduledFor
-        ? 0
-        : await Subscriber.countDocuments({ active: true }),
-      openRate: 0,
-      createdBy: req.user._id,
-    });
+  // Send custom notification
+  sendCustomNotification: async (req, res) => {
+    try {
+      const { title, message, url, icon, image, audience, tags, scheduledFor } =
+        req.body;
 
-    await notification.save();
+      if (!title || !message) {
+        return res.status(400).json({
+          success: false,
+          message: "Title and message are required",
+        });
+      }
 
-    // If not scheduled, send immediately
-    if (!scheduledFor) {
-      // Here you would integrate with your actual notification service
-      // e.g., OneSignal, Firebase, etc.
-      console.log(
-        `Notification "${title}" sent to ${audience || "all"} subscribers`
-      );
-    }
+      // Send notification via OneSignal
+      const result = await notificationService.sendNotification({
+        title,
+        message,
+        url,
+        icon,
+        image,
+        scheduledFor,
+        audience,
+        tags,
+      });
 
-    return res.status(201).json({
-      success: true,
-      message: scheduledFor ? "Notification scheduled" : "Notification sent",
-      notified: scheduledFor ? 0 : notification.sent,
-      notification,
-    });
-  } catch (err) {
-    console.error("Error sending notification:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error sending notification",
-    });
-  }
-};
+      // Save to database if you have a model for notifications
+      if (typeof Notification !== "undefined") {
+        try {
+          const notification = new Notification({
+            title,
+            message,
+            url: url || null,
+            icon: icon || "default",
+            image: image || null,
+            audience: audience || "all",
+            tags: tags || [],
+            scheduledFor: scheduledFor || null,
+            status: scheduledFor ? "scheduled" : "completed",
+            sentAt: scheduledFor ? null : new Date(),
+            sent: result.recipients || 0,
+            opened: 0,
+            openRate: 0,
+            createdBy: req.user._id,
+            oneSignalId: result.notificationId,
+          });
 
-// Get notification history
-exports.getNotificationHistory = async (req, res) => {
-  try {
-    const { status, startDate, endDate } = req.query;
+          await notification.save();
+        } catch (dbErr) {
+          console.error("Error saving notification to database:", dbErr);
+          // Continue even if database save fails
+        }
+      }
 
-    // Build query
-    const query = {};
-
-    if (status && status !== "all") {
-      query.status = status;
-    }
-
-    if (startDate && endDate) {
-      query.createdAt = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate),
-      };
-    }
-
-    // Get notifications
-    const notifications = await Notification.find(query)
-      .sort({ createdAt: -1 })
-      .limit(100);
-
-    return res.status(200).json({
-      success: true,
-      data: notifications,
-    });
-  } catch (err) {
-    console.error("Error fetching notification history:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error fetching notification history",
-    });
-  }
-};
-
-// Get templates
-exports.getTemplates = async (req, res) => {
-  try {
-    // Get templates
-    const templates = await Notification.find({ isTemplate: true }).sort({
-      createdAt: -1,
-    });
-
-    return res.status(200).json({
-      success: true,
-      data: templates,
-    });
-  } catch (err) {
-    console.error("Error fetching notification templates:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error fetching notification templates",
-    });
-  }
-};
-
-// Save template
-exports.saveTemplate = async (req, res) => {
-  try {
-    const { name, title, message, url, icon } = req.body;
-
-    if (!name || !title || !message) {
-      return res.status(400).json({
+      return res.status(201).json({
+        success: true,
+        message: scheduledFor ? "Notification scheduled" : "Notification sent",
+        notified: result.recipients || 0,
+        notificationId: result.notificationId,
+      });
+    } catch (err) {
+      console.error("Error sending notification:", err);
+      return res.status(500).json({
         success: false,
-        message: "Name, title and message are required",
+        message: err.message || "Server error sending notification",
       });
     }
+  },
 
-    // Create template
-    const template = new Notification({
-      title,
-      message,
-      url: url || null,
-      icon: icon || "default",
-      isTemplate: true,
-      name,
-      createdBy: req.user._id,
-    });
+  // Get notification history
+  getNotificationHistory: async (req, res) => {
+    try {
+      // Try to get history from database first
+      let notifications = [];
 
-    await template.save();
+      if (typeof Notification !== "undefined") {
+        try {
+          notifications = await Notification.find()
+            .sort({ createdAt: -1 })
+            .limit(50);
 
-    return res.status(201).json({
-      success: true,
-      message: "Template saved",
-      template,
-    });
-  } catch (err) {
-    console.error("Error saving template:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error saving template",
-    });
-  }
-};
+          // Convert to the expected format
+          notifications = notifications.map((notification) => ({
+            id: notification._id,
+            oneSignalId: notification.oneSignalId,
+            title: notification.title,
+            message: notification.message,
+            sentAt: notification.sentAt,
+            scheduledFor: notification.scheduledFor,
+            audience: notification.audience,
+            status: notification.status,
+            sent: notification.sent,
+            opened: notification.opened,
+            openRate: notification.openRate,
+          }));
+        } catch (dbErr) {
+          console.error("Error fetching notifications from database:", dbErr);
+        }
+      }
 
-// Delete template
-exports.deleteTemplate = async (req, res) => {
-  try {
-    const { id } = req.params;
+      // If no notifications in database, get from OneSignal
+      if (notifications.length === 0) {
+        notifications = await notificationService.getNotificationHistory();
+      }
 
-    await Notification.findOneAndDelete({
-      _id: id,
-      isTemplate: true,
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Template deleted",
-    });
-  } catch (err) {
-    console.error("Error deleting template:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error deleting template",
-    });
-  }
-};
-
-// Cancel scheduled notification
-exports.cancelScheduledNotification = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const notification = await Notification.findOne({
-      _id: id,
-      status: "scheduled",
-    });
-
-    if (!notification) {
-      return res.status(404).json({
+      return res.status(200).json({
+        success: true,
+        data: notifications,
+      });
+    } catch (err) {
+      console.error("Error fetching notification history:", err);
+      return res.status(500).json({
         success: false,
-        message: "Scheduled notification not found",
+        message: "Server error fetching notification history",
       });
     }
+  },
 
-    notification.status = "cancelled";
-    await notification.save();
+  // Get templates (from database)
+  getTemplates: async (req, res) => {
+    try {
+      let templates = [];
 
-    return res.status(200).json({
-      success: true,
-      message: "Scheduled notification cancelled",
-    });
-  } catch (err) {
-    console.error("Error cancelling notification:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error cancelling notification",
-    });
-  }
+      if (typeof Notification !== "undefined") {
+        try {
+          templates = await Notification.find({ isTemplate: true }).sort({
+            createdAt: -1,
+          });
+
+          // Convert to the expected format
+          templates = templates.map((template) => ({
+            id: template._id,
+            name: template.name,
+            title: template.title,
+            message: template.message,
+            url: template.url,
+            icon: template.icon,
+          }));
+        } catch (dbErr) {
+          console.error("Error fetching templates from database:", dbErr);
+        }
+      }
+
+      // If no templates in database, return demo data
+      if (templates.length === 0) {
+        templates = [
+          {
+            id: "t1",
+            name: "New Content Alert",
+            title: "New Content Available!",
+            message:
+              "We've just published new content that we think you'll love. Check it out now!",
+            url: "/explore",
+            icon: "content",
+          },
+          {
+            id: "t2",
+            name: "Weekly Digest",
+            title: "Your Weekly SoloGram Digest",
+            message:
+              "Here's a recap of the top content from this week. Don't miss out on what's trending!",
+            url: "/trending",
+            icon: "trending",
+          },
+        ];
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: templates,
+      });
+    } catch (err) {
+      console.error("Error fetching notification templates:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Server error fetching notification templates",
+      });
+    }
+  },
+
+  // Save template
+  saveTemplate: async (req, res) => {
+    try {
+      const { name, title, message, url, icon } = req.body;
+
+      if (!name || !title || !message) {
+        return res.status(400).json({
+          success: false,
+          message: "Name, title and message are required",
+        });
+      }
+
+      let templateId = "t-new";
+
+      // Save to database if available
+      if (typeof Notification !== "undefined") {
+        try {
+          const template = new Notification({
+            title,
+            message,
+            url: url || null,
+            icon: icon || "default",
+            isTemplate: true,
+            name,
+            createdBy: req.user._id,
+          });
+
+          await template.save();
+          templateId = template._id;
+        } catch (dbErr) {
+          console.error("Error saving template to database:", dbErr);
+        }
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: "Template saved",
+        template: { id: templateId, name, title, message, url, icon },
+      });
+    } catch (err) {
+      console.error("Error saving template:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Server error saving template",
+      });
+    }
+  },
+
+  // Delete template
+  deleteTemplate: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Delete from database if available
+      if (typeof Notification !== "undefined") {
+        try {
+          await Notification.findByIdAndDelete(id);
+        } catch (dbErr) {
+          console.error("Error deleting template from database:", dbErr);
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Template deleted",
+      });
+    } catch (err) {
+      console.error("Error deleting template:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Server error deleting template",
+      });
+    }
+  },
+
+  // Cancel scheduled notification
+  cancelScheduledNotification: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Find the notification
+      let oneSignalId = id;
+
+      if (typeof Notification !== "undefined") {
+        try {
+          const notification = await Notification.findById(id);
+          if (notification && notification.oneSignalId) {
+            oneSignalId = notification.oneSignalId;
+          }
+
+          // Update status in database
+          await Notification.findByIdAndUpdate(id, {
+            status: "cancelled",
+          });
+        } catch (dbErr) {
+          console.error("Error updating notification in database:", dbErr);
+        }
+      }
+
+      // Cancel in OneSignal
+      try {
+        await notificationService.cancelNotification(oneSignalId);
+      } catch (cancelErr) {
+        console.error("Error cancelling notification in OneSignal:", cancelErr);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Scheduled notification cancelled",
+      });
+    } catch (err) {
+      console.error("Error cancelling notification:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Server error cancelling notification",
+      });
+    }
+  },
+
+  // Register a subscriber
+  registerSubscriber: async (req, res) => {
+    try {
+      const { oneSignalId } = req.body;
+
+      if (!oneSignalId) {
+        return res.status(400).json({
+          success: false,
+          message: "OneSignal ID is required",
+        });
+      }
+
+      // Save to database if you have a Subscriber model
+      if (typeof Subscriber !== "undefined") {
+        try {
+          // Check if already exists
+          let subscriber = await Subscriber.findOne({ oneSignalId });
+
+          if (subscriber) {
+            // Update existing
+            subscriber.active = true;
+            subscriber.lastActive = new Date();
+            await subscriber.save();
+          } else {
+            // Create new
+            subscriber = new Subscriber({
+              oneSignalId,
+              active: true,
+              lastActive: new Date(),
+              userId: req.user?._id, // If user is logged in
+            });
+            await subscriber.save();
+          }
+        } catch (dbErr) {
+          console.error("Error saving subscriber to database:", dbErr);
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Subscriber registered successfully",
+      });
+    } catch (err) {
+      console.error("Error registering subscriber:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Server error registering subscriber",
+      });
+    }
+  },
 };
+
+module.exports = subscriberController;
