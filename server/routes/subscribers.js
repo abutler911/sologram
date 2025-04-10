@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const subscriberController = require("../controllers/subscriberController");
-const { protect, admin } = require("../middleware/authMiddleware");
+const { protect, admin } = require("../middleware/auth");
 
 // Get subscriber statistics
 router.get("/stats", protect, admin, subscriberController.getStats);
