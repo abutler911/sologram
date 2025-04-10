@@ -47,20 +47,40 @@ class NotificationService {
   /**
    * Get subscriber statistics from OneSignal
    */
+  /**
+   * Get subscriber statistics from OneSignal
+   */
   async getStats() {
     try {
-      const appResponse = await axios.get(
-        `${ONESIGNAL_API_URL}/apps/${this.appId}`,
-        { headers: this.getHeaders() }
-      );
+      const players = [];
+      let offset = 0;
+      const limit = 300;
+      let totalCount = 0;
 
+      // Fetch players with pagination (in case you grow >300)
+      while (true) {
+        const response = await axios.get(
+          `${ONESIGNAL_API_URL}/players?app_id=${this.appId}&limit=${limit}&offset=${offset}`,
+          { headers: this.getHeaders() }
+        );
+
+        const batch = response.data.players || [];
+        totalCount = response.data.total_count || totalCount;
+
+        players.push(...batch);
+
+        if (batch.length < limit) break; // no more pages
+        offset += limit;
+      }
+
+      const totalSubscribers = totalCount;
+      const activeSubscribers = players.filter((p) => !p.invalidated).length;
+
+      // Fetch latest notifications
       const notificationsResponse = await axios.get(
         `${ONESIGNAL_API_URL}/notifications?app_id=${this.appId}&limit=20`,
         { headers: this.getHeaders() }
       );
-
-      const totalSubscribers = appResponse.data.players || 0;
-      const activeSubscribers = appResponse.data.messageable_players || 0;
 
       const notifications = notificationsResponse.data.notifications || [];
       const totalNotifications = notifications.length;
@@ -90,7 +110,16 @@ class NotificationService {
       const openRate =
         notificationsWithStats > 0 ? totalOpenRate / notificationsWithStats : 0;
 
-      const recentGrowth = 5.2; // still placeholder
+      const recentGrowth = 5.2; // Still a placeholder unless you're tracking changes over time
+
+      // Optional: Debug output
+      console.log("📊 Notification Stats Computed:", {
+        totalSubscribers,
+        activeSubscribers,
+        totalNotifications,
+        openRate: openRate.toFixed(1),
+        lastSent,
+      });
 
       return {
         totalSubscribers,
@@ -101,7 +130,7 @@ class NotificationService {
         recentGrowth,
       };
     } catch (err) {
-      console.error("Error fetching OneSignal stats:", err);
+      console.error("Error fetching OneSignal stats:", err.message);
       return {
         totalSubscribers: 0,
         activeSubscribers: 0,
