@@ -294,7 +294,7 @@ const SubscriberAdmin = () => {
             axiosWithRetry("get", "/api/subscribers/templates"),
             axiosWithRetry("get", "/api/subscribers/notifications"),
           ]);
-
+        console.log("statsResponse", statsResponse.data);
         const {
           totalSubscribers = 0,
           lastSent = null,
