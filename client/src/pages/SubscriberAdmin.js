@@ -295,7 +295,23 @@ const SubscriberAdmin = () => {
             axiosWithRetry("get", "/api/subscribers/notifications"),
           ]);
 
-        setSubscriberStats(statsResponse.data);
+        const {
+          totalSubscribers = 0,
+          lastSent = null,
+          totalNotifications = 0,
+          openRate = 0,
+          activeSubscribers = 0,
+          recentGrowth = 0,
+        } = statsResponse.data || {};
+
+        setSubscriberStats({
+          totalSubscribers,
+          lastSent,
+          totalNotifications,
+          openRate,
+          activeSubscribers,
+          recentGrowth,
+        });
         // Also fetch platform distribution data
         await fetchOneSignalPlatformData();
 
@@ -746,7 +762,9 @@ const SubscriberAdmin = () => {
                   </StatIcon>
                   <StatInfo>
                     <StatValue>
-                      {subscriberStats.totalSubscribers.toLocaleString()}
+                      {typeof subscriberStats.totalSubscribers === "number"
+                        ? subscriberStats.totalSubscribers.toLocaleString()
+                        : "0"}
                     </StatValue>
                     <StatLabel>Total Subscribers</StatLabel>
                     <StatTrend positive={subscriberStats.recentGrowth > 0}>
