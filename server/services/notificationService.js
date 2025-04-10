@@ -51,7 +51,10 @@ const sendNotificationViaREST = async (message, title, url, additionalData) => {
     );
 
     console.log("OneSignal API response:", response.data);
-
+    const recipientCount = response.data.recipients || "unknown number of";
+    console.log(
+      `Successfully sent notification to ${recipientCount} subscribers`
+    );
     // Track notification in database
     try {
       await Subscriber.updateMany(
@@ -65,8 +68,8 @@ const sendNotificationViaREST = async (message, title, url, additionalData) => {
     return {
       success: true,
       notificationId: response.data.id,
-      recipients: response.data.recipients,
-      message: `Notification sent to ${response.data.recipients} subscribers`,
+      recipients: response.data.recipients || 0,
+      message: `Notification sent to ${recipientCount} subscribers`,
     };
   } catch (error) {
     console.error("OneSignal notification error:", error.message);
