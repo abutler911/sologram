@@ -1,71 +1,49 @@
-// Updated server/models/Subscriber.js
+// models/Subscriber.js
 const mongoose = require("mongoose");
 
-const SubscriberSchema = new mongoose.Schema({
-  // Keep basic info
-  email: {
-    type: String,
-    trim: true,
-    lowercase: true,
-    match: [
-      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-      "Please provide a valid email address",
-    ],
-  },
-  name: {
-    type: String,
-    trim: true,
-  },
-  // OneSignal specific fields
-  oneSignalId: {
-    type: String,
-    unique: true,
-    sparse: true, // Allow null/undefined values to not trigger uniqueness
-  },
-  deviceType: {
-    type: String,
-    enum: ["web", "ios", "android"],
-    default: "web",
-  },
-  // Notification preferences
-  notificationPreferences: {
-    enabled: {
+const subscriberSchema = new mongoose.Schema(
+  {
+    endpoint: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    keys: {
+      p256dh: {
+        type: String,
+        required: true,
+      },
+      auth: {
+        type: String,
+        required: true,
+      },
+    },
+    browser: {
+      type: String,
+    },
+    platform: {
+      type: String,
+    },
+    active: {
       type: Boolean,
       default: true,
     },
-    categories: {
-      posts: {
-        type: Boolean,
-        default: true,
-      },
-      stories: {
-        type: Boolean,
-        default: true,
-      },
+    lastActive: {
+      type: Date,
+      default: Date.now,
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    tags: {
+      type: [String],
+      default: [],
     },
   },
-  isActive: {
-    type: Boolean,
-    default: true,
-  },
-  lastNotified: {
-    type: Date,
-    default: null,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  { timestamps: true }
+);
 
-// Auto-update the updatedAt field
-SubscriberSchema.pre("save", function (next) {
-  this.updatedAt = new Date();
-  next();
-});
+const Subscriber = mongoose.model("Subscriber", subscriberSchema);
 
-module.exports = mongoose.model("Subscriber", SubscriberSchema);
+module.exports = Subscriber;
