@@ -35,6 +35,7 @@ import AddPostsToCollection from "./pages/AddPostsToCollection";
 import CreateStory from "./pages/CreateStory";
 import StoryArchive from "./pages/StoryArchive";
 import ArchivedStoryView from "./pages/ArchivedStoryView";
+import Analytics from "./pages/Analytics";
 
 import InstallPrompt from "./components/pwa/InstallPrompt";
 import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButtonAdjuster";
@@ -223,6 +224,14 @@ function App() {
                 element={
                   <PrivateRoute>
                     <AddPostsToCollection />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/analytics"
+                element={
+                  <PrivateRoute>
+                    <Analytics />
                   </PrivateRoute>
                 }
               />

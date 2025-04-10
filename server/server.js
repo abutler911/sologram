@@ -75,6 +75,7 @@ const authRoutes = require("./routes/auth");
 const collectionRoutes = require("./routes/collections");
 const archivedStoryRoutes = require("./routes/archivedStories");
 const subscriberRoutes = require("./routes/subscribers");
+const analyticsRoutes = require("./routes/analytics");
 
 app.use("/api/posts", postRoutes);
 app.use("/api/stories", storyRoutes);
@@ -82,6 +83,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/collections", collectionRoutes);
 app.use("/api/archived-stories", archivedStoryRoutes);
 app.use("/api/subscribers", subscriberRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 app.set("trust proxy", 1);
 
