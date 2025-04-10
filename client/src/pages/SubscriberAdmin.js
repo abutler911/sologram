@@ -295,8 +295,7 @@ const SubscriberAdmin = () => {
             axiosWithRetry("get", "/api/subscribers/notifications"),
           ]);
 
-        // Your existing code for processing the responses...
-
+        setSubscriberStats(statsResponse.data);
         // Also fetch platform distribution data
         await fetchOneSignalPlatformData();
 
