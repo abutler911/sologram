@@ -13,9 +13,25 @@ class NotificationService {
     this.apiKey = process.env.ONESIGNAL_REST_API_KEY;
     this.appId = process.env.ONESIGNAL_APP_ID;
 
-    if (!this.apiKey || !this.appId) {
-      console.warn("OneSignal API key or App ID not provided");
+    if (!this.apiKey) {
+      console.error("OneSignal REST API key is missing or undefined");
     }
+
+    if (!this.appId) {
+      console.error("OneSignal App ID is missing or undefined");
+    }
+
+    console.log("OneSignal Config:", {
+      hasApiKey: !!this.apiKey,
+      hasAppId: !!this.appId,
+      apiKeyLength: this.apiKey ? this.apiKey.length : 0,
+      // Log first few and last few characters of the key if it exists
+      apiKeySample: this.apiKey
+        ? `${this.apiKey.substring(0, 3)}...${this.apiKey.substring(
+            this.apiKey.length - 3
+          )}`
+        : "N/A",
+    });
   }
 
   /**
@@ -24,7 +40,7 @@ class NotificationService {
   getHeaders() {
     return {
       "Content-Type": "application/json",
-      Authorization: `Basic ${this.apiKey}`,
+      Authorization: `Basic ${Buffer.from(this.apiKey).toString("base64")}`,
     };
   }
 
