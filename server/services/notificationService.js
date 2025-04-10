@@ -374,6 +374,18 @@ class NotificationService {
 
     return "Other";
   }
+  async notifyNewStory(story) {
+    const title = "New Story Posted!";
+    const message = story.title || "Check out the latest update on SoloGram.";
+    const url = `https://thesologram.com/stories/${story._id}`;
+
+    return this.sendNotification({
+      title,
+      message,
+      url,
+      audience: "all",
+    });
+  }
 }
 
 module.exports = new NotificationService();
