@@ -51,4 +51,11 @@ router.patch(
   subscriberController.cancelScheduledNotification
 );
 
+router.get(
+  "/platform-stats",
+  protect,
+  authorize("admin"),
+  subscriberController.getPlatformStats
+);
+
 module.exports = router;

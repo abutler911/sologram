@@ -1,7 +1,7 @@
 // Updated subscriberController.js
 const notificationService = require("../services/notificationService");
-const Subscriber = require("../models/Subscriber"); // If you have this model
-const Notification = require("../models/Notification"); // If you have this model
+const Subscriber = require("../models/Subscriber");
+const Notification = require("../models/Notification");
 
 // Define controller methods
 const subscriberController = {
@@ -20,6 +20,25 @@ const subscriberController = {
       return res.status(500).json({
         success: false,
         message: "Server error fetching subscriber stats",
+      });
+    }
+  },
+
+  // Get platform distribution data from OneSignal
+  getPlatformStats: async (req, res) => {
+    try {
+      // Let's attempt to get the platform data from OneSignal
+      const platformData = await notificationService.getPlatformDistribution();
+
+      return res.status(200).json({
+        success: true,
+        data: platformData,
+      });
+    } catch (err) {
+      console.error("Error fetching platform distribution data:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Server error fetching platform distribution data",
       });
     }
   },
