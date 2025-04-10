@@ -21,4 +21,7 @@ router.get("/posts/:id/engagement", getPostEngagement);
 // Get subscriber analytics
 router.get("/subscribers", getSubscriberAnalytics);
 
+// routes/analytics.js
+router.get("/subscribers/open-rates", getOpenRateAnalytics);
+
 module.exports = router;

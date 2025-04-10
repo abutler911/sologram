@@ -3,6 +3,52 @@ const Post = require("../models/Post");
 const Like = require("../models/Like");
 const Story = require("../models/Story");
 const Subscriber = require("../models/Subscriber");
+const Notification = require("../models/Notification");
+
+/**
+ * Get open rate data for recent notifications, grouped by date
+ * @route   GET /api/analytics/subscribers/open-rates
+ * @access  Private (Admin only)
+ */
+exports.getOpenRateAnalytics = async (req, res) => {
+  try {
+    const recentNotifications = await Notification.find({ isTemplate: false })
+      .sort({ createdAt: -1 })
+      .limit(50); // You can adjust to 30/90/etc. for your chart needs
+
+    const dailyStats = {};
+
+    recentNotifications.forEach((notif) => {
+      const dateStr = notif.createdAt.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+      });
+
+      if (!dailyStats[dateStr]) {
+        dailyStats[dateStr] = { sent: 0, opened: 0 };
+      }
+
+      dailyStats[dateStr].sent += notif.sent || 0;
+      dailyStats[dateStr].opened += notif.opened || 0;
+    });
+
+    const openRateData = Object.entries(dailyStats)
+      .reverse() // oldest to newest
+      .map(([date, { sent, opened }]) => ({
+        date,
+        rate: sent > 0 ? parseFloat(((opened / sent) * 100).toFixed(1)) : 0,
+      }));
+
+    res.status(200).json({ success: true, data: openRateData });
+  } catch (err) {
+    console.error("Open rate analytics error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
+  }
+};
 
 /**
  * Get basic analytics for the entire platform

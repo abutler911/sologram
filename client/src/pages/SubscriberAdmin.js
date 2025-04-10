@@ -152,6 +152,7 @@ const SubscriberAdmin = () => {
     "inactive_users",
     "premium_users",
   ]);
+  const [openRateTrend, setOpenRateTrend] = useState([]);
 
   const [platformDistribution, setPlatformDistribution] = useState([]);
 
@@ -278,6 +279,18 @@ const SubscriberAdmin = () => {
     }
   }, [axiosWithRetry]);
 
+  const fetchOpenRates = useCallback(async () => {
+    try {
+      const res = await axiosWithRetry("get", "/api/subscribers/open-rates");
+      if (res.data.success) {
+        setOpenRateTrend(res.data.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch open rate trend:", error);
+      toast.error("Could not load open rate chart");
+    }
+  }, [axiosWithRetry]);
+
   // Fetch notification data with improved error handling
   const fetchNotificationData = useCallback(
     async (showToast = false) => {
@@ -334,7 +347,8 @@ const SubscriberAdmin = () => {
   // Initial data load
   useEffect(() => {
     fetchNotificationData();
-  }, [fetchNotificationData]);
+    fetchOpenRates();
+  }, [fetchNotificationData, fetchOpenRates]);
 
   // Form validation
   const isFormValid = useMemo(() => {
@@ -1576,7 +1590,7 @@ const SubscriberAdmin = () => {
                         <span>Open Rates</span>
                       </ChartTitle>
                       <ResponsiveContainer width="100%" height={250}>
-                        <BarChart data={demoData.current.openRateData}>
+                        <BarChart data={openRateTrend}>
                           <CartesianGrid
                             strokeDasharray="3 3"
                             stroke="#333333"
