@@ -6,21 +6,28 @@ const logger = require("../utils/logger");
 // OneSignal configuration
 const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID;
 const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
-const ONESIGNAL_USER_KEY = process.env.ONESIGNAL_USER_KEY;
 
 // Initialize OneSignal client
 let client = null;
 
 try {
-  if (ONESIGNAL_APP_ID && ONESIGNAL_API_KEY && ONESIGNAL_USER_KEY) {
+  if (ONESIGNAL_APP_ID && ONESIGNAL_API_KEY) {
+    console.log("Initializing OneSignal with App ID:", ONESIGNAL_APP_ID);
+
+    // Create configuration with just the API key
     const configuration = OneSignal.createConfiguration({
       appKey: ONESIGNAL_API_KEY,
-      userKey: ONESIGNAL_USER_KEY,
     });
+
     client = new OneSignal.DefaultApi(configuration);
+    console.log("OneSignal client initialized successfully");
   } else {
     console.warn(
-      "OneSignal credentials missing. Notification service will be simulated."
+      "OneSignal credentials missing. Notification service will be simulated.",
+      {
+        hasAppId: !!ONESIGNAL_APP_ID,
+        hasApiKey: !!ONESIGNAL_API_KEY,
+      }
     );
   }
 } catch (error) {
@@ -51,6 +58,15 @@ exports.sendNotification = async (
       };
     }
 
+    // Log the payload being sent
+    console.log("Sending OneSignal notification:", {
+      appId: ONESIGNAL_APP_ID,
+      title,
+      message,
+      hasUrl: !!url,
+      additionalData: Object.keys(additionalData),
+    });
+
     // Build notification payload
     const notification = new OneSignal.Notification();
     notification.app_id = ONESIGNAL_APP_ID;
@@ -70,6 +86,7 @@ exports.sendNotification = async (
 
     // Send the notification
     const response = await client.createNotification(notification);
+    console.log("OneSignal API response:", response);
 
     // Track notification in database
     try {
@@ -89,6 +106,7 @@ exports.sendNotification = async (
     };
   } catch (error) {
     console.error("OneSignal notification error:", error);
+    console.error("Error details:", error.response?.data || error);
 
     return {
       success: false,
@@ -111,6 +129,12 @@ exports.notifyNewPost = async (post) => {
     post._id
   }`;
 
+  console.log(`Preparing notification for new post: ${post._id}`, {
+    title,
+    message,
+    url,
+  });
+
   return this.sendNotification(message, title, url, {
     type: "post",
     postId: post._id,
@@ -126,8 +150,29 @@ exports.notifyNewStory = async (story) => {
   const title = "New Story on SoloGram";
   const message = `A new story has been added: "${story.title}"`;
 
+  console.log(`Preparing notification for new story: ${story._id}`, {
+    title,
+    message,
+  });
+
   return this.sendNotification(message, title, null, {
     type: "story",
     storyId: story._id,
+  });
+};
+
+/**
+ * Send a test notification
+ * @param {string} message - Optional custom message
+ * @returns {Promise} - Notification result
+ */
+exports.sendTestNotification = async (
+  message = "This is a test notification from SoloGram!"
+) => {
+  console.log("Sending test notification");
+
+  return this.sendNotification(message, "SoloGram Test", null, {
+    type: "test",
+    timestamp: Date.now(),
   });
 };

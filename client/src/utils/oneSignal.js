@@ -35,12 +35,20 @@ export const initializeOneSignal = async () => {
     return false;
   }
 
+  // Log the App ID we're using (without showing the full value for security)
+  const maskedAppId =
+    appId.substring(0, 4) + "..." + appId.substring(appId.length - 4);
+  console.log(`[OneSignal] Using App ID: ${maskedAppId}`);
+
   initPromise = new Promise(async (resolve) => {
     try {
       const OneSignal = (await import("react-onesignal")).default;
       OneSignalSDK = OneSignal;
 
-      await OneSignal.init({
+      // Log more details for debugging
+      console.log("[OneSignal] SDK loaded successfully");
+
+      const initConfig = {
         appId,
         allowLocalhostAsSecureOrigin: true,
         serviceWorkerPath: "/OneSignalSDKWorker.js",
@@ -65,9 +73,24 @@ export const initializeOneSignal = async () => {
             ],
           },
         },
+      };
+
+      console.log("[OneSignal] Starting initialization with config:", {
+        ...initConfig,
+        appId: maskedAppId, // Don't log the full app ID
       });
 
+      await OneSignal.init(initConfig);
+
       console.log("[OneSignal] Initialized successfully");
+
+      // Check browser compatibility
+      const browser = navigator.userAgent;
+      console.log("[OneSignal] Browser:", browser);
+
+      // Check for secure context
+      const isSecure = window.isSecureContext;
+      console.log("[OneSignal] Is secure context:", isSecure);
 
       if (
         OneSignal &&
@@ -75,8 +98,23 @@ export const initializeOneSignal = async () => {
       ) {
         const isSupported = await OneSignal.isPushNotificationsSupported();
         console.log("[OneSignal] Push supported:", isSupported);
+
+        // Check current permission state
+        const permission = await OneSignal.getNotificationPermission();
+        console.log("[OneSignal] Current permission status:", permission);
+
+        // Check if already subscribed
+        const isEnabled = await OneSignal.isPushNotificationsEnabled();
+        console.log("[OneSignal] Already subscribed:", isEnabled);
       } else {
         console.warn("[OneSignal] isPushNotificationsSupported not available");
+      }
+
+      // Verify the OneSignal global object is available
+      if (window.OneSignal) {
+        console.log("[OneSignal] Global OneSignal object is available");
+      } else {
+        console.warn("[OneSignal] Global OneSignal object is NOT available");
       }
 
       isInitialized = true;
@@ -93,6 +131,19 @@ export const initializeOneSignal = async () => {
     } catch (error) {
       console.error("[OneSignal] Initialization error:", error);
       isInitializing = false;
+
+      // Check for specific errors and provide better debugging
+      if (error.message && error.message.includes("service worker")) {
+        console.error(
+          "[OneSignal] Service worker registration issue detected. Check that your OneSignalSDKWorker.js file exists at the root of your domain"
+        );
+      }
+
+      if (error.message && error.message.includes("https")) {
+        console.error(
+          "[OneSignal] Secure context issue detected. OneSignal requires HTTPS or localhost"
+        );
+      }
 
       if (initAttempts < MAX_INIT_ATTEMPTS) {
         console.log(`[OneSignal] Will retry initialization in 3 seconds`);
@@ -121,11 +172,19 @@ export const isOneSignalReady = () => {
 };
 
 export const checkNotificationCompatibility = () => {
-  return (
+  const isCompatible =
     "serviceWorker" in navigator &&
     "PushManager" in window &&
-    "Notification" in window
-  );
+    "Notification" in window;
+
+  console.log("[OneSignal] Browser compatibility check:", {
+    serviceWorker: "serviceWorker" in navigator,
+    pushManager: "PushManager" in window,
+    notification: "Notification" in window,
+    isCompatible,
+  });
+
+  return isCompatible;
 };
 
 export const getNotificationDiagnostics = () => {
@@ -139,10 +198,20 @@ export const getNotificationDiagnostics = () => {
     if (serviceWorkerSupported) {
       navigator.serviceWorker.getRegistrations().then((regs) => {
         hasServiceWorker = regs.length > 0;
+        console.log("[OneSignal] Service worker registrations:", regs.length);
+
+        // Log service worker details
+        regs.forEach((reg, index) => {
+          console.log(`[OneSignal] Service worker #${index + 1}:`, {
+            scope: reg.scope,
+            updateViaCache: reg.updateViaCache,
+            active: !!reg.active,
+          });
+        });
       });
     }
 
-    return {
+    const diagnostics = {
       isSecureContext,
       notificationPermission,
       serviceWorkerSupported,
@@ -150,7 +219,12 @@ export const getNotificationDiagnostics = () => {
       hasServiceWorker,
       browser: navigator.userAgent,
     };
+
+    console.log("[OneSignal] Full diagnostics:", diagnostics);
+
+    return diagnostics;
   } catch (error) {
+    console.error("[OneSignal] Error getting diagnostics:", error);
     return {
       error: error.message,
       browser: navigator.userAgent,
@@ -160,21 +234,31 @@ export const getNotificationDiagnostics = () => {
 
 export const requestNotificationPermission = async () => {
   try {
+    console.log("[OneSignal] Starting notification permission request");
+
     if (!isInitialized) {
+      console.log("[OneSignal] Not initialized yet, will initialize first");
       const initialized = await initializeOneSignal();
       if (!initialized) {
+        console.error(
+          "[OneSignal] Failed to initialize for permission request"
+        );
         toast.error("Notification system not ready.");
         return false;
       }
     }
 
     if (!OneSignalSDK) {
+      console.error("[OneSignal] SDK not available for permission request");
       toast.error("Notification system unavailable.");
       return false;
     }
 
     const permission = await OneSignalSDK.getNotificationPermission();
+    console.log("[OneSignal] Current permission:", permission);
+
     if (permission === "denied") {
+      console.warn("[OneSignal] Notifications are blocked in browser settings");
       toast.error("Notifications are blocked in your browser settings.", {
         duration: 6000,
       });
@@ -182,25 +266,77 @@ export const requestNotificationPermission = async () => {
     }
 
     const alreadyEnabled = await OneSignalSDK.isPushNotificationsEnabled();
+    console.log("[OneSignal] Already enabled:", alreadyEnabled);
+
     if (alreadyEnabled) {
+      console.log("[OneSignal] User already subscribed");
       toast.success("You're already subscribed to notifications!");
       return true;
     }
 
+    // Try to show the prompt
+    console.log("[OneSignal] Showing permission prompt");
+
     if (typeof OneSignalSDK.showSlidedownPrompt === "function") {
+      console.log("[OneSignal] Using showSlidedownPrompt method");
       await OneSignalSDK.showSlidedownPrompt();
     } else if (
       typeof OneSignalSDK.registerForPushNotifications === "function"
     ) {
+      console.log("[OneSignal] Using registerForPushNotifications method");
       await OneSignalSDK.registerForPushNotifications();
+    } else {
+      console.warn("[OneSignal] No prompt method available");
     }
 
+    // Wait for the user to respond to the prompt
+    console.log("[OneSignal] Waiting for user response");
     await new Promise((res) => setTimeout(res, 2000));
 
+    // Check if permission was granted
     const isEnabled = await OneSignalSDK.isPushNotificationsEnabled();
+    console.log("[OneSignal] Permission granted:", isEnabled);
+
     if (isEnabled) {
+      console.log("[OneSignal] Successfully subscribed");
       toast.success("Subscribed to notifications!");
+
+      // Register the subscription with your backend
+      try {
+        const playerId = await OneSignalSDK.getUserId();
+        console.log("[OneSignal] Registering with Player ID:", playerId);
+
+        // Call your backend to register this subscriber
+        if (playerId) {
+          try {
+            const response = await fetch("/api/subscribers/register", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ oneSignalId: playerId }),
+            });
+
+            if (response.ok) {
+              console.log("[OneSignal] Successfully registered with backend");
+            } else {
+              console.warn(
+                "[OneSignal] Failed to register with backend:",
+                await response.text()
+              );
+            }
+          } catch (registerError) {
+            console.error(
+              "[OneSignal] Error registering with backend:",
+              registerError
+            );
+          }
+        }
+      } catch (playerIdError) {
+        console.error("[OneSignal] Error getting player ID:", playerIdError);
+      }
     } else {
+      console.log("[OneSignal] User did not subscribe");
       toast.info(
         "You can enable notifications later from the Subscribe button."
       );
