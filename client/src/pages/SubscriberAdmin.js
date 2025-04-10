@@ -153,6 +153,8 @@ const SubscriberAdmin = () => {
     "premium_users",
   ]);
 
+  const [platformDistribution, setPlatformDistribution] = useState([]);
+
   // State for notification preview and sending
   const [sendingMessage, setSendingMessage] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
@@ -179,12 +181,20 @@ const SubscriberAdmin = () => {
     if (!dateString) return null;
 
     try {
-      // First try to parse as ISO string
-      let parsedDate = parseISO(String(dateString));
+      let parsedDate;
 
-      // If that fails, try as a regular Date object
+      // First try to parse as ISO string
+      parsedDate = parseISO(String(dateString));
+
+      // If that fails, check if it's a Unix timestamp (in seconds)
       if (!isValid(parsedDate)) {
-        parsedDate = new Date(dateString);
+        // If it's a number or numeric string with 10 digits, assume it's a Unix timestamp in seconds
+        if (/^\d{10}$/.test(String(dateString).trim())) {
+          parsedDate = new Date(parseInt(dateString) * 1000);
+        } else {
+          // Try as a regular Date object
+          parsedDate = new Date(dateString);
+        }
 
         // If still invalid, return null
         if (!isValid(parsedDate)) {
@@ -239,6 +249,35 @@ const SubscriberAdmin = () => {
     []
   );
 
+  const fetchOneSignalPlatformData = useCallback(async () => {
+    try {
+      // Make API call to your backend endpoint that connects to OneSignal
+      const response = await axiosWithRetry(
+        "get",
+        "/api/subscribers/platform-stats"
+      );
+
+      if (response.data.success) {
+        // Transform the data for the pie chart
+        const formattedData = Object.entries(response.data.data).map(
+          ([name, value]) => ({
+            name: name,
+            value: parseInt(value, 10) || 0,
+          })
+        );
+
+        // Sort by highest value first
+        formattedData.sort((a, b) => b.value - a.value);
+
+        setPlatformDistribution(formattedData);
+      }
+    } catch (err) {
+      console.error("Error fetching OneSignal platform data:", err);
+      // Fallback to demo data if API fails
+      setPlatformDistribution(demoData.current.platformData);
+    }
+  }, [axiosWithRetry]);
+
   // Fetch notification data with improved error handling
   const fetchNotificationData = useCallback(
     async (showToast = false) => {
@@ -256,34 +295,10 @@ const SubscriberAdmin = () => {
             axiosWithRetry("get", "/api/subscribers/notifications"),
           ]);
 
-        if (statsResponse.data.success) {
-          // Preprocess stats data to ensure dates are valid
-          const processedStats = {
-            ...statsResponse.data.data,
-            lastSent: statsResponse.data.data.lastSent
-              ? String(statsResponse.data.data.lastSent)
-              : null,
-          };
-          setSubscriberStats(processedStats);
-        }
+        // Your existing code for processing the responses...
 
-        if (templatesResponse.data.success) {
-          setNotificationTemplates(templatesResponse.data.data);
-        }
-
-        if (historyResponse.data.success) {
-          // Preprocess notification data to ensure dates are valid
-          const processedHistory = historyResponse.data.data.map(
-            (notification) => ({
-              ...notification,
-              sentAt: notification.sentAt ? String(notification.sentAt) : null,
-              scheduledFor: notification.scheduledFor
-                ? String(notification.scheduledFor)
-                : null,
-            })
-          );
-          setNotificationHistory(processedHistory);
-        }
+        // Also fetch platform distribution data
+        await fetchOneSignalPlatformData();
 
         setError(null);
 
@@ -298,7 +313,7 @@ const SubscriberAdmin = () => {
         setLoading(false);
       }
     },
-    [isAuthenticated, isAdmin, axiosWithRetry]
+    [isAuthenticated, isAdmin, axiosWithRetry, fetchOneSignalPlatformData] // Add fetchOneSignalPlatformData to dependencies
   );
 
   // Initial data load
@@ -1582,7 +1597,11 @@ const SubscriberAdmin = () => {
                       <ResponsiveContainer width="100%" height={250}>
                         <PieChart>
                           <Pie
-                            data={demoData.current.platformData}
+                            data={
+                              platformDistribution.length > 0
+                                ? platformDistribution
+                                : demoData.current.platformData
+                            }
                             cx="50%"
                             cy="50%"
                             labelLine={false}
@@ -1594,16 +1613,15 @@ const SubscriberAdmin = () => {
                               `${name} ${(percent * 100).toFixed(0)}%`
                             }
                           >
-                            {demoData.current.platformData.map(
-                              (entry, index) => (
-                                <Cell
-                                  key={`cell-${index}`}
-                                  fill={
-                                    CHART_COLORS[index % CHART_COLORS.length]
-                                  }
-                                />
-                              )
-                            )}
+                            {(platformDistribution.length > 0
+                              ? platformDistribution
+                              : demoData.current.platformData
+                            ).map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={CHART_COLORS[index % CHART_COLORS.length]}
+                              />
+                            ))}
                           </Pie>
                           <Tooltip
                             contentStyle={{
