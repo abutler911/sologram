@@ -386,6 +386,21 @@ class NotificationService {
       audience: "all",
     });
   }
+  async notifyNewPost(post) {
+    const title = "📸 New Post on SoloGram!";
+    const message =
+      post.caption?.slice(0, 120) ||
+      "A new post was just shared — check it out!";
+    const url = `https://thesologram.com/posts/${post._id}`;
+
+    return this.sendNotification({
+      title,
+      message,
+      url,
+      image: post.media?.[0]?.mediaUrl,
+      audience: "all",
+    });
+  }
 }
 
 module.exports = new NotificationService();
