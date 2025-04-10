@@ -351,8 +351,14 @@ const SubscriberAdmin = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    return format(parseISO(dateString), "MMM d, yyyy 'at' h:mm a");
+    if (!dateString) return null;
+
+    try {
+      return new Date(dateString).toLocaleString();
+    } catch (error) {
+      console.warn("Invalid date encountered:", dateString);
+      return null;
+    }
   };
 
   const getFilteredHistory = () => {
