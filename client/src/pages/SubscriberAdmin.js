@@ -294,7 +294,7 @@ const SubscriberAdmin = () => {
             axiosWithRetry("get", "/api/subscribers/templates"),
             axiosWithRetry("get", "/api/subscribers/notifications"),
           ]);
-        console.log("statsResponse", statsResponse.data);
+
         const {
           totalSubscribers = 0,
           lastSent = null,
@@ -302,7 +302,7 @@ const SubscriberAdmin = () => {
           openRate = 0,
           activeSubscribers = 0,
           recentGrowth = 0,
-        } = statsResponse.data || {};
+        } = statsResponse.data.data || {};
 
         setSubscriberStats({
           totalSubscribers,
