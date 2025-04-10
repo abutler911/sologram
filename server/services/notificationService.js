@@ -40,7 +40,7 @@ class NotificationService {
   getHeaders() {
     return {
       "Content-Type": "application/json",
-      Authorization: `Basic ${Buffer.from(this.apiKey).toString("base64")}`,
+      Authorization: `Key ${this.apiKey}`, // Changed from "Basic" to "Key"
     };
   }
 
