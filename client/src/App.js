@@ -238,23 +238,9 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              <Route
-                path="/thoughts"
-                element={
-                  <>
-                    <Header
-                      onSearch={handleSearch}
-                      onClearSearch={handleClearSearch}
-                    />
-                    <main className="main-content">
-                      <SubscribeBanner />
-                      <Thoughts />
-                    </main>
-                    <Footer />
-                    <BottomNavigation />
-                  </>
-                }
-              />
+
+              <Route path="/thoughts" element={<Thoughts />} />
+
               <Route
                 path="/thoughts/:id/edit"
                 element={
