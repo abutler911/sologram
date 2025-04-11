@@ -355,19 +355,22 @@ const Thoughts = () => {
       {isAdmin && (
         <>
           {showDeleteModal && (
-            <DeleteModal>
-              <DeleteModalContent>
-                <h3>Delete Thought</h3>
-                <p>This cannot be undone. Are you sure?</p>
-                <DeleteModalButtons>
-                  <CancelButton onClick={cancelDelete}>Cancel</CancelButton>
-                  <ConfirmDeleteButton onClick={confirmDelete}>
-                    Delete
-                  </ConfirmDeleteButton>
-                </DeleteModalButtons>
-              </DeleteModalContent>
+            <ModalOverlay>
+              <DeleteModal>
+                <DeleteModalContent>
+                  <h3>Delete Thought</h3>
+                  <p>This cannot be undone. Are you sure?</p>
+                  <DeleteModalButtons>
+                    <CancelButton onClick={cancelDelete}>Cancel</CancelButton>
+                    <ConfirmDeleteButton onClick={confirmDelete}>
+                      Delete
+                    </ConfirmDeleteButton>
+                  </DeleteModalButtons>
+                </DeleteModalContent>
+              </DeleteModal>
+              {/* Optional: click outside to close */}
               <Backdrop onClick={cancelDelete} />
-            </DeleteModal>
+            </ModalOverlay>
           )}
 
           <FloatingButton to="/thoughts/create">
@@ -862,29 +865,11 @@ const ModalOverlay = styled.div`
 const DeleteModal = styled.div`
   background-color: #1e1e1e;
   border-radius: 8px;
-  width: 100%;
   max-width: 400px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-`;
-
-const DeleteModalHeader = styled.div`
-  background-color: #e74c3c;
-  color: white;
-  padding: 1.25rem;
-  display: flex;
-  align-items: center;
-
-  svg {
-    font-size: 1.5rem;
-    margin-right: 0.75rem;
-  }
-`;
-
-const DeleteModalTitle = styled.h3`
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
+  width: 100%;
+  z-index: 1001;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 `;
 
 const DeleteModalContent = styled.div`
