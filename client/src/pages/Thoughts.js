@@ -324,6 +324,11 @@ const Thoughts = () => {
           )}
         </ThoughtsContainer>
       </PageWrapper>
+      {isAdmin && (
+        <FloatingButton to="/thoughts/create">
+          <FaPlusCircle />
+        </FloatingButton>
+      )}
     </MainLayout>
   );
 };
@@ -379,12 +384,13 @@ const HeaderRight = styled.div`
 `;
 
 const PageTitle = styled.h1`
-  font-size: 2rem;
-  color: #ffffff;
+  font-size: 2.7rem;
+  color: #ff7e5f;
   margin: 0;
   font-family: "Autography", cursive;
   transform: rotate(-2deg);
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+
+  letter-spacing: 1px;
 `;
 
 const MoodFilter = styled.div`
@@ -425,7 +431,9 @@ const MoodButton = styled.button`
     background-color: ${(props) =>
       props.mood && props.mood !== "all" ? moodColors[props.mood] : "#ff7e5f"};
     color: #121212;
+    transform: scale(1.1);
   }
+  transition: all 0.2s ease-in-out;
 `;
 
 const CreateButton = styled(Link)`
@@ -497,19 +505,22 @@ const SearchForm = styled.form`
 `;
 
 const SearchInput = styled.input`
+  font-family: "Courier New", monospace;
   flex: 1;
-  background: transparent;
+  background-color: #121212;
   border: none;
   color: #ffffff;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
+  border-bottom: 2px solid #ff7e5f;
+  transition: border-color 0.3s ease;
 
   &::placeholder {
     color: #888888;
   }
 
   &:focus {
-    outline: none;
+    border-color: #ff6347;
   }
 `;
 
@@ -574,20 +585,20 @@ const ThoughtCard = styled.div`
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  border-left: 4px solid ${(props) => moodColors[props.mood] || "#ff7e5f"};
+  border: 1px solid transparent;
+  border-left: 6px solid ${(props) => moodColors[props.mood] || "#ff7e5f"};
+  background-image: ${(props) =>
+    `linear-gradient(#1e1e1e, #1e1e1e), linear-gradient(to right, ${
+      moodColors[props.mood] || "#ff7e5f"
+    }, #1e1e1e)`};
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: 0 0 12px rgba(255, 126, 95, 0.1);
   transition: transform 0.3s, box-shadow 0.3s;
 
-  ${(props) =>
-    props.pinned &&
-    `
-    background-color: #272727;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  `}
-
   &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transform: translateY(-5px);
+    box-shadow: 0 0 16px rgba(255, 126, 95, 0.3);
   }
 `;
 
@@ -687,6 +698,10 @@ const ThoughtMedia = styled.div`
     max-height: 400px;
     object-fit: contain;
     background-color: #121212;
+    transition: transform 0.3s ease;
+  }
+  &:hover img {
+    transform: scale(1.02);
   }
 `;
 
@@ -768,6 +783,28 @@ const LoadingMore = styled.div`
   padding: 1rem 0;
   font-style: italic;
   font-size: 0.875rem;
+`;
+
+const FloatingButton = styled(Link)`
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background-color: #ff7e5f;
+  color: #fff;
+  padding: 1rem;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  font-size: 1.5rem;
+  z-index: 999;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #ff6347;
+  }
+
+  @media (min-width: 769px) {
+    display: none;
+  }
 `;
 
 export default Thoughts;
