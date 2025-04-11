@@ -828,7 +828,7 @@ const LoadingMore = styled.div`
 
 const FloatingButton = styled(Link)`
   position: fixed;
-  bottom: 2rem;
+  bottom: 6rem;
   right: 2rem;
   background-color: #ff7e5f;
   color: #fff;
