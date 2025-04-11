@@ -38,6 +38,7 @@ import ArchivedStoryView from "./pages/ArchivedStoryView";
 import Analytics from "./pages/Analytics";
 import CreateThought from "./pages/CreateThought";
 import EditThought from "./pages/EditThought";
+import Thoughts from "./pages/Thoughts";
 
 import InstallPrompt from "./components/pwa/InstallPrompt";
 import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButtonAdjuster";
@@ -235,6 +236,23 @@ function App() {
                   <PrivateRoute>
                     <Analytics />
                   </PrivateRoute>
+                }
+              />
+              <Route
+                path="/thoughts"
+                element={
+                  <>
+                    <Header
+                      onSearch={handleSearch}
+                      onClearSearch={handleClearSearch}
+                    />
+                    <main className="main-content">
+                      <SubscribeBanner />
+                      <Thoughts />
+                    </main>
+                    <Footer />
+                    <BottomNavigation />
+                  </>
                 }
               />
               <Route
