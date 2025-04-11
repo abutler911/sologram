@@ -384,13 +384,13 @@ const HeaderRight = styled.div`
 `;
 
 const PageTitle = styled.h1`
-  font-size: 2.7rem;
+  font-size: 2.3rem;
   color: #ff7e5f;
   margin: 0;
   font-family: "Autography", cursive;
   transform: rotate(-2deg);
 
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 `;
 
 const MoodFilter = styled.div`
