@@ -1,6 +1,7 @@
 // services/notificationService.js
 const axios = require("axios");
 const User = require("../models/User");
+const Notification = require("../models/Notification");
 
 // OneSignal API endpoints
 const ONESIGNAL_API_URL = "https://onesignal.com/api/v1";
@@ -375,32 +376,70 @@ class NotificationService {
     return "Other";
   }
   async notifyNewStory(story) {
-    const title = "New Story Posted!";
-    const message = story.title || "Check out the latest update on SoloGram.";
+    const title = "📢 New Story on SoloGram!";
+    const message = story.title || "Check out the latest story!";
     const url = `https://thesologram.com/stories/${story._id}`;
 
-    return this.sendNotification({
-      title,
-      message,
-      url,
-      audience: "all",
-    });
+    try {
+      const result = await this.sendNotification({
+        title,
+        message,
+        url,
+        audience: "all",
+      });
+
+      await Notification.create({
+        isTemplate: false,
+        sent: result.recipients || 0,
+        opened: 0,
+        type: "story",
+        story: story._id,
+        message: story.title,
+      });
+
+      return result;
+    } catch (err) {
+      console.error("notifyNewStory error:", err);
+      return { success: false, error: err.message };
+    }
   }
+
   async notifyNewPost(post) {
     const title = "📸 New Post on SoloGram!";
     const message =
       post.caption?.slice(0, 120) ||
       "A new post was just shared — check it out!";
     const url = `https://thesologram.com/posts/${post._id}`;
+    const image = post.media?.[0]?.mediaUrl;
 
-    return this.sendNotification({
-      title,
-      message,
-      url,
-      image: post.media?.[0]?.mediaUrl,
-      audience: "all",
-    });
+    try {
+      const result = await this.sendNotification({
+        title,
+        message,
+        url,
+        image,
+        audience: "all",
+      });
+
+      await Notification.create({
+        isTemplate: false,
+        sent: result.recipients || 0,
+        opened: 0,
+        type: "post",
+        post: post._id,
+        message: post.caption,
+      });
+
+      return result;
+    } catch (err) {
+      console.error("notifyNewPost error:", err);
+      return { success: false, error: err.message };
+    }
   }
 }
+console.log(
+  "NotificationService loaded with methods:",
+  Object.getOwnPropertyNames(NotificationService.prototype)
+);
 
 module.exports = new NotificationService();
