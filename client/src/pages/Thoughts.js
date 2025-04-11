@@ -395,18 +395,10 @@ const PageTitle = styled.h1`
 
 const MoodFilter = styled.div`
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  overflow-x: auto;
   padding-bottom: 0.5rem;
-
-  &::-webkit-scrollbar {
-    height: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background-color: #333333;
-    border-radius: 2px;
-  }
+  max-width: 100%;
 `;
 
 const MoodButton = styled.button`
