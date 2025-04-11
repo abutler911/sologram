@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { keyframes } from "styled-components";
 import {
   FaHeart,
   FaTrash,
@@ -13,6 +14,9 @@ import {
   FaClock,
   FaPlusCircle,
   FaCamera,
+  FaComment,
+  FaRetweet,
+  FaShare,
 } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
 import MainLayout from "../components/layout/MainLayout";
@@ -43,6 +47,9 @@ const Thoughts = () => {
     amused: "😄",
   };
 
+  // Modify your fetchThoughts function to include user data with thoughts
+  // Update within your Thoughts component
+
   const fetchThoughts = useCallback(
     async (reset = false) => {
       try {
@@ -53,7 +60,17 @@ const Thoughts = () => {
           : `/api/thoughts?page=${currentPage}`;
 
         const response = await axios.get(url);
-        const newThoughts = response.data.data;
+        const newThoughts = response.data.data.map((thought) => ({
+          ...thought,
+          user: thought.user || {
+            username: "SoloThinker",
+            handle: thought.mood || "solothinker",
+            avatar: null,
+          },
+          userHasLiked: false, // This would come from your API in a real app
+          comments: thought.comments || [],
+          shares: Math.floor(Math.random() * 10), // Just for demo purposes
+        }));
 
         setThoughts((prevThoughts) => {
           if (reset || currentPage === 1) return newThoughts;
@@ -73,6 +90,32 @@ const Thoughts = () => {
     [page, searchQuery]
   );
 
+  // Update the handleLike function to toggle the userHasLiked state
+  const handleLike = async (id) => {
+    try {
+      const response = await axios.put(`/api/thoughts/${id}/like`);
+
+      // Update thoughts with the liked status
+      setThoughts((prevThoughts) =>
+        prevThoughts.map((thought) => {
+          if (thought._id === id) {
+            return {
+              ...response.data.data,
+              user: thought.user,
+              userHasLiked: !thought.userHasLiked, // Toggle the liked state
+              comments: thought.comments,
+              shares: thought.shares,
+            };
+          }
+          return thought;
+        })
+      );
+    } catch (err) {
+      console.error("Error liking thought:", err);
+      toast.error("Failed to like thought");
+    }
+  };
+
   useEffect(() => {
     fetchThoughts();
   }, [fetchThoughts]);
@@ -88,20 +131,6 @@ const Thoughts = () => {
     setSearchQuery("");
     setPage(1);
     fetchThoughts(true);
-  };
-
-  const handleLike = async (id) => {
-    try {
-      const response = await axios.put(`/api/thoughts/${id}/like`);
-      setThoughts((prevThoughts) =>
-        prevThoughts.map((thought) =>
-          thought._id === id ? response.data.data : thought
-        )
-      );
-    } catch (err) {
-      console.error("Error liking thought:", err);
-      toast.error("Failed to like thought");
-    }
   };
 
   const handleDelete = async (id) => {
@@ -270,15 +299,25 @@ const Thoughts = () => {
                 {thought.pinned && <PinnedBadge>Pinned</PinnedBadge>}
 
                 <ThoughtHeader>
-                  <ThoughtMeta>
-                    <ThoughtMood mood={thought.mood}>
-                      {moodEmojis[thought.mood]} {thought.mood}
-                    </ThoughtMood>
-                    <ThoughtTime>
-                      <FaClock />
-                      <span>{formatDate(thought.createdAt)}</span>
-                    </ThoughtTime>
-                  </ThoughtMeta>
+                  <UserInfo>
+                    <Avatar mood={thought.mood}>
+                      {thought.user?.avatar ? (
+                        <img src={thought.user.avatar} alt="User avatar" />
+                      ) : (
+                        <DefaultAvatar mood={thought.mood}>
+                          {moodEmojis[thought.mood]}
+                        </DefaultAvatar>
+                      )}
+                    </Avatar>
+                    <UserDetails>
+                      <Username>
+                        {thought.user?.username || "Anonymous"}
+                      </Username>
+                      <UserHandle>
+                        @{thought.user?.handle || "solothinker"}
+                      </UserHandle>
+                    </UserDetails>
+                  </UserInfo>
 
                   {isAdmin && (
                     <ThoughtActions>
@@ -328,11 +367,45 @@ const Thoughts = () => {
                   </ThoughtTags>
                 )}
 
+                <ThoughtMeta>
+                  <ThoughtTime>
+                    <FaClock />
+                    <span>{formatDate(thought.createdAt)}</span>
+                  </ThoughtTime>
+                  <ThoughtMood mood={thought.mood}>
+                    {moodEmojis[thought.mood]} {thought.mood}
+                  </ThoughtMood>
+                </ThoughtMeta>
+
                 <ThoughtFooter>
-                  <LikeButton onClick={() => handleLike(thought._id)}>
-                    <FaHeart />
-                    <span>{thought.likes} likes</span>
-                  </LikeButton>
+                  <ActionBar>
+                    <ActionItem onClick={() => handleLike(thought._id)}>
+                      <ActionIcon liked={thought.userHasLiked}>
+                        <FaHeart />
+                      </ActionIcon>
+                      <ActionCount>{thought.likes}</ActionCount>
+                    </ActionItem>
+
+                    <ActionItem>
+                      <ActionIcon>
+                        <FaComment />
+                      </ActionIcon>
+                      <ActionCount>{thought.comments?.length || 0}</ActionCount>
+                    </ActionItem>
+
+                    <ActionItem>
+                      <ActionIcon>
+                        <FaRetweet />
+                      </ActionIcon>
+                      <ActionCount>{thought.shares || 0}</ActionCount>
+                    </ActionItem>
+
+                    <ActionItem>
+                      <ActionIcon>
+                        <FaShare />
+                      </ActionIcon>
+                    </ActionItem>
+                  </ActionBar>
                 </ThoughtFooter>
               </ThoughtCard>
             ))
@@ -622,25 +695,26 @@ const ThoughtsContainer = styled.div`
 
 const ThoughtCard = styled.div`
   position: relative;
-  background-color: #1e1e1e;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid transparent;
-  border-left: 6px solid ${(props) => moodColors[props.mood] || "#ff7e5f"};
-  background-image: ${(props) =>
-    `linear-gradient(#1e1e1e, #1e1e1e), linear-gradient(to right, ${
-      moodColors[props.mood] || "#ff7e5f"
-    }, #1e1e1e)`};
-  background-origin: border-box;
-  background-clip: padding-box, border-box;
-  box-shadow: 0 0 12px rgba(255, 126, 95, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
+  background-color: #111111;
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+  border: 1px solid #333333;
+  animation: ${fadeIn} 0.3s ease-out;
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0 16px rgba(255, 126, 95, 0.3);
+    background-color: #1a1a1a;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   }
+
+  ${(props) =>
+    props.pinned &&
+    `
+    background-color: #1f1f1f;
+    border-color: ${moodColors[props.mood] || "#ff7e5f"};
+  `}
 `;
 
 const PinnedBadge = styled.div`
@@ -653,6 +727,8 @@ const PinnedBadge = styled.div`
   font-weight: 600;
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  animation: ${pulse} 2s infinite ease-in-out;
 `;
 
 const ThoughtHeader = styled.div`
@@ -664,8 +740,12 @@ const ThoughtHeader = styled.div`
 
 const ThoughtMeta = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  margin-bottom: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #333333;
 `;
 
 const ThoughtMood = styled.div`
@@ -675,6 +755,12 @@ const ThoughtMood = styled.div`
   color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
   font-size: 0.875rem;
   text-transform: capitalize;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  background-color: ${(props) => {
+    const color = moodColors[props.mood] || "#ff7e5f";
+    return `${color}15`; // 15% opacity
+  }};
 `;
 
 const ThoughtTime = styled.div`
@@ -724,25 +810,41 @@ const ActionButton = styled.button`
 const ThoughtContent = styled.p`
   color: #ffffff;
   font-size: 1.125rem;
-  line-height: 1.6;
-  margin-bottom: 1rem;
+  line-height: 1.5;
+  margin: 0.75rem 0 1rem;
   white-space: pre-wrap;
+
+  a {
+    color: #1da1f2;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 `;
 
 const ThoughtMedia = styled.div`
-  margin: 1rem 0;
-  border-radius: 8px;
+  margin: 0.75rem -1.25rem;
+  border-radius: 0;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
   img {
     width: 100%;
     max-height: 400px;
-    object-fit: contain;
-    background-color: #121212;
-    transition: transform 0.3s ease;
+    object-fit: cover;
+    transition: transform 0.4s ease, filter 0.4s ease;
   }
+
   &:hover img {
     transform: scale(1.02);
+    filter: brightness(1.1);
+  }
+
+  @media (min-width: 768px) {
+    margin: 0.75rem 0;
+    border-radius: 16px;
   }
 `;
 
@@ -755,22 +857,107 @@ const ThoughtTags = styled.div`
 
 const ThoughtTag = styled.span`
   background-color: ${(props) => {
-    const hexColor = moodColors[props.mood] || "#ff7e5f";
-    // Convert hex to RGB with opacity
-    const r = parseInt(hexColor.slice(1, 3), 16);
-    const g = parseInt(hexColor.slice(3, 5), 16);
-    const b = parseInt(hexColor.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, 0.2)`;
+    const color = moodColors[props.mood] || "#ff7e5f";
+    return `${color}20`; // 20% opacity
   }};
   color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
   padding: 0.25rem 0.75rem;
-  border-radius: 999px;
+  border-radius: 9999px;
   font-size: 0.75rem;
+  transition: all 0.2s;
+  cursor: pointer;
+
+  &:hover {
+    background-color: ${(props) => {
+      const color = moodColors[props.mood] || "#ff7e5f";
+      return `${color}30`; // 30% opacity
+    }};
+    transform: scale(1.05);
+  }
 `;
 
 const ThoughtFooter = styled.div`
+  margin-top: 0.5rem;
+`;
+
+const ActionBar = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid #2a2a2a;
+`;
+
+const ActionIcon = styled.div`
+  color: ${(props) => (props.liked ? "#e0245e" : "#8899a6")};
+  transition: color 0.2s;
+  font-size: 1.125rem;
+
+  ${(props) =>
+    props.liked &&
+    `
+    animation: ${pulse} 0.3s ease;
+  `}
+`;
+const ActionCount = styled.span`
+  color: #8899a6;
+  font-size: 0.875rem;
+  font-weight: 500;
+`;
+
+const ActionItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 9999px;
+  transition: background-color 0.2s;
+
+  // Different hover colors for different actions
+  &:nth-child(1):hover {
+    background-color: rgba(224, 36, 94, 0.1);
+
+    ${ActionIcon} {
+      color: #e0245e;
+    }
+
+    ${ActionCount} {
+      color: #e0245e;
+    }
+  }
+
+  &:nth-child(2):hover {
+    background-color: rgba(29, 161, 242, 0.1);
+
+    ${ActionIcon} {
+      color: #1da1f2;
+    }
+
+    ${ActionCount} {
+      color: #1da1f2;
+    }
+  }
+
+  &:nth-child(3):hover {
+    background-color: rgba(23, 191, 99, 0.1);
+
+    ${ActionIcon} {
+      color: #17bf63;
+    }
+
+    ${ActionCount} {
+      color: #17bf63;
+    }
+  }
+
+  &:nth-child(4):hover {
+    background-color: rgba(29, 161, 242, 0.1);
+
+    ${ActionIcon} {
+      color: #1da1f2;
+    }
+  }
 `;
 
 const LikeButton = styled.button`
@@ -945,6 +1132,93 @@ const Backdrop = styled.div`
   bottom: 0;
   background: rgba(0, 0, 0, 0.6);
   z-index: 999;
+`;
+
+const UserInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+`;
+
+const Avatar = styled.div`
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px ${(props) => moodColors[props.mood] || "#ff7e5f"};
+  position: relative;
+
+  &:after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    box-shadow: 0 0 10px 1px ${(props) => moodColors[props.mood] || "#ff7e5f"};
+    opacity: 0.3;
+    transition: opacity 0.3s;
+  }
+
+  &:hover:after {
+    opacity: 0.6;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+`;
+
+const DefaultAvatar = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${(props) => {
+    const color = moodColors[props.mood] || "#ff7e5f";
+    // Create a nice gradient based on the mood color
+    return `linear-gradient(135deg, ${color}33, ${color}66)`;
+  }};
+  color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
+  font-size: 1.5rem;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+`;
+
+const UserDetails = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+`;
+
+const Username = styled.div`
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 1rem;
+
+  &:hover {
+    text-decoration: underline;
+    cursor: pointer;
+  }
+`;
+
+const UserHandle = styled.div`
+  color: #8899a6;
+  font-size: 0.875rem;
+`;
+
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const pulse = keyframes`
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 `;
 
 export default Thoughts;
