@@ -1,4 +1,4 @@
-// Here's a restructured version of your component to fix the issues
+// Here's the updated version with your requested changes
 
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import { Link } from "react-router-dom";
@@ -768,6 +768,51 @@ const Backdrop = styled.div`
   z-index: 999;
 `;
 
+// New styled components for retweet modal
+const RetweetModal = styled.div`
+  background-color: #1e1e1e;
+  border-radius: 16px;
+  max-width: 400px;
+  width: 100%;
+  z-index: 1001;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  text-align: center;
+`;
+
+const RetweetModalContent = styled.div`
+  color: #ddd;
+  line-height: 1.6;
+
+  h3 {
+    color: #ff7e5f;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+  }
+`;
+
+const RetweetCloseButton = styled.button`
+  background-color: #ff7e5f;
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 1rem;
+
+  &:hover {
+    background-color: #ff6347;
+    transform: scale(1.05);
+  }
+`;
+
 // Main component function
 const Thoughts = () => {
   const [thoughts, setThoughts] = useState([]);
@@ -783,6 +828,9 @@ const Thoughts = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [thoughtToDelete, setThoughtToDelete] = useState(null);
 
+  // New state for retweet modal
+  const [showRetweetModal, setShowRetweetModal] = useState(false);
+
   const moodEmojis = {
     inspired: "✨",
     reflective: "🌙",
@@ -792,6 +840,13 @@ const Thoughts = () => {
     curious: "🔍",
     nostalgic: "📷",
     amused: "😄",
+  };
+
+  // Hardcoded user info
+  const defaultUser = {
+    username: "Andrew",
+    handle: "andrew",
+    avatar: null, // You can replace this with your avatar URL if you have one
   };
 
   const fetchThoughts = useCallback(
@@ -806,11 +861,7 @@ const Thoughts = () => {
         const response = await axios.get(url);
         const newThoughts = response.data.data.map((thought) => ({
           ...thought,
-          user: thought.user || {
-            username: "SoloThinker",
-            handle: thought.mood || "solothinker",
-            avatar: null,
-          },
+          user: defaultUser, // Use hardcoded user info for all thoughts
           userHasLiked: false, // This would come from your API in a real app
           comments: thought.comments || [],
           shares: Math.floor(Math.random() * 10), // Just for demo purposes
@@ -862,7 +913,7 @@ const Thoughts = () => {
           if (thought._id === id) {
             return {
               ...response.data.data,
-              user: thought.user,
+              user: defaultUser, // Keep hardcoded user info
               userHasLiked: !thought.userHasLiked, // Toggle the liked state
               comments: thought.comments,
               shares: thought.shares,
@@ -875,6 +926,11 @@ const Thoughts = () => {
       console.error("Error liking thought:", err);
       toast.error("Failed to like thought");
     }
+  };
+
+  // New function to handle retweet
+  const handleRetweet = () => {
+    setShowRetweetModal(true);
   };
 
   const handlePin = async (id) => {
@@ -1028,8 +1084,8 @@ const Thoughts = () => {
                 <ThoughtHeader>
                   <UserInfo>
                     <Avatar mood={thought.mood}>
-                      {thought.user?.avatar ? (
-                        <img src={thought.user.avatar} alt="User avatar" />
+                      {defaultUser.avatar ? (
+                        <img src={defaultUser.avatar} alt="User avatar" />
                       ) : (
                         <DefaultAvatar mood={thought.mood}>
                           {moodEmojis[thought.mood]}
@@ -1037,12 +1093,8 @@ const Thoughts = () => {
                       )}
                     </Avatar>
                     <UserDetails>
-                      <Username>
-                        {thought.user?.username || "Anonymous"}
-                      </Username>
-                      <UserHandle>
-                        @{thought.user?.handle || "solothinker"}
-                      </UserHandle>
+                      <Username>{defaultUser.username}</Username>
+                      <UserHandle>@{defaultUser.handle}</UserHandle>
                     </UserDetails>
                   </UserInfo>
 
@@ -1120,7 +1172,8 @@ const Thoughts = () => {
                       <ActionCount>{thought.comments?.length || 0}</ActionCount>
                     </ActionItem>
 
-                    <ActionItem>
+                    {/* Modified retweet action to show the modal */}
+                    <ActionItem onClick={handleRetweet}>
                       <ActionIcon>
                         <FaRetweet />
                       </ActionIcon>
@@ -1177,6 +1230,23 @@ const Thoughts = () => {
             <FaPlusCircle />
           </FloatingButton>
         </>
+      )}
+
+      {/* New Retweet Modal */}
+      {showRetweetModal && (
+        <ModalOverlay>
+          <RetweetModal>
+            <RetweetModalContent>
+              <h3>Thought Re-Thought!</h3>
+              <p>Your thought has been re-thought into the netherworld!</p>
+              <p>The cosmic thought-sphere acknowledges your contribution.</p>
+              <RetweetCloseButton onClick={() => setShowRetweetModal(false)}>
+                Cool!
+              </RetweetCloseButton>
+            </RetweetModalContent>
+          </RetweetModal>
+          <Backdrop onClick={() => setShowRetweetModal(false)} />
+        </ModalOverlay>
       )}
     </MainLayout>
   );
