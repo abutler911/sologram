@@ -36,6 +36,8 @@ import CreateStory from "./pages/CreateStory";
 import StoryArchive from "./pages/StoryArchive";
 import ArchivedStoryView from "./pages/ArchivedStoryView";
 import Analytics from "./pages/Analytics";
+import CreateThought from "./pages/CreateThought";
+import EditThought from "./pages/EditThought";
 
 import InstallPrompt from "./components/pwa/InstallPrompt";
 import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButtonAdjuster";
@@ -232,6 +234,22 @@ function App() {
                 element={
                   <PrivateRoute>
                     <Analytics />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/thoughts/:id/edit"
+                element={
+                  <PrivateRoute>
+                    <EditThought />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/create-thought"
+                element={
+                  <PrivateRoute>
+                    <CreateThought />
                   </PrivateRoute>
                 }
               />

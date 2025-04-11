@@ -1,0 +1,773 @@
+// client/src/pages/Thoughts.js
+import React, { useState, useEffect, useContext, useCallback } from "react";
+import { Link } from "react-router-dom";
+import styled from "styled-components";
+import axios from "axios";
+import { toast } from "react-hot-toast";
+import {
+  FaHeart,
+  FaTrash,
+  FaEdit,
+  FaSearch,
+  FaTimes,
+  FaClock,
+  FaPlusCircle,
+  FaCamera,
+} from "react-icons/fa";
+import { AuthContext } from "../context/AuthContext";
+import MainLayout from "../components/layout/MainLayout";
+import { format } from "date-fns";
+
+const Thoughts = () => {
+  const [thoughts, setThoughts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  const { isAuthenticated, user } = useContext(AuthContext);
+  const isAdmin = isAuthenticated && user?.role === "admin";
+  const [selectedMood, setSelectedMood] = useState("all");
+
+  const moodEmojis = {
+    inspired: "✨",
+    reflective: "🌙",
+    excited: "🔥",
+    creative: "🎨",
+    calm: "🌊",
+    curious: "🔍",
+    nostalgic: "📷",
+    amused: "😄",
+  };
+
+  const fetchThoughts = useCallback(
+    async (reset = false) => {
+      try {
+        setLoading(true);
+        const currentPage = reset ? 1 : page;
+        const url = searchQuery
+          ? `/api/thoughts/search?query=${searchQuery}&page=${currentPage}`
+          : `/api/thoughts?page=${currentPage}`;
+
+        const response = await axios.get(url);
+        const newThoughts = response.data.data;
+
+        setThoughts((prevThoughts) => {
+          if (reset || currentPage === 1) return newThoughts;
+          return [...prevThoughts, ...newThoughts];
+        });
+
+        setHasMore(currentPage < response.data.totalPages);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching thoughts:", err);
+        setError("Failed to load thoughts. Please try again.");
+        toast.error("Failed to load thoughts");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [page, searchQuery]
+  );
+
+  useEffect(() => {
+    fetchThoughts();
+  }, [fetchThoughts]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setPage(1);
+    fetchThoughts(true);
+    if (window.innerWidth <= 768) setSearchExpanded(false);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setPage(1);
+    fetchThoughts(true);
+  };
+
+  const handleLike = async (id) => {
+    try {
+      const response = await axios.put(`/api/thoughts/${id}/like`);
+      setThoughts((prevThoughts) =>
+        prevThoughts.map((thought) =>
+          thought._id === id ? response.data.data : thought
+        )
+      );
+    } catch (err) {
+      console.error("Error liking thought:", err);
+      toast.error("Failed to like thought");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this thought?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/thoughts/${id}`);
+      setThoughts((prevThoughts) =>
+        prevThoughts.filter((thought) => thought._id !== id)
+      );
+      toast.success("Thought deleted successfully");
+    } catch (err) {
+      console.error("Error deleting thought:", err);
+      toast.error("Failed to delete thought");
+    }
+  };
+
+  const handlePin = async (id) => {
+    try {
+      const response = await axios.put(`/api/thoughts/${id}/pin`);
+      // Refresh thoughts to get updated pinned status
+      fetchThoughts(true);
+      toast.success(
+        `Thought ${
+          response.data.data.pinned ? "pinned" : "unpinned"
+        } successfully`
+      );
+    } catch (err) {
+      console.error("Error pinning thought:", err);
+      toast.error("Failed to update pin status");
+    }
+  };
+
+  const handleScroll = () => {
+    if (
+      window.innerHeight + document.documentElement.scrollTop ===
+        document.documentElement.offsetHeight &&
+      !loading &&
+      hasMore
+    ) {
+      setPage((prevPage) => prevPage + 1);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [loading, hasMore]);
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return format(date, "MMM d, yyyy • h:mm a");
+  };
+
+  const filteredThoughts = thoughts.filter((thought) => {
+    if (selectedMood === "all") return true;
+    return thought.mood === selectedMood;
+  });
+
+  return (
+    <MainLayout>
+      <PageWrapper>
+        <Header>
+          <HeaderLeft>
+            <PageTitle>SoloThoughts</PageTitle>
+            <MoodFilter>
+              <MoodButton
+                active={selectedMood === "all"}
+                onClick={() => setSelectedMood("all")}
+              >
+                All
+              </MoodButton>
+              {Object.keys(moodEmojis).map((mood) => (
+                <MoodButton
+                  key={mood}
+                  active={selectedMood === mood}
+                  mood={mood}
+                  onClick={() => setSelectedMood(mood)}
+                >
+                  {moodEmojis[mood]}
+                </MoodButton>
+              ))}
+            </MoodFilter>
+          </HeaderLeft>
+
+          <HeaderRight>
+            {isAdmin && (
+              <CreateButton to="/thoughts/create">
+                <FaPlusCircle />
+                <span>New Thought</span>
+              </CreateButton>
+            )}
+
+            <SearchContainer expanded={searchExpanded}>
+              {!searchExpanded ? (
+                <SearchToggle onClick={() => setSearchExpanded(true)}>
+                  <FaSearch />
+                </SearchToggle>
+              ) : (
+                <SearchForm onSubmit={handleSearchSubmit}>
+                  <SearchInput
+                    type="text"
+                    placeholder="Search thoughts..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    autoFocus
+                  />
+                  {searchQuery && (
+                    <ClearButton
+                      type="button"
+                      onClick={clearSearch}
+                      aria-label="Clear search"
+                    >
+                      <FaTimes />
+                    </ClearButton>
+                  )}
+                  <SearchButton type="submit">
+                    <FaSearch />
+                  </SearchButton>
+                  <CloseSearchButton
+                    type="button"
+                    onClick={() => setSearchExpanded(false)}
+                  >
+                    <FaTimes />
+                  </CloseSearchButton>
+                </SearchForm>
+              )}
+            </SearchContainer>
+          </HeaderRight>
+        </Header>
+
+        <ThoughtsContainer>
+          {error ? (
+            <ErrorMessage>{error}</ErrorMessage>
+          ) : filteredThoughts.length > 0 ? (
+            filteredThoughts.map((thought, index) => (
+              <ThoughtCard
+                key={thought._id}
+                pinned={thought.pinned}
+                mood={thought.mood}
+              >
+                {thought.pinned && <PinnedBadge>Pinned</PinnedBadge>}
+
+                <ThoughtHeader>
+                  <ThoughtMeta>
+                    <ThoughtMood mood={thought.mood}>
+                      {moodEmojis[thought.mood]} {thought.mood}
+                    </ThoughtMood>
+                    <ThoughtTime>
+                      <FaClock />
+                      <span>{formatDate(thought.createdAt)}</span>
+                    </ThoughtTime>
+                  </ThoughtMeta>
+
+                  {isAdmin && (
+                    <ThoughtActions>
+                      <ActionButton
+                        onClick={() => handlePin(thought._id)}
+                        title={thought.pinned ? "Unpin" : "Pin"}
+                        className={thought.pinned ? "pinned" : ""}
+                      >
+                        📌
+                      </ActionButton>
+                      <ActionButton
+                        as={Link}
+                        to={`/thoughts/edit/${thought._id}`}
+                        title="Edit"
+                      >
+                        <FaEdit />
+                      </ActionButton>
+                      <ActionButton
+                        onClick={() => handleDelete(thought._id)}
+                        title="Delete"
+                        className="delete"
+                      >
+                        <FaTrash />
+                      </ActionButton>
+                    </ThoughtActions>
+                  )}
+                </ThoughtHeader>
+
+                <ThoughtContent>{thought.content}</ThoughtContent>
+
+                {thought.media?.mediaUrl && (
+                  <ThoughtMedia>
+                    <img src={thought.media.mediaUrl} alt="Thought media" />
+                  </ThoughtMedia>
+                )}
+
+                {thought.tags && thought.tags.length > 0 && (
+                  <ThoughtTags>
+                    {thought.tags.map((tag, tagIndex) => (
+                      <ThoughtTag key={tagIndex} mood={thought.mood}>
+                        #{tag}
+                      </ThoughtTag>
+                    ))}
+                  </ThoughtTags>
+                )}
+
+                <ThoughtFooter>
+                  <LikeButton onClick={() => handleLike(thought._id)}>
+                    <FaHeart />
+                    <span>{thought.likes} likes</span>
+                  </LikeButton>
+                </ThoughtFooter>
+              </ThoughtCard>
+            ))
+          ) : loading ? (
+            <LoadingMessage>Loading thoughts...</LoadingMessage>
+          ) : (
+            <EmptyMessage>
+              No thoughts found
+              {searchQuery && " matching your search"}
+              {selectedMood !== "all" && ` with mood "${selectedMood}"`}.
+            </EmptyMessage>
+          )}
+
+          {loading && thoughts.length > 0 && (
+            <LoadingMore>Loading more thoughts...</LoadingMore>
+          )}
+        </ThoughtsContainer>
+      </PageWrapper>
+    </MainLayout>
+  );
+};
+
+const moodColors = {
+  inspired: "#ffcb66",
+  reflective: "#7891c9",
+  excited: "#ff7e5f",
+  creative: "#7be0ad",
+  calm: "#00b2ff",
+  curious: "#a06eff",
+  nostalgic: "#ff61a6",
+  amused: "#fcbe32",
+};
+
+// Styled components
+const PageWrapper = styled.div`
+  background-color: #121212;
+  min-height: 100vh;
+  padding: 1rem 0;
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2rem;
+  margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0 1rem;
+  }
+`;
+
+const HeaderLeft = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+`;
+
+const HeaderRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: space-between;
+  }
+`;
+
+const PageTitle = styled.h1`
+  font-size: 2rem;
+  color: #ffffff;
+  margin: 0;
+  font-family: "Autography", cursive;
+  transform: rotate(-2deg);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+`;
+
+const MoodFilter = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #333333;
+    border-radius: 2px;
+  }
+`;
+
+const MoodButton = styled.button`
+  background-color: ${(props) =>
+    props.active
+      ? props.mood
+        ? props.mood === "all"
+          ? "#ff7e5f"
+          : moodColors[props.mood]
+        : "#ff7e5f"
+      : "#333333"};
+  color: ${(props) => (props.active ? "#121212" : "#dddddd")};
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: ${(props) =>
+      props.mood && props.mood !== "all" ? moodColors[props.mood] : "#ff7e5f"};
+    color: #121212;
+  }
+`;
+
+const CreateButton = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #ff7e5f;
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 500;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #ff6347;
+  }
+
+  svg {
+    font-size: 1rem;
+  }
+`;
+
+const SearchContainer = styled.div`
+  ${(props) =>
+    props.expanded &&
+    `
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    top: 0.5rem;
+    z-index: 100;
+    
+    @media (min-width: 769px) {
+      position: relative;
+      left: auto;
+      right: auto;
+      top: auto;
+      width: 300px;
+    }
+  `}
+`;
+
+const SearchToggle = styled.button`
+  background: none;
+  border: none;
+  color: #dddddd;
+  font-size: 1.125rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s;
+
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
+
+const SearchForm = styled.form`
+  display: flex;
+  align-items: center;
+  background-color: #1e1e1e;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid #333333;
+  transition: all 0.3s;
+`;
+
+const SearchInput = styled.input`
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+
+  &::placeholder {
+    color: #888888;
+  }
+
+  &:focus {
+    outline: none;
+  }
+`;
+
+const SearchButton = styled.button`
+  background: none;
+  border: none;
+  color: #888888;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
+
+const ClearButton = styled.button`
+  background: none;
+  border: none;
+  color: #888888;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
+
+const CloseSearchButton = styled.button`
+  background: none;
+  border: none;
+  color: #888888;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  @media (min-width: 769px) {
+    display: none;
+  }
+
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
+
+const ThoughtsContainer = styled.div`
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 1rem;
+`;
+
+const ThoughtCard = styled.div`
+  position: relative;
+  background-color: #1e1e1e;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border-left: 4px solid ${(props) => moodColors[props.mood] || "#ff7e5f"};
+  transition: transform 0.3s, box-shadow 0.3s;
+
+  ${(props) =>
+    props.pinned &&
+    `
+    background-color: #272727;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  `}
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+`;
+
+const PinnedBadge = styled.div`
+  position: absolute;
+  top: -10px;
+  right: 1rem;
+  background-color: #ff7e5f;
+  color: #121212;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+`;
+
+const ThoughtHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+`;
+
+const ThoughtMeta = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const ThoughtMood = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
+  font-size: 0.875rem;
+  text-transform: capitalize;
+`;
+
+const ThoughtTime = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #aaaaaa;
+  font-size: 0.75rem;
+
+  svg {
+    font-size: 0.75rem;
+  }
+`;
+
+const ThoughtActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+`;
+
+const ActionButton = styled.button`
+  background: none;
+  border: none;
+  color: #aaaaaa;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #333333;
+    color: #ffffff;
+  }
+
+  &.delete:hover {
+    color: #ff6b6b;
+  }
+
+  &.pinned {
+    color: #ffbb00;
+  }
+`;
+
+const ThoughtContent = styled.p`
+  color: #ffffff;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  white-space: pre-wrap;
+`;
+
+const ThoughtMedia = styled.div`
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    background-color: #121212;
+  }
+`;
+
+const ThoughtTags = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+`;
+
+const ThoughtTag = styled.span`
+  background-color: ${(props) => {
+    const hexColor = moodColors[props.mood] || "#ff7e5f";
+    // Convert hex to RGB with opacity
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, 0.2)`;
+  }};
+  color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+`;
+
+const ThoughtFooter = styled.div`
+  display: flex;
+  justify-content: flex-end;
+`;
+
+const LikeButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: #aaaaaa;
+  cursor: pointer;
+  transition: color 0.3s;
+  padding: 0.5rem;
+
+  &:hover {
+    color: #ff6b6b;
+  }
+
+  svg {
+    font-size: 0.875rem;
+  }
+
+  span {
+    font-size: 0.875rem;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  background-color: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 1.5rem;
+`;
+
+const LoadingMessage = styled.div`
+  color: #aaaaaa;
+  text-align: center;
+  padding: 2rem 0;
+`;
+
+const EmptyMessage = styled.div`
+  color: #aaaaaa;
+  text-align: center;
+  padding: 2rem 0;
+`;
+
+const LoadingMore = styled.div`
+  color: #aaaaaa;
+  text-align: center;
+  padding: 1rem 0;
+  font-style: italic;
+  font-size: 0.875rem;
+`;
+
+export default Thoughts;

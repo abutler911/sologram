@@ -14,6 +14,7 @@ import {
   FaSearch,
   FaChevronDown,
   FaEllipsisV,
+  FaLightbulb,
 } from "react-icons/fa";
 
 import { AuthContext } from "../../context/AuthContext";
@@ -135,6 +136,12 @@ const Header = ({ onSearch, onClearSearch }) => {
             >
               Collections
             </NavLink>
+            <NavLink
+              to="/thoughts"
+              active={location.pathname.startsWith("/thoughts")}
+            >
+              Thoughts
+            </NavLink>
             {isAuthenticated && (
               <NavLink
                 to="/story-archive"
@@ -209,10 +216,19 @@ const Header = ({ onSearch, onClearSearch }) => {
             )}
 
             {isAuthenticated && !searchExpanded && (
-              <CreateNewButtonDesktop to="/create">
-                <FaCamera />
-                <span>Create</span>
-              </CreateNewButtonDesktop>
+              <>
+                <CreateNewButtonDesktop to="/create">
+                  <FaCamera />
+                  <span>Create</span>
+                </CreateNewButtonDesktop>
+                {/* Add a button for creating thoughts */}
+                {isAdmin && (
+                  <CreateNewButtonDesktop to="/thoughts/create" thoughts={true}>
+                    <FaLightbulb />
+                    <span>New Thought</span>
+                  </CreateNewButtonDesktop>
+                )}
+              </>
             )}
 
             {isAuthenticated ? (
@@ -301,6 +317,13 @@ const Header = ({ onSearch, onClearSearch }) => {
           >
             Collections
           </MobileMenuItem>
+          <MobileMenuItem
+            to="/thoughts"
+            onClick={closeMenu}
+            active={location.pathname.startsWith("/thoughts")}
+          >
+            <FaLightbulb /> <span>Thoughts</span>
+          </MobileMenuItem>
           {isAuthenticated && (
             <>
               <MobileMenuItem
@@ -326,6 +349,13 @@ const Header = ({ onSearch, onClearSearch }) => {
                   Subscribers
                 </MobileMenuItem>
               )}
+              <MobileMenuItem
+                to="/thoughts/create"
+                onClick={closeMenu}
+                active={location.pathname === "/thoughts/create"}
+              >
+                <FaLightbulb /> <span>New Thought</span>
+              </MobileMenuItem>
               <MobileMenuLogoutButton onClick={handleLogout}>
                 <FaSignOutAlt /> <span>Logout</span>
               </MobileMenuLogoutButton>
@@ -643,16 +673,17 @@ const CreateNewButtonDesktop = styled(Link)`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #ff7e5f;
+  background-color: ${(props) => (props.thoughts ? "#7891c9" : "#ff7e5f")};
   color: white;
   text-decoration: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
   font-weight: 600;
   transition: background-color 0.3s;
+  margin-left: ${(props) => (props.thoughts ? "0.5rem" : "0")};
 
   &:hover {
-    background-color: #ff6347;
+    background-color: ${(props) => (props.thoughts ? "#6a80b4" : "#ff6347")};
   }
 
   @media (max-width: 768px) {

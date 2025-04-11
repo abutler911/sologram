@@ -436,6 +436,40 @@ class NotificationService {
       return { success: false, error: err.message };
     }
   }
+  // Add to services/notificationService.js
+
+  async notifyNewThought(thought) {
+    const title = "💭 New Thought on SoloGram";
+    const message =
+      thought.content.slice(0, 100) +
+      (thought.content.length > 100 ? "..." : "");
+    const url = `https://thesologram.com/thoughts/${thought._id}`;
+    const image = thought.media?.mediaUrl;
+
+    try {
+      const result = await this.sendNotification({
+        title,
+        message,
+        url,
+        image,
+        audience: "all",
+      });
+
+      await Notification.create({
+        isTemplate: false,
+        sent: result.recipients || 0,
+        opened: 0,
+        type: "thought",
+        thought: thought._id,
+        message: thought.content,
+      });
+
+      return result;
+    } catch (err) {
+      console.error("notifyNewThought error:", err);
+      return { success: false, error: err.message };
+    }
+  }
 }
 console.log(
   "NotificationService loaded with methods:",
