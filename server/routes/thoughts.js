@@ -20,14 +20,14 @@ router.put("/:id/like", likeThought);
 
 // Admin-only routes
 router.post(
-  "/create",
+  "/",
   protect,
   authorize(["admin"]),
   upload.single("media"),
   createThought
 );
 router.put(
-  "/:id/edit",
+  "/:id",
   protect,
   authorize(["admin"]),
   upload.single("media"),
