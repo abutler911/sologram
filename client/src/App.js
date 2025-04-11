@@ -246,7 +246,7 @@ function App() {
                 }
               />
               <Route
-                path="/create-thought"
+                path="/thoughts/create"
                 element={
                   <PrivateRoute>
                     <CreateThought />

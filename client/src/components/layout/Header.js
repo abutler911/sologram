@@ -224,7 +224,6 @@ const Header = ({ onSearch, onClearSearch }) => {
                 {/* Add a button for creating thoughts */}
                 {isAdmin && (
                   <CreateNewButtonDesktop to="/thoughts/create" thoughts={true}>
-                    <FaLightbulb />
                     <span>New Thought</span>
                   </CreateNewButtonDesktop>
                 )}
@@ -322,7 +321,7 @@ const Header = ({ onSearch, onClearSearch }) => {
             onClick={closeMenu}
             active={location.pathname.startsWith("/thoughts")}
           >
-            <FaLightbulb /> <span>Thoughts</span>
+            <span>Thoughts</span>
           </MobileMenuItem>
           {isAuthenticated && (
             <>
@@ -354,7 +353,7 @@ const Header = ({ onSearch, onClearSearch }) => {
                 onClick={closeMenu}
                 active={location.pathname === "/thoughts/create"}
               >
-                <FaLightbulb /> <span>New Thought</span>
+                <span>New Thought</span>
               </MobileMenuItem>
               <MobileMenuLogoutButton onClick={handleLogout}>
                 <FaSignOutAlt /> <span>Logout</span>
