@@ -29,6 +29,8 @@ const Thoughts = () => {
   const { isAuthenticated, user } = useContext(AuthContext);
   const isAdmin = isAuthenticated && user?.role === "admin";
   const [selectedMood, setSelectedMood] = useState("all");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [thoughtToDelete, setThoughtToDelete] = useState(null);
 
   const moodEmojis = {
     inspired: "✨",
@@ -132,6 +134,28 @@ const Thoughts = () => {
     } catch (err) {
       console.error("Error pinning thought:", err);
       toast.error("Failed to update pin status");
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setThoughtToDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!thoughtToDelete) return;
+    try {
+      await axios.delete(`/api/thoughts/${thoughtToDelete}`);
+      setThoughts((prev) =>
+        prev.filter((thought) => thought._id !== thoughtToDelete)
+      );
+      toast.success("Thought deleted");
+    } catch (err) {
+      console.error("Error deleting thought:", err);
+      toast.error("Failed to delete thought");
+    } finally {
+      setShowDeleteModal(false);
+      setThoughtToDelete(null);
     }
   };
 
@@ -273,7 +297,10 @@ const Thoughts = () => {
                         <FaEdit />
                       </ActionButton>
                       <ActionButton
-                        onClick={() => handleDelete(thought._id)}
+                        onClick={() => {
+                          setThoughtToDelete(thought._id);
+                          setShowDeleteModal(true);
+                        }}
                         title="Delete"
                         className="delete"
                       >
@@ -324,10 +351,29 @@ const Thoughts = () => {
           )}
         </ThoughtsContainer>
       </PageWrapper>
+
       {isAdmin && (
-        <FloatingButton to="/thoughts/create">
-          <FaPlusCircle />
-        </FloatingButton>
+        <>
+          {showDeleteModal && (
+            <DeleteModal>
+              <DeleteModalContent>
+                <h3>Delete Thought</h3>
+                <p>This cannot be undone. Are you sure?</p>
+                <DeleteModalButtons>
+                  <CancelButton onClick={cancelDelete}>Cancel</CancelButton>
+                  <ConfirmDeleteButton onClick={confirmDelete}>
+                    Delete
+                  </ConfirmDeleteButton>
+                </DeleteModalButtons>
+              </DeleteModalContent>
+              <Backdrop onClick={cancelDelete} />
+            </DeleteModal>
+          )}
+
+          <FloatingButton to="/thoughts/create">
+            <FaPlusCircle />
+          </FloatingButton>
+        </>
       )}
     </MainLayout>
   );
@@ -797,6 +843,123 @@ const FloatingButton = styled(Link)`
   @media (min-width: 769px) {
     display: none;
   }
+`;
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  padding: 1rem;
+`;
+
+const DeleteModal = styled.div`
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+`;
+
+const DeleteModalHeader = styled.div`
+  background-color: #e74c3c;
+  color: white;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+
+  svg {
+    font-size: 1.5rem;
+    margin-right: 0.75rem;
+  }
+`;
+
+const DeleteModalTitle = styled.h3`
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+`;
+
+const DeleteModalContent = styled.div`
+  padding: 1.5rem;
+  color: #ddd;
+  line-height: 1.5;
+`;
+
+const DeleteModalButtons = styled.div`
+  display: flex;
+  padding: 1rem 1.5rem;
+  justify-content: flex-end;
+  gap: 1rem;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
+`;
+
+const ConfirmDeleteButton = styled.button`
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #c0392b;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 480px) {
+    order: 1;
+  }
+`;
+
+const CancelButton = styled.button`
+  background-color: transparent;
+  color: #ddd;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: #333;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 480px) {
+    order: 2;
+  }
+`;
+
+const Backdrop = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
 `;
 
 export default Thoughts;
