@@ -1,4 +1,5 @@
-// client/src/pages/Thoughts.js
+// Here's a restructured version of your component to fix the issues
+
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
@@ -22,6 +23,752 @@ import { AuthContext } from "../context/AuthContext";
 import MainLayout from "../components/layout/MainLayout";
 import { format } from "date-fns";
 
+// Define animations
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const pulse = keyframes`
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+`;
+
+// Define mood colors
+const moodColors = {
+  inspired: "#ffcb66",
+  reflective: "#7891c9",
+  excited: "#ff7e5f",
+  creative: "#7be0ad",
+  calm: "#00b2ff",
+  curious: "#a06eff",
+  nostalgic: "#ff61a6",
+  amused: "#fcbe32",
+};
+
+// Styled components (in correct order to avoid reference errors)
+const PageWrapper = styled.div`
+  background-color: #121212;
+  min-height: 100vh;
+  padding: 1rem 0;
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2rem;
+  margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0 1rem;
+  }
+`;
+
+const HeaderLeft = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+`;
+
+const HeaderRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: space-between;
+  }
+`;
+
+const PageTitle = styled.h1`
+  font-size: 2.3rem;
+  color: #ff7e5f;
+  margin: 0;
+  font-family: "Autography", cursive;
+  transform: rotate(-2deg);
+  letter-spacing: 0.5px;
+`;
+
+const MoodFilter = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  max-width: 100%;
+`;
+
+const MoodButton = styled.button`
+  background-color: ${(props) =>
+    props.active
+      ? props.mood
+        ? props.mood === "all"
+          ? "#ff7e5f"
+          : moodColors[props.mood]
+        : "#ff7e5f"
+      : "#333333"};
+  color: ${(props) => (props.active ? "#121212" : "#dddddd")};
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: ${(props) =>
+      props.mood && props.mood !== "all" ? moodColors[props.mood] : "#ff7e5f"};
+    color: #121212;
+    transform: scale(1.1);
+  }
+  transition: all 0.2s ease-in-out;
+`;
+
+const CreateButton = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #ff7e5f;
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 500;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #ff6347;
+  }
+
+  svg {
+    font-size: 1rem;
+  }
+`;
+
+const SearchContainer = styled.div`
+  ${(props) =>
+    props.expanded &&
+    `
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    top: 0.5rem;
+    z-index: 100;
+    
+    @media (min-width: 769px) {
+      position: relative;
+      left: auto;
+      right: auto;
+      top: auto;
+      width: 300px;
+    }
+  `}
+`;
+
+const SearchToggle = styled.button`
+  background: none;
+  border: none;
+  color: #dddddd;
+  font-size: 1.125rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s;
+
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
+
+const SearchForm = styled.form`
+  display: flex;
+  align-items: center;
+  background-color: #1e1e1e;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid #333333;
+  transition: all 0.3s;
+`;
+
+const SearchInput = styled.input`
+  font-family: "Courier New", monospace;
+  flex: 1;
+  background-color: #121212;
+  border: none;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  border-bottom: 2px solid #ff7e5f;
+  transition: border-color 0.3s ease;
+
+  &::placeholder {
+    color: #888888;
+  }
+
+  &:focus {
+    border-color: #ff6347;
+  }
+`;
+
+const SearchButton = styled.button`
+  background: none;
+  border: none;
+  color: #888888;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
+
+const ClearButton = styled.button`
+  background: none;
+  border: none;
+  color: #888888;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
+
+const CloseSearchButton = styled.button`
+  background: none;
+  border: none;
+  color: #888888;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  @media (min-width: 769px) {
+    display: none;
+  }
+
+  &:hover {
+    color: #ff7e5f;
+  }
+`;
+
+const ThoughtsContainer = styled.div`
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 1rem;
+`;
+
+// Define UserInfo and related components
+const UserInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+`;
+
+const Avatar = styled.div`
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px ${(props) => moodColors[props.mood] || "#ff7e5f"};
+  position: relative;
+
+  &:after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    box-shadow: 0 0 10px 1px ${(props) => moodColors[props.mood] || "#ff7e5f"};
+    opacity: 0.3;
+    transition: opacity 0.3s;
+  }
+
+  &:hover:after {
+    opacity: 0.6;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+`;
+
+const DefaultAvatar = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${(props) => {
+    const color = moodColors[props.mood] || "#ff7e5f";
+    return `linear-gradient(135deg, ${color}33, ${color}66)`;
+  }};
+  color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
+  font-size: 1.5rem;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+`;
+
+const UserDetails = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+`;
+
+const Username = styled.div`
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 1rem;
+
+  &:hover {
+    text-decoration: underline;
+    cursor: pointer;
+  }
+`;
+
+const UserHandle = styled.div`
+  color: #8899a6;
+  font-size: 0.875rem;
+`;
+
+// Define action components in the correct order to avoid circular references
+const ActionIcon = styled.div`
+  color: ${(props) => (props.liked ? "#e0245e" : "#8899a6")};
+  transition: color 0.2s;
+  font-size: 1.125rem;
+
+  ${(props) =>
+    props.liked &&
+    `
+    animation: ${pulse} 0.3s ease;
+  `}
+`;
+
+const ActionCount = styled.span`
+  color: #8899a6;
+  font-size: 0.875rem;
+  font-weight: 500;
+`;
+
+const ActionItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 9999px;
+  transition: background-color 0.2s;
+
+  &:nth-child(1):hover {
+    background-color: rgba(224, 36, 94, 0.1);
+
+    ${ActionIcon} {
+      color: #e0245e;
+    }
+
+    ${ActionCount} {
+      color: #e0245e;
+    }
+  }
+
+  &:nth-child(2):hover {
+    background-color: rgba(29, 161, 242, 0.1);
+
+    ${ActionIcon} {
+      color: #1da1f2;
+    }
+
+    ${ActionCount} {
+      color: #1da1f2;
+    }
+  }
+
+  &:nth-child(3):hover {
+    background-color: rgba(23, 191, 99, 0.1);
+
+    ${ActionIcon} {
+      color: #17bf63;
+    }
+
+    ${ActionCount} {
+      color: #17bf63;
+    }
+  }
+
+  &:nth-child(4):hover {
+    background-color: rgba(29, 161, 242, 0.1);
+
+    ${ActionIcon} {
+      color: #1da1f2;
+    }
+  }
+`;
+
+const ActionBar = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid #2a2a2a;
+`;
+
+// Continue with other styled components
+const ThoughtHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+`;
+
+const ThoughtMeta = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  margin-bottom: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #333333;
+`;
+
+const ThoughtMood = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
+  font-size: 0.875rem;
+  text-transform: capitalize;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  background-color: ${(props) => {
+    const color = moodColors[props.mood] || "#ff7e5f";
+    return `${color}15`; // 15% opacity
+  }};
+`;
+
+const ThoughtTime = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #aaaaaa;
+  font-size: 0.75rem;
+
+  svg {
+    font-size: 0.75rem;
+  }
+`;
+
+const ThoughtActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+`;
+
+const ActionButton = styled.button`
+  background: none;
+  border: none;
+  color: #aaaaaa;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #333333;
+    color: #ffffff;
+  }
+
+  &.delete:hover {
+    color: #ff6b6b;
+  }
+
+  &.pinned {
+    color: #ffbb00;
+  }
+`;
+
+const ThoughtContent = styled.p`
+  color: #ffffff;
+  font-size: 1.125rem;
+  line-height: 1.5;
+  margin: 0.75rem 0 1rem;
+  white-space: pre-wrap;
+
+  a {
+    color: #1da1f2;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+`;
+
+const ThoughtMedia = styled.div`
+  margin: 0.75rem -1.25rem;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+  img {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    transition: transform 0.4s ease, filter 0.4s ease;
+  }
+
+  &:hover img {
+    transform: scale(1.02);
+    filter: brightness(1.1);
+  }
+
+  @media (min-width: 768px) {
+    margin: 0.75rem 0;
+    border-radius: 16px;
+  }
+`;
+
+const ThoughtTags = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+`;
+
+const ThoughtTag = styled.span`
+  background-color: ${(props) => {
+    const color = moodColors[props.mood] || "#ff7e5f";
+    return `${color}20`; // 20% opacity
+  }};
+  color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+  cursor: pointer;
+
+  &:hover {
+    background-color: ${(props) => {
+      const color = moodColors[props.mood] || "#ff7e5f";
+      return `${color}30`; // 30% opacity
+    }};
+    transform: scale(1.05);
+  }
+`;
+
+const ThoughtFooter = styled.div`
+  margin-top: 0.5rem;
+`;
+
+const ThoughtCard = styled.div`
+  position: relative;
+  background-color: #111111;
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+  border: 1px solid #333333;
+  animation: ${fadeIn} 0.3s ease-out;
+
+  &:hover {
+    background-color: #1a1a1a;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  ${(props) =>
+    props.pinned &&
+    `
+    background-color: #1f1f1f;
+    border-color: ${moodColors[props.mood] || "#ff7e5f"};
+  `}
+`;
+
+const PinnedBadge = styled.div`
+  position: absolute;
+  top: -10px;
+  right: 1rem;
+  background-color: #ff7e5f;
+  color: #121212;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  animation: ${pulse} 2s infinite ease-in-out;
+`;
+
+const ErrorMessage = styled.div`
+  background-color: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 1.5rem;
+`;
+
+const LoadingMessage = styled.div`
+  color: #aaaaaa;
+  text-align: center;
+  padding: 2rem 0;
+`;
+
+const EmptyMessage = styled.div`
+  color: #aaaaaa;
+  text-align: center;
+  padding: 2rem 0;
+`;
+
+const LoadingMore = styled.div`
+  color: #aaaaaa;
+  text-align: center;
+  padding: 1rem 0;
+  font-style: italic;
+  font-size: 0.875rem;
+`;
+
+const FloatingButton = styled(Link)`
+  position: fixed;
+  bottom: 6rem;
+  right: 2rem;
+  background-color: #ff7e5f;
+  color: #fff;
+  padding: 1rem;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  font-size: 1.5rem;
+  z-index: 999;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #ff6347;
+  }
+
+  @media (min-width: 769px) {
+    display: none;
+  }
+`;
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  padding: 1rem;
+`;
+
+const DeleteModal = styled.div`
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 100%;
+  z-index: 1001;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+`;
+
+const DeleteModalContent = styled.div`
+  padding: 1.5rem;
+  color: #ddd;
+  line-height: 1.5;
+`;
+
+const DeleteModalButtons = styled.div`
+  display: flex;
+  padding: 1rem 1.5rem;
+  justify-content: flex-end;
+  gap: 1rem;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
+`;
+
+const ConfirmDeleteButton = styled.button`
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #c0392b;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 480px) {
+    order: 1;
+  }
+`;
+
+const CancelButton = styled.button`
+  background-color: transparent;
+  color: #ddd;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: #333;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 480px) {
+    order: 2;
+  }
+`;
+
+const Backdrop = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+`;
+
+// Main component function
 const Thoughts = () => {
   const [thoughts, setThoughts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,9 +793,6 @@ const Thoughts = () => {
     nostalgic: "📷",
     amused: "😄",
   };
-
-  // Modify your fetchThoughts function to include user data with thoughts
-  // Update within your Thoughts component
 
   const fetchThoughts = useCallback(
     async (reset = false) => {
@@ -90,7 +834,24 @@ const Thoughts = () => {
     [page, searchQuery]
   );
 
-  // Update the handleLike function to toggle the userHasLiked state
+  useEffect(() => {
+    fetchThoughts();
+  }, [fetchThoughts]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setPage(1);
+    fetchThoughts(true);
+    if (window.innerWidth <= 768) setSearchExpanded(false);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setPage(1);
+    fetchThoughts(true);
+  };
+
+  // Unified handleLike function
   const handleLike = async (id) => {
     try {
       const response = await axios.put(`/api/thoughts/${id}/like`);
@@ -113,40 +874,6 @@ const Thoughts = () => {
     } catch (err) {
       console.error("Error liking thought:", err);
       toast.error("Failed to like thought");
-    }
-  };
-
-  useEffect(() => {
-    fetchThoughts();
-  }, [fetchThoughts]);
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    setPage(1);
-    fetchThoughts(true);
-    if (window.innerWidth <= 768) setSearchExpanded(false);
-  };
-
-  const clearSearch = () => {
-    setSearchQuery("");
-    setPage(1);
-    fetchThoughts(true);
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this thought?")) {
-      return;
-    }
-
-    try {
-      await axios.delete(`/api/thoughts/${id}`);
-      setThoughts((prevThoughts) =>
-        prevThoughts.filter((thought) => thought._id !== id)
-      );
-      toast.success("Thought deleted successfully");
-    } catch (err) {
-      console.error("Error deleting thought:", err);
-      toast.error("Failed to delete thought");
     }
   };
 
@@ -454,771 +1181,5 @@ const Thoughts = () => {
     </MainLayout>
   );
 };
-
-const moodColors = {
-  inspired: "#ffcb66",
-  reflective: "#7891c9",
-  excited: "#ff7e5f",
-  creative: "#7be0ad",
-  calm: "#00b2ff",
-  curious: "#a06eff",
-  nostalgic: "#ff61a6",
-  amused: "#fcbe32",
-};
-
-// Styled components
-const PageWrapper = styled.div`
-  background-color: #121212;
-  min-height: 100vh;
-  padding: 1rem 0;
-`;
-
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 2rem;
-  margin-bottom: 2rem;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 0 1rem;
-  }
-`;
-
-const HeaderLeft = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
-const HeaderRight = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-
-  @media (max-width: 768px) {
-    width: 100%;
-    justify-content: space-between;
-  }
-`;
-
-const PageTitle = styled.h1`
-  font-size: 2.3rem;
-  color: #ff7e5f;
-  margin: 0;
-  font-family: "Autography", cursive;
-  transform: rotate(-2deg);
-
-  letter-spacing: 0.5px;
-`;
-
-const MoodFilter = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding-bottom: 0.5rem;
-  max-width: 100%;
-`;
-
-const MoodButton = styled.button`
-  background-color: ${(props) =>
-    props.active
-      ? props.mood
-        ? props.mood === "all"
-          ? "#ff7e5f"
-          : moodColors[props.mood]
-        : "#ff7e5f"
-      : "#333333"};
-  color: ${(props) => (props.active ? "#121212" : "#dddddd")};
-  border: none;
-  border-radius: 999px;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-
-  &:hover {
-    background-color: ${(props) =>
-      props.mood && props.mood !== "all" ? moodColors[props.mood] : "#ff7e5f"};
-    color: #121212;
-    transform: scale(1.1);
-  }
-  transition: all 0.2s ease-in-out;
-`;
-
-const CreateButton = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: #ff7e5f;
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  font-weight: 500;
-  transition: background-color 0.3s;
-
-  &:hover {
-    background-color: #ff6347;
-  }
-
-  svg {
-    font-size: 1rem;
-  }
-`;
-
-const SearchContainer = styled.div`
-  ${(props) =>
-    props.expanded &&
-    `
-    position: absolute;
-    left: 1rem;
-    right: 1rem;
-    top: 0.5rem;
-    z-index: 100;
-    
-    @media (min-width: 769px) {
-      position: relative;
-      left: auto;
-      right: auto;
-      top: auto;
-      width: 300px;
-    }
-  `}
-`;
-
-const SearchToggle = styled.button`
-  background: none;
-  border: none;
-  color: #dddddd;
-  font-size: 1.125rem;
-  padding: 0.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.3s;
-
-  &:hover {
-    color: #ff7e5f;
-  }
-`;
-
-const SearchForm = styled.form`
-  display: flex;
-  align-items: center;
-  background-color: #1e1e1e;
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid #333333;
-  transition: all 0.3s;
-`;
-
-const SearchInput = styled.input`
-  font-family: "Courier New", monospace;
-  flex: 1;
-  background-color: #121212;
-  border: none;
-  color: #ffffff;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  border-bottom: 2px solid #ff7e5f;
-  transition: border-color 0.3s ease;
-
-  &::placeholder {
-    color: #888888;
-  }
-
-  &:focus {
-    border-color: #ff6347;
-  }
-`;
-
-const SearchButton = styled.button`
-  background: none;
-  border: none;
-  color: #888888;
-  padding: 0.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    color: #ff7e5f;
-  }
-`;
-
-const ClearButton = styled.button`
-  background: none;
-  border: none;
-  color: #888888;
-  padding: 0.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    color: #ff7e5f;
-  }
-`;
-
-const CloseSearchButton = styled.button`
-  background: none;
-  border: none;
-  color: #888888;
-  padding: 0.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  @media (min-width: 769px) {
-    display: none;
-  }
-
-  &:hover {
-    color: #ff7e5f;
-  }
-`;
-
-const ThoughtsContainer = styled.div`
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 0 1rem;
-`;
-
-const ThoughtCard = styled.div`
-  position: relative;
-  background-color: #111111;
-  border-radius: 16px;
-  padding: 1.25rem;
-  margin-bottom: 1rem;
-  transition: all 0.3s ease;
-  border: 1px solid #333333;
-  animation: ${fadeIn} 0.3s ease-out;
-
-  &:hover {
-    background-color: #1a1a1a;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  }
-
-  ${(props) =>
-    props.pinned &&
-    `
-    background-color: #1f1f1f;
-    border-color: ${moodColors[props.mood] || "#ff7e5f"};
-  `}
-`;
-
-const PinnedBadge = styled.div`
-  position: absolute;
-  top: -10px;
-  right: 1rem;
-  background-color: #ff7e5f;
-  color: #121212;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  animation: ${pulse} 2s infinite ease-in-out;
-`;
-
-const ThoughtHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-`;
-
-const ThoughtMeta = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 0.75rem;
-  margin-bottom: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #333333;
-`;
-
-const ThoughtMood = styled.div`
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
-  font-size: 0.875rem;
-  text-transform: capitalize;
-  padding: 0.25rem 0.5rem;
-  border-radius: 9999px;
-  background-color: ${(props) => {
-    const color = moodColors[props.mood] || "#ff7e5f";
-    return `${color}15`; // 15% opacity
-  }};
-`;
-
-const ThoughtTime = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #aaaaaa;
-  font-size: 0.75rem;
-
-  svg {
-    font-size: 0.75rem;
-  }
-`;
-
-const ThoughtActions = styled.div`
-  display: flex;
-  gap: 0.5rem;
-`;
-
-const ActionButton = styled.button`
-  background: none;
-  border: none;
-  color: #aaaaaa;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background-color: #333333;
-    color: #ffffff;
-  }
-
-  &.delete:hover {
-    color: #ff6b6b;
-  }
-
-  &.pinned {
-    color: #ffbb00;
-  }
-`;
-
-const ThoughtContent = styled.p`
-  color: #ffffff;
-  font-size: 1.125rem;
-  line-height: 1.5;
-  margin: 0.75rem 0 1rem;
-  white-space: pre-wrap;
-
-  a {
-    color: #1da1f2;
-    text-decoration: none;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-`;
-
-const ThoughtMedia = styled.div`
-  margin: 0.75rem -1.25rem;
-  border-radius: 0;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-
-  img {
-    width: 100%;
-    max-height: 400px;
-    object-fit: cover;
-    transition: transform 0.4s ease, filter 0.4s ease;
-  }
-
-  &:hover img {
-    transform: scale(1.02);
-    filter: brightness(1.1);
-  }
-
-  @media (min-width: 768px) {
-    margin: 0.75rem 0;
-    border-radius: 16px;
-  }
-`;
-
-const ThoughtTags = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-`;
-
-const ThoughtTag = styled.span`
-  background-color: ${(props) => {
-    const color = moodColors[props.mood] || "#ff7e5f";
-    return `${color}20`; // 20% opacity
-  }};
-  color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  transition: all 0.2s;
-  cursor: pointer;
-
-  &:hover {
-    background-color: ${(props) => {
-      const color = moodColors[props.mood] || "#ff7e5f";
-      return `${color}30`; // 30% opacity
-    }};
-    transform: scale(1.05);
-  }
-`;
-
-const ThoughtFooter = styled.div`
-  margin-top: 0.5rem;
-`;
-
-const ActionBar = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding-top: 0.75rem;
-  margin-top: 0.5rem;
-  border-top: 1px solid #2a2a2a;
-`;
-
-const ActionIcon = styled.div`
-  color: ${(props) => (props.liked ? "#e0245e" : "#8899a6")};
-  transition: color 0.2s;
-  font-size: 1.125rem;
-
-  ${(props) =>
-    props.liked &&
-    `
-    animation: ${pulse} 0.3s ease;
-  `}
-`;
-const ActionCount = styled.span`
-  color: #8899a6;
-  font-size: 0.875rem;
-  font-weight: 500;
-`;
-
-const ActionItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  padding: 0.5rem 0.75rem;
-  border-radius: 9999px;
-  transition: background-color 0.2s;
-
-  // Different hover colors for different actions
-  &:nth-child(1):hover {
-    background-color: rgba(224, 36, 94, 0.1);
-
-    ${ActionIcon} {
-      color: #e0245e;
-    }
-
-    ${ActionCount} {
-      color: #e0245e;
-    }
-  }
-
-  &:nth-child(2):hover {
-    background-color: rgba(29, 161, 242, 0.1);
-
-    ${ActionIcon} {
-      color: #1da1f2;
-    }
-
-    ${ActionCount} {
-      color: #1da1f2;
-    }
-  }
-
-  &:nth-child(3):hover {
-    background-color: rgba(23, 191, 99, 0.1);
-
-    ${ActionIcon} {
-      color: #17bf63;
-    }
-
-    ${ActionCount} {
-      color: #17bf63;
-    }
-  }
-
-  &:nth-child(4):hover {
-    background-color: rgba(29, 161, 242, 0.1);
-
-    ${ActionIcon} {
-      color: #1da1f2;
-    }
-  }
-`;
-
-const LikeButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: none;
-  border: none;
-  color: #aaaaaa;
-  cursor: pointer;
-  transition: color 0.3s;
-  padding: 0.5rem;
-
-  &:hover {
-    color: #ff6b6b;
-  }
-
-  svg {
-    font-size: 0.875rem;
-  }
-
-  span {
-    font-size: 0.875rem;
-  }
-`;
-
-const ErrorMessage = styled.div`
-  background-color: rgba(255, 107, 107, 0.2);
-  color: #ff6b6b;
-  padding: 1rem;
-  border-radius: 8px;
-  text-align: center;
-  margin-bottom: 1.5rem;
-`;
-
-const LoadingMessage = styled.div`
-  color: #aaaaaa;
-  text-align: center;
-  padding: 2rem 0;
-`;
-
-const EmptyMessage = styled.div`
-  color: #aaaaaa;
-  text-align: center;
-  padding: 2rem 0;
-`;
-
-const LoadingMore = styled.div`
-  color: #aaaaaa;
-  text-align: center;
-  padding: 1rem 0;
-  font-style: italic;
-  font-size: 0.875rem;
-`;
-
-const FloatingButton = styled(Link)`
-  position: fixed;
-  bottom: 6rem;
-  right: 2rem;
-  background-color: #ff7e5f;
-  color: #fff;
-  padding: 1rem;
-  border-radius: 999px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-  font-size: 1.5rem;
-  z-index: 999;
-  transition: background-color 0.3s;
-
-  &:hover {
-    background-color: #ff6347;
-  }
-
-  @media (min-width: 769px) {
-    display: none;
-  }
-`;
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-  padding: 1rem;
-`;
-
-const DeleteModal = styled.div`
-  background-color: #1e1e1e;
-  border-radius: 8px;
-  max-width: 400px;
-  width: 100%;
-  z-index: 1001;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-`;
-
-const DeleteModalContent = styled.div`
-  padding: 1.5rem;
-  color: #ddd;
-  line-height: 1.5;
-`;
-
-const DeleteModalButtons = styled.div`
-  display: flex;
-  padding: 1rem 1.5rem;
-  justify-content: flex-end;
-  gap: 1rem;
-
-  @media (max-width: 480px) {
-    flex-direction: column;
-  }
-`;
-
-const ConfirmDeleteButton = styled.button`
-  background-color: #e74c3c;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.75rem 1.25rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-
-  &:hover {
-    background-color: #c0392b;
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-
-  @media (max-width: 480px) {
-    order: 1;
-  }
-`;
-
-const CancelButton = styled.button`
-  background-color: transparent;
-  color: #ddd;
-  border: 1px solid #444;
-  border-radius: 4px;
-  padding: 0.75rem 1.25rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background-color: #333;
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-
-  @media (max-width: 480px) {
-    order: 2;
-  }
-`;
-
-const Backdrop = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 999;
-`;
-
-const UserInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-`;
-
-const Avatar = styled.div`
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  overflow: hidden;
-  box-shadow: 0 0 0 2px ${(props) => moodColors[props.mood] || "#ff7e5f"};
-  position: relative;
-
-  &:after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 50%;
-    box-shadow: 0 0 10px 1px ${(props) => moodColors[props.mood] || "#ff7e5f"};
-    opacity: 0.3;
-    transition: opacity 0.3s;
-  }
-
-  &:hover:after {
-    opacity: 0.6;
-  }
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-`;
-
-const DefaultAvatar = styled.div`
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: ${(props) => {
-    const color = moodColors[props.mood] || "#ff7e5f";
-    // Create a nice gradient based on the mood color
-    return `linear-gradient(135deg, ${color}33, ${color}66)`;
-  }};
-  color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
-  font-size: 1.5rem;
-  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-`;
-
-const UserDetails = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-`;
-
-const Username = styled.div`
-  font-weight: 700;
-  color: #ffffff;
-  font-size: 1rem;
-
-  &:hover {
-    text-decoration: underline;
-    cursor: pointer;
-  }
-`;
-
-const UserHandle = styled.div`
-  color: #8899a6;
-  font-size: 0.875rem;
-`;
-
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
-
-const pulse = keyframes`
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-`;
 
 export default Thoughts;
