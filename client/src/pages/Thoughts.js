@@ -330,12 +330,12 @@ const DefaultAvatar = styled.div`
 const UserDetails = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.125rem;
   position: relative;
 
   &:after {
     content: "";
-    width: 40px;
+    width: 75%;
     height: 2px;
     background: linear-gradient(
       to right,
