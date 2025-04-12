@@ -336,7 +336,7 @@ const UserDetails = styled.div`
 const Username = styled.div`
   font-family: "Autography", cursive;
   font-weight: normal;
-  font-size: 1.3rem;
+  font-size: 1.6rem;
   color: #ffcb66;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   letter-spacing: 0.5px;
@@ -511,8 +511,8 @@ const ActionButton = styled.button`
 
 const ThoughtContent = styled.p`
   color: #eeeeee;
-  font-size: 1.1rem;
-  line-height: 1.6;
+  font-size: 0.8rem;
+  line-height: 1.1;
   font-family: "Georgia", serif;
   font-style: italic;
   margin: 0.75rem 0 1rem;
