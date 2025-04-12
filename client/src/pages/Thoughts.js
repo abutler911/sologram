@@ -334,13 +334,17 @@ const UserDetails = styled.div`
 `;
 
 const Username = styled.div`
-  font-weight: 700;
-  color: #ffffff;
-  font-size: 1rem;
+  font-family: "Autography", cursive;
+  font-weight: normal;
+  font-size: 1.3rem;
+  color: #ffcb66;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.5px;
 
   &:hover {
-    text-decoration: underline;
-    cursor: pointer;
+    text-decoration: none;
+    transform: scale(1.03);
+    transition: transform 0.2s ease;
   }
 `;
 
@@ -457,10 +461,8 @@ const ThoughtMood = styled.div`
   text-transform: capitalize;
   padding: 0.25rem 0.5rem;
   border-radius: 9999px;
-  background-color: ${(props) => {
-    const color = moodColors[props.mood] || "#ff7e5f";
-    return `${color}15`; // 15% opacity
-  }};
+  background-color: ${(props) => `${moodColors[props.mood] || "#ff7e5f"}15`};
+  box-shadow: 0 0 8px ${(props) => moodColors[props.mood] || "#ff7e5f"};
 `;
 
 const ThoughtTime = styled.div`
@@ -508,20 +510,17 @@ const ActionButton = styled.button`
 `;
 
 const ThoughtContent = styled.p`
-  color: #ffffff;
-  font-size: 1.125rem;
-  line-height: 1.5;
+  color: #eeeeee;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  font-family: "Georgia", serif;
+  font-style: italic;
   margin: 0.75rem 0 1rem;
   white-space: pre-wrap;
-
-  a {
-    color: #1da1f2;
-    text-decoration: none;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 3px solid #ff7e5f;
 `;
 
 const ThoughtMedia = styled.div`
@@ -582,24 +581,23 @@ const ThoughtFooter = styled.div`
 
 const ThoughtCard = styled.div`
   position: relative;
-  background-color: #111111;
+  background: rgba(17, 17, 17, 0.75);
+  backdrop-filter: blur(6px);
   border-radius: 16px;
   padding: 1.25rem;
   margin-bottom: 1rem;
-  transition: all 0.3s ease;
   border: 1px solid #333333;
   animation: ${fadeIn} 0.3s ease-out;
 
   &:hover {
-    background-color: #1a1a1a;
+    background-color: rgba(26, 26, 26, 0.85);
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   }
 
   ${(props) =>
     props.pinned &&
     `
-    background-color: #1f1f1f;
     border-color: ${moodColors[props.mood] || "#ff7e5f"};
   `}
 `;
