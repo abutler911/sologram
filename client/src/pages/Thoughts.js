@@ -330,22 +330,9 @@ const DefaultAvatar = styled.div`
 const UserDetails = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  align-items: flex-start;
   position: relative;
-
-  &:after {
-    content: "";
-    width: 75%;
-    height: 2px;
-    background: linear-gradient(
-      to right,
-      #ff7e5f,
-      ${(props) => moodColors[props.mood] || "#ffcb66"},
-      #ff7e5f
-    );
-    margin-top: 0.25rem;
-    border-radius: 1px;
-  }
+  margin-top: 0.15rem;
 `;
 
 const Username = styled.div`
@@ -355,6 +342,7 @@ const Username = styled.div`
   color: #ffcb66;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   letter-spacing: 0.5px;
+  margin-bottom: 2px;
 
   &:hover {
     text-decoration: none;
@@ -366,11 +354,27 @@ const Username = styled.div`
 const UserHandle = styled.div`
   font-family: "Space Grotesk", sans-serif;
   background-color: rgba(255, 126, 95, 0.1);
-  padding: 0.2rem 0.5rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 999px;
   color: #ff7e5f;
   font-size: 0.75rem;
   display: inline-block;
+  margin-top: 1px;
+`;
+
+const UserDivider = styled.div`
+  width: 80px;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    ${(props) => moodColors[props.mood] || "#ffcb66"},
+    #ff7e5f
+  );
+  opacity: 0.7;
+  margin: 2px 0 4px;
+  border-radius: 1px;
+  transform: scaleX(1.2);
 `;
 
 // Define action components in the correct order to avoid circular references
@@ -1108,6 +1112,7 @@ const Thoughts = () => {
                     </Avatar>
                     <UserDetails>
                       <Username>{defaultUser.username}</Username>
+                      <UserDivider mood={thought.mood} />
                       <UserHandle>@{defaultUser.handle}</UserHandle>
                     </UserDetails>
                   </UserInfo>
