@@ -330,7 +330,22 @@ const DefaultAvatar = styled.div`
 const UserDetails = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: 0.25rem;
+  position: relative;
+
+  &:after {
+    content: "";
+    width: 40px;
+    height: 2px;
+    background: linear-gradient(
+      to right,
+      #ff7e5f,
+      ${(props) => moodColors[props.mood] || "#ffcb66"},
+      #ff7e5f
+    );
+    margin-top: 0.25rem;
+    border-radius: 1px;
+  }
 `;
 
 const Username = styled.div`
@@ -349,8 +364,13 @@ const Username = styled.div`
 `;
 
 const UserHandle = styled.div`
-  color: #8899a6;
-  font-size: 0.875rem;
+  font-family: "Space Grotesk", sans-serif;
+  background-color: rgba(255, 126, 95, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  color: #ff7e5f;
+  font-size: 0.75rem;
+  display: inline-block;
 `;
 
 // Define action components in the correct order to avoid circular references
