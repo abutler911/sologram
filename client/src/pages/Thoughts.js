@@ -466,14 +466,15 @@ const ThoughtMood = styled.div`
 `;
 
 const ThoughtTime = styled.div`
+  font-family: "Space Grotesk", sans-serif;
+  color: #aaaaaa;
+  font-size: 0.8rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #aaaaaa;
-  font-size: 0.75rem;
 
   svg {
-    font-size: 0.75rem;
+    font-size: 0.5rem;
   }
 `;
 
@@ -510,17 +511,17 @@ const ActionButton = styled.button`
 `;
 
 const ThoughtContent = styled.p`
-  color: #eeeeee;
-  font-size: 1rem;
-  line-height: 1.3;
-  font-family: "Georgia", serif;
-  font-style: italic;
-  margin: 0.75rem 0 1rem;
-  white-space: pre-wrap;
+  font-family: "Lora", serif;
+  color: #f0f0f0;
+  font-size: 1.125rem;
+  line-height: 1.75;
   background: rgba(255, 255, 255, 0.02);
-  padding: 1rem;
-  border-radius: 8px;
+  padding: 1.25rem;
   border-left: 3px solid #ff7e5f;
+  border-radius: 8px;
+  font-style: italic;
+  white-space: pre-wrap;
+  letter-spacing: 0.3px;
 `;
 
 const ThoughtMedia = styled.div`
@@ -555,22 +556,17 @@ const ThoughtTags = styled.div`
 `;
 
 const ThoughtTag = styled.span`
-  background-color: ${(props) => {
-    const color = moodColors[props.mood] || "#ff7e5f";
-    return `${color}20`; // 20% opacity
-  }};
+  font-family: "Space Grotesk", sans-serif;
+  background-color: ${(props) => `${moodColors[props.mood] || "#ff7e5f"}20`};
   color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: 0.5rem;
   transition: all 0.2s;
   cursor: pointer;
 
   &:hover {
-    background-color: ${(props) => {
-      const color = moodColors[props.mood] || "#ff7e5f";
-      return `${color}30`; // 30% opacity
-    }};
+    background-color: ${(props) => `${moodColors[props.mood] || "#ff7e5f"}30`};
     transform: scale(1.05);
   }
 `;
