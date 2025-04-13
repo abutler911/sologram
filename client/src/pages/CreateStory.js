@@ -484,7 +484,16 @@ const CreateStory = () => {
       navigate("/");
     }
   };
-
+  const handleMediaSelect = (mediaType) => {
+    // Handle different media types (gallery, camera, or video)
+    if (mediaType === "gallery") {
+      open(); // For gallery
+    } else if (mediaType === "camera") {
+      handleCameraCapture(); // Camera function
+    } else if (mediaType === "video") {
+      handleVideoCapture(); // Video function
+    }
+  };
   // Render upload step
   const renderUploadStep = () => (
     <>
@@ -522,41 +531,27 @@ const CreateStory = () => {
         </DropzoneContainer>
 
         <ActionButtonsContainer>
-          <GalleryButton
-            type="button"
-            onClick={handleGallerySelect}
+          <ActionButton
+            onClick={() => handleMediaSelect("gallery")}
             aria-label="Select media from gallery"
           >
             <FaImage />
             <span>Gallery</span>
-          </GalleryButton>
-
-          <CameraButton
-            type="button"
-            onClick={handleCameraCapture}
+          </ActionButton>
+          <ActionButton
+            onClick={() => handleMediaSelect("camera")}
             aria-label="Take a photo with camera"
           >
             <FaCamera />
             <span>Camera</span>
-          </CameraButton>
-
-          <VideoButton
-            type="button"
-            onClick={handleVideoCapture}
+          </ActionButton>
+          <ActionButton
+            onClick={() => handleMediaSelect("video")}
             aria-label="Record a video"
           >
             <FaVideo />
             <span>Video</span>
-          </VideoButton>
-
-          <InfoButton
-            type="button"
-            onClick={showVideoSizeGuide}
-            title="Video size info"
-            aria-label="Show video size guidelines"
-          >
-            <FaInfoCircle />
-          </InfoButton>
+          </ActionButton>
         </ActionButtonsContainer>
       </UploadContainer>
     </>
