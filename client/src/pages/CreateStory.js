@@ -467,11 +467,12 @@ const CreateStory = () => {
 
   // Go to next step
   const goToNextStep = () => {
-    if (currentStep === "edit") {
-      setCurrentStep("details");
-    } else if (currentStep === "details") {
-      handleSubmit();
+    if (!caption || mediaFiles.length === 0) {
+      toast.error("Please add a caption and at least one media item.");
+      return;
     }
+
+    handleSubmit();
   };
 
   // Go to previous step
@@ -686,18 +687,48 @@ const CreateStory = () => {
       </AppHeader>
 
       <MainContent>
-        {currentStep === "upload" && renderUploadStep()}
-        {currentStep === "edit" && renderEditStep()}
-        {currentStep === "details" && renderDetailsStep()}
+        <UploadContainer>
+          {/* Uploading & Previewing Media */}
+          <MediaPreview>
+            {previews.map((item, index) => (
+              <PreviewItem key={index}>
+                {item.type === "image" ? (
+                  <PreviewImage
+                    src={item.preview}
+                    alt={`Preview ${index + 1}`}
+                  />
+                ) : (
+                  <PreviewVideo>
+                    <video src={item.preview} controls />
+                  </PreviewVideo>
+                )}
+                <RemoveButton onClick={() => removePreview(index)}>
+                  <FaTimes />
+                </RemoveButton>
+                {previews.length > 1 && (
+                  <PreviewNumber>{index + 1}</PreviewNumber>
+                )}
+              </PreviewItem>
+            ))}
+          </MediaPreview>
 
-        {loading && uploadProgress > 0 && (
-          <UploadProgressContainer aria-live="polite">
-            <ProgressBarOuter>
-              <ProgressBarInner width={uploadProgress} />
-            </ProgressBarOuter>
-            <ProgressText>{uploadProgress}% Uploaded</ProgressText>
-          </UploadProgressContainer>
-        )}
+          {/* Caption Field */}
+          <CaptionContainer>
+            <CaptionTextarea
+              ref={textAreaRef}
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              placeholder="Write a caption..."
+              rows={1}
+              aria-label="Story caption"
+            />
+          </CaptionContainer>
+
+          {/* Submit/Next Button */}
+          <NextButton onClick={goToNextStep} disabled={loading}>
+            {loading ? "Posting..." : "Share"}
+          </NextButton>
+        </UploadContainer>
       </MainContent>
     </PageWrapper>
   );
