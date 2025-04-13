@@ -127,9 +127,7 @@ const CreateStory = () => {
 
       if (validFiles.length === 0) return;
 
-      setMediaFiles((prevFiles) => [...prevFiles, ...validFiles]);
-
-      // Create previews
+      // Create previews first
       const newPreviews = validFiles.map((file) => {
         const isVideo = file.type.startsWith("video/");
         const preview = URL.createObjectURL(file);
@@ -142,7 +140,19 @@ const CreateStory = () => {
         };
       });
 
-      setPreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
+      // Then update state with new files and previews
+      setMediaFiles((prevFiles) => [...prevFiles, ...validFiles]);
+      setPreviews((prevPreviews) => {
+        const newPreviewList = [...prevPreviews, ...newPreviews];
+        // If this is the first media, set selected index to 0
+        if (prevPreviews.length === 0) {
+          setSelectedIndex(0);
+        }
+        return newPreviewList;
+      });
+
+      // Debugging
+      console.log("Media files updated:", validFiles.length, "added");
     },
     [mediaFiles]
   );
@@ -159,7 +169,7 @@ const CreateStory = () => {
     },
     maxSize: 300 * 1024 * 1024, // 300MB max file size
     maxFiles: 20,
-    noClick: isPWA, // Disable click in PWA mode (use buttons instead)
+    noClick: false, // Allow clicking on the dropzone
     noKeyboard: false, // Allow keyboard navigation
     preventDropOnDocument: true, // Prevent dropping on document
     useFsAccessApi: false, // Disable File System Access API which can cause issues
@@ -278,6 +288,7 @@ const CreateStory = () => {
     input.onchange = (e) => {
       if (e.target.files && e.target.files.length > 0) {
         const file = e.target.files[0];
+        console.log("File selected:", file.name, file.type, file.size);
 
         // Additional client-side validation for videos
         if (file.type.startsWith("video/")) {
@@ -327,6 +338,7 @@ const CreateStory = () => {
 
   // Handle selecting media from gallery
   const handleGallerySelect = () => {
+    console.log("Opening gallery selector");
     open();
   };
 
@@ -598,10 +610,7 @@ const CreateStory = () => {
               </ThumbnailItem>
             ))}
             <AddMediaThumbnail
-              onClick={(e) => {
-                e.stopPropagation();
-                handleMediaSelect("gallery", e);
-              }}
+              onClick={() => handleGallerySelect()}
               aria-label="Add more media"
             >
               <FaPlusCircle />
@@ -784,7 +793,7 @@ const RemoveButton = styled.button`
   cursor: pointer;
 `;
 
-// Dropzone Area (when no media is selected)
+// Styled Components for Dropzone
 const DropzoneArea = styled.div`
   width: 100%;
   aspect-ratio: 9 / 16;
@@ -793,7 +802,7 @@ const DropzoneArea = styled.div`
   justify-content: center;
   border: 1px dashed ${(props) => (props.isDragActive ? "#0095f6" : "#333")};
   background-color: #1a1a1a;
-  cursor: ${(props) => (props.isPWA ? "default" : "pointer")};
+  cursor: pointer;
 `;
 
 const DropzoneContent = styled.div`
