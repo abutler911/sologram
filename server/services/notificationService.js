@@ -379,22 +379,29 @@ class NotificationService {
     const title = "📢 New Story on SoloGram!";
     const message = story.title || "Check out the latest story!";
     const url = `https://thesologram.com/stories/${story._id}`;
+    const image = story.media?.[0]?.mediaUrl;
 
     try {
       const result = await this.sendNotification({
         title,
         message,
         url,
+        image,
         audience: "all",
       });
 
       await Notification.create({
-        isTemplate: false,
+        title: "New Story Notification",
+        message: story.title,
+        url,
+        image,
+        audience: "all",
         sent: result.recipients || 0,
         opened: 0,
+        isTemplate: false,
         type: "story",
         story: story._id,
-        message: story.title,
+        createdBy: story.createdBy || "000000000000000000000000",
       });
 
       return result;
@@ -422,12 +429,17 @@ class NotificationService {
       });
 
       await Notification.create({
-        isTemplate: false,
+        title: "New Post Notification",
+        message: post.caption,
+        url,
+        image,
+        audience: "all",
         sent: result.recipients || 0,
         opened: 0,
+        isTemplate: false,
         type: "post",
         post: post._id,
-        message: post.caption,
+        createdBy: story.createdBy || "000000000000000000000000",
       });
 
       return result;
@@ -436,7 +448,6 @@ class NotificationService {
       return { success: false, error: err.message };
     }
   }
-  // Add to services/notificationService.js
 
   async notifyNewThought(thought) {
     const title = "💭 New Thought on SoloGram";
@@ -456,12 +467,17 @@ class NotificationService {
       });
 
       await Notification.create({
-        isTemplate: false,
+        title: "New Thought Notification",
+        message: thought.content,
+        url,
+        image,
+        audience: "all",
         sent: result.recipients || 0,
         opened: 0,
+        isTemplate: false,
         type: "thought",
         thought: thought._id,
-        message: thought.content,
+        createdBy: story.createdBy || "000000000000000000000000",
       });
 
       return result;
