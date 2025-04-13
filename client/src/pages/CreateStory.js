@@ -29,13 +29,13 @@ const CreateStory = () => {
   const [mediaFiles, setMediaFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState("upload"); // "upload", "edit", "details"
   const [isPWA, setIsPWA] = useState(
     window.matchMedia("(display-mode: standalone)").matches
   );
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showCompressOption, setShowCompressOption] = useState(false);
   const [compressVideo, setCompressVideo] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   const textAreaRef = useRef(null);
   const navigate = useNavigate();
@@ -143,11 +143,6 @@ const CreateStory = () => {
       });
 
       setPreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
-
-      // If this is the first media, automatically go to next step
-      if (mediaFiles.length === 0) {
-        setCurrentStep("edit");
-      }
     },
     [mediaFiles]
   );
@@ -184,9 +179,9 @@ const CreateStory = () => {
     setPreviews(newPreviews);
     setMediaFiles(newMediaFiles);
 
-    // If no media left, go back to upload step
-    if (newPreviews.length === 0) {
-      setCurrentStep("upload");
+    // Adjust selected index if needed
+    if (selectedIndex >= newPreviews.length) {
+      setSelectedIndex(Math.max(newPreviews.length - 1, 0));
     }
   };
 
@@ -356,9 +351,7 @@ const CreateStory = () => {
   };
 
   // Handle form submission
-  const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
-
+  const handleSubmit = async () => {
     if (mediaFiles.length === 0) {
       toast.error("Please add at least one image or video to your story");
       return;
@@ -465,166 +458,161 @@ const CreateStory = () => {
     }
   };
 
-  // Go to next step
-  const goToNextStep = () => {
-    if (!caption || mediaFiles.length === 0) {
-      toast.error("Please add a caption and at least one media item.");
-      return;
-    }
-
-    handleSubmit();
+  // Go back (cancel creating story)
+  const goBack = () => {
+    navigate("/");
   };
 
-  // Go to previous step
-  const goToPreviousStep = () => {
-    if (currentStep === "details") {
-      setCurrentStep("edit");
-    } else if (currentStep === "edit") {
-      setCurrentStep("upload");
-    } else {
-      navigate("/");
-    }
+  // Handle media selection in thumbnails
+  const handleThumbnailClick = (index) => {
+    setSelectedIndex(index);
   };
+
+  // Handle media selection
   const handleMediaSelect = (mediaType) => {
     // Handle different media types (gallery, camera, or video)
     if (mediaType === "gallery") {
-      open(); // For gallery
+      handleGallerySelect(); // For gallery
     } else if (mediaType === "camera") {
       handleCameraCapture(); // Camera function
     } else if (mediaType === "video") {
       handleVideoCapture(); // Video function
     }
   };
-  // Render upload step
-  const renderUploadStep = () => (
-    <>
-      <UploadContainer>
-        <DropzoneContainer
-          {...getRootProps()}
-          isDragActive={isDragActive}
-          isPWA={isPWA}
-          aria-label="Drop zone for media files"
+
+  return (
+    <PageWrapper>
+      <AppHeader>
+        <BackButton onClick={goBack} aria-label="Go back">
+          <FaArrowLeft />
+        </BackButton>
+        <HeaderTitle>New Story</HeaderTitle>
+        <NextButton
+          onClick={handleSubmit}
+          disabled={loading || mediaFiles.length === 0}
+          aria-label={loading ? "Posting..." : "Share"}
         >
-          <input {...getInputProps()} />
-          {isDragActive ? (
-            <DragActiveContent>
-              <UploadIcon>
-                <FaUpload />
-              </UploadIcon>
-              <p>Drop your files here</p>
-            </DragActiveContent>
-          ) : (
-            <DropzoneContent>
-              <UploadIcon>
-                <FaPlusCircle />
-              </UploadIcon>
-              {isPWA ? (
-                <p>Create a new story</p>
-              ) : (
-                <p>Drag photos and videos here</p>
-              )}
-            </DropzoneContent>
-          )}
-          <DropzoneSubtext>
-            You can add up to 20 photos and videos. Max file size: 20MB for
-            images, 300MB for videos (approx. 30 seconds of 4K video)
-          </DropzoneSubtext>
-        </DropzoneContainer>
+          {loading ? "Posting..." : "Share"}
+        </NextButton>
+      </AppHeader>
 
-        <ActionButtonsContainer>
-          <ActionButton
-            onClick={() => handleMediaSelect("gallery")}
-            aria-label="Select media from gallery"
+      <MainContent>
+        {/* Main Media Preview Area */}
+        {previews.length > 0 ? (
+          <MediaPreviewContainer>
+            {previews[selectedIndex]?.type === "image" ? (
+              <MainPreviewImage
+                src={previews[selectedIndex].preview}
+                alt={`Preview ${selectedIndex + 1}`}
+              />
+            ) : (
+              <MainPreviewVideo>
+                <video src={previews[selectedIndex].preview} controls muted />
+                <VideoIcon>
+                  <FaVideo />
+                </VideoIcon>
+              </MainPreviewVideo>
+            )}
+            <RemoveButton
+              onClick={() => removePreview(selectedIndex)}
+              aria-label={`Remove ${previews[selectedIndex]?.type || "media"}`}
+            >
+              <FaTimes />
+            </RemoveButton>
+          </MediaPreviewContainer>
+        ) : (
+          <DropzoneArea
+            {...getRootProps()}
+            isDragActive={isDragActive}
+            isPWA={isPWA}
           >
-            <FaImage />
-            <span>Gallery</span>
-          </ActionButton>
-          <ActionButton
-            onClick={() => handleMediaSelect("camera")}
-            aria-label="Take a photo with camera"
-          >
-            <FaCamera />
-            <span>Camera</span>
-          </ActionButton>
-          <ActionButton
-            onClick={() => handleMediaSelect("video")}
-            aria-label="Record a video"
-          >
-            <FaVideo />
-            <span>Video</span>
-          </ActionButton>
-        </ActionButtonsContainer>
-      </UploadContainer>
-    </>
-  );
-
-  // Render edit step
-  const renderEditStep = () => (
-    <>
-      <EditContainer>
-        <MediaPreview>
-          {previews.map((item, index) => (
-            <PreviewItem key={index} isActive={index === 0}>
-              {item.type === "image" ? (
-                <PreviewImage src={item.preview} alt={`Preview ${index + 1}`} />
-              ) : (
-                <PreviewVideo>
-                  <video src={item.preview} controls muted />
-                  <VideoIcon>
+            <input {...getInputProps()} />
+            {isDragActive ? (
+              <DragActiveContent>
+                <UploadIcon>
+                  <FaUpload />
+                </UploadIcon>
+                <p>Drop your files here</p>
+              </DragActiveContent>
+            ) : (
+              <DropzoneContent>
+                <UploadIcon>
+                  <FaPlusCircle />
+                </UploadIcon>
+                <p>Add photos and videos to your story</p>
+                <ActionButtonsContainer>
+                  <ActionButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMediaSelect("gallery");
+                    }}
+                    aria-label="Select media from gallery"
+                  >
+                    <FaImage />
+                    <span>Gallery</span>
+                  </ActionButton>
+                  <ActionButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMediaSelect("camera");
+                    }}
+                    aria-label="Take a photo with camera"
+                  >
+                    <FaCamera />
+                    <span>Camera</span>
+                  </ActionButton>
+                  <ActionButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMediaSelect("video");
+                    }}
+                    aria-label="Record a video"
+                  >
                     <FaVideo />
-                  </VideoIcon>
-                </PreviewVideo>
-              )}
-              <RemoveButton
-                onClick={() => removePreview(index)}
-                aria-label={`Remove ${item.type} ${index + 1}`}
-              >
-                <FaTimes />
-              </RemoveButton>
-              {previews.length > 1 && (
-                <PreviewNumber>{index + 1}</PreviewNumber>
-              )}
-            </PreviewItem>
-          ))}
-        </MediaPreview>
-
-        {previews.length > 0 && (
-          <AddMoreButton onClick={open} aria-label="Add more media">
-            <FaPlusCircle />
-            <span>Add More</span>
-          </AddMoreButton>
+                    <span>Video</span>
+                  </ActionButton>
+                </ActionButtonsContainer>
+              </DropzoneContent>
+            )}
+          </DropzoneArea>
         )}
-      </EditContainer>
-    </>
-  );
 
-  // Render details step
-  const renderDetailsStep = () => (
-    <>
-      <DetailsContainer>
-        <MediaDetailsPreview>
-          {previews[0] && (
-            <>
-              {previews[0].type === "image" ? (
-                <PreviewThumbnail
-                  src={previews[0].preview}
-                  alt="Media preview"
-                />
-              ) : (
-                <VideoThumbnail>
-                  <video src={previews[0].preview} muted />
-                  <VideoIcon>
-                    <FaVideo />
-                  </VideoIcon>
-                </VideoThumbnail>
-              )}
-            </>
-          )}
-          {previews.length > 1 && (
-            <MultipleIndicator>+{previews.length - 1}</MultipleIndicator>
-          )}
-        </MediaDetailsPreview>
+        {/* Thumbnails for multi-media stories */}
+        {previews.length > 0 && (
+          <ThumbnailContainer>
+            {previews.map((item, index) => (
+              <ThumbnailItem
+                key={index}
+                isSelected={index === selectedIndex}
+                onClick={() => handleThumbnailClick(index)}
+              >
+                {item.type === "image" ? (
+                  <ThumbnailImage
+                    src={item.preview}
+                    alt={`Thumbnail ${index + 1}`}
+                  />
+                ) : (
+                  <ThumbnailVideo>
+                    <video src={item.preview} />
+                    <ThumbnailVideoIcon>
+                      <FaVideo />
+                    </ThumbnailVideoIcon>
+                  </ThumbnailVideo>
+                )}
+              </ThumbnailItem>
+            ))}
+            <AddMediaThumbnail
+              onClick={(e) => {
+                e.stopPropagation();
+                open();
+              }}
+            >
+              <FaPlusCircle />
+            </AddMediaThumbnail>
+          </ThumbnailContainer>
+        )}
 
+        {/* Video Compression Option (if applicable) */}
         {showCompressOption && (
           <CompressOptionContainer>
             <CompressCheckbox
@@ -640,6 +628,7 @@ const CreateStory = () => {
           </CompressOptionContainer>
         )}
 
+        {/* Caption Input */}
         <CaptionContainer>
           <CaptionTextarea
             ref={textAreaRef}
@@ -650,85 +639,16 @@ const CreateStory = () => {
             aria-label="Story caption"
           />
         </CaptionContainer>
-      </DetailsContainer>
-    </>
-  );
 
-  return (
-    <PageWrapper>
-      <AppHeader>
-        <BackButton onClick={goToPreviousStep} aria-label="Go back">
-          <FaArrowLeft />
-        </BackButton>
-        <HeaderTitle>
-          {currentStep === "upload" && "New Story"}
-          {currentStep === "edit" && "Edit"}
-          {currentStep === "details" && "New Story"}
-        </HeaderTitle>
-        {currentStep !== "upload" && (
-          <NextButton
-            onClick={goToNextStep}
-            disabled={loading}
-            aria-label={
-              currentStep === "details"
-                ? loading
-                  ? "Posting..."
-                  : "Share"
-                : "Next"
-            }
-          >
-            {currentStep === "details"
-              ? loading
-                ? "Posting..."
-                : "Share"
-              : "Next"}
-          </NextButton>
+        {/* Upload Progress (when submitting) */}
+        {loading && uploadProgress > 0 && (
+          <UploadProgressContainer>
+            <ProgressBarOuter>
+              <ProgressBarInner width={uploadProgress} />
+            </ProgressBarOuter>
+            <ProgressText>{uploadProgress}% Uploaded</ProgressText>
+          </UploadProgressContainer>
         )}
-      </AppHeader>
-
-      <MainContent>
-        <UploadContainer>
-          {/* Uploading & Previewing Media */}
-          <MediaPreview>
-            {previews.map((item, index) => (
-              <PreviewItem key={index}>
-                {item.type === "image" ? (
-                  <PreviewImage
-                    src={item.preview}
-                    alt={`Preview ${index + 1}`}
-                  />
-                ) : (
-                  <PreviewVideo>
-                    <video src={item.preview} controls />
-                  </PreviewVideo>
-                )}
-                <RemoveButton onClick={() => removePreview(index)}>
-                  <FaTimes />
-                </RemoveButton>
-                {previews.length > 1 && (
-                  <PreviewNumber>{index + 1}</PreviewNumber>
-                )}
-              </PreviewItem>
-            ))}
-          </MediaPreview>
-
-          {/* Caption Field */}
-          <CaptionContainer>
-            <CaptionTextarea
-              ref={textAreaRef}
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              placeholder="Write a caption..."
-              rows={1}
-              aria-label="Story caption"
-            />
-          </CaptionContainer>
-
-          {/* Submit/Next Button */}
-          <NextButton onClick={goToNextStep} disabled={loading}>
-            {loading ? "Posting..." : "Share"}
-          </NextButton>
-        </UploadContainer>
       </MainContent>
     </PageWrapper>
   );
@@ -799,159 +719,25 @@ const MainContent = styled.main`
   flex: 1;
   display: flex;
   flex-direction: column;
+  padding-bottom: 16px;
 `;
 
-// Upload Step
-const UploadContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  flex: 1;
-`;
-
-const DropzoneContainer = styled.div`
+// Media Preview
+const MediaPreviewContainer = styled.div`
   width: 100%;
-  height: 250px;
-  border: 1px dashed ${(props) => (props.isDragActive ? "#0095f6" : "#333")};
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: ${(props) => (props.isPWA ? "default" : "pointer")};
-  margin-bottom: 24px;
-`;
-
-const DropzoneContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #888;
-  text-align: center;
-  padding: 16px;
-`;
-
-const DragActiveContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #0095f6;
-  text-align: center;
-  padding: 16px;
-`;
-
-const UploadIcon = styled.div`
-  font-size: 3rem;
-  margin-bottom: 16px;
-  color: #0095f6;
-`;
-
-const DropzoneSubtext = styled.p`
-  color: #666;
-  font-size: 0.75rem;
-  text-align: center;
-  max-width: 80%;
-  margin-top: 8px;
-`;
-
-const ActionButtonsContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  width: 100%;
-  max-width: 400px;
-`;
-
-const ActionButton = styled.button`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 16px 12px;
-  border-radius: 8px;
-  border: none;
-  font-weight: 500;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: background-color 0.2s;
-
-  svg {
-    font-size: 1.5rem;
-  }
-`;
-
-const GalleryButton = styled(ActionButton)`
-  background-color: #262626;
-  color: white;
-
-  &:hover {
-    background-color: #363636;
-  }
-`;
-
-const CameraButton = styled(ActionButton)`
-  background-color: #262626;
-  color: white;
-
-  &:hover {
-    background-color: #363636;
-  }
-`;
-
-const VideoButton = styled(ActionButton)`
-  background-color: #262626;
-  color: white;
-
-  &:hover {
-    background-color: #363636;
-  }
-`;
-
-// const InfoButton = styled(ActionButton)`
-//   background-color: #262626;
-//   color: #aaaaaa;
-
-//   &:hover {
-//     color: #ff7e5f;
-//     background-color: #363636;
-//   }
-// `;
-
-// Edit Step
-const EditContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-`;
-
-const MediaPreview = styled.div`
-  width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 9 / 16;
   position: relative;
-  background-color: #000;
+  background-color: #1a1a1a;
   overflow: hidden;
 `;
 
-const PreviewItem = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: ${(props) => (props.isActive ? "block" : "none")};
-`;
-
-const PreviewImage = styled.img`
+const MainPreviewImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: contain;
 `;
 
-const PreviewVideo = styled.div`
+const MainPreviewVideo = styled.div`
   width: 100%;
   height: 100%;
   position: relative;
@@ -993,55 +779,111 @@ const RemoveButton = styled.button`
   cursor: pointer;
 `;
 
-const PreviewNumber = styled.div`
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 0.75rem;
-`;
-
-const AddMoreButton = styled.button`
+// Dropzone Area (when no media is selected)
+const DropzoneArea = styled.div`
+  width: 100%;
+  aspect-ratio: 9 / 16;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0095f6;
-  color: white;
-  border: none;
-  margin: 16px;
-  padding: 12px;
-  border-radius: 4px;
-  font-weight: 600;
-  cursor: pointer;
-  gap: 8px;
+  border: 1px dashed ${(props) => (props.isDragActive ? "#0095f6" : "#333")};
+  background-color: #1a1a1a;
+  cursor: ${(props) => (props.isPWA ? "default" : "pointer")};
 `;
 
-// Details Step
-const DetailsContainer = styled.div`
+const DropzoneContent = styled.div`
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  text-align: center;
   padding: 16px;
+  width: 100%;
 `;
 
-const MediaDetailsPreview = styled.div`
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
-  overflow: hidden;
-  position: relative;
+const DragActiveContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #0095f6;
+  text-align: center;
+  padding: 16px;
+  width: 100%;
+`;
+
+const UploadIcon = styled.div`
+  font-size: 3rem;
   margin-bottom: 16px;
+  color: #0095f6;
 `;
 
-const PreviewThumbnail = styled.img`
+const ActionButtonsContainer = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: 400px;
+  margin-top: 24px;
+`;
+
+const ActionButton = styled.button`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 12px;
+  border-radius: 8px;
+  border: none;
+  background-color: #262626;
+  color: white;
+  font-weight: 500;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+
+  svg {
+    font-size: 1.5rem;
+  }
+
+  &:hover {
+    background-color: #363636;
+  }
+`;
+
+// Thumbnails
+const ThumbnailContainer = styled.div`
+  display: flex;
+  overflow-x: auto;
+  padding: 12px;
+  gap: 8px;
+  background-color: #0f0f0f;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+`;
+
+const ThumbnailItem = styled.div`
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 2px solid ${(props) => (props.isSelected ? "#0095f6" : "transparent")};
+`;
+
+const ThumbnailImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
 `;
 
-const VideoThumbnail = styled.div`
+const ThumbnailVideo = styled.div`
   width: 100%;
   height: 100%;
   position: relative;
@@ -1053,20 +895,44 @@ const VideoThumbnail = styled.div`
   }
 `;
 
-const MultipleIndicator = styled.div`
+const ThumbnailVideoIcon = styled.div`
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 4px;
+  right: 4px;
   background-color: rgba(0, 0, 0, 0.7);
   color: white;
-  border-radius: 4px;
-  padding: 2px 6px;
-  font-size: 0.75rem;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
 `;
 
+const AddMediaThumbnail = styled.div`
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  background-color: #262626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  color: #0095f6;
+  font-size: 1.5rem;
+
+  &:hover {
+    background-color: #363636;
+  }
+`;
+
+// Caption
 const CaptionContainer = styled.div`
+  padding: 16px;
   border-top: 1px solid #262626;
-  padding-top: 16px;
+  margin-top: 8px;
 `;
 
 const CaptionTextarea = styled.textarea`
@@ -1077,7 +943,7 @@ const CaptionTextarea = styled.textarea`
   font-size: 1rem;
   resize: none;
   padding: 8px 0;
-  min-height: 90px;
+  min-height: 60px;
 
   &:focus {
     outline: none;
@@ -1087,9 +953,10 @@ const CaptionTextarea = styled.textarea`
     color: #555;
   }
 `;
+
+// Upload Progress
 const UploadProgressContainer = styled.div`
-  margin-top: 1rem;
-  width: 100%;
+  margin: 16px;
 `;
 
 const ProgressBarOuter = styled.div`
@@ -1098,13 +965,13 @@ const ProgressBarOuter = styled.div`
   background-color: #333;
   border-radius: 4px;
   overflow: hidden;
-  margin-bottom: 0.5rem;
+  margin-bottom: 8px;
 `;
 
 const ProgressBarInner = styled.div`
   height: 100%;
   width: ${(props) => props.width}%;
-  background-color: #ff7e5f;
+  background-color: #0095f6;
   transition: width 0.3s ease;
 `;
 
@@ -1114,39 +981,23 @@ const ProgressText = styled.div`
   text-align: center;
 `;
 
+// Compress Option
 const CompressOptionContainer = styled.div`
   display: flex;
   align-items: center;
-  padding: 1rem;
-  background-color: rgba(255, 126, 95, 0.1);
-  border-radius: 8px;
-  margin: 1rem 0;
+  padding: 12px 16px;
+  background-color: rgba(0, 149, 246, 0.1);
+  border-radius: 4px;
+  margin: 8px 16px;
 `;
 
 const CompressCheckbox = styled.input`
-  margin-right: 0.75rem;
+  margin-right: 12px;
 `;
 
 const CompressLabel = styled.label`
   font-size: 0.875rem;
   color: #fff;
-`;
-
-const InfoButton = styled.button`
-  background: none;
-  border: none;
-  color: #aaaaaa;
-  font-size: 1rem;
-  padding: 0.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.3s;
-
-  &:hover {
-    color: #ff7e5f;
-  }
 `;
 
 export default CreateStory;
