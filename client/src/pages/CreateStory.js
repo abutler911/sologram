@@ -469,7 +469,12 @@ const CreateStory = () => {
   };
 
   // Handle media selection
-  const handleMediaSelect = (mediaType) => {
+  const handleMediaSelect = (mediaType, e) => {
+    // Prevent event from propagating to parent dropzone
+    if (e) {
+      e.stopPropagation();
+    }
+
     // Handle different media types (gallery, camera, or video)
     if (mediaType === "gallery") {
       handleGallerySelect(); // For gallery
@@ -542,30 +547,21 @@ const CreateStory = () => {
                 <p>Add photos and videos to your story</p>
                 <ActionButtonsContainer>
                   <ActionButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMediaSelect("gallery");
-                    }}
+                    onClick={(e) => handleMediaSelect("gallery", e)}
                     aria-label="Select media from gallery"
                   >
                     <FaImage />
                     <span>Gallery</span>
                   </ActionButton>
                   <ActionButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMediaSelect("camera");
-                    }}
+                    onClick={(e) => handleMediaSelect("camera", e)}
                     aria-label="Take a photo with camera"
                   >
                     <FaCamera />
                     <span>Camera</span>
                   </ActionButton>
                   <ActionButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMediaSelect("video");
-                    }}
+                    onClick={(e) => handleMediaSelect("video", e)}
                     aria-label="Record a video"
                   >
                     <FaVideo />
@@ -604,8 +600,9 @@ const CreateStory = () => {
             <AddMediaThumbnail
               onClick={(e) => {
                 e.stopPropagation();
-                open();
+                handleMediaSelect("gallery", e);
               }}
+              aria-label="Add more media"
             >
               <FaPlusCircle />
             </AddMediaThumbnail>
@@ -729,23 +726,31 @@ const MediaPreviewContainer = styled.div`
   position: relative;
   background-color: #1a1a1a;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const MainPreviewImage = styled.img`
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
+  display: block;
 `;
 
 const MainPreviewVideo = styled.div`
   width: 100%;
   height: 100%;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   video {
-    width: 100%;
-    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
     object-fit: contain;
+    display: block;
   }
 `;
 
@@ -875,23 +880,32 @@ const ThumbnailItem = styled.div`
   flex-shrink: 0;
   cursor: pointer;
   border: 2px solid ${(props) => (props.isSelected ? "#0095f6" : "transparent")};
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const ThumbnailImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 `;
 
 const ThumbnailVideo = styled.div`
   width: 100%;
   height: 100%;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   video {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
   }
 `;
 
