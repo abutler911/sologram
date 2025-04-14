@@ -90,23 +90,38 @@ exports.deleteArchivedStory = async (req, res) => {
       });
     }
 
+    // 🔐 Authorization check: only creator or admin can delete
+    if (
+      req.user.role !== "admin" &&
+      story.createdBy.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete this story",
+      });
+    }
+
+    // Optional: Delete from Cloudinary
     if (story.media && story.media.length > 0) {
       for (const media of story.media) {
         if (media.cloudinaryId) {
           try {
             await cloudinary.uploader.destroy(media.cloudinaryId);
           } catch (cloudinaryError) {
-            // Continue with deletion even if Cloudinary delete fails
+            console.warn(
+              `Failed to delete from Cloudinary: ${media.cloudinaryId}`
+            );
+            // Don’t stop the delete process over Cloudinary errors
           }
         }
       }
     }
 
     await story.deleteOne();
+
     res.status(200).json({
       success: true,
       message: "Archived story deleted successfully",
-      data: {},
     });
   } catch (err) {
     handleServerError(res, err, "Error deleting archived story");
