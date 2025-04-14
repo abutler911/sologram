@@ -23,7 +23,7 @@ const CreateThought = () => {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
-  const { isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const moodOptions = [
@@ -127,12 +127,12 @@ const CreateThought = () => {
     }
   };
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user || !["admin", "creator"].includes(user.role)) {
     return (
       <MainLayout>
         <AccessDenied>
           <h2>Access Denied</h2>
-          <p>You must be logged in as an admin to create thoughts.</p>
+          <p>You must be logged in with permission to create thoughts.</p>
           <BackLink to="/thoughts">Back to Thoughts</BackLink>
         </AccessDenied>
       </MainLayout>
