@@ -16,8 +16,6 @@ const ArchivedStoryView = () => {
   const { user, isAuthenticated } = useContext(AuthContext);
 
   const [story, setStory] = useState(null);
-  const isAdmin = user?.role === "admin";
-  const isCreator = story?.createdBy === user?._id;
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -25,6 +23,9 @@ const ArchivedStoryView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const isAdmin = user?.role === "admin";
+  const isCreator = story && user?._id === story.createdBy;
+  const canDelete = isAuthenticated && (isAdmin || isCreator);
 
   useEffect(() => {
     const fetchStory = async () => {
@@ -145,7 +146,7 @@ const ArchivedStoryView = () => {
             <FaArrowLeft />
             <span>Back to Archive</span>
           </BackLink>
-          {(isAdmin || isCreator) && (
+          {canDelete && (
             <DeleteButton onClick={handleDelete}>
               <FaTrash />
               <span>Delete</span>
