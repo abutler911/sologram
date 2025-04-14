@@ -19,7 +19,7 @@ import {
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { AuthContext } from "../../context/AuthContext";
+import { AuthContext } from "../context/AuthContext";
 
 // Styled Components (moved to the top)
 const PageWrapper = styled.div`
