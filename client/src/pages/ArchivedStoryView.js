@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import styled from "styled-components";
 import axios from "axios";
@@ -10,11 +10,18 @@ import {
   FaTrash,
 } from "react-icons/fa";
 import { useSwipeable } from "react-swipeable";
+import { AuthContext } from "../context/AuthContext";
 
 const ArchivedStoryView = () => {
+  const { user, isAuthenticated } = useContext(AuthContext);
+
+  const [story, setStory] = useState(null);
+  const isAdmin = user?.role === "admin";
+  const isCreator = story?.createdBy === user?._id;
+
   const { id } = useParams();
   const navigate = useNavigate();
-  const [story, setStory] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
@@ -138,10 +145,12 @@ const ArchivedStoryView = () => {
             <FaArrowLeft />
             <span>Back to Archive</span>
           </BackLink>
-          <DeleteButton onClick={handleDelete}>
-            <FaTrash />
-            <span>Delete</span>
-          </DeleteButton>
+          {(isAdmin || isCreator) && (
+            <DeleteButton onClick={handleDelete}>
+              <FaTrash />
+              <span>Delete</span>
+            </DeleteButton>
+          )}
         </Header>
 
         <StoryTitle>{story.title}</StoryTitle>
