@@ -21,6 +21,6 @@ router.post("/", protect, authorize(["admin", "creator"]), createPost);
 router.put("/:id", protect, authorize(["admin", "creator"]), updatePost);
 
 router.delete("/:id", protect, authorize(["admin", "creator"]), deletePost);
-router.put("/:id/like", likeLimiter, likePost);
+router.put("/:id/like", protect, likeLimiter, likePost);
 
 module.exports = router;

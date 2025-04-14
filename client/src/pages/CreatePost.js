@@ -1,10 +1,27 @@
-// pages/CreatePost.js
-import React from "react";
+import React, { useContext } from "react";
 import styled from "styled-components";
 import { FaCamera } from "react-icons/fa";
 import CreatePostWorkflow from "../components/posts/CreatePostWorkflow";
+import { AuthContext } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 
 const CreatePost = () => {
+  const { user, loading } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  // Wait for auth to load
+  if (loading) {
+    return <CenteredMessage>Loading...</CenteredMessage>;
+  }
+
+  // If not allowed, redirect or show a friendly message
+  if (!user || (user.role !== "admin" && user.role !== "creator")) {
+    toast.error("You do not have permission to create posts.");
+    navigate(-1); // Go back to previous page
+    return null;
+  }
+
   return (
     <PageWrapper>
       <Container>
@@ -65,6 +82,13 @@ const HeaderTitle = styled.h1`
 const HeaderSubtitle = styled.p`
   font-size: 1.125rem;
   color: #aaaaaa;
+`;
+
+const CenteredMessage = styled.div`
+  text-align: center;
+  padding: 3rem;
+  color: #aaa;
+  font-size: 1.125rem;
 `;
 
 export default CreatePost;
