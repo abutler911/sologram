@@ -279,9 +279,14 @@ const Header = ({ onSearch, onClearSearch }) => {
                 )}
               </UserMenuContainer>
             ) : (
-              <LoginButton to="/login">
-                <FaSignInAlt /> <span>Login</span>
-              </LoginButton>
+              <>
+                <LoginButton to="/login">
+                  <FaSignInAlt /> <span>Login</span>
+                </LoginButton>
+                <RegisterButton to="/register">
+                  <FaUser /> <span>Register</span>
+                </RegisterButton>
+              </>
             )}
 
             <MobileMenuToggle onClick={toggleMenu}>
@@ -361,15 +366,24 @@ const Header = ({ onSearch, onClearSearch }) => {
             </>
           )}
           {!isAuthenticated && (
-            <MobileMenuItem
-              to="/login"
-              onClick={closeMenu}
-              active={location.pathname.startsWith("/login")}
-            >
-              {" "}
-              <FaSignInAlt /> <span>Login</span>
-            </MobileMenuItem>
+            <>
+              <MobileMenuItem
+                to="/login"
+                onClick={closeMenu}
+                active={location.pathname.startsWith("/login")}
+              >
+                <FaSignInAlt /> <span>Login</span>
+              </MobileMenuItem>
+              <MobileMenuItem
+                to="/register"
+                onClick={closeMenu}
+                active={location.pathname.startsWith("/register")}
+              >
+                <FaUser /> <span>Register</span>
+              </MobileMenuItem>
+            </>
           )}
+
           <MenuDivider />
           <ExternalMenuItem
             href="https://solounderground.com"
@@ -978,6 +992,28 @@ const ExternalMenuItem = styled.a`
   svg {
     margin-right: 0.75rem;
     color: #ff7e5f;
+  }
+`;
+
+const RegisterButton = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #f0f0f0;
+  color: #4a4a4a;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.3s;
+
+  &:hover {
+    background-color: #e0e0e0;
+    color: #0095f6;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
   }
 `;
 
