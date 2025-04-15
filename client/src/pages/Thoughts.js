@@ -1,5 +1,3 @@
-// Here's the updated version with your requested changes
-
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
@@ -841,7 +839,9 @@ const Thoughts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchExpanded, setSearchExpanded] = useState(false);
   const { isAuthenticated, user } = useContext(AuthContext);
-  const isAdmin = isAuthenticated && user?.role === "admin";
+  // Updated to check for both admin and creator roles
+  const canCreateThought =
+    isAuthenticated && (user?.role === "admin" || user?.role === "creator");
   const [selectedMood, setSelectedMood] = useState("all");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [thoughtToDelete, setThoughtToDelete] = useState(null);
@@ -1042,7 +1042,8 @@ const Thoughts = () => {
           </HeaderLeft>
 
           <HeaderRight>
-            {isAdmin && (
+            {/* Only show create button if user has admin or creator role */}
+            {canCreateThought && (
               <CreateButton to="/thoughts/create">
                 <FaPlusCircle />
                 <span>New Thought</span>
@@ -1117,7 +1118,8 @@ const Thoughts = () => {
                     </UserDetails>
                   </UserInfo>
 
-                  {isAdmin && (
+                  {/* Only show thought actions if user has admin or creator role */}
+                  {canCreateThought && (
                     <ThoughtActions>
                       <ActionButton
                         onClick={() => handlePin(thought._id)}
@@ -1224,7 +1226,8 @@ const Thoughts = () => {
         </ThoughtsContainer>
       </PageWrapper>
 
-      {isAdmin && (
+      {/* Only show modals and floating button if user has admin or creator role */}
+      {canCreateThought && (
         <>
           {showDeleteModal && (
             <ModalOverlay>
@@ -1251,7 +1254,7 @@ const Thoughts = () => {
         </>
       )}
 
-      {/* New Retweet Modal */}
+      {/* New Retweet Modal - shown to all users */}
       {showRetweetModal && (
         <ModalOverlay>
           <RetweetModal>
