@@ -10,7 +10,7 @@ import {
   FaRetweet,
   FaShare,
 } from "react-icons/fa";
-import { moodColors, moodEmojis } from "../pages/Thoughts"; // Import from main Thoughts component
+import { moodColors, moodEmojis } from "../../utils/themeConstants";
 
 // Animations
 const fadeIn = keyframes`

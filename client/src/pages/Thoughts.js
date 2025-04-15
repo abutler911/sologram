@@ -4,25 +4,16 @@ import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { keyframes } from "styled-components";
-import {
-  FaHeart,
-  FaTrash,
-  FaEdit,
-  FaSearch,
-  FaTimes,
-  FaClock,
-  FaPlusCircle,
-  FaCamera,
-  FaComment,
-  FaRetweet,
-  FaShare,
-} from "react-icons/fa";
+import { FaSearch, FaTimes, FaPlusCircle } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
 import MainLayout from "../components/layout/MainLayout";
 import { format } from "date-fns";
 
-// Import the new ThoughtCard component to separate concerns
+// Import ThoughtCard component
 import ThoughtCard from "../components/ThoughtCard";
+
+// Import theme constants
+import { moodColors, moodEmojis } from "../utils/themeConstants";
 
 // Define animations
 const fadeIn = keyframes`
@@ -30,63 +21,11 @@ const fadeIn = keyframes`
   to { opacity: 1; transform: translateY(0); }
 `;
 
-const shimmer = keyframes`
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-`;
-
 const float = keyframes`
   0% { transform: translateY(0px); }
   50% { transform: translateY(-8px); }
   100% { transform: translateY(0px); }
 `;
-
-// Define mood colors with gradient options
-export const moodColors = {
-  inspired: {
-    primary: "#ffcb66",
-    gradient: "linear-gradient(135deg, #ffcb66, #ffa45c)",
-  },
-  reflective: {
-    primary: "#7891c9",
-    gradient: "linear-gradient(135deg, #7891c9, #5a6abf)",
-  },
-  excited: {
-    primary: "#ff7e5f",
-    gradient: "linear-gradient(135deg, #ff7e5f, #feb47b)",
-  },
-  creative: {
-    primary: "#7be0ad",
-    gradient: "linear-gradient(135deg, #7be0ad, #43b692)",
-  },
-  calm: {
-    primary: "#00b2ff",
-    gradient: "linear-gradient(135deg, #00b2ff, #0080ff)",
-  },
-  curious: {
-    primary: "#a06eff",
-    gradient: "linear-gradient(135deg, #a06eff, #7c4dff)",
-  },
-  nostalgic: {
-    primary: "#ff61a6",
-    gradient: "linear-gradient(135deg, #ff61a6, #ff8383)",
-  },
-  amused: {
-    primary: "#fcbe32",
-    gradient: "linear-gradient(135deg, #fcbe32, #f8d57e)",
-  },
-};
-
-export const moodEmojis = {
-  inspired: "✨",
-  reflective: "🌙",
-  excited: "🔥",
-  creative: "🎨",
-  calm: "🌊",
-  curious: "🔍",
-  nostalgic: "📷",
-  amused: "😄",
-};
 
 // Styled components for the page layout
 const PageWrapper = styled.div`
