@@ -21,31 +21,74 @@ import { AuthContext } from "../context/AuthContext";
 import MainLayout from "../components/layout/MainLayout";
 import { format } from "date-fns";
 
+// Import the new ThoughtCard component to separate concerns
+import ThoughtCard from "../components/ThoughtCard";
+
 // Define animations
 const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 `;
 
-const pulse = keyframes`
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+const shimmer = keyframes`
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 `;
 
-// Define mood colors
-const moodColors = {
-  inspired: "#ffcb66",
-  reflective: "#7891c9",
-  excited: "#ff7e5f",
-  creative: "#7be0ad",
-  calm: "#00b2ff",
-  curious: "#a06eff",
-  nostalgic: "#ff61a6",
-  amused: "#fcbe32",
+const float = keyframes`
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+`;
+
+// Define mood colors with gradient options
+export const moodColors = {
+  inspired: {
+    primary: "#ffcb66",
+    gradient: "linear-gradient(135deg, #ffcb66, #ffa45c)",
+  },
+  reflective: {
+    primary: "#7891c9",
+    gradient: "linear-gradient(135deg, #7891c9, #5a6abf)",
+  },
+  excited: {
+    primary: "#ff7e5f",
+    gradient: "linear-gradient(135deg, #ff7e5f, #feb47b)",
+  },
+  creative: {
+    primary: "#7be0ad",
+    gradient: "linear-gradient(135deg, #7be0ad, #43b692)",
+  },
+  calm: {
+    primary: "#00b2ff",
+    gradient: "linear-gradient(135deg, #00b2ff, #0080ff)",
+  },
+  curious: {
+    primary: "#a06eff",
+    gradient: "linear-gradient(135deg, #a06eff, #7c4dff)",
+  },
+  nostalgic: {
+    primary: "#ff61a6",
+    gradient: "linear-gradient(135deg, #ff61a6, #ff8383)",
+  },
+  amused: {
+    primary: "#fcbe32",
+    gradient: "linear-gradient(135deg, #fcbe32, #f8d57e)",
+  },
 };
 
-// Styled components (in correct order to avoid reference errors)
+export const moodEmojis = {
+  inspired: "✨",
+  reflective: "🌙",
+  excited: "🔥",
+  creative: "🎨",
+  calm: "🌊",
+  curious: "🔍",
+  nostalgic: "📷",
+  amused: "😄",
+};
+
+// Styled components for the page layout
 const PageWrapper = styled.div`
   background-color: #121212;
   min-height: 100vh;
@@ -91,6 +134,7 @@ const PageTitle = styled.h1`
   font-family: "Autography", cursive;
   transform: rotate(-2deg);
   letter-spacing: 0.5px;
+  text-shadow: 0 2px 10px rgba(255, 126, 95, 0.3);
 `;
 
 const MoodFilter = styled.div`
@@ -107,7 +151,7 @@ const MoodButton = styled.button`
       ? props.mood
         ? props.mood === "all"
           ? "#ff7e5f"
-          : moodColors[props.mood]
+          : moodColors[props.mood].primary
         : "#ff7e5f"
       : "#333333"};
   color: ${(props) => (props.active ? "#121212" : "#dddddd")};
@@ -118,12 +162,17 @@ const MoodButton = styled.button`
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  box-shadow: ${(props) =>
+    props.active ? "0 3px 8px rgba(0, 0, 0, 0.3)" : "none"};
 
   &:hover {
     background-color: ${(props) =>
-      props.mood && props.mood !== "all" ? moodColors[props.mood] : "#ff7e5f"};
+      props.mood && props.mood !== "all"
+        ? moodColors[props.mood].primary
+        : "#ff7e5f"};
     color: #121212;
     transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
   }
   transition: all 0.2s ease-in-out;
 `;
@@ -132,16 +181,18 @@ const CreateButton = styled(Link)`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #ff7e5f;
+  background: linear-gradient(135deg, #ff7e5f, #feb47b);
   color: white;
   text-decoration: none;
   padding: 0.5rem 1rem;
   border-radius: 999px;
   font-weight: 500;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
+  box-shadow: 0 3px 8px rgba(255, 126, 95, 0.3);
 
   &:hover {
-    background-color: #ff6347;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 126, 95, 0.4);
   }
 
   svg {
@@ -179,10 +230,11 @@ const SearchToggle = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.3s;
+  transition: all 0.3s;
 
   &:hover {
     color: #ff7e5f;
+    transform: scale(1.1);
   }
 `;
 
@@ -194,25 +246,26 @@ const SearchForm = styled.form`
   overflow: hidden;
   border: 1px solid #333333;
   transition: all 0.3s;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+
+  &:focus-within {
+    border-color: #ff7e5f;
+    box-shadow: 0 3px 15px rgba(255, 126, 95, 0.15);
+  }
 `;
 
 const SearchInput = styled.input`
-  font-family: "Courier New", monospace;
+  font-family: "Space Grotesk", sans-serif;
   flex: 1;
-  background-color: #121212;
+  background-color: transparent;
   border: none;
   color: #ffffff;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.2rem;
   font-size: 0.875rem;
-  border-bottom: 2px solid #ff7e5f;
-  transition: border-color 0.3s ease;
+  outline: none;
 
   &::placeholder {
     color: #888888;
-  }
-
-  &:focus {
-    border-color: #ff6347;
   }
 `;
 
@@ -225,9 +278,11 @@ const SearchButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s;
 
   &:hover {
     color: #ff7e5f;
+    transform: scale(1.1);
   }
 `;
 
@@ -240,9 +295,11 @@ const ClearButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s;
 
   &:hover {
     color: #ff7e5f;
+    transform: scale(1.1);
   }
 `;
 
@@ -255,6 +312,7 @@ const CloseSearchButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s;
 
   @media (min-width: 769px) {
     display: none;
@@ -262,6 +320,7 @@ const CloseSearchButton = styled.button`
 
   &:hover {
     color: #ff7e5f;
+    transform: scale(1.1);
   }
 `;
 
@@ -271,413 +330,60 @@ const ThoughtsContainer = styled.div`
   padding: 0 1rem;
 `;
 
-// Define UserInfo and related components
-const UserInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-`;
-
-const Avatar = styled.div`
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  overflow: hidden;
-  box-shadow: 0 0 0 2px ${(props) => moodColors[props.mood] || "#ff7e5f"};
-  position: relative;
-
-  &:after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 50%;
-    box-shadow: 0 0 10px 1px ${(props) => moodColors[props.mood] || "#ff7e5f"};
-    opacity: 0.3;
-    transition: opacity 0.3s;
-  }
-
-  &:hover:after {
-    opacity: 0.6;
-  }
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-`;
-
-const DefaultAvatar = styled.div`
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: ${(props) => {
-    const color = moodColors[props.mood] || "#ff7e5f";
-    return `linear-gradient(135deg, ${color}33, ${color}66)`;
-  }};
-  color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
-  font-size: 1.5rem;
-  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-`;
-
-const UserDetails = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  position: relative;
-  margin-top: 0.15rem;
-`;
-
-const Username = styled.div`
-  font-family: "Autography", cursive;
-  font-weight: normal;
-  font-size: 1.8rem;
-  color: #ffcb66;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  letter-spacing: 0.5px;
-  margin-bottom: 2px;
-
-  &:hover {
-    text-decoration: none;
-    transform: scale(1.03);
-    transition: transform 0.2s ease;
-  }
-`;
-
-const UserHandle = styled.div`
-  font-family: "Space Grotesk", sans-serif;
-  background-color: rgba(255, 126, 95, 0.1);
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  color: #ff7e5f;
-  font-size: 0.75rem;
-  display: inline-block;
-  margin-top: 1px;
-`;
-
-const UserDivider = styled.div`
-  width: 80px;
-  height: 2px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    ${(props) => moodColors[props.mood] || "#ffcb66"},
-    #ff7e5f
-  );
-  opacity: 0.7;
-  margin: 2px 0 4px;
-  border-radius: 1px;
-  transform: scaleX(1.2);
-`;
-
-// Define action components in the correct order to avoid circular references
-const ActionIcon = styled.div`
-  color: ${(props) => (props.liked ? "#e0245e" : "#8899a6")};
-  transition: color 0.2s;
-  font-size: 1.125rem;
-
-  ${(props) =>
-    props.liked &&
-    `
-    animation: ${pulse} 0.3s ease;
-  `}
-`;
-
-const ActionCount = styled.span`
-  color: #8899a6;
-  font-size: 0.875rem;
-  font-weight: 500;
-`;
-
-const ActionItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  padding: 0.5rem 0.75rem;
-  border-radius: 9999px;
-  transition: background-color 0.2s;
-
-  &:nth-child(1):hover {
-    background-color: rgba(224, 36, 94, 0.1);
-
-    ${ActionIcon} {
-      color: #e0245e;
-    }
-
-    ${ActionCount} {
-      color: #e0245e;
-    }
-  }
-
-  &:nth-child(2):hover {
-    background-color: rgba(29, 161, 242, 0.1);
-
-    ${ActionIcon} {
-      color: #1da1f2;
-    }
-
-    ${ActionCount} {
-      color: #1da1f2;
-    }
-  }
-
-  &:nth-child(3):hover {
-    background-color: rgba(23, 191, 99, 0.1);
-
-    ${ActionIcon} {
-      color: #17bf63;
-    }
-
-    ${ActionCount} {
-      color: #17bf63;
-    }
-  }
-
-  &:nth-child(4):hover {
-    background-color: rgba(29, 161, 242, 0.1);
-
-    ${ActionIcon} {
-      color: #1da1f2;
-    }
-  }
-`;
-
-const ActionBar = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding-top: 0.75rem;
-  margin-top: 0.5rem;
-  border-top: 1px solid #2a2a2a;
-`;
-
-// Continue with other styled components
-const ThoughtHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-`;
-
-const ThoughtMeta = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 0.75rem;
-  margin-bottom: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #333333;
-`;
-
-const ThoughtMood = styled.div`
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
-  font-size: 0.875rem;
-  text-transform: capitalize;
-  padding: 0.25rem 0.5rem;
-  border-radius: 9999px;
-  background-color: ${(props) => `${moodColors[props.mood] || "#ff7e5f"}15`};
-  box-shadow: 0 0 8px ${(props) => moodColors[props.mood] || "#ff7e5f"};
-`;
-
-const ThoughtTime = styled.div`
-  font-family: "Space Grotesk", sans-serif;
-  color: #aaaaaa;
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  svg {
-    font-size: 0.5rem;
-  }
-`;
-
-const ThoughtActions = styled.div`
-  display: flex;
-  gap: 0.5rem;
-`;
-
-const ActionButton = styled.button`
-  background: none;
-  border: none;
-  color: #aaaaaa;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background-color: #333333;
-    color: #ffffff;
-  }
-
-  &.delete:hover {
-    color: #ff6b6b;
-  }
-
-  &.pinned {
-    color: #ffbb00;
-  }
-`;
-
-const ThoughtContent = styled.p`
-  font-family: "Lora", serif;
-  color: #f0f0f0;
-  font-size: 1.125rem;
-  line-height: 1.75;
-  background: rgba(255, 255, 255, 0.02);
-  padding: 1.25rem;
-  border-left: 3px solid #ff7e5f;
-  border-radius: 8px;
-  font-style: italic;
-  white-space: pre-wrap;
-  letter-spacing: 0.3px;
-`;
-
-const ThoughtMedia = styled.div`
-  margin: 0.75rem -1.25rem;
-  border-radius: 0;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-
-  img {
-    width: 100%;
-    max-height: 400px;
-    object-fit: cover;
-    transition: transform 0.4s ease, filter 0.4s ease;
-  }
-
-  &:hover img {
-    transform: scale(1.02);
-    filter: brightness(1.1);
-  }
-
-  @media (min-width: 768px) {
-    margin: 0.75rem 0;
-    border-radius: 16px;
-  }
-`;
-
-const ThoughtTags = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-`;
-
-const ThoughtTag = styled.span`
-  font-family: "Space Grotesk", sans-serif;
-  background-color: ${(props) => `${moodColors[props.mood] || "#ff7e5f"}20`};
-  color: ${(props) => moodColors[props.mood] || "#ff7e5f"};
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.5rem;
-  transition: all 0.2s;
-  cursor: pointer;
-
-  &:hover {
-    background-color: ${(props) => `${moodColors[props.mood] || "#ff7e5f"}30`};
-    transform: scale(1.05);
-  }
-`;
-
-const ThoughtFooter = styled.div`
-  margin-top: 0.5rem;
-`;
-
-const ThoughtCard = styled.div`
-  position: relative;
-  background: rgba(17, 17, 17, 0.75);
-  backdrop-filter: blur(6px);
-  border-radius: 16px;
-  padding: 1.25rem;
-  margin-bottom: 1rem;
-  border: 1px solid #333333;
-  animation: ${fadeIn} 0.3s ease-out;
-
-  &:hover {
-    background-color: rgba(26, 26, 26, 0.85);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  }
-
-  ${(props) =>
-    props.pinned &&
-    `
-    border-color: ${moodColors[props.mood] || "#ff7e5f"};
-  `}
-`;
-
-const PinnedBadge = styled.div`
-  position: absolute;
-  top: -10px;
-  right: 1rem;
-  background-color: #ff7e5f;
-  color: #121212;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  animation: ${pulse} 2s infinite ease-in-out;
-`;
-
 const ErrorMessage = styled.div`
   background-color: rgba(255, 107, 107, 0.2);
   color: #ff6b6b;
-  padding: 1rem;
-  border-radius: 8px;
+  padding: 1.25rem;
+  border-radius: 16px;
   text-align: center;
   margin-bottom: 1.5rem;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  box-shadow: 0 5px 15px rgba(255, 107, 107, 0.1);
+  animation: ${fadeIn} 0.4s ease-out;
 `;
 
 const LoadingMessage = styled.div`
   color: #aaaaaa;
   text-align: center;
   padding: 2rem 0;
+  font-style: italic;
+  animation: ${fadeIn} 0.4s ease-out;
 `;
 
 const EmptyMessage = styled.div`
   color: #aaaaaa;
   text-align: center;
   padding: 2rem 0;
+  font-style: italic;
+  animation: ${fadeIn} 0.4s ease-out;
 `;
 
 const LoadingMore = styled.div`
   color: #aaaaaa;
   text-align: center;
-  padding: 1rem 0;
+  padding: 1.5rem 0;
   font-style: italic;
   font-size: 0.875rem;
+  animation: ${fadeIn} 0.4s ease-out;
 `;
 
 const FloatingButton = styled(Link)`
   position: fixed;
   bottom: 6rem;
   right: 2rem;
-  background-color: #ff7e5f;
+  background: linear-gradient(135deg, #ff7e5f, #feb47b);
   color: #fff;
   padding: 1rem;
   border-radius: 999px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
   font-size: 1.5rem;
   z-index: 999;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
 
   &:hover {
-    background-color: #ff6347;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 126, 95, 0.5);
   }
 
   @media (min-width: 769px) {
@@ -685,6 +391,7 @@ const FloatingButton = styled(Link)`
   }
 `;
 
+// Modal components
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -692,27 +399,36 @@ const ModalOverlay = styled.div`
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(3px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 2000;
   padding: 1rem;
+  animation: ${fadeIn} 0.3s ease-out;
 `;
 
 const DeleteModal = styled.div`
   background-color: #1e1e1e;
-  border-radius: 8px;
+  border-radius: 16px;
   max-width: 400px;
   width: 100%;
   z-index: 1001;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  animation: ${fadeIn} 0.4s ease-out;
 `;
 
 const DeleteModalContent = styled.div`
   padding: 1.5rem;
   color: #ddd;
-  line-height: 1.5;
+  line-height: 1.6;
+
+  h3 {
+    color: #ff7e5f;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+  }
 `;
 
 const DeleteModalButtons = styled.div`
@@ -727,17 +443,19 @@ const DeleteModalButtons = styled.div`
 `;
 
 const ConfirmDeleteButton = styled.button`
-  background-color: #e74c3c;
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 0.75rem 1.25rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
+  box-shadow: 0 3px 8px rgba(231, 76, 60, 0.3);
 
   &:hover {
-    background-color: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
   }
 
   &:disabled {
@@ -754,7 +472,7 @@ const CancelButton = styled.button`
   background-color: transparent;
   color: #ddd;
   border: 1px solid #444;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 0.75rem 1.25rem;
   font-weight: 600;
   cursor: pointer;
@@ -762,6 +480,7 @@ const CancelButton = styled.button`
 
   &:hover {
     background-color: #333;
+    transform: translateY(-2px);
   }
 
   &:disabled {
@@ -784,7 +503,7 @@ const Backdrop = styled.div`
   z-index: 999;
 `;
 
-// New styled components for retweet modal
+// Retweet modal components
 const RetweetModal = styled.div`
   background-color: #1e1e1e;
   border-radius: 16px;
@@ -794,6 +513,7 @@ const RetweetModal = styled.div`
   padding: 2rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   text-align: center;
+  animation: ${fadeIn} 0.4s ease-out;
 `;
 
 const RetweetModalContent = styled.div`
@@ -813,7 +533,7 @@ const RetweetModalContent = styled.div`
 `;
 
 const RetweetCloseButton = styled.button`
-  background-color: #ff7e5f;
+  background: linear-gradient(135deg, #ff7e5f, #feb47b);
   color: white;
   border: none;
   border-radius: 999px;
@@ -822,10 +542,11 @@ const RetweetCloseButton = styled.button`
   cursor: pointer;
   transition: all 0.3s;
   margin-top: 1rem;
+  box-shadow: 0 3px 8px rgba(255, 126, 95, 0.3);
 
   &:hover {
-    background-color: #ff6347;
     transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(255, 126, 95, 0.4);
   }
 `;
 
@@ -846,25 +567,14 @@ const Thoughts = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [thoughtToDelete, setThoughtToDelete] = useState(null);
 
-  // New state for retweet modal
+  // State for retweet modal
   const [showRetweetModal, setShowRetweetModal] = useState(false);
-
-  const moodEmojis = {
-    inspired: "✨",
-    reflective: "🌙",
-    excited: "🔥",
-    creative: "🎨",
-    calm: "🌊",
-    curious: "🔍",
-    nostalgic: "📷",
-    amused: "😄",
-  };
 
   // Hardcoded user info
   const defaultUser = {
     username: "Andrew",
     handle: "andrew",
-    avatar: null, // You can replace this with your avatar URL if you have one
+    avatar: null,
   };
 
   const fetchThoughts = useCallback(
@@ -879,10 +589,10 @@ const Thoughts = () => {
         const response = await axios.get(url);
         const newThoughts = response.data.data.map((thought) => ({
           ...thought,
-          user: defaultUser, // Use hardcoded user info for all thoughts
-          userHasLiked: false, // This would come from your API in a real app
+          user: defaultUser,
+          userHasLiked: false,
           comments: thought.comments || [],
-          shares: Math.floor(Math.random() * 10), // Just for demo purposes
+          shares: Math.floor(Math.random() * 10),
         }));
 
         setThoughts((prevThoughts) => {
@@ -920,7 +630,7 @@ const Thoughts = () => {
     fetchThoughts(true);
   };
 
-  // Unified handleLike function
+  // Handle like function
   const handleLike = async (id) => {
     try {
       const response = await axios.put(`/api/thoughts/${id}/like`);
@@ -931,8 +641,8 @@ const Thoughts = () => {
           if (thought._id === id) {
             return {
               ...response.data.data,
-              user: defaultUser, // Keep hardcoded user info
-              userHasLiked: !thought.userHasLiked, // Toggle the liked state
+              user: defaultUser,
+              userHasLiked: !thought.userHasLiked,
               comments: thought.comments,
               shares: thought.shares,
             };
@@ -946,11 +656,12 @@ const Thoughts = () => {
     }
   };
 
-  // New function to handle retweet
+  // Handle retweet function
   const handleRetweet = () => {
     setShowRetweetModal(true);
   };
 
+  // Handle pin function
   const handlePin = async (id) => {
     try {
       const response = await axios.put(`/api/thoughts/${id}/pin`);
@@ -967,6 +678,7 @@ const Thoughts = () => {
     }
   };
 
+  // Delete modal functions
   const cancelDelete = () => {
     setShowDeleteModal(false);
     setThoughtToDelete(null);
@@ -989,10 +701,11 @@ const Thoughts = () => {
     }
   };
 
+  // Infinite scroll functionality
   const handleScroll = () => {
     if (
-      window.innerHeight + document.documentElement.scrollTop ===
-        document.documentElement.offsetHeight &&
+      window.innerHeight + document.documentElement.scrollTop >=
+        document.documentElement.offsetHeight - 200 &&
       !loading &&
       hasMore
     ) {
@@ -1092,123 +805,21 @@ const Thoughts = () => {
           {error ? (
             <ErrorMessage>{error}</ErrorMessage>
           ) : filteredThoughts.length > 0 ? (
-            filteredThoughts.map((thought, index) => (
+            filteredThoughts.map((thought) => (
               <ThoughtCard
                 key={thought._id}
-                pinned={thought.pinned}
-                mood={thought.mood}
-              >
-                {thought.pinned && <PinnedBadge>Pinned</PinnedBadge>}
-
-                <ThoughtHeader>
-                  <UserInfo>
-                    <Avatar mood={thought.mood}>
-                      {defaultUser.avatar ? (
-                        <img src={defaultUser.avatar} alt="User avatar" />
-                      ) : (
-                        <DefaultAvatar mood={thought.mood}>
-                          {moodEmojis[thought.mood]}
-                        </DefaultAvatar>
-                      )}
-                    </Avatar>
-                    <UserDetails>
-                      <Username>{defaultUser.username}</Username>
-                      <UserDivider mood={thought.mood} />
-                      <UserHandle>@{defaultUser.handle}</UserHandle>
-                    </UserDetails>
-                  </UserInfo>
-
-                  {/* Only show thought actions if user has admin or creator role */}
-                  {canCreateThought && (
-                    <ThoughtActions>
-                      <ActionButton
-                        onClick={() => handlePin(thought._id)}
-                        title={thought.pinned ? "Unpin" : "Pin"}
-                        className={thought.pinned ? "pinned" : ""}
-                      >
-                        📌
-                      </ActionButton>
-                      <ActionButton
-                        as={Link}
-                        to={`/thoughts/edit/${thought._id}`}
-                        title="Edit"
-                      >
-                        <FaEdit />
-                      </ActionButton>
-                      <ActionButton
-                        onClick={() => {
-                          setThoughtToDelete(thought._id);
-                          setShowDeleteModal(true);
-                        }}
-                        title="Delete"
-                        className="delete"
-                      >
-                        <FaTrash />
-                      </ActionButton>
-                    </ThoughtActions>
-                  )}
-                </ThoughtHeader>
-
-                <ThoughtContent>{thought.content}</ThoughtContent>
-
-                {thought.media?.mediaUrl && (
-                  <ThoughtMedia>
-                    <img src={thought.media.mediaUrl} alt="Thought media" />
-                  </ThoughtMedia>
-                )}
-
-                {thought.tags && thought.tags.length > 0 && (
-                  <ThoughtTags>
-                    {thought.tags.map((tag, tagIndex) => (
-                      <ThoughtTag key={tagIndex} mood={thought.mood}>
-                        #{tag}
-                      </ThoughtTag>
-                    ))}
-                  </ThoughtTags>
-                )}
-
-                <ThoughtMeta>
-                  <ThoughtTime>
-                    <FaClock />
-                    <span>{formatDate(thought.createdAt)}</span>
-                  </ThoughtTime>
-                  <ThoughtMood mood={thought.mood}>
-                    {moodEmojis[thought.mood]} {thought.mood}
-                  </ThoughtMood>
-                </ThoughtMeta>
-
-                <ThoughtFooter>
-                  <ActionBar>
-                    <ActionItem onClick={() => handleLike(thought._id)}>
-                      <ActionIcon liked={thought.userHasLiked}>
-                        <FaHeart />
-                      </ActionIcon>
-                      <ActionCount>{thought.likes}</ActionCount>
-                    </ActionItem>
-
-                    <ActionItem>
-                      <ActionIcon>
-                        <FaComment />
-                      </ActionIcon>
-                      <ActionCount>{thought.comments?.length || 0}</ActionCount>
-                    </ActionItem>
-
-                    {/* Modified retweet action to show the modal */}
-                    <ActionItem onClick={handleRetweet}>
-                      <ActionIcon>
-                        <FaRetweet />
-                      </ActionIcon>
-                      <ActionCount>{thought.shares || 0}</ActionCount>
-                    </ActionItem>
-
-                    <ActionItem>
-                      <ActionIcon>
-                        <FaShare />
-                      </ActionIcon>
-                    </ActionItem>
-                  </ActionBar>
-                </ThoughtFooter>
-              </ThoughtCard>
+                thought={thought}
+                defaultUser={defaultUser}
+                formatDate={formatDate}
+                handleLike={handleLike}
+                handleRetweet={handleRetweet}
+                handlePin={handlePin}
+                canCreateThought={canCreateThought}
+                onDelete={(id) => {
+                  setThoughtToDelete(id);
+                  setShowDeleteModal(true);
+                }}
+              />
             ))
           ) : loading ? (
             <LoadingMessage>Loading thoughts...</LoadingMessage>
@@ -1243,7 +854,6 @@ const Thoughts = () => {
                   </DeleteModalButtons>
                 </DeleteModalContent>
               </DeleteModal>
-              {/* Optional: click outside to close */}
               <Backdrop onClick={cancelDelete} />
             </ModalOverlay>
           )}
@@ -1254,7 +864,7 @@ const Thoughts = () => {
         </>
       )}
 
-      {/* New Retweet Modal - shown to all users */}
+      {/* Retweet Modal - shown to all users */}
       {showRetweetModal && (
         <ModalOverlay>
           <RetweetModal>
