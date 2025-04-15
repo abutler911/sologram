@@ -273,8 +273,8 @@ const ActionButton = styled.button`
 const Content = styled.p`
   font-family: "Lora", serif;
   color: #f5f5f5;
-  font-size: 1.125rem;
-  line-height: 1.8;
+  font-size: 1rem;
+  line-height: 1.7;
   background: rgba(255, 255, 255, 0.03);
   padding: 1.5rem;
   border-radius: 16px;
@@ -283,13 +283,13 @@ const Content = styled.p`
       props.mood ? moodColors[props.mood].primary : moodColors.excited.primary};
   font-style: italic;
   white-space: pre-wrap;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   position: relative;
   z-index: 2;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 
   &:first-letter {
-    font-size: 1.5em;
+    font-size: 1.3em;
     font-weight: 500;
     color: ${(props) =>
       props.mood ? moodColors[props.mood].primary : moodColors.excited.primary};
