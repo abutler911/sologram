@@ -575,7 +575,7 @@ const ActionItem = styled.div`
 
 const PinnedBadge = styled.div`
   position: absolute;
-  top: -12px;
+  top: 0px;
   right: 1.5rem;
   background: ${(props) =>
     props.mood ? moodColors[props.mood].gradient : moodColors.excited.gradient};
@@ -583,11 +583,9 @@ const PinnedBadge = styled.div`
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.35rem 0.85rem;
-  border-radius: 999px;
+  border-radius: 0 0 10px 10px;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
   z-index: 10;
-  animation: ${float} 3s infinite ease-in-out;
-  transform-origin: center;
   letter-spacing: 0.5px;
 
   &:before {
