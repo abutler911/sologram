@@ -471,7 +471,7 @@ const ActionBar = styled.div`
 const ActionIcon = styled.div`
   color: ${(props) => (props.liked ? "#e0245e" : "#a0a0a0")};
   transition: color 0.3s, transform 0.3s;
-  font-size: 1.125rem;
+  font-size: 0.9rem;
 
   ${(props) =>
     props.liked &&
@@ -482,7 +482,7 @@ const ActionIcon = styled.div`
 
 const ActionCount = styled.span`
   color: #a0a0a0;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 500;
   transition: color 0.3s;
 `;
@@ -490,9 +490,9 @@ const ActionCount = styled.span`
 const ActionItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.4rem;
   cursor: pointer;
-  padding: 0.6rem 0.85rem;
+  padding: 0.4rem 0.6rem;
   border-radius: 999px;
   transition: all 0.3s;
   position: relative;
@@ -624,7 +624,6 @@ const ThoughtCard = ({
           <UserDetails>
             <Username>{defaultUser.username}</Username>
             <UserDivider mood={thought.mood} />
-            <UserHandle>@{defaultUser.handle}</UserHandle>
           </UserDetails>
         </UserInfo>
 
