@@ -182,7 +182,6 @@ const DefaultAvatar = styled.div`
   color: #ffffff;
   font-size: 1.6rem;
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-  animation: ${float} 6s infinite ease-in-out;
 `;
 
 const UserDetails = styled.div`

@@ -307,29 +307,6 @@ const LoadingMore = styled.div`
   animation: ${fadeIn} 0.4s ease-out;
 `;
 
-const FloatingButton = styled(Link)`
-  position: fixed;
-  bottom: 6rem;
-  right: 2rem;
-  background: linear-gradient(135deg, #ff7e5f, #feb47b);
-  color: #fff;
-  padding: 1rem;
-  border-radius: 999px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-  font-size: 1.5rem;
-  z-index: 999;
-  transition: all 0.3s;
-
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(255, 126, 95, 0.5);
-  }
-
-  @media (min-width: 769px) {
-    display: none;
-  }
-`;
-
 // Modal components
 const ModalOverlay = styled.div`
   position: fixed;
@@ -776,7 +753,6 @@ const Thoughts = () => {
         </ThoughtsContainer>
       </PageWrapper>
 
-      {/* Only show modals and floating button if user has admin or creator role */}
       {canCreateThought && (
         <>
           {showDeleteModal && (
@@ -796,10 +772,6 @@ const Thoughts = () => {
               <Backdrop onClick={cancelDelete} />
             </ModalOverlay>
           )}
-
-          <FloatingButton to="/thoughts/create">
-            <FaPlusCircle />
-          </FloatingButton>
         </>
       )}
 
