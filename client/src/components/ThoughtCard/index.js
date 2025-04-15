@@ -10,7 +10,7 @@ import {
   FaRetweet,
   FaShare,
 } from "react-icons/fa";
-import { moodColors, moodEmojis } from "../../utils/themeConstants";
+import { moodColors, moodEmojis } from "../../utils/themeConstants"; // Import from shared utility file
 
 // Animations
 const fadeIn = keyframes`
@@ -351,14 +351,14 @@ const Tag = styled.span`
       : `linear-gradient(120deg, ${moodColors.excited.primary}30, ${moodColors.excited.primary}10)`};
   color: ${(props) =>
     props.mood ? moodColors[props.mood].primary : moodColors.excited.primary};
-  padding: 0.35rem 0.9rem;
+  padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 0.65rem;
   transition: all 0.3s;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   backdrop-filter: blur(4px);
   border: 1px solid
     ${(props) =>
@@ -411,13 +411,13 @@ const Meta = styled.div`
 const MoodIndicator = styled.div`
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.4rem;
   color: ${(props) =>
     props.mood ? moodColors[props.mood].primary : moodColors.excited.primary};
-  font-size: 0.925rem;
+  font-size: 0.7rem;
   font-weight: 500;
   text-transform: capitalize;
-  padding: 0.35rem 0.9rem;
+  padding: 0.2rem 0.6rem;
   border-radius: 999px;
   background: ${(props) =>
     props.mood
@@ -425,11 +425,11 @@ const MoodIndicator = styled.div`
           moodColors[props.mood].primary
         }05)`
       : `linear-gradient(120deg, ${moodColors.excited.primary}20, ${moodColors.excited.primary}05)`};
-  box-shadow: 0 0 15px
+  box-shadow: 0 0 10px
     ${(props) =>
       props.mood
-        ? moodColors[props.mood].primary + "40"
-        : moodColors.excited.primary + "40"};
+        ? moodColors[props.mood].primary + "30"
+        : moodColors.excited.primary + "30"};
   backdrop-filter: blur(4px);
   border: 1px solid
     ${(props) =>
@@ -443,14 +443,14 @@ const MoodIndicator = styled.div`
 const TimeDisplay = styled.div`
   font-family: "Space Grotesk", sans-serif;
   color: #bbbbbb;
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  opacity: 0.8;
+  gap: 0.5rem;
+  opacity: 0.7;
 
   svg {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
   }
 `;
 
