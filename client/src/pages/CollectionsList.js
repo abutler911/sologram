@@ -12,7 +12,11 @@ const CollectionsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { isAuthenticated } = useContext(AuthContext);
+  // Get auth context and check for appropriate permissions
+  const { isAuthenticated, user } = useContext(AuthContext);
+  // Allow only admin and creator roles to create collections
+  const canCreateCollection =
+    isAuthenticated && (user?.role === "admin" || user?.role === "creator");
 
   useEffect(() => {
     const fetchCollections = async () => {
@@ -64,7 +68,8 @@ const CollectionsList = () => {
               <span>Collections</span>
             </PageTitle>
 
-            {isAuthenticated && (
+            {/* Only show create button for admin and creator roles */}
+            {canCreateCollection && (
               <CreateButton to="/collections/create">
                 <FaPlus />
                 <span>Create Collection</span>
@@ -78,7 +83,8 @@ const CollectionsList = () => {
                 <FaImages />
               </EmptyIcon>
               <EmptyText>No collections yet</EmptyText>
-              {isAuthenticated && (
+              {/* Only show create action link for admin and creator roles */}
+              {canCreateCollection && (
                 <EmptyActionLink to="/collections/create">
                   Create your first collection
                 </EmptyActionLink>
