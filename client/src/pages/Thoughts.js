@@ -4,7 +4,7 @@ import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { keyframes } from "styled-components";
-import { FaSearch, FaTimes, FaPlusCircle } from "react-icons/fa";
+import { FaSearch, FaTimes, FaPlusCircle, FaRetweet } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
 import MainLayout from "../components/layout/MainLayout";
 import { format } from "date-fns";
@@ -307,6 +307,8 @@ const LoadingMore = styled.div`
   animation: ${fadeIn} 0.4s ease-out;
 `;
 
+// Removed FloatingButton as requested
+
 // Modal components
 const ModalOverlay = styled.div`
   position: fixed;
@@ -419,50 +421,149 @@ const Backdrop = styled.div`
   z-index: 999;
 `;
 
+// Define animations for modal
+const shine = keyframes`
+  0% {
+    background-position: -100px;
+  }
+  40%, 100% {
+    background-position: 200px;
+  }
+`;
+
+const pulseGlow = keyframes`
+  0% { box-shadow: 0 0 15px rgba(255, 126, 95, 0.4); }
+  50% { box-shadow: 0 0 25px rgba(255, 126, 95, 0.7); }
+  100% { box-shadow: 0 0 15px rgba(255, 126, 95, 0.4); }
+`;
+
 // Retweet modal components
 const RetweetModal = styled.div`
-  background-color: #1e1e1e;
-  border-radius: 16px;
-  max-width: 400px;
+  position: relative;
+  background: linear-gradient(145deg, #222, #1a1a1a);
+  border-radius: 24px;
+  max-width: 380px;
   width: 100%;
   z-index: 1001;
-  padding: 2rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  padding: 2.5rem 2rem;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
   text-align: center;
   animation: ${fadeIn} 0.4s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100px;
+    width: 100px;
+    height: 100%;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    animation: ${shine} 3s infinite;
+    z-index: 10;
+  }
+`;
+
+const ModalIcon = styled.div`
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  color: #ff7e5f;
+  position: relative;
+  display: inline-block;
+  animation: ${pulseGlow} 2s infinite ease-in-out;
+  background: linear-gradient(135deg, #ff7e5f, #feb47b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  &:after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(
+      circle,
+      rgba(255, 126, 95, 0.2) 0%,
+      rgba(255, 126, 95, 0) 70%
+    );
+    border-radius: 50%;
+    z-index: -1;
+  }
 `;
 
 const RetweetModalContent = styled.div`
-  color: #ddd;
+  color: #eee;
   line-height: 1.6;
 
   h3 {
-    color: #ff7e5f;
-    margin-bottom: 1rem;
-    font-size: 1.5rem;
+    margin-bottom: 1.2rem;
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #ff7e5f, #feb47b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 0.5px;
   }
 
   p {
-    margin-bottom: 1.5rem;
-    font-size: 1.1rem;
+    margin-bottom: 1.2rem;
+    font-size: 1rem;
+    color: #ccc;
+  }
+
+  p:last-of-type {
+    font-size: 0.9rem;
+    font-style: italic;
+    color: #aaa;
   }
 `;
 
 const RetweetCloseButton = styled.button`
+  margin-top: 1.5rem;
   background: linear-gradient(135deg, #ff7e5f, #feb47b);
   color: white;
   border: none;
-  border-radius: 999px;
-  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  padding: 0.7rem 2rem;
   font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.3s;
-  margin-top: 1rem;
-  box-shadow: 0 3px 8px rgba(255, 126, 95, 0.3);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(255, 126, 95, 0.3);
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+    transition: left 0.7s;
+  }
 
   &:hover {
-    transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(255, 126, 95, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(255, 126, 95, 0.4);
+
+    &:before {
+      left: 100%;
+    }
   }
 `;
 
@@ -753,6 +854,7 @@ const Thoughts = () => {
         </ThoughtsContainer>
       </PageWrapper>
 
+      {/* Only show modals and floating button if user has admin or creator role */}
       {canCreateThought && (
         <>
           {showDeleteModal && (
@@ -772,6 +874,8 @@ const Thoughts = () => {
               <Backdrop onClick={cancelDelete} />
             </ModalOverlay>
           )}
+
+          {/* Floating button removed as requested */}
         </>
       )}
 
@@ -779,14 +883,17 @@ const Thoughts = () => {
       {showRetweetModal && (
         <ModalOverlay>
           <RetweetModal>
+            <ModalIcon>
+              <FaRetweet />
+            </ModalIcon>
             <RetweetModalContent>
-              <h3>Thought Re-Thought!</h3>
-              <p>Your thought has been re-thought into the netherworld!</p>
-              <p>The cosmic thought-sphere acknowledges your contribution.</p>
-              <RetweetCloseButton onClick={() => setShowRetweetModal(false)}>
-                Cool!
-              </RetweetCloseButton>
+              <h3>Echoed in the Cosmos!</h3>
+              <p>Your thought has been shared with the universe.</p>
+              <p>Ripples of your wisdom now travel through digital space.</p>
             </RetweetModalContent>
+            <RetweetCloseButton onClick={() => setShowRetweetModal(false)}>
+              Amazing
+            </RetweetCloseButton>
           </RetweetModal>
           <Backdrop onClick={() => setShowRetweetModal(false)} />
         </ModalOverlay>
