@@ -118,7 +118,7 @@ const BottomNavigation = () => {
       </NavItem>
 
       {/* Center create button - only for authenticated users */}
-      {isAuthenticated && (
+      {isAdmin && (
         <CreateButtonWrapper>
           <CreateButton onClick={toggleCreateOptions}>
             <FaPlus />
