@@ -66,6 +66,12 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
   const [hasLiked, setHasLiked] = useState(false);
   const [isDoubleTapLiking, setIsDoubleTapLiking] = useState(false);
   const actionsRef = useRef(null);
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const [showFullscreen, setShowFullscreen] = useState(false);
+  const longPressTimeoutRef = useRef(null);
+  const [fullscreenIndex, setFullscreenIndex] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [isPressing, setIsPressing] = useState(false);
 
   const hasMultipleMedia = post.media && post.media.length > 1;
 
@@ -85,6 +91,61 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const handleTouchStart = (e) => {
+    setIsPressing(true);
+
+    longPressTimeoutRef.current = setTimeout(() => {
+      setIsLongPressing(true);
+      setShowFullscreen(true);
+      // Store the current index when opening fullscreen
+      setFullscreenIndex(currentMediaIndex);
+    }, 500);
+  };
+
+  const handleTouchEnd = () => {
+    setIsPressing(false);
+
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+    setIsLongPressing(false);
+  };
+
+  const handleTouchMove = () => {
+    // Cancel long press if user moves finger
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+    setIsPressing(false);
+  };
+
+  const fullscreenSwipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (fullscreenIndex < post.media.length - 1) {
+        setFullscreenIndex(fullscreenIndex + 1);
+      }
+    },
+    onSwipedRight: () => {
+      if (fullscreenIndex > 0) {
+        setFullscreenIndex(fullscreenIndex - 1);
+      }
+    },
+    preventDefaultTouchmoveEvent: !isZoomed,
+    trackMouse: true,
+    trackTouch: true,
+  });
+
+  const handleFullscreenDoubleTap = () => {
+    setIsZoomed(!isZoomed);
+  };
+
+  const closeFullscreen = () => {
+    setShowFullscreen(false);
+    setIsZoomed(false);
+  };
 
   const handleLike = async () => {
     // Prevent multiple clicks or if already liked
@@ -188,6 +249,12 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
   });
 
   const handleMediaClick = (e) => {
+    if (isLongPressing) {
+      // Don't navigate if it was a long press
+      e.preventDefault();
+      return;
+    }
+
     if (hasMultipleMedia) {
       e.preventDefault();
     }
@@ -225,6 +292,11 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
             to={`/post/${post._id}`}
             onClick={handleMediaClick}
             onDoubleClick={handleDoubleTapLike}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchMove={handleTouchMove}
+            onTouchCancel={handleTouchEnd}
+            isPressing={isPressing}
           >
             <MediaCarousel {...swipeHandlers}>
               <MediaTrack
@@ -348,6 +420,33 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
           <ViewPostLink to={`/post/${post._id}`}>View post</ViewPostLink>
         </CardContent>
       </Card>
+
+      {/* Fullscreen image modal */}
+      {showFullscreen && (
+        <FullscreenModal onClick={closeFullscreen}>
+          <FullscreenWrapper
+            {...fullscreenSwipeHandlers}
+            onDoubleClick={handleFullscreenDoubleTap}
+          >
+            <FullscreenImage
+              src={post.media[fullscreenIndex].mediaUrl}
+              alt={post.caption || "Fullscreen view"}
+              style={{
+                transform: isZoomed ? "scale(2)" : "scale(1)",
+                transition: "transform 0.3s ease",
+              }}
+            />
+            {post.media.length > 1 && (
+              <FullscreenIndicator>
+                {fullscreenIndex + 1} / {post.media.length}
+              </FullscreenIndicator>
+            )}
+          </FullscreenWrapper>
+          <CloseFullscreenButton onClick={closeFullscreen}>
+            ×
+          </CloseFullscreenButton>
+        </FullscreenModal>
+      )}
 
       {/* Delete confirmation modal */}
       {showDeleteModal && (
@@ -517,6 +616,8 @@ const MediaContainer = styled(Link)`
   overflow: hidden;
   background-color: #000;
   flex-shrink: 0;
+  transition: opacity 0.2s ease;
+  opacity: ${(props) => (props.isPressing ? 0.8 : 1)};
 `;
 
 const MediaCarousel = styled.div`
@@ -885,6 +986,57 @@ const UserAvatarImage = styled.img`
   object-fit: cover;
   margin-right: 12px;
   border: 2px solid #ff7e5f;
+`;
+
+const FullscreenModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+`;
+
+const FullscreenImage = styled.img`
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+`;
+
+const CloseFullscreenButton = styled.button`
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 32px;
+  cursor: pointer;
+`;
+
+const FullscreenWrapper = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+`;
+
+const FullscreenIndicator = styled.div`
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 14px;
 `;
 
 export default PostCard;
