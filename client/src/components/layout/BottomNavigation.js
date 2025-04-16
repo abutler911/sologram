@@ -10,6 +10,7 @@ import {
   FaCamera,
   FaImages,
   FaUsers,
+  FaLightbulb,
 } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-hot-toast";
@@ -180,8 +181,8 @@ const BottomNavigation = () => {
           <NavLabel>Stories</NavLabel>
         </NavItem>
       ) : (
-        <NavItem to="/thoughts" active={isActive("/about")}>
-          <FaUser />
+        <NavItem to="/thoughts" active={isActive("/thoughts")}>
+          <FaLightbulb />
           <NavLabel>Thoughts</NavLabel>
         </NavItem>
       )}

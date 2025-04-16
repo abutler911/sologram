@@ -19,6 +19,8 @@ import {
 
 import { AuthContext } from "../../context/AuthContext";
 import HeaderSubscriptionBanner from "../subscription/HeaderSubscriptionBanner";
+import { toast } from "react-hot-toast";
+import { requestNotificationPermission } from "../../utils/oneSignal";
 
 const Header = ({ onSearch, onClearSearch }) => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
@@ -32,6 +34,77 @@ const Header = ({ onSearch, onClearSearch }) => {
   const searchInputRef = useRef(null);
   const searchContainerRef = useRef(null);
   const userMenuRef = useRef(null);
+
+  const handleSubscribeClick = async () => {
+    // Show loading toast while we check OneSignal
+    const loadingToast = toast.loading("Preparing subscription...");
+
+    try {
+      // Check if OneSignal is available in window object
+      if (!window.OneSignal) {
+        // Try again after a short delay
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        if (!window.OneSignal) {
+          toast.dismiss(loadingToast);
+          toast.error(
+            "Notification service isn't ready yet. Please try again in a moment."
+          );
+          return;
+        }
+      }
+
+      // Dismiss the loading toast
+      toast.dismiss(loadingToast);
+
+      // Check if native API is available (fallback)
+      const useNativeAPI =
+        !window.OneSignal.showSlidedownPrompt &&
+        "Notification" in window &&
+        Notification.permission !== "denied";
+
+      if (useNativeAPI) {
+        // Use the browser's native notification API as fallback
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+          toast.success("Successfully subscribed to notifications!");
+        } else {
+          toast(
+            "You can enable notifications anytime from your browser settings."
+          );
+        }
+        return;
+      }
+
+      // Try using OneSignal API
+      try {
+        if (typeof window.OneSignal.showSlidedownPrompt === "function") {
+          await window.OneSignal.showSlidedownPrompt();
+          toast.success("Successfully subscribed to notifications!");
+        } else if (
+          typeof window.OneSignal.registerForPushNotifications === "function"
+        ) {
+          await window.OneSignal.registerForPushNotifications();
+          toast.success("Successfully subscribed to notifications!");
+        } else {
+          // Try using our helper function
+          const result = await requestNotificationPermission();
+          if (result) {
+            toast.success("Successfully subscribed to notifications!");
+          } else {
+            toast("You can subscribe to notifications anytime.");
+          }
+        }
+      } catch (oneSignalError) {
+        console.error("OneSignal specific error:", oneSignalError);
+        toast.error("There was a problem subscribing to notifications.");
+      }
+    } catch (err) {
+      console.error("Error in handleSubscribeClick:", err);
+      toast.dismiss(loadingToast);
+      toast.error("There was a problem with the notification system.");
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -325,6 +398,12 @@ const Header = ({ onSearch, onClearSearch }) => {
             to="/thoughts"
             onClick={closeMenu}
             active={location.pathname.startsWith("/thoughts")}
+          >
+            <span>Thoughts</span>
+          </MobileMenuItem>
+          <MobileMenuItem
+            onClick={handleSubscribeClick}
+            active={location.pathname.startsWith("/subscribe")}
           >
             <span>Thoughts</span>
           </MobileMenuItem>
