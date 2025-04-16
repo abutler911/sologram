@@ -189,15 +189,22 @@ const BottomNavigation = () => {
 
       {/* Fifth nav item */}
       {isAuthenticated ? (
-        <NavItem to="/admin" active={isActive("/admin")}>
-          <FaUser />
-          <NavLabel>Admin</NavLabel>
+        <NavItem to="/thoughts" active={isActive("/thoughts")}>
+          <FaLightbulb />
+          <NavLabel>Thoughts</NavLabel>
         </NavItem>
       ) : (
         <NavAction onClick={handleSubscribeClick}>
           <FaBell />
           <NavLabel>Subscribe</NavLabel>
         </NavAction>
+      )}
+
+      {isAdmin && (
+        <NavItem to="/admin" active={isActive("/admin")}>
+          <FaUser />
+          <NavLabel>Admin</NavLabel>
+        </NavItem>
       )}
     </NavContainer>
   );

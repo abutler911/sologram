@@ -318,12 +318,15 @@ const Header = ({ onSearch, onClearSearch }) => {
                       <small>{isAdmin ? "Admin" : "User"}</small>
                     </UserInfo>
                     <MenuDivider />
-                    <UserMenuItem
-                      to="/admin"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <FaUser /> <span>Admin</span>
-                    </UserMenuItem>
+                    {isAdmin && (
+                      <UserMenuItem
+                        to="/admin"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <FaUser /> <span>Admin</span>
+                      </UserMenuItem>
+                    )}
+
                     {isAdmin && (
                       <UserMenuItem
                         to="/subscribers"
@@ -416,22 +419,26 @@ const Header = ({ onSearch, onClearSearch }) => {
               >
                 Stories
               </MobileMenuItem>
-              <MobileMenuItem
-                to="/admin"
-                onClick={closeMenu}
-                active={location.pathname.startsWith("/admin")}
-              >
-                Admin
-              </MobileMenuItem>
+
               {isAdmin && (
-                <MobileMenuItem
-                  to="/subscribers"
-                  onClick={closeMenu}
-                  active={location.pathname.startsWith("/subscribers")}
-                >
-                  Subscribers
-                </MobileMenuItem>
+                <>
+                  <MobileMenuItem
+                    to="/admin"
+                    onClick={closeMenu}
+                    active={location.pathname.startsWith("/admin")}
+                  >
+                    Admin
+                  </MobileMenuItem>
+                  <MobileMenuItem
+                    to="/subscribers"
+                    onClick={closeMenu}
+                    active={location.pathname.startsWith("/subscribers")}
+                  >
+                    Subscribers
+                  </MobileMenuItem>
+                </>
               )}
+
               <MobileMenuItem
                 to="/thoughts/create"
                 onClick={closeMenu}
@@ -439,11 +446,13 @@ const Header = ({ onSearch, onClearSearch }) => {
               >
                 <span>New Thought</span>
               </MobileMenuItem>
+
               <MobileMenuLogoutButton onClick={handleLogout}>
                 <FaSignOutAlt /> <span>Logout</span>
               </MobileMenuLogoutButton>
             </>
           )}
+
           {!isAuthenticated && (
             <>
               <MobileMenuItem
