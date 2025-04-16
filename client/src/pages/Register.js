@@ -110,7 +110,7 @@ const Register = () => {
             <FaCamera />
             <LogoText>SoloGram</LogoText>
           </LogoContainer>
-
+          <Tagline>One Voice. Infinite Moments.</Tagline>
           <FormTitle>Create an account</FormTitle>
 
           <Form onSubmit={handleSubmit}>
@@ -324,9 +324,8 @@ const Label = styled.label`
   margin-bottom: 0.75rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #333333;
+  color: #aaa;
 `;
-
 const DropzoneContainer = styled.div`
   border: 2px dashed #444;
   border-radius: 4px;
@@ -435,6 +434,26 @@ const PageWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
+`;
+
+const Tagline = styled.p`
+  color: #aaa;
+  font-size: 1rem;
+  font-style: italic;
+  text-align: center;
+  margin-bottom: 2rem;
+  animation: fadeIn 0.6s ease-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 `;
 
 export default Register;
