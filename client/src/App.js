@@ -22,6 +22,7 @@ import PostDetail from "./pages/PostDetail";
 import CreatePost from "./pages/CreatePost";
 import EditPost from "./pages/EditPost";
 import AdminDashboard from "./pages/AdminDashboard";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
@@ -146,6 +147,22 @@ function App() {
               />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <>
+                      <Header />
+                      <main className="main-content">
+                        <ProfilePage />
+                      </main>
+                      <Footer />
+                      <BottomNavigation />
+                    </>
+                  </PrivateRoute>
+                }
+              />
+
               <Route path="/post/:id" element={<PostDetail />} />
               <Route path="/about" element={<About />} />
               <Route path="/privacy" element={<Privacy />} />

@@ -347,6 +347,12 @@ const Header = ({ onSearch, onClearSearch }) => {
                     >
                       <FaArchive /> <span>Story Archive</span>
                     </UserMenuItem>
+                    <UserMenuItem
+                      to="/profile"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <FaUser /> <span>Profile</span>
+                    </UserMenuItem>
                     <MenuDivider />
                     <UserMenuButton onClick={handleLogout}>
                       <FaSignOutAlt /> <span>Logout</span>
@@ -418,6 +424,13 @@ const Header = ({ onSearch, onClearSearch }) => {
                 active={location.pathname.startsWith("/story-archive")}
               >
                 Stories
+              </MobileMenuItem>
+              <MobileMenuItem
+                to="/profile"
+                onClick={closeMenu}
+                active={location.pathname === "/profile"}
+              >
+                <FaUser /> <span>Profile</span>
               </MobileMenuItem>
 
               {isAdmin && (
