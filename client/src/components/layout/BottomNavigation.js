@@ -180,10 +180,10 @@ const BottomNavigation = () => {
           <NavLabel>Stories</NavLabel>
         </NavItem>
       ) : (
-        <NavAction onClick={handleSubscribeClick}>
-          <FaBell />
-          <NavLabel>Subscribe</NavLabel>
-        </NavAction>
+        <NavItem to="/thoughts" active={isActive("/about")}>
+          <FaUser />
+          <NavLabel>Thoughts</NavLabel>
+        </NavItem>
       )}
 
       {/* Fifth nav item */}
@@ -193,10 +193,10 @@ const BottomNavigation = () => {
           <NavLabel>Admin</NavLabel>
         </NavItem>
       ) : (
-        <NavItem to="/about" active={isActive("/about")}>
-          <FaUser />
-          <NavLabel>About</NavLabel>
-        </NavItem>
+        <NavAction onClick={handleSubscribeClick}>
+          <FaBell />
+          <NavLabel>Subscribe</NavLabel>
+        </NavAction>
       )}
     </NavContainer>
   );
