@@ -22,7 +22,7 @@ import PostDetail from "./pages/PostDetail";
 import CreatePost from "./pages/CreatePost";
 import EditPost from "./pages/EditPost";
 import AdminDashboard from "./pages/AdminDashboard";
-import ProfilePage from "./pages/ProfilePage";
+import ProfilePage from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
