@@ -405,7 +405,7 @@ const Header = ({ onSearch, onClearSearch }) => {
             onClick={handleSubscribeClick}
             active={location.pathname.startsWith("/subscribe")}
           >
-            <span>Thoughts</span>
+            <span>Subscribe</span>
           </MobileMenuItem>
           {isAuthenticated && (
             <>
