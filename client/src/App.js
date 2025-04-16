@@ -39,6 +39,7 @@ import Analytics from "./pages/Analytics";
 import CreateThought from "./pages/CreateThought";
 import EditThought from "./pages/EditThought";
 import Thoughts from "./pages/Thoughts";
+import Register from "./pages/Register";
 
 import InstallPrompt from "./components/pwa/InstallPrompt";
 import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButtonAdjuster";
@@ -144,6 +145,7 @@ function App() {
                 }
               />
               <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
               <Route path="/post/:id" element={<PostDetail />} />
               <Route path="/about" element={<About />} />
               <Route path="/privacy" element={<Privacy />} />
