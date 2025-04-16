@@ -225,6 +225,10 @@ const RegisterContainer = styled.div`
   justify-content: center;
   align-items: center;
   padding: 3rem 2rem;
+
+  @media (max-width: 480px) {
+    padding: 2rem 0.5rem;
+  }
 `;
 
 const FormContainer = styled.div`
@@ -234,6 +238,13 @@ const FormContainer = styled.div`
   padding: 2.5rem;
   width: 100%;
   max-width: 500px;
+
+  @media (max-width: 480px) {
+    padding: 2rem 1rem;
+    border-radius: 0;
+    box-shadow: none;
+    max-width: none;
+  }
 `;
 
 const LogoContainer = styled.div`
@@ -288,6 +299,11 @@ const Input = styled.input`
     outline: none;
     border-color: #ff7e5f;
     box-shadow: 0 0 0 2px rgba(255, 126, 95, 0.2);
+  }
+
+  @media (max-width: 480px) {
+    padding: 1.2rem 1rem 1.2rem 2.75rem;
+    font-size: 1.1rem;
   }
 `;
 
