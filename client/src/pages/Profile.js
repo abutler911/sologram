@@ -4,6 +4,7 @@ import { useDropzone } from "react-dropzone";
 import { AuthContext } from "../context/AuthContext";
 import { FaUser, FaEnvelope, FaCamera, FaUpload } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 
 const ProfilePage = () => {
   const { user, updateProfile } = useContext(AuthContext);
@@ -40,8 +41,8 @@ const ProfilePage = () => {
   const onDrop = (acceptedFiles) => {
     const file = acceptedFiles[0];
     if (!file) return;
-    setProfileImage(file);
 
+    setProfileImage(file);
     const reader = new FileReader();
     reader.onload = () => {
       setImagePreview(reader.result);
@@ -51,6 +52,7 @@ const ProfilePage = () => {
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
+    onDropRejected: () => toast.error("Image is too large. Max size is 5MB."),
     accept: { "image/*": [".jpg", ".jpeg", ".png"] },
     maxSize: 5 * 1024 * 1024,
     multiple: false,
@@ -68,11 +70,18 @@ const ProfilePage = () => {
       data.append("profileImage", profileImage);
     }
 
-    const success = await updateProfile(data);
-    if (success) {
-      navigate("/");
+    try {
+      const success = await updateProfile(data);
+      if (success) {
+        navigate("/");
+      } else {
+        toast.error("Profile update failed.");
+      }
+    } catch (err) {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -80,44 +89,52 @@ const ProfilePage = () => {
       <Container>
         <Title>Edit Profile</Title>
         <Form onSubmit={handleSubmit}>
+          <Label htmlFor="username">Username</Label>
           <Field>
             <Icon>
               <FaUser />
             </Icon>
             <Input
               type="text"
+              id="username"
               name="username"
-              placeholder="Username"
               value={formData.username}
               onChange={handleChange}
               required
             />
           </Field>
+
+          <Label htmlFor="email">Email</Label>
           <Field>
             <Icon>
               <FaEnvelope />
             </Icon>
             <Input
               type="email"
+              id="email"
               name="email"
-              placeholder="Email"
               value={formData.email}
               onChange={handleChange}
               required
             />
           </Field>
+
+          <Label htmlFor="bio">Bio</Label>
           <Textarea
+            id="bio"
             name="bio"
-            placeholder="Bio"
+            placeholder="Tell us about yourself..."
             value={formData.bio}
             onChange={handleChange}
             rows={4}
           />
+
           <Label>Profile Image</Label>
           {imagePreview ? (
             <Preview>
               <img src={imagePreview} alt="Preview" />
               <Remove
+                type="button"
                 onClick={() => {
                   setProfileImage(null);
                   setImagePreview(null);
@@ -127,12 +144,13 @@ const ProfilePage = () => {
               </Remove>
             </Preview>
           ) : (
-            <DropArea {...getRootProps()}>
+            <DropArea {...getRootProps()} tabIndex={0}>
               <input {...getInputProps()} />
               <FaUpload />
               <p>Click or drag to upload</p>
             </DropArea>
           )}
+
           <Submit disabled={loading}>
             {loading ? "Saving..." : "Save Changes"}
           </Submit>
@@ -142,6 +160,9 @@ const ProfilePage = () => {
   );
 };
 
+export default ProfilePage;
+
+// Styled Components
 const Wrapper = styled.div`
   background-color: #121212;
   min-height: 100vh;
@@ -165,11 +186,19 @@ const Title = styled.h2`
   margin-bottom: 2rem;
 `;
 
-const Form = styled.form``;
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+`;
+
+const Label = styled.label`
+  color: #aaa;
+  margin-bottom: 0.25rem;
+`;
 
 const Field = styled.div`
   position: relative;
-  margin-bottom: 1.5rem;
 `;
 
 const Icon = styled.div`
@@ -180,6 +209,15 @@ const Icon = styled.div`
   color: #aaa;
 `;
 
+const Input = styled.input`
+  width: 100%;
+  padding: 1rem 1rem 1rem 3rem;
+  background: #333;
+  color: white;
+  border: 1px solid #444;
+  border-radius: 4px;
+`;
+
 const Textarea = styled.textarea`
   width: 100%;
   padding: 1rem;
@@ -188,7 +226,6 @@ const Textarea = styled.textarea`
   border: 1px solid #444;
   border-radius: 4px;
   resize: vertical;
-  margin-bottom: 1.5rem;
 `;
 
 const DropArea = styled.div`
