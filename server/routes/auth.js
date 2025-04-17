@@ -14,7 +14,7 @@ const {
 const { protect, authorize } = require("../middleware/auth");
 
 router.post("/login", login);
-router.post("/register", register);
+router.post("/register", upload.single("profileImage"), register);
 
 router.get("/me", protect, getMe);
 router.put(
