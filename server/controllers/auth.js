@@ -156,7 +156,7 @@ exports.getMe = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const { username, email, bio } = req.body;
+    const { firstName, lastName, username, email, bio } = req.body;
 
     let user = await User.findById(req.user.id);
 
@@ -197,7 +197,8 @@ exports.updateProfile = async (req, res) => {
       user.profileImage = req.file.path;
       user.cloudinaryId = req.file.filename;
     }
-
+    user.firstName = firstName || user.firstName || "Anonymous"; // fallback default if needed
+    user.lastName = lastName || user.lastName;
     user.username = username || user.username;
     user.email = email || user.email;
     user.bio = bio === undefined ? user.bio : bio;
