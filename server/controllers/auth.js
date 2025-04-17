@@ -24,6 +24,8 @@ exports.register = async (req, res) => {
     }
 
     let userData = {
+      firstName,
+      lastName,
       username,
       email,
       password,
@@ -44,6 +46,8 @@ exports.register = async (req, res) => {
       token,
       user: {
         _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
         username: user.username,
         email: user.email,
         bio: user.bio,
@@ -99,6 +103,8 @@ exports.login = async (req, res) => {
       token,
       user: {
         _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
         username: user.username,
         email: user.email,
         bio: user.bio,
@@ -130,6 +136,8 @@ exports.getMe = async (req, res) => {
       success: true,
       data: {
         _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
         username: user.username,
         email: user.email,
         bio: user.bio,
