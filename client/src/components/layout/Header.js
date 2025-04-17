@@ -1129,9 +1129,10 @@ const Greeting = styled.div`
   .autography {
     font-family: "Autography", cursive;
     color: #ff7e5f;
-    font-size: 1.2rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
+    font-size: 1.5rem; /* was 1.2rem */
+    font-weight: 700;
+    letter-spacing: 1px;
+    line-height: 1.3;
   }
 
   @media (max-width: 768px) {
@@ -1147,7 +1148,9 @@ const MobileGreeting = styled.div`
   .autography {
     font-family: "Autography", cursive;
     color: #ff7e5f;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 1px;
   }
 `;
 
