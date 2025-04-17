@@ -7,6 +7,8 @@ import { AuthContext } from "../context/AuthContext";
 
 const Register = () => {
   const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
     username: "",
     email: "",
     password: "",
@@ -84,6 +86,9 @@ const Register = () => {
 
     // Create form data for submission
     const registerFormData = new FormData();
+    registerFormData.append("firstName", formData.firstName);
+    registerFormData.append("lastName", formData.lastName);
+
     registerFormData.append("username", formData.username);
     registerFormData.append("email", formData.email);
     registerFormData.append("password", formData.password);
@@ -114,6 +119,33 @@ const Register = () => {
           <FormTitle>Create an account</FormTitle>
 
           <Form onSubmit={handleSubmit}>
+            <FormGroup>
+              <InputIcon>
+                <FaUser />
+              </InputIcon>
+              <Input
+                type="text"
+                name="firstName"
+                placeholder="First Name"
+                value={formData.firstName}
+                onChange={handleChange}
+                required
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <InputIcon>
+                <FaUser />
+              </InputIcon>
+              <Input
+                type="text"
+                name="lastName"
+                placeholder="Last Name"
+                value={formData.lastName}
+                onChange={handleChange}
+              />
+            </FormGroup>
+
             <FormGroup>
               <InputIcon>
                 <FaUser />

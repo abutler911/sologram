@@ -146,6 +146,13 @@ const Header = ({ onSearch, onClearSearch }) => {
     };
   }, [searchExpanded, showUserMenu]);
 
+  useEffect(() => {
+    // Close mobile menu on any route change
+    setIsMenuOpen(false);
+    setShowUserMenu(false);
+    setSearchExpanded(false);
+  }, [location.pathname]);
+
   const handleLogout = () => {
     logout();
     setShowUserMenu(false);
@@ -190,7 +197,7 @@ const Header = ({ onSearch, onClearSearch }) => {
       <HeaderContainer>
         <HeaderContent searchExpanded={searchExpanded}>
           <LogoContainer searchExpanded={searchExpanded}>
-            <Logo to="/" onClick={closeMenu}>
+            <Logo to="/">
               <div className="logo-main">
                 <FaCamera />
                 <span>SoloGram</span>
@@ -302,6 +309,11 @@ const Header = ({ onSearch, onClearSearch }) => {
                 )}
               </>
             )}
+            {isAuthenticated && (
+              <Greeting>
+                Hi, <span className="autography">{user?.firstName}</span>
+              </Greeting>
+            )}
 
             {isAuthenticated ? (
               <UserMenuContainer ref={userMenuRef}>
@@ -383,29 +395,28 @@ const Header = ({ onSearch, onClearSearch }) => {
           <MobileMenuLogo>
             <FaCamera /> <span>SoloGram</span>
           </MobileMenuLogo>
-          <MobileMenuCloseBtn onClick={closeMenu}>
+          <MobileMenuCloseBtn>
             <FaTimes />
           </MobileMenuCloseBtn>
         </MobileMenuHeader>
+        {isAuthenticated && (
+          <MobileGreeting>
+            Hi, <span className="autography">{user?.firstName}</span>
+          </MobileGreeting>
+        )}
 
         <MobileMenuContent>
-          <MobileMenuItem
-            to="/"
-            onClick={closeMenu}
-            active={location.pathname === "/"}
-          >
+          <MobileMenuItem to="/" active={location.pathname === "/"}>
             Home
           </MobileMenuItem>
           <MobileMenuItem
             to="/collections"
-            onClick={closeMenu}
             active={location.pathname.startsWith("/collections")}
           >
             Collections
           </MobileMenuItem>
           <MobileMenuItem
             to="/thoughts"
-            onClick={closeMenu}
             active={location.pathname.startsWith("/thoughts")}
           >
             <span>Thoughts</span>
@@ -420,14 +431,12 @@ const Header = ({ onSearch, onClearSearch }) => {
             <>
               <MobileMenuItem
                 to="/story-archive"
-                onClick={closeMenu}
                 active={location.pathname.startsWith("/story-archive")}
               >
                 Stories
               </MobileMenuItem>
               <MobileMenuItem
                 to="/profile"
-                onClick={closeMenu}
                 active={location.pathname === "/profile"}
               >
                 <FaUser /> <span>Profile</span>
@@ -437,14 +446,12 @@ const Header = ({ onSearch, onClearSearch }) => {
                 <>
                   <MobileMenuItem
                     to="/admin"
-                    onClick={closeMenu}
                     active={location.pathname.startsWith("/admin")}
                   >
                     Admin
                   </MobileMenuItem>
                   <MobileMenuItem
                     to="/subscribers"
-                    onClick={closeMenu}
                     active={location.pathname.startsWith("/subscribers")}
                   >
                     Subscribers
@@ -454,7 +461,6 @@ const Header = ({ onSearch, onClearSearch }) => {
 
               <MobileMenuItem
                 to="/thoughts/create"
-                onClick={closeMenu}
                 active={location.pathname === "/thoughts/create"}
               >
                 <span>New Thought</span>
@@ -470,14 +476,12 @@ const Header = ({ onSearch, onClearSearch }) => {
             <>
               <MobileMenuItem
                 to="/login"
-                onClick={closeMenu}
                 active={location.pathname.startsWith("/login")}
               >
                 <FaSignInAlt /> <span>Login</span>
               </MobileMenuItem>
               <MobileMenuItem
                 to="/register"
-                onClick={closeMenu}
                 active={location.pathname.startsWith("/register")}
               >
                 <FaUser /> <span>Register</span>
@@ -490,7 +494,6 @@ const Header = ({ onSearch, onClearSearch }) => {
             href="https://solounderground.com"
             target="_blank"
             rel="noopener noreferrer"
-            onClick={closeMenu}
           >
             <FaExternalLinkAlt style={{ marginRight: "0.75rem" }} />
             SoloUnderground
@@ -1115,6 +1118,36 @@ const RegisterButton = styled(Link)`
 
   @media (max-width: 768px) {
     display: none;
+  }
+`;
+
+const Greeting = styled.div`
+  font-size: 1rem;
+  margin-right: 1rem;
+  color: #333;
+
+  .autography {
+    font-family: "Autography", cursive;
+    color: #ff7e5f;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const MobileGreeting = styled.div`
+  font-size: 1rem;
+  padding: 0 1rem 1rem;
+  color: #333;
+
+  .autography {
+    font-family: "Autography", cursive;
+    color: #ff7e5f;
+    font-size: 1.25rem;
   }
 `;
 

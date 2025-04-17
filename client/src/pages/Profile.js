@@ -11,6 +11,8 @@ const ProfilePage = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
     username: "",
     email: "",
     bio: "",
@@ -23,6 +25,8 @@ const ProfilePage = () => {
   useEffect(() => {
     if (user) {
       setFormData({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
         username: user.username || "",
         email: user.email || "",
         bio: user.bio || "",
@@ -63,6 +67,8 @@ const ProfilePage = () => {
     setLoading(true);
 
     const data = new FormData();
+    data.append("firstName", formData.firstName);
+    data.append("lastName", formData.lastName);
     data.append("username", formData.username);
     data.append("email", formData.email);
     data.append("bio", formData.bio);
@@ -89,6 +95,35 @@ const ProfilePage = () => {
       <Container>
         <Title>Edit Profile</Title>
         <Form onSubmit={handleSubmit}>
+          <Label htmlFor="firstName">First Name</Label>
+          <Field>
+            <Icon>
+              <FaUser />
+            </Icon>
+            <Input
+              type="text"
+              id="firstName"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              required
+            />
+          </Field>
+
+          <Label htmlFor="lastName">Last Name</Label>
+          <Field>
+            <Icon>
+              <FaUser />
+            </Icon>
+            <Input
+              type="text"
+              id="lastName"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+            />
+          </Field>
+
           <Label htmlFor="username">Username</Label>
           <Field>
             <Icon>
