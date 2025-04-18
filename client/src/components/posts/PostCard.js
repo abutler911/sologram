@@ -17,6 +17,7 @@ import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../../context/AuthContext";
 import pandaImg from "../../assets/andy.jpg";
+import { getTransformedImageUrl } from "../../utils/cloudinary";
 
 // Constants for personalization
 const AUTHOR_IMAGE = pandaImg;
@@ -308,7 +309,14 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
                   <MediaItem key={index}>
                     {media.mediaType === "image" ? (
                       <PostImage
-                        src={media.mediaUrl}
+                        src={getTransformedImageUrl(media.mediaUrl, {
+                          width: 614,
+                          height: 614,
+                          crop: "pad",
+                          quality: "auto",
+                          format: "auto",
+                          background: "auto",
+                        })}
                         alt={post.caption}
                         width="614"
                         height="614"
