@@ -192,6 +192,12 @@ const Header = ({ onSearch, onClearSearch }) => {
 
   const showSubscriptionBanner = location.pathname === "/";
 
+  const handleLinkClick = () => {
+    closeMenu();
+    setShowUserMenu(false);
+    setSearchExpanded(false);
+  };
+
   return (
     <HeaderWrapper>
       <HeaderContainer>
@@ -395,7 +401,7 @@ const Header = ({ onSearch, onClearSearch }) => {
           <MobileMenuLogo>
             <FaCamera /> <span>SoloGram</span>
           </MobileMenuLogo>
-          <MobileMenuCloseBtn>
+          <MobileMenuCloseBtn onClick={closeMenu}>
             <FaTimes />
           </MobileMenuCloseBtn>
         </MobileMenuHeader>
@@ -406,24 +412,31 @@ const Header = ({ onSearch, onClearSearch }) => {
         )}
 
         <MobileMenuContent>
-          <MobileMenuItem to="/" active={location.pathname === "/"}>
+          <MobileMenuItem
+            to="/"
+            active={location.pathname === "/"}
+            onClick={handleLinkClick}
+          >
             Home
           </MobileMenuItem>
           <MobileMenuItem
             to="/collections"
             active={location.pathname.startsWith("/collections")}
+            onClick={handleLinkClick}
           >
             Collections
           </MobileMenuItem>
           <MobileMenuItem
             to="/thoughts"
             active={location.pathname.startsWith("/thoughts")}
+            onClick={handleLinkClick}
           >
             <span>Thoughts</span>
           </MobileMenuItem>
           <MobileMenuItem
             onClick={handleSubscribeClick}
             active={location.pathname.startsWith("/subscribe")}
+            onClick={handleLinkClick}
           >
             <span>Subscribe</span>
           </MobileMenuItem>
@@ -432,12 +445,14 @@ const Header = ({ onSearch, onClearSearch }) => {
               <MobileMenuItem
                 to="/story-archive"
                 active={location.pathname.startsWith("/story-archive")}
+                onClick={handleLinkClick}
               >
                 Stories
               </MobileMenuItem>
               <MobileMenuItem
                 to="/profile"
                 active={location.pathname === "/profile"}
+                onClick={handleLinkClick}
               >
                 <span>Profile</span>
               </MobileMenuItem>
@@ -447,12 +462,14 @@ const Header = ({ onSearch, onClearSearch }) => {
                   <MobileMenuItem
                     to="/admin"
                     active={location.pathname.startsWith("/admin")}
+                    onClick={handleLinkClick}
                   >
                     Admin
                   </MobileMenuItem>
                   <MobileMenuItem
                     to="/subscribers"
                     active={location.pathname.startsWith("/subscribers")}
+                    onClick={handleLinkClick}
                   >
                     Subscribers
                   </MobileMenuItem>
@@ -487,6 +504,7 @@ const Header = ({ onSearch, onClearSearch }) => {
             href="https://solounderground.com"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleLinkClick}
           >
             <FaExternalLinkAlt style={{ marginRight: "0.75rem" }} />
             SoloUnderground
