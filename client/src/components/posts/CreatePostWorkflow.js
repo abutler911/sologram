@@ -53,6 +53,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       const mapped = initialData.media.map((media) => ({
         id: media._id,
         mediaUrl: media.mediaUrl,
+        cloudinaryId: media.cloudinaryId,
         mediaType: media.mediaType,
         isExisting: true,
         filter: media.filter || "",
@@ -222,11 +223,18 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
           filter: m.filter || "",
         }));
 
+      const formattedExistingMedia = existingMedia.map((m) => ({
+        mediaUrl: m.mediaUrl,
+        cloudinaryId: m.cloudinaryId,
+        mediaType: m.mediaType,
+        filter: m.filter || "",
+      }));
+
       const payload = {
         caption,
         content,
         tags,
-        media: [...existingMedia, ...uploadedMedia],
+        media: [...formattedExistingMedia, ...uploadedMedia],
       };
 
       let response;

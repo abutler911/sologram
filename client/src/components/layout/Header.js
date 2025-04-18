@@ -436,7 +436,6 @@ const Header = ({ onSearch, onClearSearch }) => {
           <MobileMenuItem
             onClick={handleSubscribeClick}
             active={location.pathname.startsWith("/subscribe")}
-            onClick={handleLinkClick}
           >
             <span>Subscribe</span>
           </MobileMenuItem>
