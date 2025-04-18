@@ -363,7 +363,7 @@ const Header = ({ onSearch, onClearSearch }) => {
                       to="/profile"
                       onClick={() => setShowUserMenu(false)}
                     >
-                      <FaUser /> <span>Profile</span>
+                      <span>Profile</span>
                     </UserMenuItem>
                     <MenuDivider />
                     <UserMenuButton onClick={handleLogout}>
@@ -439,7 +439,7 @@ const Header = ({ onSearch, onClearSearch }) => {
                 to="/profile"
                 active={location.pathname === "/profile"}
               >
-                <FaUser /> <span>Profile</span>
+                <span>Profile</span>
               </MobileMenuItem>
 
               {isAdmin && (
@@ -458,13 +458,6 @@ const Header = ({ onSearch, onClearSearch }) => {
                   </MobileMenuItem>
                 </>
               )}
-
-              <MobileMenuItem
-                to="/thoughts/create"
-                active={location.pathname === "/thoughts/create"}
-              >
-                <span>New Thought</span>
-              </MobileMenuItem>
 
               <MobileMenuLogoutButton onClick={handleLogout}>
                 <FaSignOutAlt /> <span>Logout</span>
