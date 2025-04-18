@@ -312,10 +312,10 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
                         src={getTransformedImageUrl(media.mediaUrl, {
                           width: 614,
                           height: 614,
-                          crop: "pad",
+                          crop: "thumb",
                           quality: "auto",
                           format: "auto",
-                          background: "auto",
+                          gravity: "auto",
                         })}
                         alt={post.caption}
                         width="614"
