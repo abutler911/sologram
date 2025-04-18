@@ -199,23 +199,31 @@ exports.updatePost = async (req, res) => {
       }
     }
 
-    // Process new media
-    const newMedia = Array.isArray(media)
-      ? media.map((item) => {
-          if (!item.mediaUrl || !item.cloudinaryId) {
-            throw new Error(
-              "Each new media item must have mediaUrl and cloudinaryId"
-            );
-          }
+    const keptMediaCloudinaryIds = keptMedia.map((m) => m.cloudinaryId);
 
-          return {
-            mediaType: item.mediaType || "image",
-            mediaUrl: item.mediaUrl,
-            cloudinaryId: item.cloudinaryId,
-            filter: item.filter || "",
-            uploadedAt: new Date(),
-          };
-        })
+    const newMedia = Array.isArray(media)
+      ? media
+          .filter((item) => {
+            return (
+              item.cloudinaryId &&
+              !keptMediaCloudinaryIds.includes(item.cloudinaryId)
+            );
+          })
+          .map((item) => {
+            if (!item.mediaUrl || !item.cloudinaryId) {
+              throw new Error(
+                "Each new media item must have mediaUrl and cloudinaryId"
+              );
+            }
+
+            return {
+              mediaType: item.mediaType || "image",
+              mediaUrl: item.mediaUrl,
+              cloudinaryId: item.cloudinaryId,
+              filter: item.filter || "",
+              uploadedAt: new Date(),
+            };
+          })
       : [];
 
     // Update post fields

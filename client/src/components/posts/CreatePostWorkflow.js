@@ -214,8 +214,15 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     setLoading(true);
 
     try {
+      const existingCloudinaryIds = existingMedia.map((m) => m.cloudinaryId);
+
       const uploadedMedia = mediaPreviews
-        .filter((m) => m.mediaUrl && !m.error)
+        .filter(
+          (m) =>
+            m.mediaUrl &&
+            !m.error &&
+            !existingCloudinaryIds.includes(m.cloudinaryId)
+        )
         .map((m) => ({
           mediaUrl: m.mediaUrl,
           cloudinaryId: m.cloudinaryId,
@@ -234,7 +241,8 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
         caption,
         content,
         tags,
-        media: [...formattedExistingMedia, ...uploadedMedia],
+        media: uploadedMedia,
+        keepMedia: existingMedia.map((m) => m.id).join(","),
       };
 
       let response;
