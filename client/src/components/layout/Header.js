@@ -308,11 +308,6 @@ const Header = ({ onSearch, onClearSearch }) => {
                   <span>Create</span>
                 </CreateNewButtonDesktop>
                 {/* Add a button for creating thoughts */}
-                {isAdmin && (
-                  <CreateNewButtonDesktop to="/thoughts/create" thoughts={true}>
-                    <span>New Thought</span>
-                  </CreateNewButtonDesktop>
-                )}
               </>
             )}
             {isAuthenticated && (
