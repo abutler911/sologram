@@ -18,6 +18,7 @@ import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../../context/AuthContext";
 import pandaImg from "../../assets/andy.jpg";
 import { getTransformedImageUrl } from "../../utils/cloudinary";
+import { COLORS, THEME } from "../../theme"; // Import the theme
 
 // Constants for personalization
 const AUTHOR_IMAGE = pandaImg;
@@ -496,21 +497,21 @@ const CardWrapper = styled.div`
 
 // Styled Components
 const Card = styled.article`
-  background-color: #121212;
+  background-color: ${COLORS.cardBackground};
   border-radius: 12px;
-  border: 1px solid #262626;
+  border: 1px solid ${COLORS.border};
   overflow: hidden;
   margin-bottom: 24px;
   display: flex;
   flex-direction: column;
   width: 100%;
   max-width: 614px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 2px ${COLORS.shadow};
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 10px ${COLORS.shadow};
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -532,7 +533,7 @@ const CardHeader = styled.header`
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid #262626;
+  border-bottom: 1px solid ${COLORS.divider};
 `;
 
 const UserInfo = styled.div`
@@ -551,7 +552,7 @@ const Username = styled.span`
   letter-spacing: 0.7px;
   line-height: 1.3;
   margin-top: 2px;
-  color: #ff7e5f;
+  color: ${COLORS.primaryPurple};
 
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
   transition: transform 0.3s ease, filter 0.3s ease;
@@ -565,7 +566,7 @@ const Username = styled.span`
 const ActionsButton = styled.button`
   background: none;
   border: none;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
   font-size: 1rem;
   cursor: pointer;
   padding: 8px;
@@ -573,7 +574,7 @@ const ActionsButton = styled.button`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #262626;
+    background-color: ${COLORS.elevatedBackground};
   }
 `;
 
@@ -581,9 +582,9 @@ const ActionsMenu = styled.div`
   position: absolute;
   right: 0;
   top: 40px;
-  background-color: #262626;
+  background-color: ${COLORS.elevatedBackground};
   border-radius: 4px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 12px ${COLORS.shadow};
   z-index: 10;
   overflow: hidden;
   width: 180px;
@@ -594,7 +595,7 @@ const ActionItem = styled.button`
   padding: 12px 16px;
   border: none;
   background: none;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
   text-align: left;
   font-size: 0.875rem;
   cursor: pointer;
@@ -604,15 +605,21 @@ const ActionItem = styled.button`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #363636;
+    background-color: ${COLORS.primaryPurple}20;
+    color: ${COLORS.primaryPurple};
   }
 
   svg {
     margin-right: 12px;
+    color: ${COLORS.textSecondary};
+  }
+
+  &:hover svg {
+    color: ${COLORS.primaryPurple};
   }
 
   &:not(:last-child) {
-    border-bottom: 1px solid #363636;
+    border-bottom: 1px solid ${COLORS.divider};
   }
 `;
 
@@ -756,7 +763,7 @@ const Dot = styled.button`
   height: 6px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? "#ffffff" : "rgba(255, 255, 255, 0.4)"};
+    props.active ? COLORS.primaryPurple : "rgba(255, 255, 255, 0.4)"};
   border: none;
   cursor: pointer;
   padding: 0;
@@ -773,7 +780,7 @@ const HeartAnimation = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: #ffffff;
+  color: ${COLORS.primaryPurple};
   font-size: 80px;
   opacity: 0;
   animation: ${scaleIn} 1s ease forwards;
@@ -786,7 +793,7 @@ const HeartAnimation = styled.div`
 
 const CardActions = styled.div`
   padding: 8px 16px;
-  border-bottom: 1px solid #262626;
+  border-bottom: 1px solid ${COLORS.divider};
 `;
 
 const ActionGroup = styled.div`
@@ -798,7 +805,8 @@ const ActionGroup = styled.div`
 const LikeButton = styled.button`
   background: none;
   border: none;
-  color: ${(props) => (props.liked ? "#ed4956" : "#ffffff")};
+  color: ${(props) =>
+    props.liked ? COLORS.primaryPurple : COLORS.textPrimary};
   font-size: 1.5rem;
   cursor: ${(props) =>
     props.disabled && !props.liked ? "default" : "pointer"};
@@ -822,7 +830,7 @@ const LikeButton = styled.button`
 const DateDisplay = styled.div`
   display: flex;
   align-items: center;
-  color: #a8a8a8;
+  color: ${COLORS.textTertiary};
   font-size: 0.75rem;
 
   svg {
@@ -835,7 +843,7 @@ const LikesCounter = styled.div`
   padding: 0 16px;
   margin-top: 8px;
   font-size: 0.875rem;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
 `;
 
 const CardContent = styled.div`
@@ -851,7 +859,7 @@ const CardContent = styled.div`
 const PostTitle = styled.h2`
   font-size: 1.25rem;
   font-weight: 700;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
   margin: 0 0 12px 0;
   line-height: 1.3;
   word-break: break-word;
@@ -859,7 +867,7 @@ const PostTitle = styled.h2`
 `;
 
 const Content = styled.p`
-  color: #a8a8a8;
+  color: ${COLORS.textSecondary};
   font-size: 0.875rem;
   margin: 8px 0;
   word-break: break-word;
@@ -879,18 +887,19 @@ const TagsContainer = styled.div`
 `;
 
 const Tag = styled.span`
-  color: #0095f6;
+  color: ${COLORS.primaryBlue};
   font-size: 0.875rem;
 `;
 
 const ViewPostLink = styled(Link)`
-  color: #a8a8a8;
+  color: ${COLORS.textTertiary};
   font-size: 0.75rem;
   margin-top: 8px;
   text-decoration: none;
 
   &:hover {
     text-decoration: underline;
+    color: ${COLORS.primaryBlue};
   }
 `;
 
@@ -907,7 +916,7 @@ const DeleteModal = styled.div`
 `;
 
 const DeleteModalContent = styled.div`
-  background-color: #262626;
+  background-color: ${COLORS.elevatedBackground};
   border-radius: 8px;
   padding: 24px;
   width: 90%;
@@ -916,14 +925,14 @@ const DeleteModalContent = styled.div`
   text-align: center;
 
   h3 {
-    color: #ffffff;
+    color: ${COLORS.textPrimary};
     margin-top: 0;
     margin-bottom: 16px;
     font-weight: 600;
   }
 
   p {
-    color: #a8a8a8;
+    color: ${COLORS.textSecondary};
     margin-bottom: 24px;
   }
 `;
@@ -936,7 +945,7 @@ const DeleteModalButtons = styled.div`
 
 const CancelButton = styled.button`
   background: none;
-  color: #0095f6;
+  color: ${COLORS.primaryBlue};
   border: none;
   border-radius: 4px;
   padding: 12px;
@@ -946,7 +955,7 @@ const CancelButton = styled.button`
   width: 100%;
 
   &:hover {
-    background-color: rgba(0, 149, 246, 0.1);
+    background-color: ${COLORS.primaryBlue}10;
   }
 `;
 
@@ -960,7 +969,7 @@ const ConfirmDeleteButton = styled.button`
   cursor: pointer;
   transition: background-color 0.3s;
   width: 100%;
-  border-top: 1px solid #363636;
+  border-top: 1px solid ${COLORS.divider};
 
   &:hover {
     background-color: rgba(237, 73, 86, 0.1);
@@ -993,7 +1002,7 @@ const UserAvatarImage = styled.img`
   border-radius: 50%;
   object-fit: cover;
   margin-right: 12px;
-  border: 2px solid #ff7e5f;
+  border: 2px solid ${COLORS.primaryPurple};
 `;
 
 const FullscreenModal = styled.div`
