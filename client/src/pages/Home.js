@@ -14,6 +14,7 @@ import { toast } from "react-hot-toast";
 import { FaCamera } from "react-icons/fa";
 import Stories from "../components/stories/Stories";
 import PreloadImage from "../components/PreLoadImage";
+import { COLORS, THEME } from "../theme"; // Import the theme
 
 const PostCard = lazy(() => import("../components/posts/PostCard"));
 
@@ -241,7 +242,9 @@ const Home = forwardRef((props, ref) => {
             <PostGrid isPWA={isPWA}>
               <Suspense
                 fallback={
-                  <div style={{ color: "#aaa", textAlign: "center" }}>
+                  <div
+                    style={{ color: COLORS.textTertiary, textAlign: "center" }}
+                  >
                     Loading posts...
                   </div>
                 }
@@ -283,7 +286,7 @@ const Home = forwardRef((props, ref) => {
 });
 
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   padding: 0.5rem 0 5rem;
 
@@ -316,7 +319,7 @@ const SearchResultsIndicator = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: rgba(30, 30, 30, 0.7);
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
   padding: 0.75rem 1rem;
   margin-bottom: 1rem;
@@ -330,14 +333,14 @@ const SearchResultsIndicator = styled.div`
 `;
 
 const SearchResultsText = styled.div`
-  color: #ddd;
+  color: ${COLORS.textSecondary};
   font-size: 0.9375rem;
 `;
 
 const ClearSearchButton = styled.button`
-  background-color: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #444;
+  background-color: ${COLORS.elevatedBackground};
+  color: ${COLORS.textSecondary};
+  border: 1px solid ${COLORS.border};
   border-radius: 4px;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
@@ -346,7 +349,8 @@ const ClearSearchButton = styled.button`
   white-space: nowrap;
 
   &:hover {
-    background-color: #333;
+    background-color: ${THEME.button.secondary.hoverBackground};
+    border-color: ${COLORS.primaryPurple};
   }
 `;
 
@@ -380,8 +384,8 @@ const GridItem = styled.div`
 `;
 
 const ErrorMessage = styled.div`
-  background-color: rgba(248, 215, 218, 0.9);
-  color: #721c24;
+  background-color: rgba(244, 67, 54, 0.1);
+  color: ${COLORS.error};
   padding: 0.75rem;
   border-radius: 4px;
   margin-bottom: 1rem;
@@ -392,21 +396,21 @@ const ErrorMessage = styled.div`
 const LoadingMessage = styled.div`
   text-align: center;
   margin: 2rem 0;
-  color: #ddd;
+  color: ${COLORS.textSecondary};
   font-size: 0.9375rem;
 `;
 
 const NoPostsMessage = styled.div`
   text-align: center;
   margin: 2rem 0;
-  color: #ddd;
+  color: ${COLORS.textSecondary};
   font-size: 0.9375rem;
 `;
 
 const LoadingMore = styled.div`
   text-align: center;
   margin: 1rem 0;
-  color: #aaa;
+  color: ${COLORS.textTertiary};
   font-style: italic;
   font-size: 0.875rem;
 `;
@@ -415,14 +419,15 @@ const AboutBanner = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #fff;
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px ${COLORS.shadow};
   padding: 1rem;
   margin-bottom: 1rem;
   position: relative;
   width: 100%;
   box-sizing: border-box;
+  border: 1px solid ${COLORS.primaryPurple};
 
   @media (max-width: 640px) {
     padding: 0.875rem;
@@ -451,7 +456,7 @@ const BannerContent = styled.div`
 const LogoContainer = styled.div`
   width: 40px;
   height: 40px;
-  background-color: #ff7e5f;
+  background-color: ${COLORS.primaryPurple};
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -491,7 +496,7 @@ const BannerTextContainer = styled.div`
 
 const BannerTitle = styled.h2`
   font-size: 1.125rem;
-  color: #333;
+  color: ${COLORS.textPrimary};
   margin: 0 0 0.25rem;
 
   @media (max-width: 640px) {
@@ -507,7 +512,7 @@ const BannerTitle = styled.h2`
 
 const BannerTagline = styled.p`
   font-size: 0.9375rem;
-  color: #ff7e5f;
+  color: ${COLORS.primaryBlue};
   font-weight: 500;
   font-style: italic;
   margin: 0;
@@ -524,7 +529,7 @@ const BannerTagline = styled.p`
 const CloseButton = styled.button`
   background: none;
   border: none;
-  color: #999;
+  color: ${COLORS.textTertiary};
   font-size: 1.25rem;
   cursor: pointer;
   padding: 0;
@@ -532,7 +537,7 @@ const CloseButton = styled.button`
   margin-left: 0.75rem;
 
   &:hover {
-    color: #555;
+    color: ${COLORS.textSecondary};
   }
 
   @media (max-width: 640px) {
