@@ -531,6 +531,7 @@ const HeaderContent = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   position: relative;
+  gap: 1rem; // Add gap to space out all elements
 
   ${(props) =>
     props.searchExpanded &&
@@ -546,6 +547,8 @@ const HeaderContent = styled.div`
 `;
 
 const LogoContainer = styled.div`
+  flex: 0 0 auto; // Don't let it stretch
+
   ${(props) =>
     props.searchExpanded &&
     `
@@ -627,8 +630,9 @@ const Logo = styled(Link)`
 
 const DesktopNavigation = styled.nav`
   display: flex;
-  gap: 1.5rem;
+  gap: 2.25rem;
   align-items: center;
+  margin-left: 2rem;
 
   @media (max-width: 768px) {
     display: none;
@@ -638,15 +642,17 @@ const DesktopNavigation = styled.nav`
 const NavLink = styled(Link)`
   color: ${(props) => (props.active ? "#ff7e5f" : "#4a4a4a")};
   text-decoration: none;
-  font-weight: 500;
+  font-weight: ${(props) =>
+    props.active ? "600" : "500"}; // Bolder for active state
   position: relative;
   padding: 0.5rem 0;
+  transition: color 0.3s ease;
 
   &:after {
     content: "";
     position: absolute;
     left: 0;
-    bottom: 0;
+    bottom: -2px; // Moved down slightly
     width: ${(props) => (props.active ? "100%" : "0")};
     height: 2px;
     background-color: #ff7e5f;
@@ -665,7 +671,7 @@ const NavLink = styled(Link)`
 const HeaderActions = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
 `;
 
 const SearchContainer = styled.div`
@@ -1127,17 +1133,31 @@ const RegisterButton = styled(Link)`
 `;
 
 const Greeting = styled.div`
-  font-size: 1rem;
+  font-size: 0.95rem;
   margin-right: 1rem;
-  color: #333;
+  color: #555;
+  background-color: #f9f9f9;
+  padding: 0.4rem 0.75rem;
+  border-radius: 20px;
+  border: 1px solid #eee;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: #fff0ed;
+    border-color: #ffd7d0;
+  }
 
   .autography {
     font-family: "Autography", cursive;
     color: #ff7e5f;
-    font-size: 1.5rem; /* was 1.2rem */
+    font-size: 1.4rem;
     font-weight: 700;
-    letter-spacing: 1px;
-    line-height: 1.3;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+    display: inline-block;
+    margin-left: 0.25rem;
+    position: relative;
+    top: 2px;
   }
 
   @media (max-width: 768px) {
@@ -1147,8 +1167,12 @@ const Greeting = styled.div`
 
 const MobileGreeting = styled.div`
   font-size: 1rem;
-  padding: 0 1rem 1rem;
+  padding: 0.75rem 1rem 1rem;
   color: #333;
+  background-color: #f9f9f9;
+  margin: 0 1rem;
+  border-radius: 20px;
+  text-align: center;
 
   .autography {
     font-family: "Autography", cursive;
@@ -1156,6 +1180,8 @@ const MobileGreeting = styled.div`
     font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: 1px;
+    display: inline-block;
+    margin-left: 0.25rem;
   }
 `;
 
