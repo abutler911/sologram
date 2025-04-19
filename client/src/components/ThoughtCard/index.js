@@ -11,6 +11,7 @@ import {
   FaShare,
 } from "react-icons/fa";
 import { moodColors, moodEmojis } from "../../utils/themeConstants"; // Import from shared utility file
+import { COLORS, THEME } from "../../theme"; // Import the theme
 
 // Animations
 const fadeIn = keyframes`
@@ -32,13 +33,13 @@ const float = keyframes`
 // ThoughtCard styled components
 const Card = styled.div`
   position: relative;
-  background: rgba(17, 17, 17, 0.75);
+  background: ${COLORS.cardBackground};
   backdrop-filter: blur(10px);
   border-radius: 24px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid ${COLORS.border};
+  box-shadow: 0 10px 30px ${COLORS.shadow};
   animation: ${fadeIn} 0.4s ease-out;
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -52,8 +53,8 @@ const Card = styled.div`
     height: 5px;
     background: ${(props) =>
       props.mood
-        ? moodColors[props.mood].gradient
-        : moodColors.excited.gradient};
+        ? `linear-gradient(to right, ${COLORS.primaryPurple}, ${COLORS.primaryBlue}, ${COLORS.primaryGreen})`
+        : `linear-gradient(to right, ${COLORS.primaryPurple}, ${COLORS.primaryBlue})`};
     opacity: ${(props) => (props.pinned ? 1 : 0.7)};
   }
 
@@ -67,37 +68,25 @@ const Card = styled.div`
     border-radius: 24px;
     background: ${(props) =>
       props.mood
-        ? `linear-gradient(45deg, ${
-            moodColors[props.mood].primary
-          }05, transparent 40%)`
-        : `linear-gradient(45deg, ${moodColors.excited.primary}05, transparent 40%)`};
+        ? `linear-gradient(45deg, ${COLORS.primaryPurple}05, transparent 40%)`
+        : `linear-gradient(45deg, ${COLORS.primaryPurple}05, transparent 40%)`};
     pointer-events: none;
     z-index: 1;
   }
 
   &:hover {
     transform: translateY(-5px) scale(1.02);
-    background-color: rgba(26, 26, 26, 0.85);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+    background-color: ${COLORS.elevatedBackground};
+    box-shadow: 0 15px 35px ${COLORS.shadow};
     border-color: ${(props) =>
-      props.mood
-        ? moodColors[props.mood].primary + "40"
-        : moodColors.excited.primary + "40"};
+      props.mood ? `${COLORS.primaryPurple}40` : `${COLORS.primaryPurple}40`};
   }
 
   ${(props) =>
     props.pinned &&
     `
-    border-color: ${
-      props.mood
-        ? moodColors[props.mood].primary + "80"
-        : moodColors.excited.primary + "80"
-    };
-    box-shadow: 0 10px 35px ${
-      props.mood
-        ? moodColors[props.mood].primary + "30"
-        : moodColors.excited.primary + "30"
-    };
+    border-color: ${COLORS.primaryPurple}80;
+    box-shadow: 0 10px 35px ${COLORS.primaryPurple}30;
   `}
 `;
 
@@ -133,9 +122,7 @@ const Avatar = styled.div`
   height: 52px;
   border-radius: 50%;
   overflow: hidden;
-  box-shadow: 0 0 0 2px
-    ${(props) =>
-      props.mood ? moodColors[props.mood].primary : moodColors.excited.primary};
+  box-shadow: 0 0 0 2px ${COLORS.primaryPurple};
   position: relative;
 
   /* Inner glow effect */
@@ -147,11 +134,7 @@ const Avatar = styled.div`
     right: 0;
     bottom: 0;
     border-radius: 50%;
-    box-shadow: inset 0 0 15px
-      ${(props) =>
-        props.mood
-          ? moodColors[props.mood].primary
-          : moodColors.excited.primary};
+    box-shadow: inset 0 0 15px ${COLORS.primaryPurple};
     opacity: 0.3;
     transition: opacity 0.3s;
   }
@@ -173,12 +156,11 @@ const DefaultAvatar = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${(props) => {
-    const color = props.mood
-      ? moodColors[props.mood].gradient
-      : moodColors.excited.gradient;
-    return color;
-  }};
+  background: linear-gradient(
+    45deg,
+    ${COLORS.primaryPurple},
+    ${COLORS.primaryBlue}
+  );
   color: #ffffff;
   font-size: 1.6rem;
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
@@ -196,7 +178,7 @@ const Username = styled.div`
   font-family: "Autography", cursive;
   font-weight: normal;
   font-size: 1.9rem;
-  color: #ffcb66;
+  color: ${COLORS.accentPurple};
   text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
   letter-spacing: 0.5px;
   margin-bottom: 2px;
@@ -211,15 +193,15 @@ const Username = styled.div`
 
 const UserHandle = styled.div`
   font-family: "Space Grotesk", sans-serif;
-  background-color: rgba(255, 126, 95, 0.1);
+  background-color: rgba(149, 117, 205, 0.1);
   padding: 0.15rem 0.6rem;
   border-radius: 999px;
-  color: #ff7e5f;
+  color: ${COLORS.accentPurple};
   font-size: 0.75rem;
   display: inline-block;
   margin-top: 2px;
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 126, 95, 0.1);
+  border: 1px solid rgba(149, 117, 205, 0.1);
 `;
 
 const UserDivider = styled.div`
@@ -228,8 +210,8 @@ const UserDivider = styled.div`
   background: linear-gradient(
     to right,
     transparent,
-    ${(props) => (props.mood ? moodColors[props.mood].primary : "#ffcb66")},
-    #ff7e5f
+    ${COLORS.primaryPurple},
+    ${COLORS.primaryBlue}
   );
   opacity: 0.7;
   margin: 2px 0 4px;
@@ -245,7 +227,7 @@ const ThoughtActions = styled.div`
 const ActionButton = styled.button`
   background: none;
   border: none;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   width: 32px;
   height: 32px;
   display: flex;
@@ -256,8 +238,8 @@ const ActionButton = styled.button`
   transition: all 0.3s;
 
   &:hover {
-    background-color: #333333;
-    color: #ffffff;
+    background-color: ${COLORS.elevatedBackground};
+    color: ${COLORS.textPrimary};
     transform: scale(1.1);
   }
 
@@ -266,21 +248,19 @@ const ActionButton = styled.button`
   }
 
   &.pinned {
-    color: #ffbb00;
+    color: ${COLORS.accentGreen};
   }
 `;
 
 const Content = styled.p`
   font-family: "Lora", serif;
-  color: #f5f5f5;
+  color: ${COLORS.textPrimary};
   font-size: 1rem;
   line-height: 1.7;
   background: rgba(255, 255, 255, 0.03);
   padding: 1.5rem;
   border-radius: 16px;
-  border-left: 3px solid
-    ${(props) =>
-      props.mood ? moodColors[props.mood].primary : moodColors.excited.primary};
+  border-left: 3px solid ${COLORS.primaryPurple};
   font-style: italic;
   white-space: pre-wrap;
   letter-spacing: 0.3px;
@@ -291,8 +271,7 @@ const Content = styled.p`
   &:first-letter {
     font-size: 1.3em;
     font-weight: 500;
-    color: ${(props) =>
-      props.mood ? moodColors[props.mood].primary : moodColors.excited.primary};
+    color: ${COLORS.primaryPurple};
   }
 `;
 
@@ -300,7 +279,7 @@ const Media = styled.div`
   margin: 1rem 0;
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 5px 15px ${COLORS.shadow};
   position: relative;
   z-index: 2;
 
@@ -343,14 +322,12 @@ const Tags = styled.div`
 
 const Tag = styled.span`
   font-family: "Space Grotesk", sans-serif;
-  background: ${(props) =>
-    props.mood
-      ? `linear-gradient(120deg, ${moodColors[props.mood].primary}30, ${
-          moodColors[props.mood].primary
-        }10)`
-      : `linear-gradient(120deg, ${moodColors.excited.primary}30, ${moodColors.excited.primary}10)`};
-  color: ${(props) =>
-    props.mood ? moodColors[props.mood].primary : moodColors.excited.primary};
+  background: linear-gradient(
+    120deg,
+    ${COLORS.primaryPurple}30,
+    ${COLORS.primaryPurple}10
+  );
+  color: ${COLORS.primaryPurple};
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
   font-size: 0.65rem;
@@ -360,11 +337,7 @@ const Tag = styled.span`
   overflow: hidden;
   letter-spacing: 0.3px;
   backdrop-filter: blur(4px);
-  border: 1px solid
-    ${(props) =>
-      props.mood
-        ? moodColors[props.mood].primary + "30"
-        : moodColors.excited.primary + "30"};
+  border: 1px solid ${COLORS.primaryPurple}30;
 
   &:before {
     content: "";
@@ -384,11 +357,7 @@ const Tag = styled.span`
 
   &:hover {
     transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 3px 10px
-      ${(props) =>
-        props.mood
-          ? moodColors[props.mood].primary + "40"
-          : moodColors.excited.primary + "40"};
+    box-shadow: 0 3px 10px ${COLORS.primaryPurple}40;
 
     &:before {
       animation: ${shimmer} 1.5s infinite;
@@ -403,7 +372,7 @@ const Meta = styled.div`
   margin-top: 0.75rem;
   margin-bottom: 1rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #333333;
+  border-top: 1px solid ${COLORS.divider};
   position: relative;
   z-index: 2;
 `;
@@ -412,37 +381,27 @@ const MoodIndicator = styled.div`
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  color: ${(props) =>
-    props.mood ? moodColors[props.mood].primary : moodColors.excited.primary};
+  color: ${COLORS.primaryBlue};
   font-size: 0.7rem;
   font-weight: 500;
   text-transform: capitalize;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  background: ${(props) =>
-    props.mood
-      ? `linear-gradient(120deg, ${moodColors[props.mood].primary}20, ${
-          moodColors[props.mood].primary
-        }05)`
-      : `linear-gradient(120deg, ${moodColors.excited.primary}20, ${moodColors.excited.primary}05)`};
-  box-shadow: 0 0 10px
-    ${(props) =>
-      props.mood
-        ? moodColors[props.mood].primary + "30"
-        : moodColors.excited.primary + "30"};
+  background: linear-gradient(
+    120deg,
+    ${COLORS.primaryBlue}20,
+    ${COLORS.primaryBlue}05
+  );
+  box-shadow: 0 0 10px ${COLORS.primaryBlue}30;
   backdrop-filter: blur(4px);
-  border: 1px solid
-    ${(props) =>
-      props.mood
-        ? moodColors[props.mood].primary + "20"
-        : moodColors.excited.primary + "20"};
+  border: 1px solid ${COLORS.primaryBlue}20;
   position: relative;
   overflow: hidden;
 `;
 
 const TimeDisplay = styled.div`
   font-family: "Space Grotesk", sans-serif;
-  color: #bbbbbb;
+  color: ${COLORS.textSecondary};
   font-size: 0.7rem;
   display: flex;
   align-items: center;
@@ -463,13 +422,14 @@ const ActionBar = styled.div`
   justify-content: space-between;
   padding-top: 0.75rem;
   margin-top: 0.75rem;
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid ${COLORS.divider};
   position: relative;
   z-index: 2;
 `;
 
 const ActionIcon = styled.div`
-  color: ${(props) => (props.liked ? "#e0245e" : "#a0a0a0")};
+  color: ${(props) =>
+    props.liked ? COLORS.primaryPurple : COLORS.textTertiary};
   transition: color 0.3s, transform 0.3s;
   font-size: 0.9rem;
 
@@ -481,7 +441,7 @@ const ActionIcon = styled.div`
 `;
 
 const ActionCount = styled.span`
-  color: #a0a0a0;
+  color: ${COLORS.textTertiary};
   font-size: 0.75rem;
   font-weight: 500;
   transition: color 0.3s;
@@ -514,60 +474,60 @@ const ActionItem = styled.div`
 
   &:nth-child(1):hover {
     &:before {
-      background-color: rgba(224, 36, 94, 0.1);
+      background-color: ${COLORS.primaryPurple}10;
       transform: scale(1);
     }
 
     ${ActionIcon} {
-      color: #e0245e;
+      color: ${COLORS.primaryPurple};
       transform: scale(1.2);
     }
 
     ${ActionCount} {
-      color: #e0245e;
+      color: ${COLORS.primaryPurple};
     }
   }
 
   &:nth-child(2):hover {
     &:before {
-      background-color: rgba(29, 161, 242, 0.1);
+      background-color: ${COLORS.primaryBlue}10;
       transform: scale(1);
     }
 
     ${ActionIcon} {
-      color: #1da1f2;
+      color: ${COLORS.primaryBlue};
       transform: scale(1.2);
     }
 
     ${ActionCount} {
-      color: #1da1f2;
+      color: ${COLORS.primaryBlue};
     }
   }
 
   &:nth-child(3):hover {
     &:before {
-      background-color: rgba(23, 191, 99, 0.1);
+      background-color: ${COLORS.primaryGreen}10;
       transform: scale(1);
     }
 
     ${ActionIcon} {
-      color: #17bf63;
+      color: ${COLORS.primaryGreen};
       transform: scale(1.2);
     }
 
     ${ActionCount} {
-      color: #17bf63;
+      color: ${COLORS.primaryGreen};
     }
   }
 
   &:nth-child(4):hover {
     &:before {
-      background-color: rgba(29, 161, 242, 0.1);
+      background-color: ${COLORS.accentPurple}10;
       transform: scale(1);
     }
 
     ${ActionIcon} {
-      color: #1da1f2;
+      color: ${COLORS.accentPurple};
       transform: scale(1.2);
     }
   }
@@ -577,14 +537,17 @@ const PinnedBadge = styled.div`
   position: absolute;
   top: 0px;
   right: 1.5rem;
-  background: ${(props) =>
-    props.mood ? moodColors[props.mood].gradient : moodColors.excited.gradient};
+  background: linear-gradient(
+    45deg,
+    ${COLORS.primaryPurple},
+    ${COLORS.primaryBlue}
+  );
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.35rem 0.85rem;
   border-radius: 0 0 10px 10px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3px 8px ${COLORS.shadow};
   z-index: 10;
   letter-spacing: 0.5px;
 

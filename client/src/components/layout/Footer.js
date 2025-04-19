@@ -1,10 +1,10 @@
 import React from "react";
 import styled from "styled-components";
 import { FaHeart, FaCamera, FaEnvelope, FaGithub } from "react-icons/fa";
+import { COLORS, THEME } from "../../theme"; // Import the theme
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-
   return (
     <FooterContainer>
       <FooterContent>
@@ -16,7 +16,6 @@ const Footer = () => {
             </div>
             <div className="tagline">One Voice. Infinite Moments.</div>
           </LogoSection>
-
           <SocialLinks>
             <SocialLink href="mailto:abutler911@gmail.com" aria-label="Email">
               <FaEnvelope />
@@ -31,18 +30,14 @@ const Footer = () => {
             </SocialLink>
           </SocialLinks>
         </TopSection>
-
         <Divider />
-
         <BottomSection>
           <Copyright>
             &copy; {currentYear} SoloGram. All rights reserved.
           </Copyright>
-
           <CreatedWithLove>
             Created with <HeartIcon /> by Andrew
           </CreatedWithLove>
-
           <FooterLinks>
             <FooterLink href="/about">About</FooterLink>
             <FooterLink href="/privacy">Privacy</FooterLink>
@@ -55,8 +50,8 @@ const Footer = () => {
 };
 
 const FooterContainer = styled.footer`
-  background-color: #fff;
-  border-top: 1px solid #e6e6e6;
+  background-color: ${COLORS.cardBackground};
+  border-top: 1px solid ${COLORS.divider};
   padding: 2rem 0;
   padding-bottom: calc(2rem + env(safe-area-inset-bottom));
   margin-bottom: 65px;
@@ -66,7 +61,6 @@ const FooterContent = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
-
   @media (max-width: 768px) {
     padding: 0 1rem;
   }
@@ -77,7 +71,6 @@ const TopSection = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
-
   @media (max-width: 768px) {
     flex-direction: column;
     gap: 1.5rem;
@@ -88,7 +81,7 @@ const TopSection = styled.div`
 const LogoSection = styled.div`
   display: flex;
   flex-direction: column;
-  color: #ff7e5f;
+  color: ${COLORS.primaryPurple};
 
   .logo {
     display: flex;
@@ -106,7 +99,7 @@ const LogoSection = styled.div`
   .tagline {
     font-size: 0.9rem;
     font-style: italic;
-    color: #666;
+    color: ${COLORS.primaryBlue};
   }
 `;
 
@@ -124,17 +117,17 @@ const SocialLinks = styled.div`
 `;
 
 const SocialLink = styled.a`
-  color: #666;
+  color: ${COLORS.textSecondary};
   transition: color 0.3s;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.primaryGreen};
   }
 `;
 
 const Divider = styled.hr`
   border: none;
-  border-top: 1px solid #e6e6e6;
+  border-top: 1px solid ${COLORS.divider};
   margin-bottom: 1.5rem;
 `;
 
@@ -152,13 +145,13 @@ const BottomSection = styled.div`
 `;
 
 const Copyright = styled.p`
-  color: #6c757d;
+  color: ${COLORS.textTertiary};
   margin: 0;
   font-size: 0.875rem;
 `;
 
 const CreatedWithLove = styled.p`
-  color: #6c757d;
+  color: ${COLORS.textTertiary};
   display: flex;
   align-items: center;
   font-size: 0.875rem;
@@ -166,7 +159,7 @@ const CreatedWithLove = styled.p`
 `;
 
 const HeartIcon = styled(FaHeart)`
-  color: #ff7e5f;
+  color: ${COLORS.primaryPurple};
   margin: 0 0.25rem;
 `;
 
@@ -181,13 +174,13 @@ const FooterLinks = styled.div`
 `;
 
 const FooterLink = styled.a`
-  color: #6c757d;
+  color: ${COLORS.textSecondary};
   font-size: 0.875rem;
   text-decoration: none;
   transition: color 0.3s;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.primaryBlue};
     text-decoration: underline;
   }
 `;

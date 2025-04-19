@@ -15,6 +15,7 @@ import {
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-hot-toast";
 import { requestNotificationPermission } from "../../utils/oneSignal";
+import { COLORS, THEME } from "../../theme"; // Import the theme
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -218,7 +219,7 @@ const NavAction = styled.button`
   justify-content: center;
   padding: 0.5rem 0;
   flex: 1;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   cursor: pointer;
 
   svg {
@@ -227,7 +228,7 @@ const NavAction = styled.button`
   }
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.primaryBlue};
   }
 `;
 
@@ -243,8 +244,8 @@ const NavContainer = styled.div`
     left: 0;
     right: 0;
     height: 60px; /* Slightly increased for better touchability */
-    background-color: #1e1e1e;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
+    background-color: ${COLORS.cardBackground};
+    box-shadow: 0 -2px 8px ${COLORS.shadow};
     z-index: 1000;
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
@@ -257,7 +258,8 @@ const NavItem = styled(Link)`
   justify-content: center;
   padding: 0.5rem 0;
   flex: 1;
-  color: ${(props) => (props.active ? "#ff7e5f" : "#aaaaaa")};
+  color: ${(props) =>
+    props.active ? COLORS.primaryPurple : COLORS.textTertiary};
   text-decoration: none;
 
   svg {
@@ -266,7 +268,7 @@ const NavItem = styled(Link)`
   }
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.primaryPurple};
   }
 `;
 
@@ -293,16 +295,16 @@ const CreateButton = styled.button`
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background-color: #ff7e5f;
+  background-color: ${COLORS.primaryGreen};
   border: none;
   color: white;
   font-size: 1.25rem;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 8px ${COLORS.shadow};
   margin-bottom: 0.125rem;
 
   &:hover {
-    background-color: #ff6347;
+    background-color: ${COLORS.accentGreen};
   }
 
   &:active {
@@ -324,21 +326,21 @@ const CreateOptionsOverlay = styled.div`
 `;
 
 const CreateOptions = styled.div`
-  background-color: #262626;
+  background-color: ${COLORS.cardBackground};
   border-radius: 12px;
   overflow: hidden;
   width: 80%;
   max-width: 300px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px ${COLORS.shadow};
 `;
 
 const CreateOptionItem = styled(Link)`
   display: flex;
   align-items: center;
   padding: 16px;
-  color: white;
+  color: ${COLORS.textPrimary};
   text-decoration: none;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid ${COLORS.divider};
 
   &:last-child {
     border-bottom: none;
@@ -347,11 +349,11 @@ const CreateOptionItem = styled(Link)`
   svg {
     margin-right: 12px;
     font-size: 1.2rem;
-    color: #ff7e5f;
+    color: ${COLORS.primaryGreen};
   }
 
   &:hover {
-    background-color: #333;
+    background-color: ${COLORS.elevatedBackground};
   }
 `;
 
@@ -366,7 +368,7 @@ const BrandCenter = styled.div`
 const BrandText = styled.span`
   font-size: 0.75rem;
   font-weight: 600;
-  color: #ff7e5f;
+  color: ${COLORS.primaryPurple};
   letter-spacing: 0.5px;
   user-select: none;
   animation: pulse 2.8s ease-in-out infinite;

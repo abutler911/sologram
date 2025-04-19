@@ -21,6 +21,7 @@ import { AuthContext } from "../../context/AuthContext";
 import HeaderSubscriptionBanner from "../subscription/HeaderSubscriptionBanner";
 import { toast } from "react-hot-toast";
 import { requestNotificationPermission } from "../../utils/oneSignal";
+import { COLORS, THEME } from "../../theme"; // Import the theme
 
 const Header = ({ onSearch, onClearSearch }) => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
@@ -511,16 +512,16 @@ const Header = ({ onSearch, onClearSearch }) => {
   );
 };
 
-// Styled Components (updated ones)
+// Styled Components (updated with Modern Twilight theme)
 const HeaderWrapper = styled.div`
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px ${COLORS.shadow};
 `;
 
 const HeaderContainer = styled.header`
-  background-color: #ffffff;
+  background-color: ${COLORS.primaryPurple};
 `;
 
 const HeaderContent = styled.div`
@@ -571,8 +572,7 @@ const Logo = styled(Link)`
     font-family: "Sora", sans-serif;
     font-size: 2.2rem;
     font-weight: 600;
-    color: #ff7e5f;
-
+    color: ${COLORS.textPrimary};
     letter-spacing: 1px;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
@@ -592,7 +592,7 @@ const Logo = styled(Link)`
     font-size: 0.95rem;
     font-style: italic;
     font-weight: 400;
-    color: #666;
+    color: ${COLORS.accentBlue};
     margin-top: 0.4rem;
     margin-left: 0; /* override previous indent */
     text-align: left;
@@ -640,7 +640,7 @@ const DesktopNavigation = styled.nav`
 `;
 
 const NavLink = styled(Link)`
-  color: ${(props) => (props.active ? "#ff7e5f" : "#4a4a4a")};
+  color: ${(props) => (props.active ? COLORS.accentGreen : COLORS.textPrimary)};
   text-decoration: none;
   font-weight: ${(props) =>
     props.active ? "600" : "500"}; // Bolder for active state
@@ -655,12 +655,12 @@ const NavLink = styled(Link)`
     bottom: -2px; // Moved down slightly
     width: ${(props) => (props.active ? "100%" : "0")};
     height: 2px;
-    background-color: #ff7e5f;
+    background-color: ${COLORS.primaryGreen};
     transition: width 0.3s ease;
   }
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.accentGreen};
 
     &:after {
       width: 100%;
@@ -701,26 +701,26 @@ const ActionButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #4a4a4a;
+  color: ${COLORS.textPrimary};
   font-size: 1.125rem;
   padding: 0.5rem;
   cursor: pointer;
   transition: color 0.3s;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.accentGreen};
   }
 `;
 
 const SearchForm = styled.form`
   display: flex;
   align-items: center;
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
   overflow: hidden;
-  border: 1px solid #ddd;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px ${COLORS.shadow};
   width: 100%;
 
   @media (min-width: 768px) {
@@ -731,7 +731,7 @@ const SearchForm = styled.form`
 const SearchInput = styled.input`
   background: transparent;
   border: none;
-  color: #4a4a4a;
+  color: ${COLORS.textPrimary};
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   width: 100%;
@@ -739,14 +739,14 @@ const SearchInput = styled.input`
   flex: 1;
 
   &::placeholder {
-    color: #999;
+    color: rgba(255, 255, 255, 0.7);
   }
 `;
 
 const ClearButton = styled.button`
   background: none;
   border: none;
-  color: #999;
+  color: rgba(255, 255, 255, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -755,12 +755,12 @@ const ClearButton = styled.button`
   font-size: 0.75rem;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.accentGreen};
   }
 `;
 
 const SearchSubmit = styled.button`
-  background-color: #ff7e5f;
+  background-color: ${COLORS.primaryBlue};
   border: none;
   color: white;
   display: flex;
@@ -771,25 +771,25 @@ const SearchSubmit = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #ff6347;
+    background-color: ${THEME.button.action.hoverBackground};
   }
 `;
 
 const CloseSearchButton = styled.button`
-  background-color: #eee;
+  background-color: rgba(0, 0, 0, 0.2);
   border: none;
-  color: #666;
+  color: rgba(255, 255, 255, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0.5rem 0.75rem;
   cursor: pointer;
   transition: background-color 0.3s;
-  border-left: 1px solid #ddd;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
 
   &:hover {
-    background-color: #ddd;
-    color: #333;
+    background-color: rgba(0, 0, 0, 0.3);
+    color: ${COLORS.textPrimary};
   }
 
   @media (min-width: 768px) {
@@ -801,7 +801,8 @@ const CreateNewButtonDesktop = styled(Link)`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: ${(props) => (props.thoughts ? "#7891c9" : "#ff7e5f")};
+  background-color: ${(props) =>
+    props.thoughts ? COLORS.primaryBlue : COLORS.primaryGreen};
   color: white;
   text-decoration: none;
   padding: 0.5rem 1rem;
@@ -811,7 +812,10 @@ const CreateNewButtonDesktop = styled(Link)`
   margin-left: ${(props) => (props.thoughts ? "0.5rem" : "0")};
 
   &:hover {
-    background-color: ${(props) => (props.thoughts ? "#6a80b4" : "#ff6347")};
+    background-color: ${(props) =>
+      props.thoughts
+        ? THEME.button.action.hoverBackground
+        : COLORS.accentGreen};
   }
 
   @media (max-width: 768px) {
@@ -834,12 +838,12 @@ const UserButton = styled.button`
 
   .arrow-icon {
     font-size: 0.75rem;
-    color: #666;
+    color: ${COLORS.textPrimary};
     transition: transform 0.2s;
   }
 
   &:hover .arrow-icon {
-    color: #ff7e5f;
+    color: ${COLORS.accentGreen};
   }
 
   @media (max-width: 768px) {
@@ -851,14 +855,15 @@ const UserAvatar = styled.div`
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background-color: #f0f0f0;
+  background-color: rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #555;
+  color: ${COLORS.textPrimary};
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.accentGreen};
+    background-color: rgba(255, 255, 255, 0.3);
   }
 `;
 
@@ -866,9 +871,9 @@ const UserMenuDropdown = styled.div`
   position: absolute;
   top: 100%;
   right: 0;
-  background-color: white;
+  background-color: ${COLORS.cardBackground};
   border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px ${COLORS.shadow};
   width: 200px;
   padding: 0.5rem 0;
   margin-top: 0.5rem;
@@ -877,22 +882,22 @@ const UserMenuDropdown = styled.div`
 
 const UserInfo = styled.div`
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid ${COLORS.divider};
 
   strong {
     display: block;
-    color: #333;
+    color: ${COLORS.textPrimary};
   }
 
   small {
-    color: #888;
+    color: ${COLORS.textSecondary};
     font-size: 0.75rem;
   }
 `;
 
 const MenuDivider = styled.div`
   height: 1px;
-  background-color: #eee;
+  background-color: ${COLORS.divider};
   margin: 0.5rem 0;
 `;
 
@@ -901,22 +906,22 @@ const UserMenuItem = styled(Link)`
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  color: #4a4a4a;
+  color: ${COLORS.textSecondary};
   text-decoration: none;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #f9f9f9;
-    color: #ff7e5f;
+    background-color: ${COLORS.elevatedBackground};
+    color: ${COLORS.primaryPurple};
   }
 
   svg {
     font-size: 1rem;
-    color: #777;
+    color: ${COLORS.textTertiary};
   }
 
   &:hover svg {
-    color: #ff7e5f;
+    color: ${COLORS.primaryPurple};
   }
 `;
 
@@ -929,22 +934,22 @@ const UserMenuButton = styled.button`
   background: none;
   border: none;
   padding: 0.75rem 1rem;
-  color: #4a4a4a;
+  color: ${COLORS.textSecondary};
   cursor: pointer;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #f9f9f9;
-    color: #ff7e5f;
+    background-color: ${COLORS.elevatedBackground};
+    color: ${COLORS.primaryPurple};
   }
 
   svg {
     font-size: 1rem;
-    color: #777;
+    color: ${COLORS.textTertiary};
   }
 
   &:hover svg {
-    color: #ff7e5f;
+    color: ${COLORS.primaryPurple};
   }
 `;
 
@@ -952,8 +957,8 @@ const LoginButton = styled(Link)`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #f0f0f0;
-  color: #4a4a4a;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: ${COLORS.textPrimary};
   text-decoration: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -961,8 +966,8 @@ const LoginButton = styled(Link)`
   transition: all 0.3s;
 
   &:hover {
-    background-color: #e0e0e0;
-    color: #ff7e5f;
+    background-color: rgba(255, 255, 255, 0.25);
+    color: ${COLORS.textPrimary};
   }
 
   @media (max-width: 768px) {
@@ -976,12 +981,12 @@ const MobileMenuToggle = styled.button`
   background: none;
   border: none;
   font-size: 1.25rem;
-  color: #4a4a4a;
+  color: ${COLORS.textPrimary};
   cursor: pointer;
   padding: 0.5rem;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.accentGreen};
   }
 
   @media (max-width: 768px) {
@@ -996,8 +1001,8 @@ const MobileMenu = styled.div`
   bottom: 0;
   width: 80%;
   max-width: 300px;
-  background-color: white;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  background-color: ${COLORS.cardBackground};
+  box-shadow: -2px 0 10px ${COLORS.shadow};
   z-index: 1001;
   transform: ${(props) =>
     props.isOpen ? "translateX(0)" : "translateX(100%)"};
@@ -1011,13 +1016,14 @@ const MobileMenuHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid ${COLORS.divider};
+  background-color: ${COLORS.primaryPurple};
 `;
 
 const MobileMenuLogo = styled.div`
   display: flex;
   align-items: center;
-  color: #ff7e5f;
+  color: ${COLORS.textPrimary};
   font-weight: 700;
 
   svg {
@@ -1029,11 +1035,11 @@ const MobileMenuCloseBtn = styled.button`
   background: none;
   border: none;
   font-size: 1.25rem;
-  color: #777;
+  color: ${COLORS.textPrimary};
   cursor: pointer;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.accentGreen};
   }
 `;
 
@@ -1050,16 +1056,17 @@ const MobileMenuItem = styled(Link)`
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem;
-  color: ${(props) => (props.active ? "#ff7e5f" : "#4a4a4a")};
+  color: ${(props) =>
+    props.active ? COLORS.primaryPurple : COLORS.textSecondary};
   text-decoration: none;
   font-weight: 500;
   border-radius: 4px;
   background-color: ${(props) =>
-    props.active ? "rgba(255, 126, 95, 0.1)" : "transparent"};
+    props.active ? `rgba(94, 53, 177, 0.1)` : "transparent"};
 
   &:hover {
-    background-color: rgba(255, 126, 95, 0.1);
-    color: #ff7e5f;
+    background-color: ${COLORS.elevatedBackground};
+    color: ${COLORS.primaryPurple};
   }
 
   svg {
@@ -1072,7 +1079,7 @@ const MobileMenuLogoutButton = styled.button`
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem;
-  color: #4a4a4a;
+  color: ${COLORS.textSecondary};
   background: none;
   border: none;
   font-size: 1rem;
@@ -1082,8 +1089,8 @@ const MobileMenuLogoutButton = styled.button`
   cursor: pointer;
 
   &:hover {
-    background-color: rgba(255, 126, 95, 0.1);
-    color: #ff7e5f;
+    background-color: ${COLORS.elevatedBackground};
+    color: ${COLORS.primaryPurple};
   }
 
   svg {
@@ -1095,18 +1102,18 @@ const ExternalMenuItem = styled.a`
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem;
-  color: #ff7e5f;
+  color: ${COLORS.primaryBlue};
   font-weight: 600;
   border-radius: 4px;
   text-decoration: none;
 
   &:hover {
-    background-color: rgba(255, 126, 95, 0.1);
+    background-color: ${COLORS.elevatedBackground};
   }
 
   svg {
     margin-right: 0.75rem;
-    color: #ff7e5f;
+    color: ${COLORS.primaryBlue};
   }
 `;
 
@@ -1114,8 +1121,8 @@ const RegisterButton = styled(Link)`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #f0f0f0;
-  color: #4a4a4a;
+  background-color: ${COLORS.primaryGreen};
+  color: ${COLORS.textPrimary};
   text-decoration: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -1123,8 +1130,7 @@ const RegisterButton = styled(Link)`
   transition: all 0.3s;
 
   &:hover {
-    background-color: #e0e0e0;
-    color: #0095f6;
+    background-color: ${COLORS.accentGreen};
   }
 
   @media (max-width: 768px) {
@@ -1135,21 +1141,20 @@ const RegisterButton = styled(Link)`
 const Greeting = styled.div`
   font-size: 0.95rem;
   margin-right: 1rem;
-  color: #555;
-  background-color: #f9f9f9;
+  color: ${COLORS.textPrimary};
+  background-color: rgba(255, 255, 255, 0.15);
   padding: 0.4rem 0.75rem;
   border-radius: 20px;
-  border: 1px solid #eee;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
 
   &:hover {
-    background-color: #fff0ed;
-    border-color: #ffd7d0;
+    background-color: rgba(255, 255, 255, 0.25);
   }
 
   .autography {
     font-family: "Autography", cursive;
-    color: #ff7e5f;
+    color: ${COLORS.accentGreen};
     font-size: 1.4rem;
     font-weight: 700;
     letter-spacing: 0.5px;
@@ -1168,15 +1173,15 @@ const Greeting = styled.div`
 const MobileGreeting = styled.div`
   font-size: 1rem;
   padding: 0.75rem 1rem 1rem;
-  color: #333;
-  background-color: #f9f9f9;
+  color: ${COLORS.textPrimary};
+  background-color: ${COLORS.elevatedBackground};
   margin: 0 1rem;
   border-radius: 20px;
   text-align: center;
 
   .autography {
     font-family: "Autography", cursive;
-    color: #ff7e5f;
+    color: ${COLORS.primaryPurple};
     font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: 1px;

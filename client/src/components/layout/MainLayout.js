@@ -1,4 +1,3 @@
-// client/src/components/layout/MainLayout.js
 import React from "react";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -7,6 +6,7 @@ import InstallPrompt from "../pwa/InstallPrompt";
 import FloatingActionButtonAdjuster from "./FloatingActionButtonAdjuster";
 import SubscribeBanner from "../notifications/SubscribeBanner";
 import styled from "styled-components";
+import { COLORS } from "../../theme"; // Import the theme
 
 const MainLayout = ({ children, noNav = false, noFooter = false }) => {
   return (
@@ -28,7 +28,7 @@ const LayoutWrapper = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #121212;
+  background-color: ${COLORS.background};
 `;
 
 export default MainLayout;
