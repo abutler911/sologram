@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { lazy, Suspense, useState, useEffect, useRef } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -15,33 +15,6 @@ import Footer from "./components/layout/Footer";
 import BottomNavigation from "./components/layout/BottomNavigation";
 import SubscribeBanner from "./components/notifications/SubscribeBanner";
 import ScrollToTop from "./components/ScrollToTop";
-
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import PostDetail from "./pages/PostDetail";
-import CreatePost from "./pages/CreatePost";
-import EditPost from "./pages/EditPost";
-import AdminDashboard from "./pages/AdminDashboard";
-import ProfilePage from "./pages/Profile";
-import NotFound from "./pages/NotFound";
-import About from "./pages/About";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import SubscriberAdmin from "./pages/SubscriberAdmin";
-import CollectionsList from "./pages/CollectionsList";
-import CollectionDetail from "./pages/CollectionDetail";
-import CreateCollection from "./pages/CreateCollection";
-import EditCollection from "./pages/EditCollection";
-import AddPostsToCollection from "./pages/AddPostsToCollection";
-import CreateStory from "./pages/CreateStory";
-import StoryArchive from "./pages/StoryArchive";
-import ArchivedStoryView from "./pages/ArchivedStoryView";
-import Analytics from "./pages/Analytics";
-import CreateThought from "./pages/CreateThought";
-import EditThought from "./pages/EditThought";
-import Thoughts from "./pages/Thoughts";
-import Register from "./pages/Register";
-
 import InstallPrompt from "./components/pwa/InstallPrompt";
 import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButtonAdjuster";
 
@@ -49,6 +22,32 @@ import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
+
+const Home = lazy(() => import("./pages/Home"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const PostDetail = lazy(() => import("./pages/PostDetail"));
+const CreatePost = lazy(() => import("./pages/CreatePost"));
+const EditPost = lazy(() => import("./pages/EditPost"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const ProfilePage = lazy(() => import("./pages/Profile"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const About = lazy(() => import("./pages/About"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const SubscriberAdmin = lazy(() => import("./pages/SubscriberAdmin"));
+const CollectionsList = lazy(() => import("./pages/CollectionsList"));
+const CollectionDetail = lazy(() => import("./pages/CollectionDetail"));
+const CreateCollection = lazy(() => import("./pages/CreateCollection"));
+const EditCollection = lazy(() => import("./pages/EditCollection"));
+const AddPostsToCollection = lazy(() => import("./pages/AddPostsToCollection"));
+const CreateStory = lazy(() => import("./pages/CreateStory"));
+const StoryArchive = lazy(() => import("./pages/StoryArchive"));
+const ArchivedStoryView = lazy(() => import("./pages/ArchivedStoryView"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const CreateThought = lazy(() => import("./pages/CreateThought"));
+const EditThought = lazy(() => import("./pages/EditThought"));
+const Thoughts = lazy(() => import("./pages/Thoughts"));
 
 serviceWorkerRegistration.register();
 
@@ -138,15 +137,31 @@ function App() {
                     />
                     <main className="main-content">
                       <SubscribeBanner />
-                      <Home ref={homeRef} />
+                      <Suspense fallback={<div>Loading...</div>}>
+                        <Home ref={homeRef} />
+                      </Suspense>
                     </main>
                     <Footer />
                     <BottomNavigation />
                   </>
                 }
               />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              <Route
+                path="/login"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <Login />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <Register />
+                  </Suspense>
+                }
+              />
               <Route
                 path="/profile"
                 element={
@@ -154,7 +169,9 @@ function App() {
                     <>
                       <Header />
                       <main className="main-content">
-                        <ProfilePage />
+                        <Suspense fallback={<div>Loading...</div>}>
+                          <ProfilePage />
+                        </Suspense>
                       </main>
                       <Footer />
                       <BottomNavigation />
@@ -163,15 +180,45 @@ function App() {
                 }
               />
 
-              <Route path="/post/:id" element={<PostDetail />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/terms" element={<Terms />} />
+              <Route
+                path="/post/:id"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <PostDetail />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/about"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <About />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/privacy"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <Privacy />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/terms"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <Terms />
+                  </Suspense>
+                }
+              />
               <Route
                 path="/subscribers"
                 element={
                   <PrivateRoute>
-                    <SubscriberAdmin />
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <SubscriberAdmin />
+                    </Suspense>
                   </PrivateRoute>
                 }
               />
@@ -179,7 +226,9 @@ function App() {
                 path="/create"
                 element={
                   <PrivateRoute>
-                    <CreatePost />
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <CreatePost />
+                    </Suspense>
                   </PrivateRoute>
                 }
               />
@@ -187,7 +236,9 @@ function App() {
                 path="/edit/:id"
                 element={
                   <PrivateRoute>
-                    <EditPost />
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <EditPost />
+                    </Suspense>
                   </PrivateRoute>
                 }
               />
@@ -195,7 +246,9 @@ function App() {
                 path="/admin"
                 element={
                   <PrivateRoute>
-                    <AdminDashboard />
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <AdminDashboard />
+                    </Suspense>
                   </PrivateRoute>
                 }
               />
@@ -203,7 +256,9 @@ function App() {
                 path="/create-story"
                 element={
                   <PrivateRoute>
-                    <CreateStory />
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <CreateStory />
+                    </Suspense>
                   </PrivateRoute>
                 }
               />
@@ -211,7 +266,9 @@ function App() {
                 path="/story-archive"
                 element={
                   <PrivateRoute>
-                    <StoryArchive />
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <StoryArchive />
+                    </Suspense>
                   </PrivateRoute>
                 }
               />
@@ -219,17 +276,35 @@ function App() {
                 path="/story-archive/:id"
                 element={
                   <PrivateRoute>
-                    <ArchivedStoryView />
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <ArchivedStoryView />
+                    </Suspense>
                   </PrivateRoute>
                 }
               />
-              <Route path="/collections" element={<CollectionsList />} />
-              <Route path="/collections/:id" element={<CollectionDetail />} />
+              <Route
+                path="/collections"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <CollectionsList />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/collections/:id"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <CollectionDetail />
+                  </Suspense>
+                }
+              />
               <Route
                 path="/collections/create"
                 element={
                   <PrivateRoute>
-                    <CreateCollection />
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <CreateCollection />
+                    </Suspense>
                   </PrivateRoute>
                 }
               />
@@ -237,7 +312,9 @@ function App() {
                 path="/collections/:id/edit"
                 element={
                   <PrivateRoute>
-                    <EditCollection />
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <EditCollection />
+                    </Suspense>
                   </PrivateRoute>
                 }
               />
@@ -245,7 +322,9 @@ function App() {
                 path="/collections/:id/add-posts"
                 element={
                   <PrivateRoute>
-                    <AddPostsToCollection />
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <AddPostsToCollection />
+                    </Suspense>
                   </PrivateRoute>
                 }
               />
@@ -253,18 +332,29 @@ function App() {
                 path="/analytics"
                 element={
                   <PrivateRoute>
-                    <Analytics />
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <Analytics />
+                    </Suspense>
                   </PrivateRoute>
                 }
               />
 
-              <Route path="/thoughts" element={<Thoughts />} />
+              <Route
+                path="/thoughts"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <Thoughts />
+                  </Suspense>
+                }
+              />
 
               <Route
                 path="/thoughts/:id/edit"
                 element={
                   <PrivateRoute>
-                    <EditThought />
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <EditThought />
+                    </Suspense>
                   </PrivateRoute>
                 }
               />
@@ -272,11 +362,20 @@ function App() {
                 path="/thoughts/create"
                 element={
                   <PrivateRoute>
-                    <CreateThought />
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <CreateThought />
+                    </Suspense>
                   </PrivateRoute>
                 }
               />
-              <Route path="*" element={<NotFound />} />
+              <Route
+                path="*"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <NotFound />
+                  </Suspense>
+                }
+              />
             </Routes>
             <InstallPrompt />
             <FloatingActionButtonAdjuster />

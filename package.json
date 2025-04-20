@@ -2,7 +2,12 @@
   "dependencies": {
     "react-ga4": "^2.1.0"
   },
+  "scripts": {
+    "analyze": "source-map-explorer 'build/static/js/*.js'",
+    "sitemap": "react-router-sitemap --config ./src/sitemap.config.js --out ./public/sitemap.xml"
+  },
   "devDependencies": {
-    "react-router-sitemap": "^1.2.0"
+    "react-router-sitemap": "^1.2.0",
+    "source-map-explorer": "^2.5.3"
   }
 }
