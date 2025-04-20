@@ -856,20 +856,52 @@ const CreateStory = () => {
       if (validFiles.length === 0) return;
 
       try {
-        // Create previews with optimized handling
-        const newPreviews = validFiles.map((file) => {
-          const isVideo = file.type.startsWith("video/");
-          const preview = URL.createObjectURL(file);
+        // Create previews with optimized handling - using base64 data URLs instead of blob URLs
+        // This is to work around Content-Security-Policy restrictions on blob URLs
+        const newPreviews = [];
 
-          return {
-            file,
-            preview,
-            type: isVideo ? "video" : "image",
-            name: file.name,
-            size: formatFileSize(file.size),
-            timestamp: Date.now(), // For uniqueness
-          };
-        });
+        for (const file of validFiles) {
+          const isVideo = file.type.startsWith("video/");
+
+          if (isVideo) {
+            // For videos, we'll just use a placeholder instead of trying to generate a preview
+            // This avoids CSP issues and is more efficient
+            newPreviews.push({
+              file,
+              preview:
+                "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiMzMzMiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIzMCIgZmlsbD0iIzY2NiIvPjxwb2x5Z29uIHBvaW50cz0iNDAsNDAgNzAsNTAgNDAsNjAiIGZpbGw9IiNmZmYiLz48L3N2Zz4=", // Video placeholder SVG
+              type: "video",
+              name: file.name,
+              size: formatFileSize(file.size),
+              timestamp: Date.now(),
+            });
+          } else {
+            // For images, create a data URL preview that complies with CSP
+            try {
+              const dataUrl = await readFileAsDataURL(file);
+              newPreviews.push({
+                file,
+                preview: dataUrl,
+                type: "image",
+                name: file.name,
+                size: formatFileSize(file.size),
+                timestamp: Date.now(),
+              });
+            } catch (e) {
+              console.error("Failed to create preview for", file.name, e);
+              // Add a placeholder if we can't create a preview
+              newPreviews.push({
+                file,
+                preview:
+                  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz48cGF0aCBkPSJNMzAsNTAgTDcwLDUwIE01MCwzMCBMNTAsNzAiIHN0cm9rZT0iIzk5OSIgc3Ryb2tlLXdpZHRoPSI4Ii8+PC9zdmc+", // Error placeholder SVG
+                type: "image",
+                name: file.name,
+                size: formatFileSize(file.size),
+                timestamp: Date.now(),
+              });
+            }
+          }
+        }
 
         // Update state in a single batch with proper selected index handling
         setPreviews((prevPreviews) => {
@@ -897,6 +929,19 @@ const CreateStory = () => {
     [processVideoFile]
   );
 
+  // Helper function to read a file as data URL (works with CSP)
+  const readFileAsDataURL = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (e) => {
+        console.error("FileReader error:", e);
+        reject(e);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   // Configure dropzone with improved options
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
@@ -921,10 +966,8 @@ const CreateStory = () => {
       const newPreviews = [...previews];
       const newMediaFiles = [...mediaFiles];
 
-      // Revoke object URL to avoid memory leaks
-      if (newPreviews[index]?.preview) {
-        URL.revokeObjectURL(newPreviews[index].preview);
-      }
+      // We're not using URL.revokeObjectURL anymore since we're using data URLs
+      // No need to revoke anything here
 
       newPreviews.splice(index, 1);
       newMediaFiles.splice(index, 1);
@@ -950,19 +993,14 @@ const CreateStory = () => {
 
   // Remove all media at once
   const removeAllMedia = useCallback(() => {
-    // Revoke all object URLs first
-    previews.forEach((item) => {
-      if (item.preview) {
-        URL.revokeObjectURL(item.preview);
-      }
-    });
+    // We're not using URL.revokeObjectURL anymore, so no need to revoke
 
     setPreviews([]);
     setMediaFiles([]);
     setSelectedIndex(0);
     setShowCompressOption(false);
     setCompressVideo(false);
-  }, [previews]);
+  }, []);
 
   // Optimized camera capture with permissions handling
   const handleCameraCapture = useCallback(() => {
@@ -1066,10 +1104,31 @@ const CreateStory = () => {
     [onDrop]
   );
 
-  // Handle selecting media from gallery - simplified
+  // Handle gallery select with explicit error handling
   const handleGallerySelect = useCallback(() => {
-    open();
-  }, [open]);
+    console.log("Opening gallery selector");
+    try {
+      open();
+    } catch (error) {
+      console.error("Error opening file selector:", error);
+
+      // Fallback method if React Dropzone's open fails
+      const input = document.createElement("input");
+      input.type = "file";
+      input.multiple = true;
+      input.accept = "image/*,video/*";
+
+      input.onchange = async (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          const files = Array.from(e.target.files);
+          console.log("Files selected:", files.length);
+          await onDrop(files, []);
+        }
+      };
+
+      input.click();
+    }
+  }, [open, onDrop]);
 
   // More reliable form submission with better error handling
   const handleSubmit = useCallback(async () => {
@@ -1274,14 +1333,9 @@ const CreateStory = () => {
         clearTimeout(videoProcessingTimeoutRef.current);
       }
 
-      // Revoke all object URLs
-      previews.forEach((item) => {
-        if (item.preview) {
-          URL.revokeObjectURL(item.preview);
-        }
-      });
+      // No need to revoke object URLs since we're using data URLs
     };
-  }, [previews]);
+  }, []);
 
   // Memoized media count stats for better performance
   const mediaStats = useMemo(() => {
