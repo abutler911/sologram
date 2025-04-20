@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { FaCamera, FaUser, FaLock, FaEnvelope, FaUpload } from "react-icons/fa";
 import { useDropzone } from "react-dropzone";
 import { AuthContext } from "../context/AuthContext";
+import { COLORS, THEME } from "../theme"; // Import the theme
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -263,9 +264,10 @@ const RegisterContainer = styled.div`
 `;
 
 const FormContainer = styled.div`
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px ${COLORS.shadow};
+  border: 1px solid ${COLORS.border};
   padding: 2.5rem;
   width: 100%;
   max-width: 500px;
@@ -283,7 +285,7 @@ const LogoContainer = styled.div`
   align-items: center;
   justify-content: center;
   margin-bottom: 2rem;
-  color: #ff7e5f;
+  color: ${COLORS.primaryPurple};
 
   svg {
     font-size: 2.5rem;
@@ -292,7 +294,7 @@ const LogoContainer = styled.div`
 `;
 
 const FormTitle = styled.h2`
-  color: #fff;
+  color: ${COLORS.textPrimary};
   font-size: 1.5rem;
   text-align: center;
   margin-bottom: 2rem;
@@ -301,7 +303,7 @@ const FormTitle = styled.h2`
 const LogoText = styled.h1`
   font-size: 2rem;
   font-weight: 700;
-  color: #fff;
+  color: ${COLORS.textPrimary};
 `;
 
 const Form = styled.form`
@@ -316,20 +318,20 @@ const FormGroup = styled.div`
 const Input = styled.input`
   width: 100%;
   padding: 1rem 1rem 1rem 2.75rem;
-  background-color: #333;
-  border: 1px solid #444;
+  background-color: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
   border-radius: 4px;
   font-size: 1rem;
-  color: #fff;
+  color: ${COLORS.textPrimary};
 
   &::placeholder {
-    color: #888;
+    color: ${COLORS.textTertiary};
   }
 
   &:focus {
     outline: none;
-    border-color: #ff7e5f;
-    box-shadow: 0 0 0 2px rgba(255, 126, 95, 0.2);
+    border-color: ${COLORS.primaryPurple};
+    box-shadow: 0 0 0 2px ${COLORS.primaryPurple}30;
   }
 
   @media (max-width: 480px) {
@@ -341,21 +343,21 @@ const Input = styled.input`
 const Textarea = styled.textarea`
   width: 100%;
   padding: 1rem;
-  background-color: #333;
-  border: 1px solid #444;
+  background-color: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
   border-radius: 4px;
   font-size: 1rem;
-  color: #fff;
+  color: ${COLORS.textPrimary};
   resize: vertical;
 
   &::placeholder {
-    color: #888;
+    color: ${COLORS.textTertiary};
   }
 
   &:focus {
     outline: none;
-    border-color: #ff7e5f;
-    box-shadow: 0 0 0 2px rgba(255, 126, 95, 0.2);
+    border-color: ${COLORS.primaryPurple};
+    box-shadow: 0 0 0 2px ${COLORS.primaryPurple}30;
   }
 `;
 
@@ -364,36 +366,43 @@ const InputIcon = styled.div`
   left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #aaa;
+  color: ${COLORS.textTertiary};
 `;
+
 const Label = styled.label`
   display: block;
   margin-bottom: 0.75rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #aaa;
+  color: ${COLORS.textSecondary};
 `;
+
 const DropzoneContainer = styled.div`
-  border: 2px dashed #444;
+  border: 2px dashed ${COLORS.border};
   border-radius: 4px;
   padding: 2rem;
   text-align: center;
   cursor: pointer;
-  background-color: #2a2a2a;
+  background-color: ${COLORS.elevatedBackground};
   transition: border-color 0.3s;
 
   &:hover {
-    border-color: #ff7e5f;
+    border-color: ${COLORS.primaryBlue};
   }
 
   svg {
-    color: #888;
+    color: ${COLORS.textTertiary};
     font-size: 2rem;
     margin-bottom: 0.75rem;
+    transition: color 0.3s;
+  }
+
+  &:hover svg {
+    color: ${COLORS.primaryBlue};
   }
 
   p {
-    color: #aaa;
+    color: ${COLORS.textSecondary};
     margin: 0;
   }
 `;
@@ -405,6 +414,8 @@ const ProfileImagePreview = styled.div`
   margin: 0 auto;
   border-radius: 50%;
   overflow: hidden;
+  border: 3px solid ${COLORS.primaryPurple};
+  box-shadow: 0 0 10px ${COLORS.shadow};
 
   img {
     width: 100%;
@@ -419,7 +430,7 @@ const RemoveButton = styled.button`
   left: 0;
   right: 0;
   background-color: rgba(0, 0, 0, 0.7);
-  color: white;
+  color: ${COLORS.textPrimary};
   border: none;
   padding: 0.5rem;
   cursor: pointer;
@@ -427,6 +438,7 @@ const RemoveButton = styled.button`
 
   &:hover {
     background-color: rgba(0, 0, 0, 0.9);
+    color: ${COLORS.accentPurple};
   }
 `;
 
@@ -439,44 +451,54 @@ const ErrorText = styled.p`
 
 const SubmitButton = styled.button`
   width: 100%;
-  background-color: #ff7e5f;
-  color: white;
+  background-color: ${COLORS.primaryGreen};
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 4px;
   padding: 0.875rem;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
 
   &:hover {
-    background-color: #ff6347;
+    background-color: ${COLORS.accentGreen};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px ${COLORS.shadow};
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   &:disabled {
-    background-color: #cccccc;
+    background-color: ${COLORS.textTertiary};
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 `;
 
 const LoginLink = styled.p`
   text-align: center;
   font-size: 0.875rem;
-  color: #666666;
+  color: ${COLORS.textSecondary};
 
   a {
-    color: #ff7e5f;
+    color: ${COLORS.primaryBlue};
     font-weight: 600;
     text-decoration: none;
+    transition: color 0.2s;
 
     &:hover {
+      color: ${COLORS.accentBlue};
       text-decoration: underline;
     }
   }
 `;
 
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -484,7 +506,7 @@ const PageWrapper = styled.div`
 `;
 
 const Tagline = styled.p`
-  color: #aaa;
+  color: ${COLORS.primaryBlue};
   font-size: 1rem;
   font-style: italic;
   text-align: center;

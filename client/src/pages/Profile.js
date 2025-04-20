@@ -5,6 +5,7 @@ import { AuthContext } from "../context/AuthContext";
 import { FaUser, FaEnvelope, FaCamera, FaUpload } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import { COLORS, THEME } from "../theme"; // Import the theme
 
 const ProfilePage = () => {
   const { user, updateProfile } = useContext(AuthContext);
@@ -199,7 +200,7 @@ export default ProfilePage;
 
 // Styled Components
 const Wrapper = styled.div`
-  background-color: #121212;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -207,16 +208,17 @@ const Wrapper = styled.div`
 `;
 
 const Container = styled.div`
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   padding: 2.5rem;
   max-width: 500px;
   width: 100%;
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px ${COLORS.shadow};
+  border: 1px solid ${COLORS.border};
 `;
 
 const Title = styled.h2`
-  color: #fff;
+  color: ${COLORS.textPrimary};
   text-align: center;
   margin-bottom: 2rem;
 `;
@@ -228,7 +230,7 @@ const Form = styled.form`
 `;
 
 const Label = styled.label`
-  color: #aaa;
+  color: ${COLORS.textSecondary};
   margin-bottom: 0.25rem;
 `;
 
@@ -241,35 +243,55 @@ const Icon = styled.div`
   top: 50%;
   left: 1rem;
   transform: translateY(-50%);
-  color: #aaa;
+  color: ${COLORS.textTertiary};
 `;
 
 const Input = styled.input`
   width: 100%;
   padding: 1rem 1rem 1rem 3rem;
-  background: #333;
-  color: white;
-  border: 1px solid #444;
+  background: ${COLORS.elevatedBackground};
+  color: ${COLORS.textPrimary};
+  border: 1px solid ${COLORS.border};
   border-radius: 4px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+
+  &:focus {
+    border-color: ${COLORS.primaryPurple};
+    box-shadow: 0 0 0 2px ${COLORS.primaryPurple}30;
+    outline: none;
+  }
 `;
 
 const Textarea = styled.textarea`
   width: 100%;
   padding: 1rem;
-  background: #333;
-  color: white;
-  border: 1px solid #444;
+  background: ${COLORS.elevatedBackground};
+  color: ${COLORS.textPrimary};
+  border: 1px solid ${COLORS.border};
   border-radius: 4px;
   resize: vertical;
+  transition: border-color 0.3s, box-shadow 0.3s;
+
+  &:focus {
+    border-color: ${COLORS.primaryPurple};
+    box-shadow: 0 0 0 2px ${COLORS.primaryPurple}30;
+    outline: none;
+  }
 `;
 
 const DropArea = styled.div`
-  border: 2px dashed #444;
+  border: 2px dashed ${COLORS.border};
   padding: 2rem;
   text-align: center;
-  background: #2a2a2a;
+  background: ${COLORS.elevatedBackground};
   cursor: pointer;
-  color: #aaa;
+  color: ${COLORS.textTertiary};
+  transition: border-color 0.3s, color 0.3s;
+
+  &:hover {
+    border-color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryBlue};
+  }
 
   svg {
     font-size: 2rem;
@@ -282,43 +304,58 @@ const Preview = styled.div`
   width: 150px;
   height: 150px;
   margin-bottom: 1rem;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid ${COLORS.primaryPurple};
+  box-shadow: 0 4px 12px ${COLORS.shadow};
 
   img {
     width: 100%;
     height: 100%;
-    border-radius: 50%;
     object-fit: cover;
   }
 `;
 
 const Remove = styled.button`
   background: rgba(0, 0, 0, 0.7);
-  color: white;
+  color: ${COLORS.textPrimary};
   width: 100%;
   padding: 0.5rem;
   border: none;
   cursor: pointer;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  transition: background-color 0.3s;
 
   &:hover {
     background: rgba(0, 0, 0, 0.9);
+    color: ${COLORS.primaryPurple};
   }
 `;
 
 const Submit = styled.button`
   width: 100%;
   padding: 0.875rem;
-  background: #ff7e5f;
-  color: white;
+  background: ${COLORS.primaryGreen};
+  color: ${COLORS.textPrimary};
   font-weight: bold;
   border: none;
   border-radius: 4px;
+  transition: background-color 0.3s, transform 0.2s;
 
   &:hover {
-    background: #ff6347;
+    background: ${COLORS.accentGreen};
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   &:disabled {
-    background: #aaa;
+    background: ${COLORS.textTertiary};
     cursor: not-allowed;
+    transform: none;
   }
 `;

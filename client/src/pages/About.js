@@ -3,6 +3,7 @@ import { sanity } from "../lib/sanityClient";
 import PortableTextComponent from "../components/PortableTextComponent";
 import styled from "styled-components";
 import MainLayout from "../components/layout/MainLayout";
+import { COLORS, THEME } from "../theme"; // Import the theme
 
 const query = `*[_type == "aboutPage"][0]{
   title,
@@ -23,20 +24,21 @@ const About = () => {
   }, []);
 
   if (!aboutData) {
-    return <p>Loading...</p>;
+    return <LoadingWrapper>Loading...</LoadingWrapper>;
   }
 
   return (
     <MainLayout>
       <Container>
         <Title>{aboutData.title}</Title>
-
         {aboutData.profileImageUrl && (
-          <ProfileImage src={aboutData.profileImageUrl} alt="Andrew" />
+          <ProfileImageContainer>
+            <ProfileImage src={aboutData.profileImageUrl} alt="Andrew" />
+          </ProfileImageContainer>
         )}
-
-        <PortableTextComponent value={aboutData.content} />
-
+        <Content>
+          <PortableTextComponent value={aboutData.content} />
+        </Content>
         <LastUpdated>
           Last updated: {new Date(aboutData.lastUpdated).toLocaleDateString()}
         </LastUpdated>
@@ -45,30 +47,130 @@ const About = () => {
   );
 };
 
+const LoadingWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+  color: ${COLORS.textPrimary};
+  font-size: 1.2rem;
+`;
+
 const Container = styled.div`
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
+  background-color: ${COLORS.cardBackground};
+  border-radius: 12px;
+  box-shadow: 0 4px 16px ${COLORS.shadow};
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid ${COLORS.border};
+
+  @media (max-width: 850px) {
+    border-radius: 0;
+    padding: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
 `;
 
 const Title = styled.h1`
-  font-size: 2rem;
-  color: #fff;
+  font-size: 2.5rem;
+  color: ${COLORS.textPrimary};
+  margin-bottom: 1.5rem;
+  text-align: center;
+  position: relative;
+
+  &:after {
+    content: "";
+    display: block;
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      ${COLORS.primaryPurple},
+      ${COLORS.primaryBlue}
+    );
+    margin: 0.5rem auto 0;
+    border-radius: 3px;
+  }
+`;
+
+const ProfileImageContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
 `;
 
 const ProfileImage = styled.img`
-  width: 150px;
-  height: 150px;
+  width: 180px;
+  height: 180px;
   object-fit: cover;
   border-radius: 50%;
-  margin: 1rem 0;
-  border: 3px solid #ff7e5f;
+  border: 4px solid ${COLORS.primaryPurple};
+  box-shadow: 0 5px 15px ${COLORS.shadow};
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: scale(1.03);
+    box-shadow: 0 8px 25px ${COLORS.shadow};
+  }
+`;
+
+const Content = styled.div`
+  color: ${COLORS.textSecondary};
+  line-height: 1.7;
+  font-size: 1.1rem;
+
+  h2 {
+    color: ${COLORS.primaryBlue};
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    color: ${COLORS.accentPurple};
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  a {
+    color: ${COLORS.primaryBlue};
+    text-decoration: none;
+    position: relative;
+
+    &:hover {
+      color: ${COLORS.accentBlue};
+      text-decoration: underline;
+    }
+  }
+
+  ul,
+  ol {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+  }
+
+  li {
+    margin-bottom: 0.5rem;
+  }
+
+  blockquote {
+    border-left: 3px solid ${COLORS.primaryGreen};
+    padding-left: 1rem;
+    margin-left: 0;
+    font-style: italic;
+    color: ${COLORS.textPrimary};
+  }
 `;
 
 const LastUpdated = styled.p`
-  color: #888;
+  color: ${COLORS.textTertiary};
   font-size: 0.875rem;
-  margin-top: 2rem;
+  margin-top: 3rem;
+  text-align: right;
+  font-style: italic;
 `;
 
 export default About;

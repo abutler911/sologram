@@ -1,7 +1,8 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import styled from 'styled-components';
-import { FaCamera, FaHome } from 'react-icons/fa';
+import React from "react";
+import { Link } from "react-router-dom";
+import styled from "styled-components";
+import { FaCamera, FaHome } from "react-icons/fa";
+import { COLORS, THEME } from "../theme"; // Import the theme
 
 const NotFound = () => {
   return (
@@ -9,15 +10,15 @@ const NotFound = () => {
       <LogoIcon>
         <FaCamera />
       </LogoIcon>
-      
+
       <NotFoundCode>404</NotFoundCode>
-      
+
       <NotFoundTitle>Page Not Found</NotFoundTitle>
-      
+
       <NotFoundMessage>
         Oops! The page you're looking for doesn't exist or has been moved.
       </NotFoundMessage>
-      
+
       <BackToHomeLink to="/">
         <FaHome />
         <span>Back to Home</span>
@@ -35,31 +36,55 @@ const NotFoundContainer = styled.div`
   padding: 4rem 2rem;
   text-align: center;
   min-height: calc(100vh - 300px);
+  background-color: ${COLORS.background};
 `;
 
 const LogoIcon = styled.div`
-  color: #ff7e5f;
+  color: ${COLORS.primaryPurple};
   font-size: 4rem;
   margin-bottom: 1rem;
+  animation: pulse 2s infinite ease-in-out;
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
 `;
 
 const NotFoundCode = styled.h1`
   font-size: 6rem;
   font-weight: 700;
-  color: #ff7e5f;
+  color: ${COLORS.primaryPurple};
   margin: 0 0 1rem;
   line-height: 1;
+  background: linear-gradient(
+    45deg,
+    ${COLORS.primaryPurple},
+    ${COLORS.primaryBlue},
+    ${COLORS.primaryGreen}
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 5px 15px ${COLORS.shadow};
 `;
 
 const NotFoundTitle = styled.h2`
   font-size: 2rem;
-  color: #333333;
+  color: ${COLORS.textPrimary};
   margin-bottom: 1.5rem;
 `;
 
 const NotFoundMessage = styled.p`
   font-size: 1.125rem;
-  color: #666666;
+  color: ${COLORS.textSecondary};
   max-width: 500px;
   margin-bottom: 2rem;
 `;
@@ -67,18 +92,24 @@ const NotFoundMessage = styled.p`
 const BackToHomeLink = styled(Link)`
   display: flex;
   align-items: center;
-  background-color: #ff7e5f;
+  background-color: ${COLORS.primaryGreen};
   color: white;
   text-decoration: none;
   padding: 0.75rem 1.5rem;
   border-radius: 4px;
   font-weight: 600;
-  transition: background-color 0.3s;
-  
+  transition: all 0.3s ease;
+
   &:hover {
-    background-color: #ff6347;
+    background-color: ${COLORS.accentGreen};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px ${COLORS.shadow};
   }
-  
+
+  &:active {
+    transform: translateY(0);
+  }
+
   svg {
     margin-right: 0.5rem;
   }
