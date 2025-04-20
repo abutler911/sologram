@@ -2,41 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <!-- Universal Icon from cover.png -->
-    <link
-      rel="icon"
-      type="image/png"
-      href="%PUBLIC_URL%/cover.png"
-      sizes="32x32"
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1"
     />
-    <link
-      rel="icon"
-      type="image/png"
-      href="%PUBLIC_URL%/cover.png"
-      sizes="16x16"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/cover.png" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#FF5733" />
     <meta
       name="description"
       content="SoloGram - One Voice. Infinite Moments."
     />
-
-    <!-- SEO Meta -->
-
-    <title>SoloGram - One Voice. Infinite Moments.</title>
-    <meta
-      name="description"
-      content="SoloGram allows me to post and you to view. One voice. Infinite moments."
-    />
-    <meta
-      name="keywords"
-      content="SoloGram, stories, photo sharing, videos, media, create, archive"
-    />
+    <meta name="robots" content="index, follow" />
     <meta name="author" content="Andy" />
     <link rel="canonical" href="https://sologram.netlify.app/" />
 
@@ -49,6 +24,7 @@
     />
     <meta property="og:url" content="https://sologram.netlify.app/" />
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="SoloGram" />
     <meta name="twitter:description" content="One Voice. Infinite Moments." />
@@ -56,30 +32,54 @@
       name="twitter:image"
       content="https://sologram.netlify.app/cover.png"
     />
+    <meta name="twitter:creator" content="@YourTwitterHandle" />
+
     <!-- Preconnects -->
     <link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
     <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Fonts -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Shadows+Into+Light&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Shadows+Into+Light&family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Sora:wght@100..800&display=swap"
       rel="stylesheet"
     />
     <link
-      href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Space+Grotesk:wght@300..700&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="https://fonts.gstatic.com/s/inter/v12/Inter-Regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+
+    <!-- Icons -->
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="%PUBLIC_URL%/favicon-32x32.png"
     />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
-      rel="stylesheet"
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="%PUBLIC_URL%/favicon-16x16.png"
     />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Sora:wght@100..800&display=swap"
-      rel="stylesheet"
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/apple-touch-icon.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- CSP -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://cdn.sanity.io; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://res.cloudinary.com; connect-src 'self';"
     />
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+      JavaScript is required to run this application. Please enable JavaScript
+      in your browser settings or visit our <a href="/help">help page</a>.
+    </noscript>
     <div id="root"></div>
   </body>
 </html>
