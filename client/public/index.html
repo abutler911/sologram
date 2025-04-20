@@ -72,7 +72,15 @@
     <!-- CSP -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' https://cdn.sanity.io; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://res.cloudinary.com; connect-src 'self';"
+      content="
+        default-src 'self';
+        script-src 'self' https://cdn.sanity.io https://www.googletagmanager.com https://cdn.onesignal.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' https://res.cloudinary.com data:;
+        connect-src 'self' https://sologram-api.onrender.com https://cdn.onesignal.com https://www.google-analytics.com;
+        frame-src 'self';
+      "
     />
   </head>
   <body>
