@@ -16,6 +16,7 @@ import {
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
+import LoadingSpinner from "../common/loadingSpinner";
 import pandaImg from "../../assets/panda.jpg";
 
 const filters = [
@@ -62,71 +63,56 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     }
   }, [isEditing, initialData]);
 
-  const onDrop = useCallback(
-    async (acceptedFiles, rejectedFiles = []) => {
-      // Show errors for rejected
-      if (rejectedFiles.length > 0) {
-        rejectedFiles.forEach(({ file, errors }) => {
-          toast.error(`${file.name}: ${errors[0]?.message || "Upload error"}`);
-        });
-      }
+  const onDrop = useCallback(async (acceptedFiles) => {
+    const uploadPromises = acceptedFiles.map(async (file) => {
+      const id = Date.now() + Math.random().toString();
+      const isVideo = file.type.startsWith("video/");
 
-      const totalFiles =
-        mediaPreviews.length + existingMedia.length + acceptedFiles.length;
-      if (totalFiles > 25) {
-        toast.error("Maximum 25 media files allowed");
-        return;
-      }
+      const preview = {
+        id,
+        file,
+        preview: URL.createObjectURL(file),
+        type: isVideo ? "video" : "image",
+        filter: "",
+        uploading: true,
+        progress: 0,
+        error: false,
+      };
 
-      for (const file of acceptedFiles) {
-        const id = Date.now() + Math.random().toString();
-        const isVideo = file.type.startsWith("video/");
+      setMediaPreviews((prev) => [...prev, preview]);
 
-        const preview = {
-          id,
-          file,
-          preview: URL.createObjectURL(file),
-          type: isVideo ? "video" : "image",
-          filter: "",
-          uploading: true,
-          progress: 0,
-          error: false,
+      try {
+        const onProgress = (percent) => {
+          setMediaPreviews((prev) =>
+            prev.map((p) => (p.id === id ? { ...p, progress: percent } : p))
+          );
         };
 
-        setMediaPreviews((prev) => [...prev, preview]);
+        const uploaded = await uploadToCloudinary(file, onProgress);
 
-        try {
-          const onProgress = (percent) => {
-            setMediaPreviews((prev) =>
-              prev.map((p) => (p.id === id ? { ...p, progress: percent } : p))
-            );
-          };
-
-          const uploaded = await uploadToCloudinary(file, onProgress);
-
-          setMediaPreviews((prev) =>
-            prev.map((p) =>
-              p.id === id
-                ? {
-                    ...p,
-                    uploading: false,
-                    mediaUrl: uploaded.mediaUrl,
-                    cloudinaryId: uploaded.cloudinaryId,
-                    mediaType: uploaded.mediaType,
-                  }
-                : p
-            )
-          );
-        } catch (err) {
-          toast.error(`Upload failed: ${file.name}`);
-          setMediaPreviews((prev) =>
-            prev.map((p) => (p.id === id ? { ...p, error: true } : p))
-          );
-        }
+        setMediaPreviews((prev) =>
+          prev.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  uploading: false,
+                  mediaUrl: uploaded.mediaUrl,
+                  cloudinaryId: uploaded.cloudinaryId,
+                  mediaType: uploaded.mediaType,
+                }
+              : p
+          )
+        );
+      } catch (err) {
+        toast.error(`Upload failed: ${file.name}`);
+        setMediaPreviews((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, error: true } : p))
+        );
       }
-    },
-    [mediaPreviews, existingMedia]
-  );
+    });
+
+    await Promise.all(uploadPromises);
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -229,13 +215,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
           mediaType: m.mediaType,
           filter: m.filter || "",
         }));
-
-      const formattedExistingMedia = existingMedia.map((m) => ({
-        mediaUrl: m.mediaUrl,
-        cloudinaryId: m.cloudinaryId,
-        mediaType: m.mediaType,
-        filter: m.filter || "",
-      }));
 
       const payload = {
         caption,
@@ -658,7 +637,18 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
         </StepCircle>
       </StepIndicator>
 
-      {renderStepContent()}
+      <main aria-label="Create Post Workflow">
+        {renderStepContent()}
+        <button aria-label="Remove media" onClick={removePreviewFile}>
+          <FaTimes />
+        </button>
+      </main>
+
+      {loading && (
+        <LoadingOverlay>
+          <LoadingSpinner />
+        </LoadingOverlay>
+      )}
 
       <NavigationButtons>
         {currentStep > 1 && (
@@ -1477,6 +1467,19 @@ const ProgressText = styled.div`
   color: white;
   font-size: 1.25rem;
   font-weight: bold;
+`;
+
+const LoadingOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
 `;
 
 export default CreatePostWorkflow;
