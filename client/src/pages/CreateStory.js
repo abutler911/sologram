@@ -4,6 +4,7 @@ import React, {
   useRef,
   useEffect,
   useContext,
+  useMemo,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
@@ -15,14 +16,18 @@ import {
   FaVideo,
   FaArrowLeft,
   FaPlusCircle,
+  FaCheck,
+  FaCompress,
 } from "react-icons/fa";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { AuthContext } from "../context/AuthContext";
-import { COLORS, THEME } from "../theme"; // Import the theme
+import { COLORS, THEME } from "../theme";
 
-// Styled Components (moved to the top)
+// Styled Components - No changes needed here as they're well-defined
+// ... (keeping all your existing styled components)
+
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
   min-height: 100vh;
@@ -460,6 +465,112 @@ const CompressLabel = styled.label`
   color: ${COLORS.textSecondary};
 `;
 
+// New components for improved UX
+
+const MediaFilesInfo = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background-color: ${COLORS.elevatedBackground};
+  font-size: 0.75rem;
+  color: ${COLORS.textSecondary};
+`;
+
+const MediaStats = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const MediaClearButton = styled.button`
+  background: none;
+  border: none;
+  color: ${COLORS.primaryRed || "#ff3b30"};
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  background-color: ${COLORS.primaryRed}10 || 'rgba(255, 59, 48, 0.1)'};
+  border: 1px solid ${COLORS.primaryRed}30 || 'rgba(255, 59, 48, 0.3)'};
+  color: ${COLORS.primaryRed || "#ff3b30"};
+  padding: 8px 16px;
+  margin: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+`;
+
+const LoaderOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  color: white;
+
+  p {
+    margin-top: 16px;
+    font-size: 1rem;
+  }
+`;
+
+const Spinner = styled.div`
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 4px solid white;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
+const PreviewNavigation = styled.div`
+  display: flex;
+  position: absolute;
+  width: 100%;
+  bottom: 16px;
+  justify-content: center;
+  gap: 8px;
+  z-index: 5;
+`;
+
+const PreviewDot = styled.div`
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: ${(props) =>
+    props.active ? "white" : "rgba(255, 255, 255, 0.5)"};
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: scale(1.2);
+  }
+`;
+
 // Helper function to format file size
 const formatFileSize = (bytes) => {
   if (bytes === 0) return "0 Bytes";
@@ -469,6 +580,9 @@ const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
+/**
+ * CreateStory Component - Optimized for better file handling and UX
+ */
 const CreateStory = () => {
   const navigate = useNavigate();
   const {
@@ -477,18 +591,25 @@ const CreateStory = () => {
     loading: authLoading,
   } = useContext(AuthContext);
 
+  // State variables
   const [caption, setCaption] = useState("");
   const [mediaFiles, setMediaFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [processingVideo, setProcessingVideo] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showCompressOption, setShowCompressOption] = useState(false);
   const [compressVideo, setCompressVideo] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [error, setError] = useState("");
+  const [uploadStatus, setUploadStatus] = useState("");
 
+  // Refs
   const textAreaRef = useRef(null);
   const fileInputRef = useRef(null);
+  const videoProcessingTimeoutRef = useRef(null);
+  const thumbnailContainerRef = useRef(null);
 
   // Check auth on component mount
   useEffect(() => {
@@ -503,23 +624,17 @@ const CreateStory = () => {
 
   // Check if running as PWA
   useEffect(() => {
-    // Check initial PWA status
-    setIsPWA(window.matchMedia("(display-mode: standalone)").matches);
-
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
 
-    // Define the handler
     const handleChange = (e) => setIsPWA(e.matches);
+    setIsPWA(mediaQuery.matches);
 
-    // Use standard event listener if available
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener("change", handleChange);
     } else {
-      // Fallback for older browsers
       mediaQuery.addListener(handleChange);
     }
 
-    // Cleanup
     return () => {
       if (mediaQuery.removeEventListener) {
         mediaQuery.removeEventListener("change", handleChange);
@@ -537,89 +652,213 @@ const CreateStory = () => {
     }
   }, [caption]);
 
-  // Handle file uploads with enhanced error handling
-  const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
-    // Handle rejected files first
-    if (rejectedFiles && rejectedFiles.length > 0) {
-      rejectedFiles.forEach(({ file, errors }) => {
-        if (errors[0]?.code === "file-too-large") {
-          toast.error(
-            `File ${file.name} is too large. Max size is 20MB for images and 300MB for videos.`
+  // Scroll selected thumbnail into view
+  useEffect(() => {
+    if (thumbnailContainerRef.current && previews.length > 0) {
+      const container = thumbnailContainerRef.current;
+      const selectedThumb = container.children[selectedIndex];
+
+      if (selectedThumb) {
+        // Calculate scroll position to center the selected item
+        const scrollLeft =
+          selectedThumb.offsetLeft -
+          container.offsetWidth / 2 +
+          selectedThumb.offsetWidth / 2;
+        container.scrollTo({ left: scrollLeft, behavior: "smooth" });
+      }
+    }
+  }, [selectedIndex, previews.length]);
+
+  // Video processor function - optimized for better handling
+  const processVideoFile = useCallback((file) => {
+    return new Promise((resolve, reject) => {
+      try {
+        setProcessingVideo(true);
+        setUploadStatus("Processing video...");
+
+        const video = document.createElement("video");
+        video.preload = "metadata";
+
+        const objectUrl = URL.createObjectURL(file);
+        video.src = objectUrl;
+
+        // Set timeout for processing to prevent hanging
+        videoProcessingTimeoutRef.current = setTimeout(() => {
+          URL.revokeObjectURL(objectUrl);
+          setProcessingVideo(false);
+          resolve(file); // Continue with the original file if processing times out
+          setUploadStatus("");
+        }, 10000);
+
+        video.onloadedmetadata = () => {
+          clearTimeout(videoProcessingTimeoutRef.current);
+
+          const duration = video.duration;
+          console.log(`Video duration: ${duration} seconds`);
+
+          // Check if video is too long
+          if (duration > 60) {
+            URL.revokeObjectURL(objectUrl);
+            setProcessingVideo(false);
+            setUploadStatus("");
+            reject(
+              new Error(
+                `Video is too long (${Math.round(
+                  duration
+                )} seconds). Maximum allowed duration is 60 seconds.`
+              )
+            );
+            return;
+          }
+
+          // If video is reasonably sized, proceed
+          URL.revokeObjectURL(objectUrl);
+          setProcessingVideo(false);
+          setUploadStatus("");
+          resolve(file);
+        };
+
+        video.onerror = () => {
+          clearTimeout(videoProcessingTimeoutRef.current);
+          URL.revokeObjectURL(objectUrl);
+          setProcessingVideo(false);
+          setUploadStatus("");
+          reject(
+            new Error(
+              "Failed to load video metadata. The file may be corrupted."
+            )
           );
-        } else if (errors[0]?.code === "file-invalid-type") {
-          toast.error(
-            `File ${file.name} has an invalid type. Only images (JPG, PNG, GIF) and videos (MP4, MOV) are allowed.`
-          );
-        } else {
-          toast.error(
-            `File ${file.name} couldn't be uploaded. ${errors[0]?.message}`
-          );
+        };
+      } catch (err) {
+        setProcessingVideo(false);
+        setUploadStatus("");
+        reject(new Error("Error processing video: " + err.message));
+      }
+    });
+  }, []);
+
+  // Enhanced file drop handler with improved validation
+  const onDrop = useCallback(
+    async (acceptedFiles, rejectedFiles) => {
+      setError(""); // Clear any previous errors
+
+      // Handle rejected files with more specific feedback
+      if (rejectedFiles && rejectedFiles.length > 0) {
+        rejectedFiles.forEach(({ file, errors }) => {
+          if (errors[0]?.code === "file-too-large") {
+            setError(
+              `File ${file.name} is too large. Max size is 20MB for images and 300MB for videos.`
+            );
+            toast.error(
+              `File ${file.name} is too large. Max size is 20MB for images and 300MB for videos.`
+            );
+          } else if (errors[0]?.code === "file-invalid-type") {
+            setError(
+              `File ${file.name} has an invalid type. Only images (JPG, PNG, GIF) and videos (MP4, MOV) are allowed.`
+            );
+            toast.error(
+              `File ${file.name} has an invalid type. Only images (JPG, PNG, GIF) and videos (MP4, MOV) are allowed.`
+            );
+          } else {
+            setError(
+              `File ${file.name} couldn't be uploaded. ${errors[0]?.message}`
+            );
+            toast.error(
+              `File ${file.name} couldn't be uploaded. ${errors[0]?.message}`
+            );
+          }
+        });
+      }
+
+      // Check if adding these files would exceed the limit
+      if (mediaFiles.length + acceptedFiles.length > 20) {
+        setError("Maximum 20 media files allowed per story");
+        toast.error("Maximum 20 media files allowed per story");
+        return;
+      }
+
+      // Process accepted files with better validation
+      const validFiles = [];
+
+      for (const file of acceptedFiles) {
+        try {
+          // Image size check
+          if (file.type.startsWith("image/")) {
+            if (file.size > 20 * 1024 * 1024) {
+              setError(`Image ${file.name} exceeds 20MB limit`);
+              toast.error(`Image ${file.name} exceeds 20MB limit`);
+              continue;
+            }
+            validFiles.push(file);
+          }
+          // Video processing with enhanced checks
+          else if (file.type.startsWith("video/")) {
+            // Show compress option for large videos
+            if (file.size > 150 * 1024 * 1024) {
+              setShowCompressOption(true);
+            }
+
+            // Hard limit on video size
+            if (file.size > 300 * 1024 * 1024) {
+              setError(`Video ${file.name} exceeds 300MB limit`);
+              toast.error(`Video ${file.name} exceeds 300MB limit`);
+              continue;
+            }
+
+            try {
+              // Process video metadata (check duration, etc.)
+              const processedVideo = await processVideoFile(file);
+              validFiles.push(processedVideo);
+            } catch (videoError) {
+              setError(videoError.message);
+              toast.error(videoError.message);
+              continue;
+            }
+          }
+        } catch (err) {
+          console.error("Error processing file:", err);
+          toast.error(`Error processing ${file.name}: ${err.message}`);
         }
+      }
+
+      if (validFiles.length === 0) return;
+
+      // Create previews with optimized handling
+      const newPreviews = validFiles.map((file) => {
+        const isVideo = file.type.startsWith("video/");
+        const preview = URL.createObjectURL(file);
+
+        return {
+          file,
+          preview,
+          type: isVideo ? "video" : "image",
+          name: file.name,
+          size: formatFileSize(file.size),
+          timestamp: Date.now(), // For uniqueness
+        };
       });
-    }
 
-    // Check if adding these files would exceed the 20 file limit
-    if (mediaFiles.length + acceptedFiles.length > 20) {
-      toast.error("Maximum 20 media files allowed per story");
-      return;
-    }
+      // Update state in a single batch with proper selected index handling
+      setPreviews((prevPreviews) => {
+        const newPreviewList = [...prevPreviews, ...newPreviews];
 
-    // Process accepted files - apply validations
-    const validFiles = acceptedFiles.filter((file) => {
-      // Image size check
-      if (file.type.startsWith("image/") && file.size > 20 * 1024 * 1024) {
-        toast.error(`Image ${file.name} exceeds 20MB limit`);
-        return false;
-      }
-
-      // Video size check
-      if (file.type.startsWith("video/")) {
-        // Show compress option for large videos
-        if (file.size > 150 * 1024 * 1024) {
-          setShowCompressOption(true);
+        // If this is the first media being added, set selectedIndex to 0
+        if (prevPreviews.length === 0) {
+          setSelectedIndex(0);
+        } else {
+          // Otherwise, focus on the first of the newly added items
+          setSelectedIndex(prevPreviews.length);
         }
 
-        // Hard limit on video size
-        if (file.size > 300 * 1024 * 1024) {
-          toast.error(`Video ${file.name} exceeds 300MB limit`);
-          return false;
-        }
-      }
+        return newPreviewList;
+      });
 
-      return true;
-    });
+      setMediaFiles((prevFiles) => [...prevFiles, ...validFiles]);
+    },
+    [processVideoFile]
+  );
 
-    if (validFiles.length === 0) return;
-
-    // Create previews and update state together
-    const newPreviews = validFiles.map((file) => {
-      const isVideo = file.type.startsWith("video/");
-      const preview = URL.createObjectURL(file);
-      return {
-        file,
-        preview,
-        type: isVideo ? "video" : "image",
-        name: file.name,
-        size: formatFileSize(file.size),
-      };
-    });
-
-    // Update state in a single batch
-    setPreviews((prevPreviews) => {
-      const newPreviewList = [...prevPreviews, ...newPreviews];
-      // If this is the first media being added, set selectedIndex to 0
-      if (prevPreviews.length === 0) {
-        setSelectedIndex(0);
-      }
-      return newPreviewList;
-    });
-
-    setMediaFiles((prevFiles) => [...prevFiles, ...validFiles]);
-
-    console.log("Media files updated:", validFiles.length, "added");
-  }, []); // No mediaFiles dependency to avoid recreating onDrop for each change
-
-  // Configure dropzone with more specific options
+  // Configure dropzone with improved options
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: {
@@ -631,180 +870,188 @@ const CreateStory = () => {
     },
     maxSize: 300 * 1024 * 1024, // 300MB max file size
     maxFiles: 20,
-    noClick: false, // Allow clicking on the dropzone
-    noKeyboard: false, // Allow keyboard navigation
-    preventDropOnDocument: true, // Prevent dropping on document
+    noClick: false,
+    noKeyboard: false,
+    preventDropOnDocument: true,
     useFsAccessApi: false, // Disable File System Access API which can cause issues
   });
 
-  // Remove a preview and its file
-  const removePreview = (index) => {
-    const newPreviews = [...previews];
-    const newMediaFiles = [...mediaFiles];
+  // Remove a preview and its file with improved cleanup
+  const removePreview = useCallback(
+    (index) => {
+      const newPreviews = [...previews];
+      const newMediaFiles = [...mediaFiles];
 
-    // Revoke object URL to avoid memory leaks
-    URL.revokeObjectURL(previews[index].preview);
-
-    newPreviews.splice(index, 1);
-    newMediaFiles.splice(index, 1);
-
-    setPreviews(newPreviews);
-    setMediaFiles(newMediaFiles);
-
-    // Adjust selected index if needed
-    if (selectedIndex >= newPreviews.length) {
-      setSelectedIndex(Math.max(newPreviews.length - 1, 0));
-    }
-  };
-
-  // Handle direct camera capture with React refs
-  const handleCameraCapture = () => {
-    if ("mediaDevices" in navigator) {
-      try {
-        // Try modern MediaDevices API first
-        navigator.mediaDevices
-          .getUserMedia({
-            video: {
-              facingMode: "environment",
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            },
-          })
-          .then((stream) => {
-            // Clean up the stream when done
-            stream.getTracks().forEach((track) => track.stop());
-
-            // For now, fall back to the input element approach
-            fallbackToFileInput("image");
-          })
-          .catch((err) => {
-            console.log("MediaDevices error:", err);
-            fallbackToFileInput("image");
-          });
-      } catch (err) {
-        fallbackToFileInput("image");
+      // Revoke object URL to avoid memory leaks
+      if (newPreviews[index]?.preview) {
+        URL.revokeObjectURL(newPreviews[index].preview);
       }
-    } else {
-      fallbackToFileInput("image");
-    }
-  };
 
-  // Handle video recording with improved cleanup
-  const handleVideoCapture = () => {
-    if ("mediaDevices" in navigator) {
-      try {
-        // Try modern MediaDevices API first
-        navigator.mediaDevices
-          .getUserMedia({
-            video: {
-              facingMode: "environment",
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            },
-          })
-          .then((stream) => {
-            // Clean up the stream when done
-            stream.getTracks().forEach((track) => track.stop());
+      newPreviews.splice(index, 1);
+      newMediaFiles.splice(index, 1);
 
-            // For now, fall back to the input element approach
-            fallbackToFileInput("video");
-          })
-          .catch((err) => {
-            console.log("MediaDevices error:", err);
-            fallbackToFileInput("video");
-          });
-      } catch (err) {
-        fallbackToFileInput("video");
+      setPreviews(newPreviews);
+      setMediaFiles(newMediaFiles);
+
+      // Adjust selected index if needed
+      if (selectedIndex >= newPreviews.length && newPreviews.length > 0) {
+        setSelectedIndex(Math.max(newPreviews.length - 1, 0));
+      } else if (newPreviews.length === 0) {
+        setSelectedIndex(0);
       }
-    } else {
-      fallbackToFileInput("video");
+
+      // Hide compress option if no videos left
+      if (!newMediaFiles.some((file) => file.type.startsWith("video/"))) {
+        setShowCompressOption(false);
+        setCompressVideo(false);
+      }
+    },
+    [previews, mediaFiles, selectedIndex]
+  );
+
+  // Remove all media at once
+  const removeAllMedia = useCallback(() => {
+    // Revoke all object URLs first
+    previews.forEach((item) => {
+      if (item.preview) {
+        URL.revokeObjectURL(item.preview);
+      }
+    });
+
+    setPreviews([]);
+    setMediaFiles([]);
+    setSelectedIndex(0);
+    setShowCompressOption(false);
+    setCompressVideo(false);
+  }, [previews]);
+
+  // Optimized camera capture with permissions handling
+  const handleCameraCapture = useCallback(() => {
+    // First check if we have permission
+    if (!navigator.permissions || !navigator.permissions.query) {
+      // Browser doesn't support permission API, try direct capture
+      directCaptureMedia("image");
+      return;
     }
-  };
 
-  // Fallback method using file input with React ref
-  const fallbackToFileInput = (mediaType) => {
-    // Create a temporary input element
-    const input = document.createElement("input");
-    input.type = "file";
-
-    if (mediaType === "image") {
-      input.accept = "image/*";
-      input.capture = "environment"; // Use the back camera
-    } else {
-      input.accept = "video/*";
-      input.capture = "environment";
-
-      // Show toast about time limit
-      toast("Maximum video length: 30 seconds", {
-        duration: 3000,
-        position: "top-center",
+    navigator.permissions
+      .query({ name: "camera" })
+      .then((permissionStatus) => {
+        if (permissionStatus.state === "granted") {
+          directCaptureMedia("image");
+        } else if (permissionStatus.state === "prompt") {
+          // Will show permission dialog
+          directCaptureMedia("image");
+        } else {
+          // Permission denied
+          toast.error(
+            "Camera access is blocked. Please check your browser settings."
+          );
+        }
+      })
+      .catch((error) => {
+        console.log("Permission check failed:", error);
+        directCaptureMedia("image");
       });
+  }, []);
+
+  // Optimized video capture with permissions handling
+  const handleVideoCapture = useCallback(() => {
+    // First check if we have permission
+    if (!navigator.permissions || !navigator.permissions.query) {
+      // Browser doesn't support permission API, try direct capture
+      directCaptureMedia("video");
+      return;
     }
 
-    input.onchange = (e) => {
-      if (e.target.files && e.target.files.length > 0) {
-        const file = e.target.files[0];
-        console.log("File selected:", file.name, file.type, file.size);
+    navigator.permissions
+      .query({ name: "camera" })
+      .then((permissionStatus) => {
+        if (permissionStatus.state === "granted") {
+          directCaptureMedia("video");
+        } else if (permissionStatus.state === "prompt") {
+          // Will show permission dialog
+          directCaptureMedia("video");
+        } else {
+          // Permission denied
+          toast.error(
+            "Camera access is blocked. Please check your browser settings."
+          );
+        }
+      })
+      .catch((error) => {
+        console.log("Permission check failed:", error);
+        directCaptureMedia("video");
+      });
+  }, []);
 
-        // Additional client-side validation for videos
-        if (file.type.startsWith("video/")) {
-          // Check if we can determine the duration
-          const video = document.createElement("video");
-          video.preload = "metadata";
+  // Improved direct media capture function
+  const directCaptureMedia = useCallback(
+    (mediaType) => {
+      try {
+        // Create a temporary input element
+        const input = document.createElement("input");
+        input.type = "file";
 
-          // Create safe object URL management
-          const videoUrl = URL.createObjectURL(file);
-          video.src = videoUrl;
+        if (mediaType === "image") {
+          input.accept = "image/*";
+          input.capture = "environment"; // Use the back camera
+        } else {
+          input.accept = "video/*";
+          input.capture = "environment";
 
-          // Set timeout to handle case where metadata never loads
-          const timeoutId = setTimeout(() => {
-            URL.revokeObjectURL(videoUrl);
-          }, 5000);
-
-          video.onloadedmetadata = function () {
-            clearTimeout(timeoutId);
-            URL.revokeObjectURL(videoUrl);
-            const duration = video.duration;
-
-            // If video is longer than 30 seconds, show warning
-            if (duration > 30) {
-              toast.warning(
-                `Video is ${Math.round(
-                  duration
-                )} seconds long. Only the first 30 seconds will be used.`,
-                { duration: 4000 }
-              );
-            }
-          };
-
-          video.onerror = function () {
-            clearTimeout(timeoutId);
-            URL.revokeObjectURL(videoUrl);
-          };
+          // Show toast about time limit
+          toast("Maximum video length: 60 seconds", {
+            duration: 3000,
+            position: "top-center",
+          });
         }
 
-        onDrop([file], []);
+        // Handle file selection
+        input.onchange = async (e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+            console.log("File selected:", file.name, file.type, file.size);
+
+            // Use the onDrop function to handle the file with validation
+            await onDrop([file], []);
+          }
+        };
+
+        input.click();
+      } catch (error) {
+        console.error("Error capturing media:", error);
+        toast.error("Failed to capture media. Please try again.");
       }
-    };
+    },
+    [onDrop]
+  );
 
-    input.click();
-  };
-
-  // Handle selecting media from gallery
-  const handleGallerySelect = () => {
-    console.log("Opening gallery selector");
+  // Handle selecting media from gallery - simplified
+  const handleGallerySelect = useCallback(() => {
     open();
-  };
+  }, [open]);
 
-  // Handle form submission
-  const handleSubmit = async () => {
+  // More reliable form submission with better error handling
+  const handleSubmit = useCallback(async () => {
     if (mediaFiles.length === 0) {
       toast.error("Please add at least one image or video to your story");
       return;
     }
 
+    // Clear any previous errors
+    setError("");
     setLoading(true);
     setUploadProgress(0);
+
+    // Check internet connection first
+    if (!navigator.onLine) {
+      toast.error(
+        "No internet connection. Please check your network and try again."
+      );
+      setLoading(false);
+      return;
+    }
 
     const formData = new FormData();
     formData.append("title", caption || "My Story"); // Provide a default title if caption is empty
@@ -815,131 +1062,175 @@ const CreateStory = () => {
       formData.append("compress", "true");
     }
 
-    mediaFiles.forEach((file) => {
-      formData.append("media", file);
+    // Add files with better handling
+    mediaFiles.forEach((file, index) => {
+      // Add index to keep track of order
+      formData.append(`media_${index}`, file);
     });
 
-    // Check if any video files exist
+    // Also send the order as JSON
+    formData.append("mediaOrder", JSON.stringify(mediaFiles.map((_, i) => i)));
+
+    // Check if any video files exist for toast messaging
     const hasVideoFiles = mediaFiles.some((file) =>
       file.type.startsWith("video/")
     );
-
-    // Add upload progress monitoring
-    const uploadToast = hasVideoFiles
-      ? toast.loading("Uploading video... 0%")
-      : null;
+    const uploadToastId = hasVideoFiles
+      ? toast.loading("Preparing to upload video...")
+      : toast.loading("Uploading story...");
 
     try {
+      setUploadStatus("Uploading story...");
+
       await axios.post("/api/stories", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
         onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          setUploadProgress(percentCompleted);
+          if (progressEvent.total) {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            setUploadProgress(percentCompleted);
+            setUploadStatus(`Uploading: ${percentCompleted}%`);
 
-          if (hasVideoFiles && uploadToast) {
-            toast.loading(`Uploading video... ${percentCompleted}%`, {
-              id: uploadToast,
+            // Update toast message
+            toast.loading(`Uploading: ${percentCompleted}%`, {
+              id: uploadToastId,
             });
           }
         },
+        // Add timeout for large uploads
+        timeout: 300000, // 5 minutes
       });
 
-      if (uploadToast) {
-        toast.dismiss(uploadToast);
-      }
-
+      toast.dismiss(uploadToastId);
       toast.success("Story created successfully!");
       navigate("/");
     } catch (err) {
       console.error("Error creating story:", err);
+      toast.dismiss(uploadToastId);
 
-      if (!navigator.onLine) {
-        toast.error(
-          "No internet connection. Please check your network and try again."
-        );
-        return;
-      }
-
-      // More specific error messages based on error type
+      // More specific and user-friendly error messages
       if (err.response) {
-        // Handle specific HTTP error codes
         switch (err.response.status) {
           case 413:
+            setError(
+              "Files are too large. Please use smaller files or enable compression."
+            );
             toast.error(
-              "Video file is too large for the server to process. Please use a shorter video or reduce the quality."
+              "Files are too large. Please use smaller files or enable compression."
             );
             break;
           case 401:
+            setError("You need to be logged in to create stories.");
             toast.error("You need to be logged in to create stories.");
             break;
           case 429:
+            setError("Too many requests. Please try again later.");
             toast.error("Too many requests. Please try again later.");
             break;
+          case 500:
+            setError("Server error. The team has been notified.");
+            toast.error("Server error. The team has been notified.");
+            break;
           default:
+            setError(
+              err.response.data?.message ||
+                `Upload failed (${err.response.status}). Please try again.`
+            );
             toast.error(
               err.response.data?.message ||
                 `Upload failed (${err.response.status}). Please try again.`
             );
         }
       } else if (err.request) {
-        // Request was made but no response received
+        setError("Server not responding. Please try again later.");
         toast.error("Server not responding. Please try again later.");
       } else if (err.message.includes("timeout")) {
+        setError(
+          "Upload timed out. Please try again with smaller files or better connection."
+        );
         toast.error(
-          "Upload timed out. Please use a shorter video or check your internet connection."
+          "Upload timed out. Please try again with smaller files or better connection."
         );
       } else {
+        setError("Failed to create story. Please try again.");
         toast.error("Failed to create story. Please try again.");
       }
     } finally {
       setLoading(false);
       setUploadProgress(0);
-      if (uploadToast) {
-        toast.dismiss(uploadToast);
-      }
+      setUploadStatus("");
     }
-  };
+  }, [mediaFiles, caption, compressVideo, navigate]);
 
-  // Go back (cancel creating story)
-  const goBack = () => {
+  // Simple navigation handler
+  const goBack = useCallback(() => {
     navigate("/");
-  };
+  }, [navigate]);
 
-  // Handle media selection in thumbnails
-  const handleThumbnailClick = (index) => {
+  // Optimized thumbnail handling
+  const handleThumbnailClick = useCallback((index) => {
     setSelectedIndex(index);
-  };
+  }, []);
 
-  // Handle media selection
-  const handleMediaSelect = (mediaType, e) => {
-    // Prevent event from propagating to parent dropzone
-    if (e) {
-      e.stopPropagation();
-    }
+  // Media selection handler with improved error catching
+  const handleMediaSelect = useCallback(
+    (mediaType, e) => {
+      // Prevent event from propagating to parent dropzone
+      if (e) {
+        e.stopPropagation();
+      }
 
-    // Handle different media types (gallery, camera, or video)
-    if (mediaType === "gallery") {
-      handleGallerySelect(); // For gallery
-    } else if (mediaType === "camera") {
-      handleCameraCapture(); // Camera function
-    } else if (mediaType === "video") {
-      handleVideoCapture(); // Video function
-    }
-  };
+      try {
+        if (mediaType === "gallery") {
+          handleGallerySelect();
+        } else if (mediaType === "camera") {
+          handleCameraCapture();
+        } else if (mediaType === "video") {
+          handleVideoCapture();
+        }
+      } catch (error) {
+        console.error(`Error handling ${mediaType} selection:`, error);
+        toast.error(`Failed to access ${mediaType}. Please try again.`);
+      }
+    },
+    [handleGallerySelect, handleCameraCapture, handleVideoCapture]
+  );
 
-  // Clean up preview URLs when component unmounts
+  // Clean up on component unmount to prevent memory leaks
   useEffect(() => {
     return () => {
-      // Revoke all object URLs when component unmounts
+      // Clear any timeouts
+      if (videoProcessingTimeoutRef.current) {
+        clearTimeout(videoProcessingTimeoutRef.current);
+      }
+
+      // Revoke all object URLs
       previews.forEach((item) => {
-        URL.revokeObjectURL(item.preview);
+        if (item.preview) {
+          URL.revokeObjectURL(item.preview);
+        }
       });
     };
   }, [previews]);
+
+  // Memoized media count stats for better performance
+  const mediaStats = useMemo(() => {
+    const imageCount = mediaFiles.filter((file) =>
+      file.type.startsWith("image/")
+    ).length;
+    const videoCount = mediaFiles.filter((file) =>
+      file.type.startsWith("video/")
+    ).length;
+
+    return {
+      total: mediaFiles.length,
+      images: imageCount,
+      videos: videoCount,
+    };
+  }, [mediaFiles]);
 
   // Render null during auth loading
   if (authLoading) {
@@ -963,6 +1254,35 @@ const CreateStory = () => {
       </AppHeader>
 
       <MainContent>
+        {/* Media Files Info */}
+        {mediaFiles.length > 0 && (
+          <MediaFilesInfo>
+            <MediaStats>
+              <span>
+                {mediaStats.total} file{mediaStats.total !== 1 ? "s" : ""}
+              </span>
+              {mediaStats.images > 0 && (
+                <span>
+                  • {mediaStats.images} image
+                  {mediaStats.images !== 1 ? "s" : ""}
+                </span>
+              )}
+              {mediaStats.videos > 0 && (
+                <span>
+                  • {mediaStats.videos} video
+                  {mediaStats.videos !== 1 ? "s" : ""}
+                </span>
+              )}
+            </MediaStats>
+            <MediaClearButton onClick={removeAllMedia}>
+              <FaTimes size={12} /> Clear all
+            </MediaClearButton>
+          </MediaFilesInfo>
+        )}
+
+        {/* Error message display */}
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+
         {/* Main Media Preview Area */}
         {previews.length > 0 ? (
           <MediaPreviewContainer>
@@ -973,7 +1293,18 @@ const CreateStory = () => {
               />
             ) : (
               <MainPreviewVideo>
-                <video src={previews[selectedIndex].preview} controls muted />
+                <video
+                  src={previews[selectedIndex].preview}
+                  controls
+                  muted
+                  preload="metadata"
+                  onError={(e) => {
+                    console.error("Video preview error:", e);
+                    toast.error(
+                      `Error loading video preview: ${previews[selectedIndex].name}`
+                    );
+                  }}
+                />
                 <VideoIcon>
                   <FaVideo />
                 </VideoIcon>
@@ -985,6 +1316,19 @@ const CreateStory = () => {
             >
               <FaTimes />
             </RemoveButton>
+
+            {/* Preview dots navigation for quick jumping between media */}
+            {previews.length > 1 && (
+              <PreviewNavigation>
+                {previews.map((_, index) => (
+                  <PreviewDot
+                    key={`dot-${index}`}
+                    active={index === selectedIndex}
+                    onClick={() => handleThumbnailClick(index)}
+                  />
+                ))}
+              </PreviewNavigation>
+            )}
           </MediaPreviewContainer>
         ) : (
           <DropzoneArea
@@ -1036,10 +1380,10 @@ const CreateStory = () => {
 
         {/* Thumbnails for multi-media stories */}
         {previews.length > 0 && (
-          <ThumbnailContainer>
+          <ThumbnailContainer ref={thumbnailContainerRef}>
             {previews.map((item, index) => (
               <ThumbnailItem
-                key={index}
+                key={`thumb-${index}-${item.timestamp}`}
                 isSelected={index === selectedIndex}
                 onClick={() => handleThumbnailClick(index)}
               >
@@ -1047,6 +1391,7 @@ const CreateStory = () => {
                   <ThumbnailImage
                     src={item.preview}
                     alt={`Thumbnail ${index + 1}`}
+                    loading="lazy"
                   />
                 ) : (
                   <ThumbnailVideo>
@@ -1058,12 +1403,14 @@ const CreateStory = () => {
                 )}
               </ThumbnailItem>
             ))}
-            <AddMediaThumbnail
-              onClick={() => handleGallerySelect()}
-              aria-label="Add more media"
-            >
-              <FaPlusCircle />
-            </AddMediaThumbnail>
+            {mediaFiles.length < 20 && (
+              <AddMediaThumbnail
+                onClick={() => handleGallerySelect()}
+                aria-label="Add more media"
+              >
+                <FaPlusCircle />
+              </AddMediaThumbnail>
+            )}
           </ThumbnailContainer>
         )}
 
@@ -1078,7 +1425,8 @@ const CreateStory = () => {
               aria-label="Compress video"
             />
             <CompressLabel htmlFor="compress-video">
-              Compress large videos for faster upload (may reduce quality)
+              <FaCompress style={{ marginRight: "6px", fontSize: "12px" }} />
+              Compress large videos for faster upload (recommended)
             </CompressLabel>
           </CompressOptionContainer>
         )}
@@ -1092,6 +1440,7 @@ const CreateStory = () => {
             placeholder="Write a caption..."
             rows={1}
             aria-label="Story caption"
+            maxLength={2200} // Instagram-like character limit
           />
         </CaptionContainer>
 
@@ -1105,6 +1454,21 @@ const CreateStory = () => {
           </UploadProgressContainer>
         )}
       </MainContent>
+
+      {/* Fullscreen loaders */}
+      {processingVideo && (
+        <LoaderOverlay>
+          <Spinner />
+          <p>Processing video, please wait...</p>
+        </LoaderOverlay>
+      )}
+
+      {loading && (
+        <LoaderOverlay>
+          <Spinner />
+          <p>{uploadStatus || "Creating your story..."}</p>
+        </LoaderOverlay>
+      )}
     </PageWrapper>
   );
 };
