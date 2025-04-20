@@ -2,10 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1"
-    />
+    <meta name="viewport" content="width=device-width, maximum-scale=1" />
     <meta name="theme-color" content="#FF5733" />
     <meta
       name="description"
@@ -46,6 +43,10 @@
       rel="stylesheet"
     />
     <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
       rel="preload"
       href="https://fonts.gstatic.com/s/inter/v12/Inter-Regular.woff2"
       as="font"
@@ -78,6 +79,7 @@
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
         font-src 'self' https://fonts.gstatic.com;
         img-src 'self' https://res.cloudinary.com data:;
+        media-src 'self' https://res.cloudinary.com;
         connect-src 'self' https://sologram-api.onrender.com https://cdn.onesignal.com https://www.google-analytics.com;
         frame-src 'self';
       "
@@ -89,5 +91,21 @@
       in your browser settings or visit our <a href="/help">help page</a>.
     </noscript>
     <div id="root"></div>
+    <script>
+      self.addEventListener("install", (event) => {
+        event.waitUntil(
+          caches.open("static-cache").then((cache) => {
+            return cache.addAll([
+              "/",
+              "/index.html",
+              "/static/js/main.js",
+              "/static/css/main.css",
+              "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap",
+              "https://fonts.gstatic.com/s/inter/v12/Inter-Regular.woff2",
+            ]);
+          })
+        );
+      });
+    </script>
   </body>
 </html>
