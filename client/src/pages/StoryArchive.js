@@ -10,6 +10,7 @@ import {
   FaExclamationTriangle,
   FaRedoAlt,
 } from "react-icons/fa";
+import { COLORS, THEME } from "../theme"; // Import the theme
 
 const StoryArchive = () => {
   const [archivedStories, setArchivedStories] = useState([]);
@@ -188,9 +189,9 @@ const StoryArchive = () => {
   );
 };
 
-// Styled components remain the same
+// Styled components updated with Modern Twilight theme
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   padding: 1rem 0;
 `;
@@ -219,12 +220,14 @@ const Header = styled.div`
 const BackButton = styled(Link)`
   display: flex;
   align-items: center;
-  color: #ddd;
+  color: ${COLORS.textSecondary};
   text-decoration: none;
   margin-right: 2rem;
+  transition: all 0.3s ease;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.primaryBlue};
+    transform: translateX(-3px);
   }
 
   svg {
@@ -237,7 +240,7 @@ const BackButton = styled(Link)`
 `;
 
 const PageTitle = styled.h1`
-  color: #fff;
+  color: ${COLORS.textPrimary};
   font-size: 1.75rem;
   margin: 0;
   display: flex;
@@ -245,13 +248,13 @@ const PageTitle = styled.h1`
 
   svg {
     margin-right: 0.75rem;
-    color: #ff7e5f;
+    color: ${COLORS.primaryPurple};
   }
 `;
 
 const LoadingMessage = styled.div`
   text-align: center;
-  color: #ddd;
+  color: ${COLORS.textSecondary};
   font-size: 1.125rem;
   padding: 3rem 0;
   display: flex;
@@ -263,9 +266,9 @@ const LoadingMessage = styled.div`
 const LoadingSpinner = styled.div`
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(255, 126, 95, 0.2);
+  border: 3px solid ${COLORS.primaryPurple}30;
   border-radius: 50%;
-  border-top-color: #ff7e5f;
+  border-top-color: ${COLORS.primaryPurple};
   animation: spin 1s ease-in-out infinite;
 
   @keyframes spin {
@@ -301,17 +304,23 @@ const ErrorMessage = styled.div`
 const RetryButton = styled.button`
   display: flex;
   align-items: center;
-  background-color: #ff7e5f;
+  background-color: ${COLORS.primaryBlue};
   color: white;
   border: none;
   border-radius: 4px;
   padding: 0.75rem 1.5rem;
   cursor: pointer;
   font-size: 1rem;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
 
   &:hover {
-    background-color: #ff6347;
+    background-color: ${COLORS.accentBlue};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px ${COLORS.shadow};
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   svg {
@@ -321,9 +330,13 @@ const RetryButton = styled.button`
 
 const EmptyMessage = styled.div`
   text-align: center;
-  color: #ddd;
+  color: ${COLORS.textSecondary};
   font-size: 1.125rem;
   padding: 3rem 0;
+  background-color: ${COLORS.cardBackground};
+  border-radius: 8px;
+  border: 1px dashed ${COLORS.border};
+  margin-top: 2rem;
 `;
 
 const ArchiveGrid = styled.div`
@@ -333,14 +346,17 @@ const ArchiveGrid = styled.div`
 `;
 
 const StoryCard = styled.div`
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease;
+  border: 1px solid ${COLORS.border};
+  box-shadow: 0 2px 8px ${COLORS.shadow};
+  transition: all 0.3s ease;
 
   &:hover {
     transform: translateY(-5px);
+    box-shadow: 0 8px 16px ${COLORS.shadow};
+    border-color: ${COLORS.primaryPurple}50;
   }
 `;
 
@@ -354,6 +370,11 @@ const StoryImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.5s ease;
+
+  ${StoryCard}:hover & {
+    transform: scale(1.05);
+  }
 `;
 
 const NoImagePlaceholder = styled.div`
@@ -362,9 +383,14 @@ const NoImagePlaceholder = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #2a2a2a;
-  color: #999;
+  background-color: ${COLORS.elevatedBackground};
+  color: ${COLORS.textTertiary};
   font-size: 3rem;
+  transition: color 0.3s ease;
+
+  ${StoryCard}:hover & {
+    color: ${COLORS.primaryPurple};
+  }
 `;
 
 const MediaCount = styled.div`
@@ -372,10 +398,12 @@ const MediaCount = styled.div`
   bottom: 0.5rem;
   right: 0.5rem;
   background-color: rgba(0, 0, 0, 0.7);
-  color: white;
+  color: ${COLORS.textPrimary};
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.75rem;
+  backdrop-filter: blur(4px);
+  border: 1px solid ${COLORS.border};
 `;
 
 const StoryContent = styled.div`
@@ -383,19 +411,19 @@ const StoryContent = styled.div`
 `;
 
 const StoryTitle = styled.h2`
-  color: #fff;
+  color: ${COLORS.textPrimary};
   font-size: 1.25rem;
   margin: 0 0 0.5rem;
 `;
 
 const StoryDate = styled.div`
-  color: #aaa;
+  color: ${COLORS.textTertiary};
   font-size: 0.875rem;
   margin-bottom: 0.5rem;
 `;
 
 const ArchivedDate = styled.div`
-  color: #ff7e5f;
+  color: ${COLORS.primaryBlue};
   font-size: 0.875rem;
   margin-bottom: 1rem;
 `;
@@ -404,20 +432,27 @@ const ActionButtons = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 1rem;
 `;
 
 const ViewButton = styled(Link)`
-  background-color: #ff7e5f;
+  background-color: ${COLORS.primaryGreen};
   color: white;
   border: none;
   border-radius: 4px;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   text-decoration: none;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
+  font-weight: 500;
 
   &:hover {
-    background-color: #ff6347;
+    background-color: ${COLORS.accentGreen};
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 `;
 
@@ -427,10 +462,13 @@ const DeleteButton = styled.button`
   border: none;
   padding: 0.5rem;
   cursor: pointer;
-  transition: color 0.3s;
+  transition: all 0.3s ease;
+  border-radius: 50%;
 
   &:hover {
     color: #c0392b;
+    background-color: rgba(231, 76, 60, 0.1);
+    transform: scale(1.1);
   }
 `;
 

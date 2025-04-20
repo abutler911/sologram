@@ -20,12 +20,13 @@ import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { AuthContext } from "../context/AuthContext";
+import { COLORS, THEME } from "../theme"; // Import the theme
 
 // Styled Components (moved to the top)
 const PageWrapper = styled.div`
-  background-color: #000;
+  background-color: ${COLORS.background};
   min-height: 100vh;
-  color: #fff;
+  color: ${COLORS.textPrimary};
   display: flex;
   flex-direction: column;
 
@@ -40,8 +41,8 @@ const AppHeader = styled.header`
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid #262626;
-  background-color: #000;
+  border-bottom: 1px solid ${COLORS.border};
+  background-color: ${COLORS.cardBackground};
   position: sticky;
   top: 0;
   z-index: 10;
@@ -50,13 +51,19 @@ const AppHeader = styled.header`
 const BackButton = styled.button`
   background: none;
   border: none;
-  color: #fff;
+  color: ${COLORS.textPrimary};
   font-size: 1.25rem;
   padding: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: ${COLORS.primaryBlue};
+    transform: translateX(-2px);
+  }
 `;
 
 const HeaderTitle = styled.h1`
@@ -65,20 +72,28 @@ const HeaderTitle = styled.h1`
   margin: 0;
   flex-grow: 1;
   text-align: center;
+  color: ${COLORS.textPrimary};
 `;
 
 const NextButton = styled.button`
   background: none;
   border: none;
-  color: #0095f6;
+  color: ${COLORS.primaryGreen};
   font-weight: 600;
   padding: 8px;
   cursor: pointer;
   font-size: 0.875rem;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: ${COLORS.accentGreen};
+    transform: translateY(-1px);
+  }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
   }
 `;
 
@@ -94,11 +109,12 @@ const MediaPreviewContainer = styled.div`
   width: 100%;
   aspect-ratio: 9 / 16;
   position: relative;
-  background-color: #1a1a1a;
+  background-color: ${COLORS.cardBackground};
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid ${COLORS.border};
 `;
 
 const MainPreviewImage = styled.img`
@@ -129,7 +145,7 @@ const VideoIcon = styled.div`
   top: 12px;
   right: 12px;
   background-color: rgba(0, 0, 0, 0.7);
-  color: white;
+  color: ${COLORS.textPrimary};
   border-radius: 50%;
   width: 32px;
   height: 32px;
@@ -143,7 +159,7 @@ const RemoveButton = styled.button`
   top: 12px;
   left: 12px;
   background-color: rgba(0, 0, 0, 0.7);
-  color: white;
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 50%;
   width: 32px;
@@ -152,6 +168,12 @@ const RemoveButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: rgba(255, 0, 0, 0.3);
+    transform: scale(1.1);
+  }
 `;
 
 // Styled Components for Dropzone
@@ -161,9 +183,16 @@ const DropzoneArea = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px dashed ${(props) => (props.isDragActive ? "#0095f6" : "#333")};
-  background-color: #1a1a1a;
+  border: 2px dashed
+    ${(props) => (props.isDragActive ? COLORS.primaryBlue : COLORS.border)};
+  background-color: ${COLORS.cardBackground};
   cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: ${COLORS.primaryBlue}80;
+    background-color: ${COLORS.elevatedBackground};
+  }
 `;
 
 const DropzoneContent = styled.div`
@@ -171,7 +200,7 @@ const DropzoneContent = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #888;
+  color: ${COLORS.textSecondary};
   text-align: center;
   padding: 16px;
   width: 100%;
@@ -182,7 +211,7 @@ const DragActiveContent = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #0095f6;
+  color: ${COLORS.primaryBlue};
   text-align: center;
   padding: 16px;
   width: 100%;
@@ -191,7 +220,7 @@ const DragActiveContent = styled.div`
 const UploadIcon = styled.div`
   font-size: 3rem;
   margin-bottom: 16px;
-  color: #0095f6;
+  color: ${COLORS.primaryBlue};
 `;
 
 const ActionButtonsContainer = styled.div`
@@ -211,20 +240,44 @@ const ActionButton = styled.button`
   padding: 16px 12px;
   border-radius: 8px;
   border: none;
-  background-color: #262626;
-  color: white;
+  background-color: ${COLORS.elevatedBackground};
+  color: ${COLORS.textPrimary};
   font-weight: 500;
   gap: 8px;
   cursor: pointer;
   font-size: 0.875rem;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
 
   svg {
     font-size: 1.5rem;
+    color: ${COLORS.textSecondary};
+    transition: color 0.3s ease;
   }
 
   &:hover {
-    background-color: #363636;
+    background-color: ${COLORS.primaryPurple}20;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px ${COLORS.shadow};
+
+    svg {
+      color: ${COLORS.primaryPurple};
+    }
+  }
+
+  &:nth-child(2):hover {
+    background-color: ${COLORS.primaryBlue}20;
+
+    svg {
+      color: ${COLORS.primaryBlue};
+    }
+  }
+
+  &:nth-child(3):hover {
+    background-color: ${COLORS.primaryGreen}20;
+
+    svg {
+      color: ${COLORS.primaryGreen};
+    }
   }
 `;
 
@@ -234,8 +287,10 @@ const ThumbnailContainer = styled.div`
   overflow-x: auto;
   padding: 12px;
   gap: 8px;
-  background-color: #0f0f0f;
+  background-color: ${COLORS.elevatedBackground};
   scrollbar-width: none;
+  border-top: 1px solid ${COLORS.border};
+  border-bottom: 1px solid ${COLORS.border};
 
   &::-webkit-scrollbar {
     display: none;
@@ -249,11 +304,17 @@ const ThumbnailItem = styled.div`
   overflow: hidden;
   flex-shrink: 0;
   cursor: pointer;
-  border: 2px solid ${(props) => (props.isSelected ? "#0095f6" : "transparent")};
+  border: 2px solid
+    ${(props) => (props.isSelected ? COLORS.primaryPurple : "transparent")};
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.05);
+  }
 `;
 
 const ThumbnailImage = styled.img`
@@ -284,7 +345,7 @@ const ThumbnailVideoIcon = styled.div`
   top: 4px;
   right: 4px;
   background-color: rgba(0, 0, 0, 0.7);
-  color: white;
+  color: ${COLORS.textPrimary};
   border-radius: 50%;
   width: 16px;
   height: 16px;
@@ -298,32 +359,37 @@ const AddMediaThumbnail = styled.div`
   width: 60px;
   height: 60px;
   border-radius: 6px;
-  background-color: #262626;
+  background-color: ${COLORS.elevatedBackground};
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   cursor: pointer;
-  color: #0095f6;
+  color: ${COLORS.primaryGreen};
   font-size: 1.5rem;
+  border: 1px dashed ${COLORS.border};
+  transition: all 0.2s ease;
 
   &:hover {
-    background-color: #363636;
+    background-color: ${COLORS.primaryGreen}20;
+    color: ${COLORS.accentGreen};
+    transform: scale(1.05);
   }
 `;
 
 // Caption
 const CaptionContainer = styled.div`
   padding: 16px;
-  border-top: 1px solid #262626;
+  border-top: 1px solid ${COLORS.border};
   margin-top: 8px;
+  background-color: ${COLORS.cardBackground};
 `;
 
 const CaptionTextarea = styled.textarea`
   width: 100%;
   background: transparent;
   border: none;
-  color: #fff;
+  color: ${COLORS.textPrimary};
   font-size: 1rem;
   resize: none;
   padding: 8px 0;
@@ -334,19 +400,23 @@ const CaptionTextarea = styled.textarea`
   }
 
   &::placeholder {
-    color: #555;
+    color: ${COLORS.textTertiary};
   }
 `;
 
 // Upload Progress
 const UploadProgressContainer = styled.div`
   margin: 16px;
+  background-color: ${COLORS.cardBackground};
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid ${COLORS.border};
 `;
 
 const ProgressBarOuter = styled.div`
   width: 100%;
   height: 8px;
-  background-color: #333;
+  background-color: ${COLORS.elevatedBackground};
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 8px;
@@ -355,13 +425,17 @@ const ProgressBarOuter = styled.div`
 const ProgressBarInner = styled.div`
   height: 100%;
   width: ${(props) => props.width}%;
-  background-color: #0095f6;
+  background: linear-gradient(
+    90deg,
+    ${COLORS.primaryPurple},
+    ${COLORS.primaryBlue}
+  );
   transition: width 0.3s ease;
 `;
 
 const ProgressText = styled.div`
   font-size: 0.75rem;
-  color: #aaa;
+  color: ${COLORS.textSecondary};
   text-align: center;
 `;
 
@@ -370,18 +444,20 @@ const CompressOptionContainer = styled.div`
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background-color: rgba(0, 149, 246, 0.1);
+  background-color: ${COLORS.primaryBlue}10;
   border-radius: 4px;
   margin: 8px 16px;
+  border: 1px solid ${COLORS.primaryBlue}30;
 `;
 
 const CompressCheckbox = styled.input`
   margin-right: 12px;
+  accent-color: ${COLORS.primaryBlue};
 `;
 
 const CompressLabel = styled.label`
   font-size: 0.875rem;
-  color: #fff;
+  color: ${COLORS.textSecondary};
 `;
 
 // Helper function to format file size

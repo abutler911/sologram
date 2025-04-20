@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { FaArrowLeft, FaGavel } from "react-icons/fa";
 import MainLayout from "../components/layout/MainLayout";
 import { sanity } from "../lib/sanityClient";
+import { COLORS, THEME } from "../theme"; // Import the theme
 
 const Terms = () => {
   const [policy, setPolicy] = useState(null);
@@ -18,7 +19,7 @@ const Terms = () => {
   if (!policy)
     return (
       <MainLayout>
-        <p>Loading...</p>
+        <LoadingContainer>Loading...</LoadingContainer>
       </MainLayout>
     );
 
@@ -85,19 +86,29 @@ const Terms = () => {
 
 // Full-width page wrapper that fills the viewport
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   width: 100%;
   display: flex;
   justify-content: center;
 `;
 
-// Dark theme styled components
+// Loading container with themed colors
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+  color: ${COLORS.textPrimary};
+  font-size: 1.2rem;
+`;
+
+// Themed styled components
 const Container = styled.div`
   width: 100%;
   max-width: 1000px; /* Increased from 800px for wider content */
   padding: 2rem;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
   box-sizing: border-box;
 
   @media (max-width: 1024px) {
@@ -124,13 +135,14 @@ const Container = styled.div`
 const BackLink = styled(Link)`
   display: inline-flex;
   align-items: center;
-  color: #aaaaaa;
+  color: ${COLORS.textSecondary};
   text-decoration: none;
   margin-bottom: 1.5rem;
-  transition: color 0.3s;
+  transition: all 0.3s ease;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.primaryBlue};
+    transform: translateX(-3px);
   }
 
   svg {
@@ -139,10 +151,11 @@ const BackLink = styled(Link)`
 `;
 
 const ContentCard = styled.div`
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
   padding: 2rem;
-  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 10px ${COLORS.shadow};
+  border: 1px solid ${COLORS.border};
 
   @media (max-width: 768px) {
     padding: 1.5rem;
@@ -165,7 +178,7 @@ const PageHeader = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 1rem;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid ${COLORS.divider};
   padding-bottom: 1rem;
 `;
 
@@ -173,13 +186,18 @@ const LogoIcon = styled.div`
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
-  background-color: #ff7e5f;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primaryPurple},
+    ${COLORS.primaryBlue}
+  );
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
   margin-right: 1rem;
+  box-shadow: 0 3px 6px ${COLORS.shadow};
 
   @media (max-width: 480px) {
     width: 2.5rem;
@@ -191,7 +209,7 @@ const LogoIcon = styled.div`
 
 const PageTitle = styled.h1`
   font-size: 1.75rem;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
   margin: 0;
 
   @media (max-width: 480px) {
@@ -200,11 +218,11 @@ const PageTitle = styled.h1`
 `;
 
 const LastUpdated = styled.p`
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   font-style: italic;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid ${COLORS.divider};
 `;
 
 const Section = styled.section`
@@ -213,24 +231,45 @@ const Section = styled.section`
 
 const SectionTitle = styled.h2`
   font-size: 1.25rem;
-  color: #ff7e5f;
+  color: ${COLORS.primaryPurple};
   margin: 0 0 1rem 0;
 `;
 
-const Paragraph = styled.p`
-  color: #bbbbbb;
+const Paragraph = styled.div`
+  color: ${COLORS.textSecondary};
   margin-bottom: 1rem;
   line-height: 1.6;
+
+  a {
+    color: ${COLORS.primaryBlue};
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover {
+      color: ${COLORS.accentBlue};
+      text-decoration: underline;
+    }
+  }
+
+  strong,
+  b {
+    color: ${COLORS.textPrimary};
+    font-weight: 600;
+  }
 `;
 
 const List = styled.ul`
   margin: 0 0 1rem 1.5rem;
-  color: #bbbbbb;
+  color: ${COLORS.textSecondary};
 `;
 
 const ListItem = styled.li`
   margin-bottom: 0.5rem;
   line-height: 1.6;
+
+  &::marker {
+    color: ${COLORS.primaryGreen};
+  }
 `;
 
 export default Terms;
