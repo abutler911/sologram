@@ -31,11 +31,11 @@ export const initializeOneSignal = async () => {
 
   if (!appId) {
     console.error("[OneSignal] Missing APP_ID environment variable");
+    toast.error("Notification system is not configured properly.");
     isInitializing = false;
     return false;
   }
 
-  // Log the App ID we're using (without showing the full value for security)
   const maskedAppId =
     appId.substring(0, 4) + "..." + appId.substring(appId.length - 4);
   console.log(`[OneSignal] Using App ID: ${maskedAppId}`);
@@ -45,7 +45,6 @@ export const initializeOneSignal = async () => {
       const OneSignal = (await import("react-onesignal")).default;
       OneSignalSDK = OneSignal;
 
-      // Log more details for debugging
       console.log("[OneSignal] SDK loaded successfully");
 
       const initConfig = {
@@ -77,18 +76,13 @@ export const initializeOneSignal = async () => {
 
       console.log("[OneSignal] Starting initialization with config:", {
         ...initConfig,
-        appId: maskedAppId, // Don't log the full app ID
+        appId: maskedAppId,
       });
 
       await OneSignal.init(initConfig);
 
       console.log("[OneSignal] Initialized successfully");
 
-      // Check browser compatibility
-      const browser = navigator.userAgent;
-      console.log("[OneSignal] Browser:", browser);
-
-      // Check for secure context
       const isSecure = window.isSecureContext;
       console.log("[OneSignal] Is secure context:", isSecure);
 
@@ -99,18 +93,15 @@ export const initializeOneSignal = async () => {
         const isSupported = await OneSignal.isPushNotificationsSupported();
         console.log("[OneSignal] Push supported:", isSupported);
 
-        // Check current permission state
         const permission = await OneSignal.getNotificationPermission();
         console.log("[OneSignal] Current permission status:", permission);
 
-        // Check if already subscribed
         const isEnabled = await OneSignal.isPushNotificationsEnabled();
         console.log("[OneSignal] Already subscribed:", isEnabled);
       } else {
         console.warn("[OneSignal] isPushNotificationsSupported not available");
       }
 
-      // Verify the OneSignal global object is available
       if (window.OneSignal) {
         console.log("[OneSignal] Global OneSignal object is available");
       } else {
@@ -132,7 +123,6 @@ export const initializeOneSignal = async () => {
       console.error("[OneSignal] Initialization error:", error);
       isInitializing = false;
 
-      // Check for specific errors and provide better debugging
       if (error.message && error.message.includes("service worker")) {
         console.error(
           "[OneSignal] Service worker registration issue detected. Check that your OneSignalSDKWorker.js file exists at the root of your domain"
@@ -149,6 +139,7 @@ export const initializeOneSignal = async () => {
         console.log(`[OneSignal] Will retry initialization in 3 seconds`);
         setTimeout(() => {
           initPromise = null;
+          initializeOneSignal(); // Retry initialization
         }, 3000);
       } else {
         console.error(
@@ -200,7 +191,6 @@ export const getNotificationDiagnostics = () => {
         hasServiceWorker = regs.length > 0;
         console.log("[OneSignal] Service worker registrations:", regs.length);
 
-        // Log service worker details
         regs.forEach((reg, index) => {
           console.log(`[OneSignal] Service worker #${index + 1}:`, {
             scope: reg.scope,
@@ -274,7 +264,6 @@ export const requestNotificationPermission = async () => {
       return true;
     }
 
-    // Try to show the prompt
     console.log("[OneSignal] Showing permission prompt");
 
     if (typeof OneSignalSDK.showSlidedownPrompt === "function") {
@@ -289,11 +278,9 @@ export const requestNotificationPermission = async () => {
       console.warn("[OneSignal] No prompt method available");
     }
 
-    // Wait for the user to respond to the prompt
     console.log("[OneSignal] Waiting for user response");
     await new Promise((res) => setTimeout(res, 2000));
 
-    // Check if permission was granted
     const isEnabled = await OneSignalSDK.isPushNotificationsEnabled();
     console.log("[OneSignal] Permission granted:", isEnabled);
 
@@ -301,12 +288,10 @@ export const requestNotificationPermission = async () => {
       console.log("[OneSignal] Successfully subscribed");
       toast.success("Subscribed to notifications!");
 
-      // Register the subscription with your backend
       try {
         const playerId = await OneSignalSDK.getUserId();
         console.log("[OneSignal] Registering with Player ID:", playerId);
 
-        // Call your backend to register this subscriber
         if (playerId) {
           try {
             const response = await fetch("/api/subscribers/register", {
