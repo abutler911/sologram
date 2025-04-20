@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import ThoughtCard from "../components/ThoughtCard";
 
 // Import theme constants
+import { COLORS, THEME } from "../theme";
 import { moodColors, moodEmojis } from "../utils/themeConstants";
 
 // Define animations
@@ -29,7 +30,7 @@ const float = keyframes`
 
 // Styled components for the page layout
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   padding: 1rem 0;
 `;
@@ -68,12 +69,12 @@ const HeaderRight = styled.div`
 
 const PageTitle = styled.h1`
   font-size: 2.3rem;
-  color: #ff7e5f;
+  color: ${COLORS.primaryPurple};
   margin: 0;
   font-family: "Autography", cursive;
   transform: rotate(-2deg);
   letter-spacing: 0.5px;
-  text-shadow: 0 2px 10px rgba(255, 126, 95, 0.3);
+  text-shadow: 0 2px 10px rgba(94, 53, 177, 0.3);
 `;
 
 const MoodFilter = styled.div`
@@ -89,11 +90,12 @@ const MoodButton = styled.button`
     props.active
       ? props.mood
         ? props.mood === "all"
-          ? "#ff7e5f"
+          ? COLORS.primaryPurple
           : moodColors[props.mood].primary
-        : "#ff7e5f"
-      : "#333333"};
-  color: ${(props) => (props.active ? "#121212" : "#dddddd")};
+        : COLORS.primaryPurple
+      : COLORS.elevatedBackground};
+  color: ${(props) =>
+    props.active ? COLORS.textPrimary : COLORS.textSecondary};
   border: none;
   border-radius: 999px;
   padding: 0.5rem 1rem;
@@ -108,8 +110,8 @@ const MoodButton = styled.button`
     background-color: ${(props) =>
       props.mood && props.mood !== "all"
         ? moodColors[props.mood].primary
-        : "#ff7e5f"};
-    color: #121212;
+        : COLORS.primaryPurple};
+    color: ${COLORS.textPrimary};
     transform: scale(1.1);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
   }
@@ -120,18 +122,22 @@ const CreateButton = styled(Link)`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #ff7e5f, #feb47b);
-  color: white;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primaryPurple},
+    ${COLORS.accentPurple}
+  );
+  color: ${COLORS.textPrimary};
   text-decoration: none;
   padding: 0.5rem 1rem;
   border-radius: 999px;
   font-weight: 500;
   transition: all 0.3s;
-  box-shadow: 0 3px 8px rgba(255, 126, 95, 0.3);
+  box-shadow: 0 3px 8px rgba(94, 53, 177, 0.3);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(255, 126, 95, 0.4);
+    box-shadow: 0 5px 15px rgba(94, 53, 177, 0.4);
   }
 
   svg {
@@ -162,7 +168,7 @@ const SearchContainer = styled.div`
 const SearchToggle = styled.button`
   background: none;
   border: none;
-  color: #dddddd;
+  color: ${COLORS.textSecondary};
   font-size: 1.125rem;
   padding: 0.5rem;
   cursor: pointer;
@@ -172,7 +178,7 @@ const SearchToggle = styled.button`
   transition: all 0.3s;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.primaryPurple};
     transform: scale(1.1);
   }
 `;
@@ -180,16 +186,16 @@ const SearchToggle = styled.button`
 const SearchForm = styled.form`
   display: flex;
   align-items: center;
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   border-radius: 999px;
   overflow: hidden;
-  border: 1px solid #333333;
+  border: 1px solid ${COLORS.border};
   transition: all 0.3s;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
 
   &:focus-within {
-    border-color: #ff7e5f;
-    box-shadow: 0 3px 15px rgba(255, 126, 95, 0.15);
+    border-color: ${COLORS.primaryPurple};
+    box-shadow: 0 3px 15px rgba(94, 53, 177, 0.15);
   }
 `;
 
@@ -198,20 +204,20 @@ const SearchInput = styled.input`
   flex: 1;
   background-color: transparent;
   border: none;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
   padding: 0.6rem 1.2rem;
   font-size: 0.875rem;
   outline: none;
 
   &::placeholder {
-    color: #888888;
+    color: ${COLORS.textTertiary};
   }
 `;
 
 const SearchButton = styled.button`
   background: none;
   border: none;
-  color: #888888;
+  color: ${COLORS.textTertiary};
   padding: 0.5rem;
   cursor: pointer;
   display: flex;
@@ -220,7 +226,7 @@ const SearchButton = styled.button`
   transition: all 0.3s;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.primaryPurple};
     transform: scale(1.1);
   }
 `;
@@ -228,7 +234,7 @@ const SearchButton = styled.button`
 const ClearButton = styled.button`
   background: none;
   border: none;
-  color: #888888;
+  color: ${COLORS.textTertiary};
   padding: 0.5rem;
   cursor: pointer;
   display: flex;
@@ -237,7 +243,7 @@ const ClearButton = styled.button`
   transition: all 0.3s;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.primaryPurple};
     transform: scale(1.1);
   }
 `;
@@ -245,7 +251,7 @@ const ClearButton = styled.button`
 const CloseSearchButton = styled.button`
   background: none;
   border: none;
-  color: #888888;
+  color: ${COLORS.textTertiary};
   padding: 0.5rem;
   cursor: pointer;
   display: flex;
@@ -258,7 +264,7 @@ const CloseSearchButton = styled.button`
   }
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.primaryPurple};
     transform: scale(1.1);
   }
 `;
@@ -270,20 +276,20 @@ const ThoughtsContainer = styled.div`
 `;
 
 const ErrorMessage = styled.div`
-  background-color: rgba(255, 107, 107, 0.2);
-  color: #ff6b6b;
+  background-color: rgba(244, 67, 54, 0.2);
+  color: ${COLORS.error};
   padding: 1.25rem;
   border-radius: 16px;
   text-align: center;
   margin-bottom: 1.5rem;
   backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 107, 107, 0.3);
-  box-shadow: 0 5px 15px rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  box-shadow: 0 5px 15px rgba(244, 67, 54, 0.1);
   animation: ${fadeIn} 0.4s ease-out;
 `;
 
 const LoadingMessage = styled.div`
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   text-align: center;
   padding: 2rem 0;
   font-style: italic;
@@ -291,7 +297,7 @@ const LoadingMessage = styled.div`
 `;
 
 const EmptyMessage = styled.div`
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   text-align: center;
   padding: 2rem 0;
   font-style: italic;
@@ -299,15 +305,13 @@ const EmptyMessage = styled.div`
 `;
 
 const LoadingMore = styled.div`
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   text-align: center;
   padding: 1.5rem 0;
   font-style: italic;
   font-size: 0.875rem;
   animation: ${fadeIn} 0.4s ease-out;
 `;
-
-// Removed FloatingButton as requested
 
 // Modal components
 const ModalOverlay = styled.div`
@@ -327,7 +331,7 @@ const ModalOverlay = styled.div`
 `;
 
 const DeleteModal = styled.div`
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   border-radius: 16px;
   max-width: 400px;
   width: 100%;
@@ -339,11 +343,11 @@ const DeleteModal = styled.div`
 
 const DeleteModalContent = styled.div`
   padding: 1.5rem;
-  color: #ddd;
+  color: ${COLORS.textSecondary};
   line-height: 1.6;
 
   h3 {
-    color: #ff7e5f;
+    color: ${COLORS.primaryPurple};
     margin-bottom: 1rem;
     font-size: 1.5rem;
   }
@@ -361,19 +365,19 @@ const DeleteModalButtons = styled.div`
 `;
 
 const ConfirmDeleteButton = styled.button`
-  background: linear-gradient(135deg, #e74c3c, #c0392b);
-  color: white;
+  background: linear-gradient(135deg, ${COLORS.error}, #c0392b);
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 8px;
   padding: 0.75rem 1.25rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 3px 8px rgba(231, 76, 60, 0.3);
+  box-shadow: 0 3px 8px rgba(244, 67, 54, 0.3);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+    box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
   }
 
   &:disabled {
@@ -388,8 +392,8 @@ const ConfirmDeleteButton = styled.button`
 
 const CancelButton = styled.button`
   background-color: transparent;
-  color: #ddd;
-  border: 1px solid #444;
+  color: ${COLORS.textSecondary};
+  border: 1px solid ${COLORS.border};
   border-radius: 8px;
   padding: 0.75rem 1.25rem;
   font-weight: 600;
@@ -397,7 +401,7 @@ const CancelButton = styled.button`
   transition: all 0.3s ease;
 
   &:hover {
-    background-color: #333;
+    background-color: ${COLORS.elevatedBackground};
     transform: translateY(-2px);
   }
 
@@ -432,15 +436,19 @@ const shine = keyframes`
 `;
 
 const pulseGlow = keyframes`
-  0% { box-shadow: 0 0 15px rgba(255, 126, 95, 0.4); }
-  50% { box-shadow: 0 0 25px rgba(255, 126, 95, 0.7); }
-  100% { box-shadow: 0 0 15px rgba(255, 126, 95, 0.4); }
+  0% { box-shadow: 0 0 15px rgba(94, 53, 177, 0.4); }
+  50% { box-shadow: 0 0 25px rgba(94, 53, 177, 0.7); }
+  100% { box-shadow: 0 0 15px rgba(94, 53, 177, 0.4); }
 `;
 
 // Retweet modal components
 const RetweetModal = styled.div`
   position: relative;
-  background: linear-gradient(145deg, #222, #1a1a1a);
+  background: linear-gradient(
+    145deg,
+    ${COLORS.cardBackground},
+    ${COLORS.background}
+  );
   border-radius: 24px;
   max-width: 380px;
   width: 100%;
@@ -473,11 +481,15 @@ const RetweetModal = styled.div`
 const ModalIcon = styled.div`
   font-size: 2.5rem;
   margin-bottom: 1.5rem;
-  color: #ff7e5f;
+  color: ${COLORS.primaryPurple};
   position: relative;
   display: inline-block;
   animation: ${pulseGlow} 2s infinite ease-in-out;
-  background: linear-gradient(135deg, #ff7e5f, #feb47b);
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primaryPurple},
+    ${COLORS.accentPurple}
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 
@@ -491,8 +503,8 @@ const ModalIcon = styled.div`
     height: 60px;
     background: radial-gradient(
       circle,
-      rgba(255, 126, 95, 0.2) 0%,
-      rgba(255, 126, 95, 0) 70%
+      rgba(94, 53, 177, 0.2) 0%,
+      rgba(94, 53, 177, 0) 70%
     );
     border-radius: 50%;
     z-index: -1;
@@ -500,14 +512,18 @@ const ModalIcon = styled.div`
 `;
 
 const RetweetModalContent = styled.div`
-  color: #eee;
+  color: ${COLORS.textPrimary};
   line-height: 1.6;
 
   h3 {
     margin-bottom: 1.2rem;
     font-size: 1.6rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #ff7e5f, #feb47b);
+    background: linear-gradient(
+      135deg,
+      ${COLORS.primaryPurple},
+      ${COLORS.accentPurple}
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: 0.5px;
@@ -516,20 +532,24 @@ const RetweetModalContent = styled.div`
   p {
     margin-bottom: 1.2rem;
     font-size: 1rem;
-    color: #ccc;
+    color: ${COLORS.textSecondary};
   }
 
   p:last-of-type {
     font-size: 0.9rem;
     font-style: italic;
-    color: #aaa;
+    color: ${COLORS.textTertiary};
   }
 `;
 
 const RetweetCloseButton = styled.button`
   margin-top: 1.5rem;
-  background: linear-gradient(135deg, #ff7e5f, #feb47b);
-  color: white;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primaryPurple},
+    ${COLORS.accentPurple}
+  );
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 12px;
   padding: 0.7rem 2rem;
@@ -539,7 +559,7 @@ const RetweetCloseButton = styled.button`
   transition: all 0.3s;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(255, 126, 95, 0.3);
+  box-shadow: 0 4px 12px rgba(94, 53, 177, 0.3);
 
   &:before {
     content: "";
@@ -559,7 +579,7 @@ const RetweetCloseButton = styled.button`
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(255, 126, 95, 0.4);
+    box-shadow: 0 6px 15px rgba(94, 53, 177, 0.4);
 
     &:before {
       left: 100%;
