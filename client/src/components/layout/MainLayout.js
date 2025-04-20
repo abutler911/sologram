@@ -1,25 +1,40 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
+import PropTypes from "prop-types";
 import Header from "./Header";
 import Footer from "./Footer";
 import BottomNavigation from "./BottomNavigation";
-import InstallPrompt from "../pwa/InstallPrompt";
-import FloatingActionButtonAdjuster from "./FloatingActionButtonAdjuster";
 import SubscribeBanner from "../notifications/SubscribeBanner";
 import styled from "styled-components";
-import { COLORS } from "../../theme"; // Import the theme
+import { COLORS } from "../../theme";
+import LoadingSpinner from "../common/loadingSpinner";
 
-const MainLayout = ({ children, noNav = false, noFooter = false }) => {
+const InstallPrompt = lazy(() => import("../pwa/InstallPrompt"));
+const FloatingActionButtonAdjuster = lazy(() =>
+  import("./FloatingActionButtonAdjuster")
+);
+
+const MainLayout = ({
+  children,
+  noNav = false,
+  noFooter = false,
+  customHeader = null,
+  customFooter = null,
+  customBanner = null,
+  isLoading = false,
+}) => {
   return (
     <LayoutWrapper>
-      <Header />
-      <main>
-        <SubscribeBanner />
-        {children}
+      {customHeader || <Header />}
+      <main aria-label="Main Content">
+        {customBanner || <SubscribeBanner />}
+        {isLoading ? <LoadingSpinner /> : children}
       </main>
-      {!noFooter && <Footer />}
+      {!noFooter && (customFooter || <Footer />)}
       {!noNav && <BottomNavigation />}
-      <InstallPrompt />
-      <FloatingActionButtonAdjuster />
+      <Suspense fallback={<div>Loading...</div>}>
+        <InstallPrompt />
+        <FloatingActionButtonAdjuster />
+      </Suspense>
     </LayoutWrapper>
   );
 };
@@ -29,6 +44,23 @@ const LayoutWrapper = styled.div`
   flex-direction: column;
   min-height: 100vh;
   background-color: ${COLORS.background};
+  transition: background-color 0.3s ease-in-out;
+
+  @media (min-width: 768px) {
+    .bottom-navigation {
+      display: none;
+    }
+  }
 `;
+
+MainLayout.propTypes = {
+  children: PropTypes.node.isRequired,
+  noNav: PropTypes.bool,
+  noFooter: PropTypes.bool,
+  customHeader: PropTypes.node,
+  customFooter: PropTypes.node,
+  customBanner: PropTypes.node,
+  isLoading: PropTypes.bool,
+};
 
 export default MainLayout;
