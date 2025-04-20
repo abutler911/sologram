@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1"
+      content="width=device-width, maximum-scale=1.0, initial-scale=1.0"
     />
     <meta name="theme-color" content="#FF5733" />
     <meta
@@ -67,7 +67,7 @@
       http-equiv="Content-Security-Policy"
       content="
         default-src 'self';
-        script-src 'self' https://cdn.sanity.io https://www.googletagmanager.com https://cdn.onesignal.com;
+        script-src 'self' 'nonce-abc123' https://cdn.sanity.io https://www.googletagmanager.com https://cdn.onesignal.com;
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
         font-src 'self' https://fonts.gstatic.com;
         img-src 'self' https://res.cloudinary.com data:;
@@ -106,7 +106,7 @@
       async
       src="https://www.googletagmanager.com/gtag/js?id=G-VG8RGGQQWZ"
     ></script>
-    <script>
+    <script nonce="abc123">
       window.dataLayer = window.dataLayer || [];
       function gtag() {
         dataLayer.push(arguments);
