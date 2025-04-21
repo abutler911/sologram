@@ -7,14 +7,6 @@ export const uploadToCloudinary = async (file, onProgress, cancelToken) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "https://api.cloudinary.com/v1_1/ds5rxplmr/auto/upload");
 
-    // Add cancel token support if provided
-    if (cancelToken) {
-      cancelToken.promise.then(() => {
-        xhr.abort();
-        reject(new Error("Upload cancelled"));
-      });
-    }
-
     xhr.upload.addEventListener("progress", (event) => {
       if (event.lengthComputable && onProgress) {
         const percent = Math.round((event.loaded * 100) / event.total);
@@ -49,6 +41,16 @@ export const uploadToCloudinary = async (file, onProgress, cancelToken) => {
       console.error("❌ Network error during Cloudinary upload");
       reject(new Error("Upload network error"));
     };
+
+    // Properly handle cancellation
+    if (cancelToken) {
+      cancelToken.promise
+        .then(() => {
+          xhr.abort();
+          reject(new Error("Upload cancelled"));
+        })
+        .catch(() => {});
+    }
 
     xhr.send(formData);
   });

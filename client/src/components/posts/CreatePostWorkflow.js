@@ -154,14 +154,13 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       setUploading(true);
 
       try {
-        // Process all the files
-        const uploadPromises = acceptedFiles.map(async (file) => {
+        for (const file of acceptedFiles) {
           const id = `upload_${Date.now()}_${Math.random()
             .toString(36)
             .substring(2, 9)}`;
           const isVideo = file.type.startsWith("video/");
 
-          // Add to state right away for preview
+          // Add to previews
           setMediaPreviews((prev) => [
             ...prev,
             {
@@ -180,7 +179,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
             const cancelToken = createCancelableRequest();
             cancelTokensRef.current.push(cancelToken);
 
-            // Upload the file
             const uploaded = await uploadToCloudinary(
               file,
               (percent) => {
@@ -196,7 +194,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
             if (!mountedRef.current) return;
 
-            // Update the state with upload result
+            // Update state on success
             setMediaPreviews((prev) =>
               prev.map((p) =>
                 p.id === id
@@ -210,14 +208,12 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                   : p
               )
             );
-
-            return { success: true };
           } catch (err) {
             console.error("Upload error:", err.message);
 
             if (!mountedRef.current) return;
 
-            // Mark as error but don't leave in uploading state
+            // CRITICAL: Update state on error to mark as not uploading
             setMediaPreviews((prev) =>
               prev.map((p) =>
                 p.id === id ? { ...p, error: true, uploading: false } : p
@@ -227,16 +223,12 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
             if (!axios.isCancel(err)) {
               toast.error(`Upload failed: ${file.name}`);
             }
-
-            return { success: false, id };
           }
-        });
-
-        await Promise.all(uploadPromises);
+        }
       } catch (err) {
         console.error("Upload batch error:", err);
       } finally {
-        // IMPORTANT: Make sure uploading state is set to false when done
+        // CRITICAL: Always set uploading to false when finished
         if (mountedRef.current) {
           setUploading(false);
         }
@@ -244,7 +236,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     },
     [totalMediaCount]
   );
-
   // Configure dropzone with validation
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -481,6 +472,15 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     },
     [totalMediaCount]
   );
+
+  const resetUploadState = () => {
+    setMediaPreviews((prev) =>
+      prev.map((p) =>
+        p.uploading ? { ...p, uploading: false, error: true } : p
+      )
+    );
+    setUploading(false);
+  };
 
   // Retry upload with improved error handling
   const retryUpload = async (filePreview) => {
@@ -1084,7 +1084,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
         {currentStep === 1 && totalMediaCount > 0 && (
           <NextButton
             onClick={() => setCurrentStep(2)}
-            disabled={uploading}
+            disabled={uploading} // Only disable when actively uploading
             aria-label="Continue to next step"
           >
             <span>Next</span>
@@ -1092,6 +1092,9 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
           </NextButton>
         )}
 
+        {uploading && mediaPreviews.some((m) => m.uploading) && (
+          <ResetButton onClick={resetUploadState}>Cancel Uploads</ResetButton>
+        )}
         {currentStep === 2 && (
           <PublishButton
             onClick={handleSubmit}
@@ -1996,6 +1999,24 @@ const ErrorMessage = styled.p`
   font-size: 0.9rem;
   text-align: center;
   margin: 0;
+`;
+
+const ResetButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: #ff3a3a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 100;
+
+  &:hover {
+    background-color: #e62e2e;
+  }
 `;
 
 export default CreatePostWorkflow;
