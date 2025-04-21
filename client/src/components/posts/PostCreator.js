@@ -74,6 +74,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const navigate = useNavigate();
   const inputFileRef = useRef(null);
   const cameraInputRef = useRef(null);
+  const videoCameraInputRef = useRef(null); // New ref for video camera
   const mountedRef = useRef(true);
 
   // Available filters
@@ -442,17 +443,35 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 <CameraButton
                   type="button"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    cameraInputRef.current?.click();
+                    e.stopPropagation(); // Prevent dropzone click
+                    if (cameraInputRef.current) {
+                      cameraInputRef.current.accept = "image/*";
+                      cameraInputRef.current.capture = "environment";
+                      cameraInputRef.current.click();
+                    }
                   }}
                 >
                   <FaCamera />
                   <span>Take Photo</span>
                 </CameraButton>
+                <VideoCameraButton
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent dropzone click
+                    if (videoCameraInputRef.current) {
+                      videoCameraInputRef.current.accept = "video/*";
+                      videoCameraInputRef.current.capture = "environment";
+                      videoCameraInputRef.current.click();
+                    }
+                  }}
+                >
+                  <FaVideo />
+                  <span>Record Video</span>
+                </VideoCameraButton>
                 <GalleryButton
                   type="button"
                   onClick={(e) => {
-                    e.stopPropagation();
+                    e.stopPropagation(); // Prevent dropzone click
                     const galleryInput = document.createElement("input");
                     galleryInput.type = "file";
                     galleryInput.accept = "image/*,video/*";
@@ -483,6 +502,14 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 ref={cameraInputRef}
                 onChange={handleCameraCapture}
                 accept="image/*"
+                capture="environment"
+                style={{ display: "none" }}
+              />
+              <input
+                type="file"
+                ref={videoCameraInputRef}
+                onChange={handleCameraCapture}
+                accept="video/*"
                 capture="environment"
                 style={{ display: "none" }}
               />
@@ -599,11 +626,34 @@ function PostCreator({ initialData = null, isEditing = false }) {
               </FilterOptions>
 
               <AddMoreSection>
+                <AddMorePhotoButton
+                  as="div"
+                  onClick={() => {
+                    if (cameraInputRef.current) {
+                      cameraInputRef.current.accept = "image/*";
+                      cameraInputRef.current.capture = "environment";
+                      cameraInputRef.current.click();
+                    }
+                  }}
+                >
+                  <FaCamera /> Take Photo
+                </AddMorePhotoButton>
+                <AddMoreVideoButton
+                  as="div"
+                  onClick={() => {
+                    if (videoCameraInputRef.current) {
+                      videoCameraInputRef.current.accept = "video/*";
+                      videoCameraInputRef.current.capture = "environment";
+                      videoCameraInputRef.current.click();
+                    }
+                  }}
+                >
+                  <FaVideo /> Record Video
+                </AddMoreVideoButton>
                 <AddMoreButton
                   as="div"
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Create a file input that doesn't use the capture attribute
                     const galleryInput = document.createElement("input");
                     galleryInput.type = "file";
                     galleryInput.accept = "image/*,video/*";
@@ -626,12 +676,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
                   }}
                 >
                   <FaImage /> Add from Gallery
-                </AddMoreButton>
-                <AddMoreButton
-                  as="div"
-                  onClick={() => cameraInputRef.current?.click()}
-                >
-                  <FaCamera /> Take Photo
                 </AddMoreButton>
               </AddMoreSection>
             </MediaPreview>
@@ -889,6 +933,74 @@ const UploadIcon = styled.div`
   }
 `;
 
+// Base MediaButton component (needs to be defined before components that extend it)
+const MediaButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: ${COLORS.cardBackground};
+  color: ${COLORS.textPrimary};
+  border: 2px solid ${COLORS.border};
+  border-radius: 8px;
+  padding: 15px 25px;
+  width: 220px;
+  height: 60px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-weight: 600;
+  font-size: 15px;
+  box-shadow: 0 2px 8px ${COLORS.shadow};
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 0;
+    background: linear-gradient(
+      to bottom,
+      ${COLORS.primaryPurple}10,
+      transparent
+    );
+    transition: height 0.25s ease;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: ${COLORS.primaryPurple};
+    box-shadow: 0 4px 12px ${COLORS.primaryPurple}40;
+
+    &::before {
+      height: 100%;
+    }
+
+    svg {
+      transform: scale(1.2);
+    }
+  }
+
+  &:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px ${COLORS.shadow};
+  }
+
+  svg {
+    font-size: 22px;
+    transition: transform 0.2s ease;
+    z-index: 1;
+  }
+
+  span {
+    z-index: 1;
+  }
+`;
+
 const ButtonGroup = styled.div`
   display: flex;
   gap: 15px;
@@ -907,6 +1019,17 @@ const CameraButton = styled(MediaButton)`
   &:hover {
     border-color: ${COLORS.primaryGreen};
     box-shadow: 0 4px 12px ${COLORS.primaryGreen}40;
+  }
+`;
+
+const VideoCameraButton = styled(MediaButton)`
+  svg {
+    color: ${COLORS.primaryRed || "#e53935"};
+  }
+
+  &:hover {
+    border-color: ${COLORS.primaryRed || "#e53935"};
+    box-shadow: 0 4px 12px ${COLORS.primaryRed || "#e53935"}40;
   }
 `;
 
@@ -1101,73 +1224,6 @@ const NavButton = styled.button`
   }
 `;
 
-const MediaButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  background-color: ${COLORS.cardBackground};
-  color: ${COLORS.textPrimary};
-  border: 2px solid ${COLORS.border};
-  border-radius: 8px;
-  padding: 15px 25px;
-  width: 220px;
-  height: 60px;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  font-weight: 600;
-  font-size: 15px;
-  box-shadow: 0 2px 8px ${COLORS.shadow};
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 0;
-    background: linear-gradient(
-      to bottom,
-      ${COLORS.primaryPurple}10,
-      transparent
-    );
-    transition: height 0.25s ease;
-    z-index: 0;
-    opacity: 0.5;
-  }
-
-  &:hover {
-    transform: translateY(-2px);
-    border-color: ${COLORS.primaryPurple};
-    box-shadow: 0 4px 12px ${COLORS.primaryPurple}40;
-
-    &::before {
-      height: 100%;
-    }
-
-    svg {
-      transform: scale(1.2);
-    }
-  }
-
-  &:active {
-    transform: translateY(1px);
-    box-shadow: 0 2px 4px ${COLORS.shadow};
-  }
-
-  svg {
-    font-size: 22px;
-    transition: transform 0.2s ease;
-    z-index: 1;
-  }
-
-  span {
-    z-index: 1;
-  }
-`;
-
 const MediaCounter = styled.div`
   background: rgba(0, 0, 0, 0.6);
   color: white;
@@ -1290,6 +1346,29 @@ const AddMoreButton = styled.button`
     font-size: 18px;
     color: ${COLORS.accentPurple};
     transition: transform 0.2s ease;
+  }
+`;
+
+// Specialized styled buttons for "Add More" section
+const AddMorePhotoButton = styled(AddMoreButton)`
+  svg {
+    color: ${COLORS.primaryGreen};
+  }
+
+  &:hover {
+    border-color: ${COLORS.primaryGreen};
+    box-shadow: 0 4px 12px ${COLORS.primaryGreen}40;
+  }
+`;
+
+const AddMoreVideoButton = styled(AddMoreButton)`
+  svg {
+    color: ${COLORS.primaryRed || "#e53935"};
+  }
+
+  &:hover {
+    border-color: ${COLORS.primaryRed || "#e53935"};
+    box-shadow: 0 4px 12px ${COLORS.primaryRed || "#e53935"}40;
   }
 `;
 
