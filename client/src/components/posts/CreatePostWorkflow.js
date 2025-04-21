@@ -135,7 +135,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   // Handle file drops with improved error handling and progress tracking
   const onDrop = useCallback(
     async (acceptedFiles) => {
-      // Early return if max files reached
       if (totalMediaCount + acceptedFiles.length > MAX_MEDIA_COUNT) {
         toast.error(`Maximum ${MAX_MEDIA_COUNT} files allowed`);
         return;
@@ -143,95 +142,91 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
       setUploading(true);
 
-      const uploadPromises = acceptedFiles.map(async (file) => {
-        // Generate unique ID for tracking this upload
-        const id = `upload_${Date.now()}_${Math.random()
-          .toString(36)
-          .substring(2, 9)}`;
-        const isVideo = file.type.startsWith("video/");
+      const newUploads = acceptedFiles.map((file) => {
+        return new Promise(async (resolve) => {
+          const id = `upload_${Date.now()}_${Math.random()
+            .toString(36)
+            .substring(2, 9)}`;
+          const isVideo = file.type.startsWith("video/");
 
-        // Create preview object
-        const preview = {
-          id,
-          file,
-          preview: URL.createObjectURL(file),
-          type: isVideo ? "video" : "image",
-          filter: "",
-          uploading: true,
-          progress: 0,
-          error: false,
-        };
-
-        // Add to state
-        setMediaPreviews((prev) => [...prev, preview]);
-        setUploadProgress((prev) => ({ ...prev, [id]: 0 }));
-
-        try {
-          // Create cancelable request
-          const cancelToken = createCancelableRequest();
-          cancelTokensRef.current.push(cancelToken);
-
-          // Track progress
-          const onProgress = (percent) => {
-            if (!mountedRef.current) return;
-            setUploadProgress((prev) => ({ ...prev, [id]: percent }));
-            setMediaPreviews((prev) =>
-              prev.map((p) => (p.id === id ? { ...p, progress: percent } : p))
-            );
+          const preview = {
+            id,
+            file,
+            preview: URL.createObjectURL(file),
+            type: isVideo ? "video" : "image",
+            filter: "",
+            uploading: true,
+            progress: 0,
+            error: false,
           };
 
-          // Upload with progress tracking and cancelation support
-          const uploaded = await uploadToCloudinary(
-            file,
-            onProgress,
-            cancelToken.token
-          );
+          setMediaPreviews((prev) => [...prev, preview]);
+          setUploadProgress((prev) => ({ ...prev, [id]: 0 }));
 
-          if (!mountedRef.current) return;
+          try {
+            const cancelToken = createCancelableRequest();
+            cancelTokensRef.current.push(cancelToken);
 
-          // Update state with success
-          setMediaPreviews((prev) =>
-            prev.map((p) =>
-              p.id === id
-                ? {
-                    ...p,
-                    uploading: false,
-                    mediaUrl: uploaded.mediaUrl,
-                    cloudinaryId: uploaded.cloudinaryId,
-                    mediaType: uploaded.mediaType,
-                  }
-                : p
-            )
-          );
-          console.log("Upload success for:", file.name, uploaded);
-          // Remove this token from the active list
-          cancelTokensRef.current = cancelTokensRef.current.filter(
-            (token) => token !== cancelToken
-          );
+            const uploaded = await uploadToCloudinary(
+              file,
+              (percent) => {
+                if (!mountedRef.current) return;
+                setUploadProgress((prev) => ({ ...prev, [id]: percent }));
+                setMediaPreviews((prev) =>
+                  prev.map((p) =>
+                    p.id === id ? { ...p, progress: percent } : p
+                  )
+                );
+              },
+              cancelToken.token
+            );
 
-          return { success: true, id };
-        } catch (err) {
-          if (!mountedRef.current) return { success: false, id };
+            if (!mountedRef.current) return;
 
-          // Only show error if it's not a cancellation
-          if (!axios.isCancel(err)) {
-            toast.error(`Upload failed: ${file.name}`);
+            setMediaPreviews((prev) =>
+              prev.map((p) =>
+                p.id === id
+                  ? {
+                      ...p,
+                      uploading: false,
+                      mediaUrl: uploaded.mediaUrl,
+                      cloudinaryId: uploaded.cloudinaryId,
+                      mediaType: uploaded.mediaType,
+                    }
+                  : p
+              )
+            );
+
+            cancelTokensRef.current = cancelTokensRef.current.filter(
+              (token) => token !== cancelToken
+            );
+
+            console.log("✅ Upload completed for", file.name);
+            resolve();
+          } catch (err) {
+            if (!axios.isCancel(err)) {
+              console.error("❌ Upload failed:", err.message);
+              toast.error(`Upload failed: ${file.name}`);
+            }
+
             setMediaPreviews((prev) =>
               prev.map((p) =>
                 p.id === id ? { ...p, error: true, uploading: false } : p
               )
             );
+            resolve(); // ✅ Always resolve so Promise.all doesn't hang
           }
-
-          return { success: false, id };
-        }
+        });
       });
 
       try {
-        await Promise.all(uploadPromises);
+        await Promise.all(newUploads);
+        console.log("🟢 All uploads completed");
+      } catch (err) {
+        console.error("Upload batch error:", err);
       } finally {
         if (mountedRef.current) {
-          setUploading(false);
+          setUploading(false); // ✅ This will finally run correctly
         }
       }
     },
