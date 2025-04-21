@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import { FaPlus, FaFolder, FaImages } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
 import MainLayout from "../components/layout/MainLayout";
+import { COLORS, THEME } from "../theme"; // Import your theme
 
 const CollectionsList = () => {
   const [collections, setCollections] = useState([]);
@@ -129,9 +130,9 @@ const CollectionsList = () => {
   );
 };
 
-// Styled Components
+// Styled Components with Modern Twilight theme
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   padding: 1rem 0;
 `;
@@ -163,20 +164,20 @@ const PageTitle = styled.h1`
   display: flex;
   align-items: center;
   font-size: 2rem;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
   margin: 0;
 
   svg {
     margin-right: 0.75rem;
-    color: #ff7e5f;
+    color: ${COLORS.primaryPurple};
   }
 `;
 
 const CreateButton = styled(Link)`
   display: flex;
   align-items: center;
-  background-color: #ff7e5f;
-  color: white;
+  background-color: ${COLORS.primaryPurple};
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 4px;
   padding: 0.75rem 1.25rem;
@@ -186,7 +187,7 @@ const CreateButton = styled(Link)`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #ff6347;
+    background-color: #4527a0; /* Darker purple on hover */
   }
 
   svg {
@@ -201,15 +202,16 @@ const CollectionsGrid = styled.div`
 `;
 
 const CollectionCard = styled.div`
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px ${COLORS.shadow};
   transition: transform 0.3s, box-shadow 0.3s;
 
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 12px ${COLORS.shadow};
+    border: 1px solid ${COLORS.primaryPurple}20;
   }
 `;
 
@@ -228,14 +230,14 @@ const CollectionCover = styled.img`
 const CollectionCoverPlaceholder = styled.div`
   width: 100%;
   height: 180px;
-  background-color: #2a2a2a;
+  background-color: ${COLORS.elevatedBackground};
   display: flex;
   align-items: center;
   justify-content: center;
 
   svg {
     font-size: 3rem;
-    color: #444444;
+    color: ${COLORS.divider};
   }
 `;
 
@@ -246,18 +248,18 @@ const CollectionDetails = styled.div`
 const CollectionName = styled.h2`
   font-size: 1.25rem;
   margin: 0 0 0.5rem;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
 `;
 
 const PostCount = styled.div`
   font-size: 0.875rem;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   margin-bottom: 0.75rem;
 `;
 
 const CollectionDescription = styled.p`
   font-size: 0.875rem;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   margin: 0;
   line-height: 1.5;
 `;
@@ -266,12 +268,12 @@ const LoadingMessage = styled.div`
   text-align: center;
   padding: 4rem 0;
   font-size: 1.125rem;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
 `;
 
 const ErrorMessage = styled.div`
-  background-color: rgba(248, 215, 218, 0.2);
-  color: #ff6b6b;
+  background-color: rgba(244, 67, 54, 0.1);
+  color: ${COLORS.error};
   padding: 1rem;
   border-radius: 4px;
   margin: 2rem 0;
@@ -281,27 +283,27 @@ const ErrorMessage = styled.div`
 const EmptyState = styled.div`
   text-align: center;
   padding: 4rem 0;
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px ${COLORS.shadow};
 `;
 
 const EmptyIcon = styled.div`
   font-size: 3rem;
-  color: #444444;
+  color: ${COLORS.divider};
   margin-bottom: 1rem;
 `;
 
 const EmptyText = styled.h3`
   font-size: 1.5rem;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   margin-bottom: 1rem;
 `;
 
 const EmptyActionLink = styled(Link)`
   display: inline-block;
-  background-color: #ff7e5f;
-  color: white;
+  background-color: ${COLORS.primaryPurple};
+  color: ${COLORS.textPrimary};
   text-decoration: none;
   padding: 0.75rem 1.25rem;
   border-radius: 4px;
@@ -309,7 +311,7 @@ const EmptyActionLink = styled(Link)`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #ff6347;
+    background-color: #4527a0; /* Darker purple on hover */
   }
 `;
 

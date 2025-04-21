@@ -13,6 +13,7 @@ import {
 } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
 import PostCard from "../components/posts/PostCard";
+import { COLORS, THEME } from "../theme"; // Import your theme
 
 const CollectionDetail = () => {
   const { id } = useParams();
@@ -227,9 +228,9 @@ const CollectionDetail = () => {
   );
 };
 
-// Styled Components
+// Styled Components with Modern Twilight theme
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   padding: 1rem 0;
 `;
@@ -247,13 +248,13 @@ const Container = styled.div`
 const BackButton = styled(Link)`
   display: inline-flex;
   align-items: center;
-  color: #dddddd;
+  color: ${COLORS.textSecondary};
   text-decoration: none;
   margin-bottom: 2rem;
   transition: color 0.3s;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.accentPurple};
   }
 
   svg {
@@ -265,10 +266,10 @@ const CollectionHeader = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 2.5rem;
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   padding: 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px ${COLORS.shadow};
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -279,7 +280,7 @@ const CollectionHeader = styled.div`
 
 const CollectionIcon = styled.div`
   font-size: 2.5rem;
-  color: #ff7e5f;
+  color: ${COLORS.primaryPurple};
   margin-right: 1.5rem;
 
   @media (max-width: 768px) {
@@ -294,18 +295,18 @@ const CollectionInfo = styled.div`
 const CollectionTitle = styled.h1`
   font-size: 2rem;
   margin: 0 0 0.5rem 0;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
 `;
 
 const CollectionDescription = styled.p`
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   margin: 0 0 0.75rem 0;
   line-height: 1.5;
 `;
 
 const CollectionMeta = styled.div`
   display: flex;
-  color: #888888;
+  color: ${COLORS.textTertiary};
   font-size: 0.875rem;
 `;
 
@@ -327,8 +328,8 @@ const ActionButtons = styled.div`
 const EditButton = styled(Link)`
   display: flex;
   align-items: center;
-  background-color: #4a90e2;
-  color: white;
+  background-color: ${COLORS.primaryBlue};
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 4px;
   padding: 0.75rem 1.25rem;
@@ -337,7 +338,7 @@ const EditButton = styled(Link)`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #3a70b2;
+    background-color: #1565c0; /* Darker blue on hover */
   }
 
   svg {
@@ -352,8 +353,8 @@ const EditButton = styled(Link)`
 const DeleteButton = styled.button`
   display: flex;
   align-items: center;
-  background-color: #e74c3c;
-  color: white;
+  background-color: ${COLORS.error};
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 4px;
   padding: 0.75rem 1.25rem;
@@ -362,7 +363,7 @@ const DeleteButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #c0392b;
+    background-color: #c0392b; /* Darker red on hover */
   }
 
   svg {
@@ -378,8 +379,8 @@ const DeleteButton = styled.button`
 const AddPostButton = styled(Link)`
   display: flex;
   align-items: center;
-  background-color: #50c878;
-  color: white;
+  background-color: ${COLORS.primaryGreen};
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 4px;
   padding: 0.75rem 1.25rem;
@@ -388,7 +389,7 @@ const AddPostButton = styled(Link)`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #3cb371;
+    background-color: #2e7d32; /* Darker green on hover */
   }
 
   svg {
@@ -414,7 +415,7 @@ const LoadingMessage = styled.div`
   text-align: center;
   padding: 4rem 0;
   font-size: 1.125rem;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
 `;
 
 const ErrorContainer = styled.div`
@@ -423,8 +424,8 @@ const ErrorContainer = styled.div`
 `;
 
 const ErrorMessage = styled.div`
-  background-color: rgba(248, 215, 218, 0.2);
-  color: #ff6b6b;
+  background-color: rgba(244, 67, 54, 0.1);
+  color: ${COLORS.error};
   padding: 1rem;
   border-radius: 4px;
   margin-bottom: 2rem;
@@ -433,27 +434,27 @@ const ErrorMessage = styled.div`
 const EmptyState = styled.div`
   text-align: center;
   padding: 4rem 0;
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px ${COLORS.shadow};
 `;
 
 const EmptyIcon = styled.div`
   font-size: 3rem;
-  color: #444444;
+  color: ${COLORS.divider};
   margin-bottom: 1rem;
 `;
 
 const EmptyText = styled.h3`
   font-size: 1.5rem;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   margin-bottom: 1rem;
 `;
 
 const EmptyActionLink = styled(Link)`
   display: inline-block;
-  background-color: #ff7e5f;
-  color: white;
+  background-color: ${COLORS.primaryPurple};
+  color: ${COLORS.textPrimary};
   text-decoration: none;
   padding: 0.75rem 1.25rem;
   border-radius: 4px;
@@ -461,7 +462,7 @@ const EmptyActionLink = styled(Link)`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #ff6347;
+    background-color: #4527a0; /* Darker purple on hover */
   }
 `;
 
@@ -478,22 +479,22 @@ const DeleteModal = styled.div`
 `;
 
 const DeleteModalContent = styled.div`
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
   padding: 2rem;
   width: 90%;
   max-width: 500px;
   z-index: 1001;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px ${COLORS.shadow};
 
   h3 {
-    color: #ffffff;
+    color: ${COLORS.textPrimary};
     margin-top: 0;
     margin-bottom: 1rem;
   }
 
   p {
-    color: #dddddd;
+    color: ${COLORS.textSecondary};
     margin-bottom: 1.5rem;
   }
 `;
@@ -509,16 +510,16 @@ const DeleteModalButtons = styled.div`
 `;
 
 const CancelModalButton = styled.button`
-  background-color: #333333;
-  color: #dddddd;
-  border: none;
+  background-color: ${COLORS.elevatedBackground};
+  color: ${COLORS.textSecondary};
+  border: 1px solid ${COLORS.border};
   border-radius: 4px;
   padding: 0.75rem 1rem;
   cursor: pointer;
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #444444;
+    background-color: ${COLORS.buttonHover};
   }
 
   @media (max-width: 480px) {
@@ -527,8 +528,8 @@ const CancelModalButton = styled.button`
 `;
 
 const ConfirmDeleteButton = styled.button`
-  background-color: #e74c3c;
-  color: white;
+  background-color: ${COLORS.error};
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 4px;
   padding: 0.75rem 1rem;
@@ -536,7 +537,7 @@ const ConfirmDeleteButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #c0392b;
+    background-color: #c0392b; /* Darker red on hover */
   }
 
   @media (max-width: 480px) {
