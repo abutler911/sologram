@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
+import { COLORS, THEME } from "../../theme"; // Import your theme
 
 const Stories = () => {
   const [stories, setStories] = useState([]);
@@ -437,7 +438,7 @@ const Stories = () => {
   );
 };
 
-// Styled Components
+// Styled Components with Modern Twilight theme
 const StoriesContainer = styled.div`
   display: flex;
   overflow-x: auto;
@@ -458,11 +459,11 @@ const StoryArchiveLink = styled(Link)`
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  color: #aaa;
+  color: ${COLORS.textTertiary};
   transition: color 0.3s;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.accentPurple};
   }
 
   svg {
@@ -476,21 +477,21 @@ const StoryArchiveLink = styled(Link)`
 `;
 
 const LoadingMessage = styled.p`
-  color: #888;
+  color: ${COLORS.textTertiary};
   width: 100%;
   text-align: center;
   padding: 1rem 0;
 `;
 
 const ErrorMessage = styled.p`
-  color: #e74c3c;
+  color: ${COLORS.error};
   width: 100%;
   text-align: center;
   padding: 1rem 0;
 `;
 
 const EmptyMessage = styled.p`
-  color: #888;
+  color: ${COLORS.textTertiary};
   width: 100%;
   text-align: center;
   padding: 1rem 0;
@@ -524,7 +525,7 @@ const VideoIndicator = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: ${COLORS.textPrimary};
   font-size: 0.8rem;
 `;
 
@@ -534,7 +535,7 @@ const StoryModal = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #000;
+  background-color: ${COLORS.background};
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -586,7 +587,7 @@ const ProgressBar = styled.div`
         : props.active
         ? `${props.progress * 100}%`
         : "0"};
-    background-color: white;
+    background-color: ${COLORS.primaryPurple};
     transition: width 1s linear;
   }
 `;
@@ -625,7 +626,7 @@ const StoryHeaderContent = styled.div`
 // Updated title style with more space
 const StoryHeaderTitle = styled.h3`
   font-size: 1rem;
-  color: white;
+  color: ${COLORS.textPrimary};
   margin: 0 0 4px 0;
   font-weight: 600;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
@@ -634,7 +635,7 @@ const StoryHeaderTitle = styled.h3`
 `;
 
 const StoryTimestamp = styled.span`
-  color: rgba(255, 255, 255, 0.8);
+  color: ${COLORS.textSecondary};
   font-size: 0.875rem;
   font-weight: 500;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
@@ -656,9 +657,9 @@ const ControlsBar = styled.div`
 `;
 
 const CloseButton = styled.button`
-  background: rgba(0, 0, 0, 0.3); /* Semi-transparent background */
+  background: ${COLORS.elevatedBackground};
   border: none;
-  color: white;
+  color: ${COLORS.textPrimary};
   font-size: 1.5rem;
   cursor: pointer;
   display: flex;
@@ -670,14 +671,14 @@ const CloseButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: ${COLORS.buttonHover};
   }
 `;
 
 const DeleteButton = styled.button`
-  background-color: rgba(231, 76, 60, 0.7);
+  background-color: rgba(244, 67, 54, 0.7);
   border: none;
-  color: white;
+  color: ${COLORS.textPrimary};
   font-size: 1.25rem;
   cursor: pointer;
   display: flex;
@@ -689,7 +690,7 @@ const DeleteButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: rgba(231, 76, 60, 0.9);
+    background-color: ${COLORS.error};
   }
 
   &:disabled {
@@ -708,7 +709,7 @@ const StoryContent = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #000;
+  background-color: ${COLORS.background};
   width: 100vw;
   height: 100vh;
 `;
@@ -753,7 +754,7 @@ const NavArea = styled.div`
   }
 `;
 
-// Modal styling remains largely the same
+// Modal styling remains largely the same but updated with theme colors
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -769,17 +770,17 @@ const ModalOverlay = styled.div`
 `;
 
 const DeleteModal = styled.div`
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
   width: 100%;
   max-width: 400px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px ${COLORS.shadow};
 `;
 
 const DeleteModalHeader = styled.div`
-  background-color: #e74c3c;
-  color: white;
+  background-color: ${COLORS.error};
+  color: ${COLORS.textPrimary};
   padding: 1.25rem;
   display: flex;
   align-items: center;
@@ -798,7 +799,7 @@ const DeleteModalTitle = styled.h3`
 
 const DeleteModalContent = styled.div`
   padding: 1.5rem;
-  color: #ddd;
+  color: ${COLORS.textSecondary};
   line-height: 1.5;
 `;
 
@@ -814,8 +815,8 @@ const DeleteModalButtons = styled.div`
 `;
 
 const ConfirmDeleteButton = styled.button`
-  background-color: #e74c3c;
-  color: white;
+  background-color: ${COLORS.error};
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 4px;
   padding: 0.75rem 1.25rem;
@@ -839,8 +840,8 @@ const ConfirmDeleteButton = styled.button`
 
 const CancelButton = styled.button`
   background-color: transparent;
-  color: #ddd;
-  border: 1px solid #444;
+  color: ${COLORS.textSecondary};
+  border: 1px solid ${COLORS.border};
   border-radius: 4px;
   padding: 0.75rem 1.25rem;
   font-weight: 600;
@@ -848,7 +849,7 @@ const CancelButton = styled.button`
   transition: all 0.3s ease;
 
   &:hover {
-    background-color: #333;
+    background-color: ${COLORS.buttonHover};
   }
 
   &:disabled {
@@ -867,9 +868,12 @@ const StoryImageWrapper = styled.div`
   height: 78px;
   border-radius: 50%;
   overflow: hidden;
-  border: 2px solid #ff7e5f;
+  /* Use the gradient from theme.story.border.active */
+  border: 3px solid transparent;
+  background-image: ${THEME.story.border.active};
+  background-origin: border-box;
+  background-clip: content-box, border-box;
   padding: 3px;
-  background-color: #333;
   transition: transform 0.3s ease;
 
   @media (hover: hover) {
@@ -882,14 +886,14 @@ const StoryImageWrapper = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #444;
+    background-color: ${COLORS.elevatedBackground};
 
     &:before {
       content: "\\f03e";
       font-family: "Font Awesome 5 Free";
       font-weight: 900;
       font-size: 1.5rem;
-      color: rgba(255, 255, 255, 0.7);
+      color: ${COLORS.textTertiary};
     }
   }
 `;
