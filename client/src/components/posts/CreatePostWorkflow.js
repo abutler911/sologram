@@ -183,11 +183,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
             if (!mountedRef.current) return;
 
-            cancelTokensRef.current = cancelTokensRef.current.filter(
-              (token) => token !== cancelToken
-            );
-
-            resolve({ success: true, id, uploaded });
+            resolve({ success: true, id, uploaded }); // ✅ critical fix: pass uploaded
           } catch (err) {
             if (!axios.isCancel(err)) {
               console.error("❌ Upload failed:", err.message);
@@ -208,21 +204,26 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       try {
         const uploadResults = await Promise.all(newUploads);
 
-        setMediaPreviews((prev) =>
-          prev.map((preview) => {
+        // ✅ Merge upload data into mediaPreviews once
+        setMediaPreviews((prev) => {
+          const updated = prev.map((preview) => {
             const result = uploadResults.find((res) => res.id === preview.id);
             if (result?.success && result?.uploaded) {
+              const { mediaUrl, cloudinaryId, mediaType } = result.uploaded;
               return {
                 ...preview,
                 uploading: false,
-                mediaUrl: result.uploaded.mediaUrl,
-                cloudinaryId: result.uploaded.cloudinaryId,
-                mediaType: result.uploaded.mediaType,
+                mediaUrl,
+                cloudinaryId,
+                mediaType,
               };
             }
             return preview;
-          })
-        );
+          });
+
+          console.log("🧩 Final mediaPreviews after all uploads:", updated);
+          return updated;
+        });
 
         console.log("🟢 All uploads completed");
       } catch (err) {
