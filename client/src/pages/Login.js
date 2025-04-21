@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { FaCamera, FaLock, FaEnvelope } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
 import MainLayout from "../components/layout/MainLayout";
+import { COLORS, THEME } from "../theme"; // Import your theme
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -89,7 +90,7 @@ const Login = () => {
 };
 
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -105,9 +106,9 @@ const LoginContainer = styled.div`
 `;
 
 const FormContainer = styled.div`
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px ${COLORS.shadow};
   padding: 2.5rem;
   width: 100%;
   max-width: 450px;
@@ -122,7 +123,7 @@ const LogoContainer = styled.div`
   align-items: center;
   justify-content: center;
   margin-bottom: 1rem;
-  color: #ff7e5f;
+  color: ${COLORS.primaryPurple};
 
   svg {
     font-size: 2.5rem;
@@ -133,11 +134,11 @@ const LogoContainer = styled.div`
 const LogoText = styled.h1`
   font-size: 2rem;
   font-weight: 700;
-  color: #fff;
+  color: ${COLORS.textPrimary};
 `;
 
 const Tagline = styled.p`
-  color: #aaa;
+  color: ${COLORS.textTertiary};
   font-size: 1rem;
   font-style: italic;
   text-align: center;
@@ -145,7 +146,7 @@ const Tagline = styled.p`
 `;
 
 const FormTitle = styled.h2`
-  color: #fff;
+  color: ${COLORS.textPrimary};
   font-size: 1.5rem;
   text-align: center;
   margin-bottom: 2rem;
@@ -165,28 +166,28 @@ const InputIcon = styled.div`
   left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #aaa;
+  color: ${COLORS.textTertiary};
   z-index: 1;
 `;
 
 const Input = styled.input`
   width: 100%;
   padding: 1rem 1rem 1rem 2.75rem;
-  background-color: #333;
-  border: 1px solid #444;
+  background-color: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
   border-radius: 4px;
   font-size: 1rem;
-  color: #fff;
+  color: ${COLORS.textPrimary};
   transition: border-color 0.3s, box-shadow 0.3s;
 
   &::placeholder {
-    color: #888;
+    color: ${COLORS.textTertiary};
   }
 
   &:focus {
     outline: none;
-    border-color: #ff7e5f;
-    box-shadow: 0 0 0 2px rgba(255, 126, 95, 0.2);
+    border-color: ${COLORS.primaryPurple};
+    box-shadow: 0 0 0 2px ${COLORS.primaryPurple}20;
   }
 
   @media (max-width: 500px) {
@@ -197,8 +198,8 @@ const Input = styled.input`
 
 const SubmitButton = styled.button`
   width: 100%;
-  background-color: #ff7e5f;
-  color: white;
+  background-color: ${COLORS.primaryPurple};
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 4px;
   padding: 1rem;
@@ -208,7 +209,7 @@ const SubmitButton = styled.button`
   transition: background-color 0.3s, transform 0.2s;
 
   &:hover {
-    background-color: #ff6347;
+    background-color: #4527a0; /* Darker purple on hover */
     transform: translateY(-2px);
   }
 
@@ -217,7 +218,7 @@ const SubmitButton = styled.button`
   }
 
   &:disabled {
-    background-color: #666;
+    background-color: ${COLORS.divider};
     cursor: not-allowed;
     transform: none;
   }
@@ -231,7 +232,7 @@ const SubmitButton = styled.button`
 const AdminNoteText = styled.p`
   text-align: center;
   font-size: 0.875rem;
-  color: #888;
+  color: ${COLORS.textTertiary};
   font-style: italic;
 `;
 
