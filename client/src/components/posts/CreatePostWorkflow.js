@@ -183,25 +183,10 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
             if (!mountedRef.current) return;
 
-            setMediaPreviews((prev) =>
-              prev.map((p) =>
-                p.id === id
-                  ? {
-                      ...p,
-                      uploading: false,
-                      mediaUrl: uploaded.mediaUrl,
-                      cloudinaryId: uploaded.cloudinaryId,
-                      mediaType: uploaded.mediaType,
-                    }
-                  : p
-              )
-            );
-
             cancelTokensRef.current = cancelTokensRef.current.filter(
               (token) => token !== cancelToken
             );
 
-            console.log("✅ Upload completed for", file.name);
             resolve({ success: true, id, uploaded });
           } catch (err) {
             if (!axios.isCancel(err)) {
@@ -214,6 +199,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                 p.id === id ? { ...p, error: true, uploading: false } : p
               )
             );
+
             resolve({ success: false, id });
           }
         });
@@ -222,7 +208,6 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       try {
         const uploadResults = await Promise.all(newUploads);
 
-        await Promise.all(newUploads);
         setMediaPreviews((prev) =>
           prev.map((preview) => {
             const result = uploadResults.find((res) => res.id === preview.id);
@@ -238,12 +223,13 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
             return preview;
           })
         );
+
         console.log("🟢 All uploads completed");
       } catch (err) {
         console.error("Upload batch error:", err);
       } finally {
         if (mountedRef.current) {
-          setUploading(false); // ✅ This will finally run correctly
+          setUploading(false);
         }
       }
     },
