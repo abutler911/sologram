@@ -97,7 +97,9 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
   // Check if we have any pending uploads
   const hasPendingUploads = useMemo(() => {
-    return mediaPreviews.some((media) => media.uploading || !media.mediaUrl);
+    return mediaPreviews.some(
+      (media) => (media.uploading === true || !media.mediaUrl) && !media.error
+    );
   }, [mediaPreviews]);
 
   // Calculate the total number of media items
@@ -151,36 +153,38 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
       setUploading(true);
 
-      const newUploads = acceptedFiles.map((file) => {
-        return new Promise(async (resolve) => {
+      try {
+        // Process all the files
+        const uploadPromises = acceptedFiles.map(async (file) => {
           const id = `upload_${Date.now()}_${Math.random()
             .toString(36)
             .substring(2, 9)}`;
           const isVideo = file.type.startsWith("video/");
 
-          const preview = {
-            id,
-            file,
-            preview: URL.createObjectURL(file),
-            type: isVideo ? "video" : "image",
-            filter: "",
-            uploading: true,
-            progress: 0,
-            error: false,
-          };
-
-          setMediaPreviews((prev) => [...prev, preview]);
-          setUploadProgress((prev) => ({ ...prev, [id]: 0 }));
+          // Add to state right away for preview
+          setMediaPreviews((prev) => [
+            ...prev,
+            {
+              id,
+              file,
+              preview: URL.createObjectURL(file),
+              type: isVideo ? "video" : "image",
+              filter: "",
+              uploading: true,
+              progress: 0,
+              error: false,
+            },
+          ]);
 
           try {
             const cancelToken = createCancelableRequest();
             cancelTokensRef.current.push(cancelToken);
 
+            // Upload the file
             const uploaded = await uploadToCloudinary(
               file,
               (percent) => {
                 if (!mountedRef.current) return;
-                setUploadProgress((prev) => ({ ...prev, [id]: percent }));
                 setMediaPreviews((prev) =>
                   prev.map((p) =>
                     p.id === id ? { ...p, progress: percent } : p
@@ -192,53 +196,47 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
             if (!mountedRef.current) return;
 
-            // Important: resolve with both success flag and uploaded data
-            resolve({ success: true, id, uploaded });
-          } catch (err) {
-            if (!axios.isCancel(err)) {
-              console.error("❌ Upload failed:", err.message);
-              toast.error(`Upload failed: ${file.name}`);
-            }
+            // Update the state with upload result
+            setMediaPreviews((prev) =>
+              prev.map((p) =>
+                p.id === id
+                  ? {
+                      ...p,
+                      uploading: false,
+                      mediaUrl: uploaded.mediaUrl,
+                      cloudinaryId: uploaded.cloudinaryId,
+                      mediaType: uploaded.mediaType,
+                    }
+                  : p
+              )
+            );
 
+            return { success: true };
+          } catch (err) {
+            console.error("Upload error:", err.message);
+
+            if (!mountedRef.current) return;
+
+            // Mark as error but don't leave in uploading state
             setMediaPreviews((prev) =>
               prev.map((p) =>
                 p.id === id ? { ...p, error: true, uploading: false } : p
               )
             );
 
-            resolve({ success: false, id });
+            if (!axios.isCancel(err)) {
+              toast.error(`Upload failed: ${file.name}`);
+            }
+
+            return { success: false, id };
           }
         });
-      });
 
-      try {
-        const uploadResults = await Promise.all(newUploads);
-
-        // Critical fix: properly update mediaPreviews with upload results
-        setMediaPreviews((prev) => {
-          const updated = prev.map((preview) => {
-            const result = uploadResults.find((res) => res.id === preview.id);
-            if (result?.success && result?.uploaded) {
-              const { mediaUrl, cloudinaryId, mediaType } = result.uploaded;
-              return {
-                ...preview,
-                uploading: false,
-                mediaUrl,
-                cloudinaryId,
-                mediaType,
-              };
-            }
-            return preview;
-          });
-
-          console.log("🧩 Final mediaPreviews after all uploads:", updated);
-          return updated;
-        });
-
-        console.log("🟢 All uploads completed");
+        await Promise.all(uploadPromises);
       } catch (err) {
         console.error("Upload batch error:", err);
       } finally {
+        // IMPORTANT: Make sure uploading state is set to false when done
         if (mountedRef.current) {
           setUploading(false);
         }
@@ -644,7 +642,14 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   };
 
   // Helper to determine if the media step has no media
-  const isMediaStepEmpty = currentStep === 1 && totalMediaCount === 0;
+  const isMediaStepEmpty = useMemo(() => {
+    // Consider empty if no media or all media has errors
+    if (currentStep !== 1) return false;
+    if (totalMediaCount === 0) return true;
+
+    const allMedia = [...existingMedia, ...mediaPreviews];
+    return allMedia.every((media) => media.error === true);
+  }, [currentStep, totalMediaCount, existingMedia, mediaPreviews]);
 
   // Keyboard navigation for accessibility
   const handleKeyDown = useCallback(
@@ -735,12 +740,18 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                 <MediaCarousel>
                   <CurrentMediaPreview>
                     {getCurrentMedia()?.error && (
-                      <RetryButton
-                        onClick={() => retryUpload(getCurrentMedia())}
-                        disabled={uploading}
-                      >
-                        <FaExclamationTriangle /> Retry Upload
-                      </RetryButton>
+                      <RetryButtonWrapper>
+                        <RetryButton
+                          onClick={() => retryUpload(getCurrentMedia())}
+                          disabled={uploading}
+                        >
+                          <FaExclamationTriangle /> Retry Upload
+                        </RetryButton>
+                        <ErrorMessage>
+                          Upload failed. You can retry or continue with the post
+                          creation.
+                        </ErrorMessage>
+                      </RetryButtonWrapper>
                     )}
 
                     {getCurrentMedia()?.mediaType === "video" ||
@@ -1073,7 +1084,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
         {currentStep === 1 && totalMediaCount > 0 && (
           <NextButton
             onClick={() => setCurrentStep(2)}
-            disabled={uploading || hasPendingUploads}
+            disabled={uploading}
             aria-label="Continue to next step"
           >
             <span>Next</span>
@@ -1883,28 +1894,27 @@ const FilterPreviewImage = styled.img`
 `;
 
 const RetryButton = styled.button`
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  z-index: 5;
   background-color: #ff7e5f;
   color: white;
   border: none;
   border-radius: 4px;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  opacity: ${(props) => (props.disabled ? 0.7 : 1)};
+  margin-bottom: 1rem;
+  width: 100%;
+  justify-content: center;
 
   &:hover {
-    background-color: ${(props) => (props.disabled ? "#ff7e5f" : "#ff6a4b")};
+    background-color: #ff6a4b;
   }
 
   &:disabled {
+    opacity: 0.7;
     cursor: not-allowed;
   }
 
@@ -1963,6 +1973,29 @@ const LoadingOverlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 10;
+`;
+
+const RetryButtonWrapper = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 1.5rem;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 300px;
+`;
+
+const ErrorMessage = styled.p`
+  color: white;
+  font-size: 0.9rem;
+  text-align: center;
+  margin: 0;
 `;
 
 export default CreatePostWorkflow;
