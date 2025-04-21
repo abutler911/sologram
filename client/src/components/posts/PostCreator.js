@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useDropzone } from "react-dropzone";
@@ -12,6 +12,7 @@ import {
   FaArrowRight,
   FaArrowLeft,
 } from "react-icons/fa";
+import { COLORS, THEME } from "../../theme"; // Import your theme
 
 // Default placeholder image
 const PLACEHOLDER_IMG =
@@ -72,6 +73,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const navigate = useNavigate();
   const inputFileRef = useRef(null);
   const cameraInputRef = useRef(null);
+  const mountedRef = useRef(true);
 
   // Available filters
   const filters = [
@@ -81,6 +83,46 @@ function PostCreator({ initialData = null, isEditing = false }) {
     { id: "bw", name: "B&W", className: "filter-grayscale" },
     { id: "vintage", name: "Vintage", className: "filter-vintage" },
   ];
+
+  // Load existing media when editing
+  useEffect(() => {
+    if (isEditing && initialData?.media?.length > 0) {
+      const existingMedia = initialData.media.map((item) => ({
+        id:
+          item._id ||
+          `existing_${Date.now()}_${Math.random()
+            .toString(36)
+            .substring(2, 8)}`,
+        mediaUrl: item.mediaUrl,
+        cloudinaryId: item.cloudinaryId,
+        mediaType: item.mediaType,
+        filter: item.filter || "none",
+        isExisting: true,
+        uploading: false,
+        error: false,
+      }));
+
+      setMedia(existingMedia);
+    }
+  }, [isEditing, initialData]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+
+      // Revoke object URLs to prevent memory leaks
+      media.forEach((item) => {
+        if (item.previewUrl && !item.isExisting) {
+          try {
+            URL.revokeObjectURL(item.previewUrl);
+          } catch (err) {
+            console.error("Failed to revoke URL:", err);
+          }
+        }
+      });
+    };
+  }, [media]);
 
   // Handle file drop
   const onDrop = useCallback(async (acceptedFiles) => {
@@ -246,16 +288,10 @@ function PostCreator({ initialData = null, isEditing = false }) {
           filter: item.filter,
         }));
 
-      // Prepare tags - send as array directly instead of string
-      const tagsList = tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter((tag) => tag !== "");
-
       // Create the payload
       const payload = {
         caption,
-        tags: tags, // Send as string instead of array to let server handle splitting
+        tags: tags, // Send as string to let server handle splitting
         media: mediaItems,
       };
 
@@ -322,9 +358,45 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 <FaVideo />
               </UploadIcon>
               <p>Drag photos or videos here, or click to browse</p>
-              <CameraButton onClick={() => cameraInputRef.current?.click()}>
-                <FaCamera /> Take a Photo
-              </CameraButton>
+              <ButtonGroup>
+                <CameraButton
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent dropzone click
+                    cameraInputRef.current?.click();
+                  }}
+                >
+                  <FaCamera /> Take Photo
+                </CameraButton>
+                <GalleryButton
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent dropzone click
+                    // Create a file input that doesn't use the capture attribute
+                    const galleryInput = document.createElement("input");
+                    galleryInput.type = "file";
+                    galleryInput.accept = "image/*,video/*";
+                    galleryInput.multiple = true;
+                    galleryInput.style.display = "none";
+
+                    galleryInput.onchange = (event) => {
+                      if (event.target.files?.length) {
+                        onDrop(Array.from(event.target.files));
+                      }
+                    };
+
+                    document.body.appendChild(galleryInput);
+                    galleryInput.click();
+
+                    // Clean up
+                    setTimeout(() => {
+                      document.body.removeChild(galleryInput);
+                    }, 1000);
+                  }}
+                >
+                  <FaImage /> Choose from Gallery
+                </GalleryButton>
+              </ButtonGroup>
               <input
                 type="file"
                 ref={cameraInputRef}
@@ -441,11 +513,38 @@ function PostCreator({ initialData = null, isEditing = false }) {
               </FilterOptions>
 
               <AddMoreSection>
-                <AddMoreButton {...getRootProps()}>
-                  <input {...getInputProps()} />
-                  <FaImage /> Add More
+                <AddMoreButton
+                  as="div"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Create a file input that doesn't use the capture attribute
+                    const galleryInput = document.createElement("input");
+                    galleryInput.type = "file";
+                    galleryInput.accept = "image/*,video/*";
+                    galleryInput.multiple = true;
+                    galleryInput.style.display = "none";
+
+                    galleryInput.onchange = (event) => {
+                      if (event.target.files?.length) {
+                        onDrop(Array.from(event.target.files));
+                      }
+                    };
+
+                    document.body.appendChild(galleryInput);
+                    galleryInput.click();
+
+                    // Clean up
+                    setTimeout(() => {
+                      document.body.removeChild(galleryInput);
+                    }, 1000);
+                  }}
+                >
+                  <FaImage /> Add from Gallery
                 </AddMoreButton>
-                <AddMoreButton onClick={() => cameraInputRef.current?.click()}>
+                <AddMoreButton
+                  as="div"
+                  onClick={() => cameraInputRef.current?.click()}
+                >
                   <FaCamera /> Take Photo
                 </AddMoreButton>
               </AddMoreSection>
@@ -574,15 +673,15 @@ function PostCreator({ initialData = null, isEditing = false }) {
   );
 }
 
-// Styled components
+// Styled components - Now updated with Modern Twilight theme
 const Container = styled.div`
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  color: #fff;
+  box-shadow: 0 2px 10px ${COLORS.shadow};
+  color: ${COLORS.textPrimary};
 `;
 
 const Header = styled.div`
@@ -592,6 +691,7 @@ const Header = styled.div`
   h1 {
     margin-bottom: 20px;
     font-size: 24px;
+    color: ${COLORS.textPrimary};
   }
 `;
 
@@ -603,18 +703,20 @@ const StepIndicator = styled.div`
 
 const Step = styled.div`
   padding: 8px 16px;
-  background-color: ${(props) => (props.active ? "#ff7e5f" : "#333")};
+  background-color: ${(props) =>
+    props.active ? COLORS.primaryPurple : COLORS.elevatedBackground};
   border-radius: 20px;
   font-size: 14px;
   font-weight: 600;
   cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
   opacity: ${(props) => (props.disabled ? 0.6 : 1)};
+  color: ${COLORS.textPrimary};
 `;
 
 const StepConnector = styled.div`
   width: 60px;
   height: 2px;
-  background-color: #333;
+  background-color: ${COLORS.divider};
   margin: 0 10px;
 `;
 
@@ -623,7 +725,7 @@ const MediaSection = styled.div`
 `;
 
 const DropArea = styled.div`
-  border: 2px dashed #444;
+  border: 2px dashed ${COLORS.border};
   border-radius: 8px;
   padding: 40px 20px;
   text-align: center;
@@ -636,13 +738,13 @@ const DropArea = styled.div`
   justify-content: center;
 
   &:hover {
-    border-color: #ff7e5f;
-    background-color: rgba(255, 126, 95, 0.05);
+    border-color: ${COLORS.primaryPurple};
+    background-color: rgba(94, 53, 177, 0.05);
   }
 
   p {
     margin: 15px 0;
-    color: #ccc;
+    color: ${COLORS.textSecondary};
   }
 `;
 
@@ -650,48 +752,84 @@ const UploadIcon = styled.div`
   display: flex;
   gap: 20px;
   font-size: 40px;
-  color: #666;
+  color: ${COLORS.textTertiary};
 
   svg {
     transition: color 0.2s;
   }
 
   ${DropArea}:hover & svg {
-    color: #ff7e5f;
+    color: ${COLORS.primaryPurple};
   }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
 `;
 
 const CameraButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: #333;
-  color: #fff;
+  background-color: ${COLORS.elevatedBackground};
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 4px;
   padding: 10px 20px;
-  margin-top: 20px;
   cursor: pointer;
   transition: background 0.2s;
 
   &:hover {
-    background-color: #444;
+    background-color: ${COLORS.buttonHover};
   }
 
   svg {
+    color: ${COLORS.primaryGreen};
+    font-size: 18px;
+  }
+`;
+
+const GalleryButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: ${COLORS.elevatedBackground};
+  color: ${COLORS.textPrimary};
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background-color: ${COLORS.buttonHover};
+  }
+
+  svg {
+    color: ${COLORS.primaryBlue};
     font-size: 18px;
   }
 `;
 
 const MediaPreview = styled.div`
   margin-bottom: ${(props) => (props.small ? "20px" : "30px")};
+
+  h3 {
+    color: ${COLORS.textSecondary};
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
 `;
 
 const PreviewContainer = styled.div`
   position: relative;
   width: 100%;
   height: 350px;
-  background-color: #222;
+  background-color: ${COLORS.elevatedBackground};
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 15px;
@@ -761,7 +899,7 @@ const UploadOverlay = styled.div`
 const UploadProgress = styled.div`
   width: 80%;
   height: 8px;
-  background-color: #333;
+  background-color: ${COLORS.elevatedBackground};
   border-radius: 4px;
   margin-bottom: 10px;
   overflow: hidden;
@@ -770,7 +908,7 @@ const UploadProgress = styled.div`
 const UploadProgressInner = styled.div`
   height: 100%;
   width: ${(props) => props.width}%;
-  background-color: #ff7e5f;
+  background-color: ${COLORS.primaryPurple};
   transition: width 0.3s;
 `;
 
@@ -780,7 +918,7 @@ const ErrorOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(200, 30, 30, 0.7);
+  background: rgba(244, 67, 54, 0.7); /* Using error color with opacity */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -789,8 +927,8 @@ const ErrorOverlay = styled.div`
   z-index: 2;
 
   button {
-    background: #fff;
-    color: #c81e1e;
+    background: ${COLORS.elevatedBackground};
+    color: ${COLORS.textPrimary};
     border: none;
     border-radius: 4px;
     padding: 8px 16px;
@@ -818,7 +956,7 @@ const RemoveButton = styled.button`
   z-index: 3;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.8);
+    background: ${COLORS.error};
   }
 `;
 
@@ -853,7 +991,7 @@ const NavButton = styled.button`
   }
 
   &:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.8);
+    background: ${COLORS.primaryPurple};
   }
 `;
 
@@ -872,6 +1010,7 @@ const FilterOptions = styled.div`
     margin-bottom: 10px;
     font-size: 16px;
     font-weight: 600;
+    color: ${COLORS.textSecondary};
   }
 `;
 
@@ -886,7 +1025,7 @@ const FiltersGrid = styled.div`
   }
 
   &::-webkit-scrollbar-thumb {
-    background-color: #555;
+    background-color: ${COLORS.divider};
     border-radius: 5px;
   }
 `;
@@ -901,7 +1040,8 @@ const FilterItem = styled.div`
   span {
     margin-top: 8px;
     font-size: 12px;
-    color: ${(props) => (props.active ? "#ff7e5f" : "#ccc")};
+    color: ${(props) =>
+      props.active ? COLORS.primaryPurple : COLORS.textTertiary};
   }
 
   &:hover {
@@ -936,14 +1076,15 @@ const AddMoreSection = styled.div`
   display: flex;
   gap: 10px;
   margin-top: 20px;
+  flex-wrap: wrap;
 `;
 
 const AddMoreButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: #333;
-  color: #fff;
+  background-color: ${COLORS.elevatedBackground};
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 4px;
   padding: 10px 20px;
@@ -951,10 +1092,11 @@ const AddMoreButton = styled.button`
   transition: background 0.2s;
 
   &:hover {
-    background-color: #444;
+    background-color: ${COLORS.buttonHover};
   }
 
   svg {
+    color: ${COLORS.accentPurple};
     font-size: 18px;
   }
 `;
@@ -967,14 +1109,14 @@ const ButtonRow = styled.div`
 
 const CancelButton = styled.button`
   background: transparent;
-  color: #aaa;
+  color: ${COLORS.textTertiary};
   border: none;
   padding: 10px 20px;
   border-radius: 4px;
   cursor: pointer;
 
   &:hover {
-    color: #fff;
+    color: ${COLORS.textPrimary};
   }
 `;
 
@@ -982,8 +1124,8 @@ const NextButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: #ff7e5f;
-  color: white;
+  background-color: ${THEME.button.primary.background};
+  color: ${THEME.button.primary.text};
   border: none;
   border-radius: 4px;
   padding: 10px 20px;
@@ -991,12 +1133,12 @@ const NextButton = styled.button`
   transition: all 0.2s;
 
   &:disabled {
-    background-color: #555;
+    background-color: ${COLORS.elevatedBackground};
     cursor: not-allowed;
   }
 
   &:hover:not(:disabled) {
-    background-color: #ff6a4a;
+    background-color: ${THEME.button.primary.hoverBackground};
   }
 `;
 
@@ -1014,45 +1156,45 @@ const Label = styled.label`
   margin-bottom: 8px;
   font-weight: 600;
   font-size: 14px;
-  color: #ddd;
+  color: ${COLORS.textSecondary};
 `;
 
 const Input = styled.input`
   width: 100%;
   padding: 12px;
-  background-color: #333;
-  border: 1px solid #444;
+  background-color: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
   border-radius: 4px;
-  color: white;
+  color: ${COLORS.textPrimary};
   font-size: 16px;
 
   &:focus {
     outline: none;
-    border-color: #ff7e5f;
+    border-color: ${COLORS.primaryPurple};
   }
 
   &::placeholder {
-    color: #777;
+    color: ${COLORS.textTertiary};
   }
 `;
 
 const Textarea = styled.textarea`
   width: 100%;
   padding: 12px;
-  background-color: #333;
-  border: 1px solid #444;
+  background-color: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
   border-radius: 4px;
-  color: white;
+  color: ${COLORS.textPrimary};
   font-size: 16px;
   resize: vertical;
 
   &:focus {
     outline: none;
-    border-color: #ff7e5f;
+    border-color: ${COLORS.primaryPurple};
   }
 
   &::placeholder {
-    color: #777;
+    color: ${COLORS.textTertiary};
   }
 `;
 
@@ -1061,30 +1203,30 @@ const CharCount = styled.div`
   right: 10px;
   bottom: 10px;
   font-size: 12px;
-  color: #777;
+  color: ${COLORS.textTertiary};
 `;
 
 const BackButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: transparent;
-  color: #ccc;
-  border: 1px solid #444;
+  background-color: ${THEME.button.secondary.background};
+  color: ${THEME.button.secondary.text};
+  border: 1px solid ${COLORS.border};
   border-radius: 4px;
   padding: 10px 20px;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background-color: #333;
-    color: white;
+    background-color: ${THEME.button.secondary.hoverBackground};
+    color: ${COLORS.textPrimary};
   }
 `;
 
 const PublishButton = styled.button`
-  background-color: #ff7e5f;
-  color: white;
+  background-color: ${THEME.button.action.background};
+  color: ${THEME.button.action.text};
   border: none;
   border-radius: 4px;
   padding: 10px 25px;
@@ -1093,12 +1235,12 @@ const PublishButton = styled.button`
   transition: all 0.2s;
 
   &:disabled {
-    background-color: #555;
+    background-color: ${COLORS.elevatedBackground};
     cursor: not-allowed;
   }
 
   &:hover:not(:disabled) {
-    background-color: #ff6a4a;
+    background-color: ${THEME.button.action.hoverBackground};
   }
 `;
 
