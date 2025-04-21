@@ -246,7 +246,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
           filter: item.filter,
         }));
 
-      // Prepare tags
+      // Prepare tags - send as array directly instead of string
       const tagsList = tags
         .split(",")
         .map((tag) => tag.trim())
@@ -255,7 +255,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
       // Create the payload
       const payload = {
         caption,
-        tags: tagsList,
+        tags: tags, // Send as string instead of array to let server handle splitting
         media: mediaItems,
       };
 
