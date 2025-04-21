@@ -511,6 +511,8 @@ const ThumbnailImage = styled.img`
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
+  position: relative;
+  z-index: 1;
 `;
 
 const VideoIndicator = styled.div`
@@ -527,6 +529,58 @@ const VideoIndicator = styled.div`
   justify-content: center;
   color: ${COLORS.textPrimary};
   font-size: 0.8rem;
+  z-index: 2; /* Ensure this appears above the thumbnail */
+`;
+
+const StoryImageWrapper = styled.div`
+  position: relative;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  overflow: hidden;
+
+  /* Gradient border approach */
+  padding: 3px;
+  background: ${THEME.story.border.active};
+
+  /* For the inner content (the actual image container) */
+  &::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    right: 3px;
+    bottom: 3px;
+    border-radius: 50%;
+    background: ${COLORS.cardBackground};
+    z-index: 0;
+  }
+
+  transition: transform 0.3s ease;
+
+  @media (hover: hover) {
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  &.image-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:before {
+      background-color: ${COLORS.elevatedBackground};
+      content: "\\f03e";
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      font-size: 1.5rem;
+      color: ${COLORS.textTertiary};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
 `;
 
 const StoryModal = styled.div`
@@ -859,42 +913,6 @@ const CancelButton = styled.button`
 
   @media (max-width: 480px) {
     order: 2;
-  }
-`;
-
-const StoryImageWrapper = styled.div`
-  position: relative;
-  width: 78px;
-  height: 78px;
-  border-radius: 50%;
-  overflow: hidden;
-  /* Use the gradient from theme.story.border.active */
-  border: 3px solid transparent;
-  background-image: ${THEME.story.border.active};
-  background-origin: border-box;
-  background-clip: content-box, border-box;
-  padding: 3px;
-  transition: transform 0.3s ease;
-
-  @media (hover: hover) {
-    &:hover {
-      transform: scale(1.05);
-    }
-  }
-
-  &.image-fallback {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: ${COLORS.elevatedBackground};
-
-    &:before {
-      content: "\\f03e";
-      font-family: "Font Awesome 5 Free";
-      font-weight: 900;
-      font-size: 1.5rem;
-      color: ${COLORS.textTertiary};
-    }
   }
 `;
 
