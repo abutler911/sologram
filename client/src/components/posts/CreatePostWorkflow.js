@@ -203,7 +203,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                 : p
             )
           );
-
+          console.log("Upload success for:", file.name, uploaded);
           // Remove this token from the active list
           cancelTokensRef.current = cancelTokensRef.current.filter(
             (token) => token !== cancelToken
@@ -271,7 +271,9 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   // Get the current media being displayed
   const getCurrentMedia = () => {
     const allMedia = [...existingMedia, ...mediaPreviews];
-    return allMedia[activePreviewIndex] || null;
+    const current = allMedia[activePreviewIndex] || null;
+    console.log("📸 getCurrentMedia:", current); // 🔍 ADD THIS LINE
+    return current;
   };
 
   // Remove a preview file with cleanup
@@ -523,7 +525,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
             : item
         )
       );
-
+      console.log("🔁 Retry upload complete:", uploaded);
       // Cleanup token
       cancelTokensRef.current = cancelTokensRef.current.filter(
         (token) => token !== cancelToken
@@ -575,7 +577,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     try {
       // Prepare existing media IDs
       const existingCloudinaryIds = existingMedia.map((m) => m.cloudinaryId);
-
+      console.log("🚨 Final mediaPreviews before submit:", mediaPreviews);
       // Prepare uploaded media that isn't already saved
       const uploadedMedia = mediaPreviews
         .filter(

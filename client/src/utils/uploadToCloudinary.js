@@ -24,6 +24,7 @@ export const uploadToCloudinary = async (file, onProgress) => {
               cloudinaryId: res.public_id,
               mediaType: file.type.startsWith("video") ? "video" : "image",
             });
+            console.log("Upload successful:", res.secure_url);
           } else {
             reject(new Error(res.error?.message || "Upload failed"));
           }
