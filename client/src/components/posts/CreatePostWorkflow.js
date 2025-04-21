@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useDropzone } from "react-dropzone";
@@ -12,6 +12,7 @@ import {
   FaCheck,
   FaHashtag,
   FaCamera,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -19,7 +20,8 @@ import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
 import LoadingSpinner from "../common/loadingSpinner";
 import pandaImg from "../../assets/panda.jpg";
 
-const filters = [
+// Define filters outside component to avoid recreation on renders
+const FILTERS = [
   { name: "None", class: "" },
   { name: "Warm", class: "filter-warm" },
   { name: "Cool", class: "filter-cool" },
@@ -27,7 +29,39 @@ const filters = [
   { name: "Vintage", class: "filter-vintage" },
 ];
 
+// Constants to avoid magic numbers/strings
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+const MAX_MEDIA_COUNT = 25;
+const FILE_TYPES = {
+  IMAGE: {
+    accept: {
+      "image/*": [".jpeg", ".jpg", ".png", ".gif", ".webp"],
+    },
+    icon: FaImage,
+  },
+  VIDEO: {
+    accept: {
+      "video/*": [".mp4", ".mov", ".avi", ".webm"],
+    },
+    icon: FaVideo,
+  },
+};
+
+// Define a cancelable request utility
+const createCancelableRequest = () => {
+  const source = axios.CancelToken.source();
+  return {
+    token: source.token,
+    cancel: source.cancel,
+  };
+};
+
 const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
+  // Refs for cleanup and preventing memory leaks
+  const cancelTokensRef = useRef([]);
+  const mountedRef = useRef(true);
+
+  // Component state
   const [currentStep, setCurrentStep] = useState(1);
   const [caption, setCaption] = useState(initialData?.caption || "");
   const [content, setContent] = useState(initialData?.content || "");
@@ -37,18 +71,53 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({});
 
+  // UI state
   const [captionFocused, setCaptionFocused] = useState(false);
   const [contentFocused, setContentFocused] = useState(false);
   const [tagInputFocused, setTagInputFocused] = useState(false);
-  const [tagSuggestions] = useState(["travel", "fitness", "fun", "adventure"]);
+  const [tagSuggestions] = useState([
+    "travel",
+    "fitness",
+    "fun",
+    "adventure",
+    "food",
+    "photography",
+  ]);
 
   const navigate = useNavigate();
 
+  // Check if we have any pending uploads
   const hasPendingUploads = mediaPreviews.some(
     (media) => media.uploading || !media.mediaUrl
   );
 
+  // Calculate the total number of media items
+  const totalMediaCount = existingMedia.length + mediaPreviews.length;
+
+  // Reset component on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      // Cancel any ongoing uploads when component unmounts
+      cancelTokensRef.current.forEach((cancelToken) => {
+        if (cancelToken && cancelToken.cancel) {
+          cancelToken.cancel("Component unmounted");
+        }
+      });
+
+      // Revoke object URLs to prevent memory leaks
+      mediaPreviews.forEach((media) => {
+        if (media.preview) {
+          URL.revokeObjectURL(media.preview);
+        }
+      });
+    };
+  }, [mediaPreviews]);
+
+  // Load existing media when editing
   useEffect(() => {
     if (isEditing && initialData?.media?.length > 0) {
       const mapped = initialData.media.map((media) => ({
@@ -63,145 +132,451 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     }
   }, [isEditing, initialData]);
 
-  const onDrop = useCallback(async (acceptedFiles) => {
-    const uploadPromises = acceptedFiles.map(async (file) => {
-      const id = Date.now() + Math.random().toString();
-      const isVideo = file.type.startsWith("video/");
+  // Handle file drops with improved error handling and progress tracking
+  const onDrop = useCallback(
+    async (acceptedFiles) => {
+      // Early return if max files reached
+      if (totalMediaCount + acceptedFiles.length > MAX_MEDIA_COUNT) {
+        toast.error(`Maximum ${MAX_MEDIA_COUNT} files allowed`);
+        return;
+      }
 
-      const preview = {
-        id,
-        file,
-        preview: URL.createObjectURL(file),
-        type: isVideo ? "video" : "image",
-        filter: "",
-        uploading: true,
-        progress: 0,
-        error: false,
-      };
+      setUploading(true);
 
-      setMediaPreviews((prev) => [...prev, preview]);
+      const uploadPromises = acceptedFiles.map(async (file) => {
+        // Generate unique ID for tracking this upload
+        const id = `upload_${Date.now()}_${Math.random()
+          .toString(36)
+          .substring(2, 9)}`;
+        const isVideo = file.type.startsWith("video/");
 
-      try {
-        const onProgress = (percent) => {
-          setMediaPreviews((prev) =>
-            prev.map((p) => (p.id === id ? { ...p, progress: percent } : p))
-          );
+        // Create preview object
+        const preview = {
+          id,
+          file,
+          preview: URL.createObjectURL(file),
+          type: isVideo ? "video" : "image",
+          filter: "",
+          uploading: true,
+          progress: 0,
+          error: false,
         };
 
-        const uploaded = await uploadToCloudinary(file, onProgress);
+        // Add to state
+        setMediaPreviews((prev) => [...prev, preview]);
+        setUploadProgress((prev) => ({ ...prev, [id]: 0 }));
 
-        setMediaPreviews((prev) =>
-          prev.map((p) =>
-            p.id === id
-              ? {
-                  ...p,
-                  uploading: false,
-                  mediaUrl: uploaded.mediaUrl,
-                  cloudinaryId: uploaded.cloudinaryId,
-                  mediaType: uploaded.mediaType,
-                }
-              : p
-          )
-        );
-      } catch (err) {
-        toast.error(`Upload failed: ${file.name}`);
-        setMediaPreviews((prev) =>
-          prev.map((p) => (p.id === id ? { ...p, error: true } : p))
-        );
+        try {
+          // Create cancelable request
+          const cancelToken = createCancelableRequest();
+          cancelTokensRef.current.push(cancelToken);
+
+          // Track progress
+          const onProgress = (percent) => {
+            if (!mountedRef.current) return;
+            setUploadProgress((prev) => ({ ...prev, [id]: percent }));
+            setMediaPreviews((prev) =>
+              prev.map((p) => (p.id === id ? { ...p, progress: percent } : p))
+            );
+          };
+
+          // Upload with progress tracking and cancelation support
+          const uploaded = await uploadToCloudinary(
+            file,
+            onProgress,
+            cancelToken.token
+          );
+
+          if (!mountedRef.current) return;
+
+          // Update state with success
+          setMediaPreviews((prev) =>
+            prev.map((p) =>
+              p.id === id
+                ? {
+                    ...p,
+                    uploading: false,
+                    mediaUrl: uploaded.mediaUrl,
+                    cloudinaryId: uploaded.cloudinaryId,
+                    mediaType: uploaded.mediaType,
+                  }
+                : p
+            )
+          );
+
+          // Remove this token from the active list
+          cancelTokensRef.current = cancelTokensRef.current.filter(
+            (token) => token !== cancelToken
+          );
+
+          return { success: true, id };
+        } catch (err) {
+          if (!mountedRef.current) return { success: false, id };
+
+          // Only show error if it's not a cancellation
+          if (!axios.isCancel(err)) {
+            toast.error(`Upload failed: ${file.name}`);
+            setMediaPreviews((prev) =>
+              prev.map((p) =>
+                p.id === id ? { ...p, error: true, uploading: false } : p
+              )
+            );
+          }
+
+          return { success: false, id };
+        }
+      });
+
+      try {
+        await Promise.all(uploadPromises);
+      } finally {
+        if (mountedRef.current) {
+          setUploading(false);
+        }
       }
-    });
+    },
+    [totalMediaCount]
+  );
 
-    await Promise.all(uploadPromises);
-  }, []);
-
+  // Configure dropzone with validation
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      "image/*": [".jpeg", ".jpg", ".png", ".gif"],
-      "video/*": [".mp4", ".mov", ".avi", ".webm"],
+      ...FILE_TYPES.IMAGE.accept,
+      ...FILE_TYPES.VIDEO.accept,
     },
-    maxSize: 25 * 1024 * 1024,
+    maxSize: MAX_FILE_SIZE,
     multiple: true,
+    disabled: uploading || totalMediaCount >= MAX_MEDIA_COUNT,
+    validator: (file) => {
+      if (file.size > MAX_FILE_SIZE) {
+        return {
+          code: "file-too-large",
+          message: `File is larger than ${MAX_FILE_SIZE / (1024 * 1024)}MB`,
+        };
+      }
+
+      // Make sure it's either an image or video
+      if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+        return {
+          code: "file-invalid-type",
+          message: "File must be an image or video",
+        };
+      }
+
+      return null;
+    },
   });
 
   // Get the current media being displayed
   const getCurrentMedia = () => {
     const allMedia = [...existingMedia, ...mediaPreviews];
-
     return allMedia[activePreviewIndex] || null;
   };
 
-  // Remove a preview file
-  const removePreviewFile = (id) => {
-    const previewIndex = mediaPreviews.findIndex((p) => p.id === id);
-    if (previewIndex !== -1) {
-      // Remove the preview
-      setMediaPreviews((prev) => prev.filter((p) => p.id !== id));
+  // Remove a preview file with cleanup
+  const removePreviewFile = useCallback(
+    (id) => {
+      const previewIndex = mediaPreviews.findIndex((p) => p.id === id);
 
-      // Adjust active preview index if needed
-      if (activePreviewIndex >= mediaPreviews.length - 1) {
-        setActivePreviewIndex(Math.max(0, mediaPreviews.length - 2));
+      if (previewIndex !== -1) {
+        // Cancel any ongoing upload for this file
+        const preview = mediaPreviews[previewIndex];
+
+        // Clean up object URL to prevent memory leaks
+        if (preview.preview) {
+          URL.revokeObjectURL(preview.preview);
+        }
+
+        // Remove the preview
+        setMediaPreviews((prev) => prev.filter((p) => p.id !== id));
+
+        // Adjust active preview index if needed
+        if (activePreviewIndex >= totalMediaCount - 1) {
+          setActivePreviewIndex(Math.max(0, totalMediaCount - 2));
+        }
       }
-    }
-  };
+    },
+    [mediaPreviews, activePreviewIndex, totalMediaCount]
+  );
 
   // Remove an existing media
-  const removeExistingMedia = (id) => {
-    setExistingMedia((prev) => prev.filter((m) => m.id !== id));
+  const removeExistingMedia = useCallback(
+    (id) => {
+      setExistingMedia((prev) => prev.filter((m) => m.id !== id));
 
-    // Adjust active preview index if needed
-    if (activePreviewIndex >= existingMedia.length - 1) {
-      setActivePreviewIndex(Math.max(0, existingMedia.length - 2));
-    }
-  };
+      // Adjust active preview index if needed
+      if (activePreviewIndex >= totalMediaCount - 1) {
+        setActivePreviewIndex(Math.max(0, totalMediaCount - 2));
+      }
+    },
+    [activePreviewIndex, totalMediaCount]
+  );
 
-  // Navigate to next media preview
-  const nextPreview = () => {
-    const totalMedia = mediaPreviews.length + existingMedia.length;
-    if (activePreviewIndex < totalMedia - 1) {
+  // Navigation between media previews
+  const nextPreview = useCallback(() => {
+    if (activePreviewIndex < totalMediaCount - 1) {
       setActivePreviewIndex((prev) => prev + 1);
     }
-  };
+  }, [activePreviewIndex, totalMediaCount]);
 
-  // Navigate to previous media preview
-  const prevPreview = () => {
+  const prevPreview = useCallback(() => {
     if (activePreviewIndex > 0) {
       setActivePreviewIndex((prev) => prev - 1);
     }
-  };
+  }, [activePreviewIndex]);
 
   // Apply filter to current media
-  const applyFilter = (filterIndex) => {
-    setSelectedFilter(filterIndex);
+  const applyFilter = useCallback(
+    (filterIndex) => {
+      setSelectedFilter(filterIndex);
 
-    // Apply filter to the active media
-    const allMedia = [...existingMedia, ...mediaPreviews];
-    if (activePreviewIndex < allMedia.length) {
-      const newMediaPreviews = [...mediaPreviews];
-      const targetIndex = activePreviewIndex - existingMedia.length;
+      // Apply filter to the active media
+      const allMedia = [...existingMedia, ...mediaPreviews];
+      if (activePreviewIndex < allMedia.length) {
+        const targetIndex = activePreviewIndex - existingMedia.length;
 
-      if (targetIndex >= 0 && targetIndex < newMediaPreviews.length) {
-        newMediaPreviews[targetIndex].filter = filters[filterIndex].class;
-        setMediaPreviews(newMediaPreviews);
+        if (targetIndex >= 0 && targetIndex < mediaPreviews.length) {
+          setMediaPreviews((prev) =>
+            prev.map((item, idx) =>
+              idx === targetIndex
+                ? { ...item, filter: FILTERS[filterIndex].class }
+                : item
+            )
+          );
+        }
+      }
+    },
+    [activePreviewIndex, existingMedia.length, mediaPreviews]
+  );
+
+  // Handle tag suggestions
+  const addTag = useCallback(
+    (tag) => {
+      const currentTags = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter((t) => t !== "");
+
+      if (!currentTags.includes(tag)) {
+        const newTags = [...currentTags, tag];
+        setTags(newTags.join(", "));
+      }
+    },
+    [tags]
+  );
+
+  // Handle camera capture with error handling
+  const handleCameraFile = useCallback(
+    (e) => {
+      try {
+        const file = e.target.files?.[0];
+        if (file) {
+          // Early return if max files reached
+          if (totalMediaCount >= MAX_MEDIA_COUNT) {
+            toast.error(`Maximum ${MAX_MEDIA_COUNT} files allowed`);
+            return;
+          }
+
+          const isVideo = file.type.startsWith("video/");
+
+          // Size validation
+          if (file.size > MAX_FILE_SIZE) {
+            toast.error(
+              `File exceeds the maximum size of ${
+                MAX_FILE_SIZE / (1024 * 1024)
+              }MB`
+            );
+            return;
+          }
+
+          // Create new ID for this file
+          const id = `camera_${Date.now()}_${Math.random()
+            .toString(36)
+            .substring(2, 9)}`;
+
+          // Create object URL for preview
+          const preview = URL.createObjectURL(file);
+
+          // Create media preview object
+          const newMedia = {
+            id,
+            file,
+            preview,
+            type: isVideo ? "video" : "image",
+            filter: "",
+            uploading: true,
+            progress: 0,
+          };
+
+          // Add to state
+          setMediaPreviews((prev) => [...prev, newMedia]);
+
+          // Start upload immediately
+          const cancelToken = createCancelableRequest();
+          cancelTokensRef.current.push(cancelToken);
+
+          // Upload with progress tracking
+          uploadToCloudinary(
+            file,
+            (percent) => {
+              if (!mountedRef.current) return;
+              setMediaPreviews((prev) =>
+                prev.map((p) => (p.id === id ? { ...p, progress: percent } : p))
+              );
+            },
+            cancelToken.token
+          )
+            .then((uploaded) => {
+              if (!mountedRef.current) return;
+
+              setMediaPreviews((prev) =>
+                prev.map((p) =>
+                  p.id === id
+                    ? {
+                        ...p,
+                        uploading: false,
+                        mediaUrl: uploaded.mediaUrl,
+                        cloudinaryId: uploaded.cloudinaryId,
+                        mediaType: uploaded.mediaType,
+                      }
+                    : p
+                )
+              );
+
+              // Remove from active tokens
+              cancelTokensRef.current = cancelTokensRef.current.filter(
+                (token) => token !== cancelToken
+              );
+            })
+            .catch((err) => {
+              if (!mountedRef.current) return;
+
+              if (!axios.isCancel(err)) {
+                toast.error(`Upload failed: ${file.name}`);
+                setMediaPreviews((prev) =>
+                  prev.map((p) =>
+                    p.id === id ? { ...p, error: true, uploading: false } : p
+                  )
+                );
+              }
+            });
+        }
+      } catch (err) {
+        console.error("Camera capture error:", err);
+        toast.error("Failed to capture image. Please try again.");
+      } finally {
+        // Reset input so camera can be triggered again
+        if (e.target) e.target.value = null;
+      }
+    },
+    [totalMediaCount]
+  );
+
+  // Retry upload with improved error handling
+  const retryUpload = async (filePreview) => {
+    if (!filePreview || !filePreview.file) {
+      toast.error("Cannot retry upload: File not available");
+      return;
+    }
+
+    try {
+      setMediaPreviews((prev) =>
+        prev.map((item) =>
+          item.id === filePreview.id
+            ? { ...item, error: false, uploading: true, progress: 0 }
+            : item
+        )
+      );
+
+      const cancelToken = createCancelableRequest();
+      cancelTokensRef.current.push(cancelToken);
+
+      const onProgress = (percent) => {
+        if (!mountedRef.current) return;
+        setMediaPreviews((prev) =>
+          prev.map((item) =>
+            item.id === filePreview.id ? { ...item, progress: percent } : item
+          )
+        );
+      };
+
+      const uploaded = await uploadToCloudinary(
+        filePreview.file,
+        onProgress,
+        cancelToken.token
+      );
+
+      if (!mountedRef.current) return;
+
+      setMediaPreviews((prev) =>
+        prev.map((item) =>
+          item.id === filePreview.id
+            ? {
+                ...item,
+                uploading: false,
+                mediaUrl: uploaded.mediaUrl,
+                cloudinaryId: uploaded.cloudinaryId,
+                mediaType: uploaded.mediaType,
+                error: false,
+              }
+            : item
+        )
+      );
+
+      // Cleanup token
+      cancelTokensRef.current = cancelTokensRef.current.filter(
+        (token) => token !== cancelToken
+      );
+
+      toast.success("Upload succeeded!");
+    } catch (err) {
+      if (!mountedRef.current) return;
+
+      if (!axios.isCancel(err)) {
+        console.error("Retry upload error:", err);
+        toast.error("Retry failed. Try again later.");
+
+        setMediaPreviews((prev) =>
+          prev.map((item) =>
+            item.id === filePreview.id
+              ? { ...item, error: true, uploading: false }
+              : item
+          )
+        );
       }
     }
   };
 
-  // Handle form submission
+  // Submit form with optimistic updates and error handling
   const handleSubmit = async () => {
-    if (!caption.trim()) return toast.error("Please add a caption");
+    // Validate input
+    if (!caption.trim()) {
+      toast.error("Please add a caption");
+      return;
+    }
+
     if (
       mediaPreviews.filter((m) => m.mediaUrl && !m.error).length === 0 &&
       existingMedia.length === 0
     ) {
-      return toast.error("Add at least one uploaded image or video");
+      toast.error("Add at least one image or video");
+      return;
+    }
+
+    // Check for pending uploads
+    if (hasPendingUploads) {
+      toast.error("Please wait for all uploads to complete");
+      return;
     }
 
     setLoading(true);
 
     try {
+      // Prepare existing media IDs
       const existingCloudinaryIds = existingMedia.map((m) => m.cloudinaryId);
 
+      // Prepare uploaded media that isn't already saved
       const uploadedMedia = mediaPreviews
         .filter(
           (m) =>
@@ -216,15 +591,20 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
           filter: m.filter || "",
         }));
 
+      // Prepare payload
       const payload = {
         caption,
         content,
-        tags,
+        tags: tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter((tag) => tag),
         media: uploadedMedia,
-        keepMedia: existingMedia.map((m) => m.id).join(","),
       };
 
       let response;
+
+      // Handle different API endpoints for create vs edit
       if (isEditing) {
         payload.keepMedia = existingMedia.map((m) => m.id).join(",");
         response = await axios.put(`/api/posts/${initialData._id}`, payload);
@@ -234,81 +614,48 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
         toast.success("Post created!");
       }
 
+      // Navigate to the post view page on success
       navigate(`/post/${response.data.data._id}`);
     } catch (err) {
       console.error("Post failed:", err);
-      toast.error("Something went wrong. Please try again.");
+
+      // More specific error messages based on response
+      if (err.response?.status === 413) {
+        toast.error("Post too large. Try reducing the number of media files.");
+      } else if (err.response?.status === 401) {
+        toast.error("Please log in to create a post.");
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const retryUpload = async (filePreview) => {
-    try {
-      setMediaPreviews((prev) =>
-        prev.map((item) =>
-          item.id === filePreview.id
-            ? { ...item, error: false, progress: 0 }
-            : item
-        )
-      );
+  // Helper to determine if the media step has no media
+  const isMediaStepEmpty = currentStep === 1 && totalMediaCount === 0;
 
-      const onProgress = (percent) => {
-        setMediaPreviews((prev) =>
-          prev.map((item) =>
-            item.id === filePreview.id ? { ...item, progress: percent } : item
-          )
-        );
-      };
+  // Keyboard navigation for accessibility
+  const handleKeyDown = useCallback(
+    (e) => {
+      // Only process when on the media step with media items
+      if (currentStep !== 1 || isMediaStepEmpty) return;
 
-      const uploaded = await uploadToCloudinary(filePreview.file, onProgress);
-      uploaded.filter = filePreview.filter || "";
+      if (e.key === "ArrowRight") {
+        nextPreview();
+      } else if (e.key === "ArrowLeft") {
+        prevPreview();
+      }
+    },
+    [currentStep, isMediaStepEmpty, nextPreview, prevPreview]
+  );
 
-      // Replace the errored one with the successfully uploaded
-      setMediaPreviews((prev) =>
-        prev.filter((item) => item.id !== filePreview.id)
-      );
-      setExistingMedia((prev) => [...prev, uploaded]);
-      toast.success("Upload succeeded!");
-    } catch (err) {
-      toast.error("Retry failed. Try again later.");
-    }
-  };
-
-  // Detect if we're on media step with no media
-  const isMediaStepEmpty =
-    currentStep === 1 &&
-    mediaPreviews.length === 0 &&
-    existingMedia.length === 0;
-
-  // Add a hashtag from suggestions
-  const addTag = (tag) => {
-    const currentTags = tags
-      .split(",")
-      .map((t) => t.trim())
-      .filter((t) => t !== "");
-    if (!currentTags.includes(tag)) {
-      const newTags = [...currentTags, tag];
-      setTags(newTags.join(", "));
-    }
-  };
-  const handleCameraFile = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const isVideo = file.type.startsWith("video/");
-      const preview = {
-        id: Date.now() + Math.random().toString(),
-        file,
-        preview: URL.createObjectURL(file),
-        type: isVideo ? "video" : "image",
-        filter: "",
-      };
-      setMediaPreviews((prev) => [...prev, preview]);
-    }
-
-    // ✅ Reset input so camera can be triggered again
-    e.target.value = null;
-  };
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleKeyDown]);
 
   // Render the appropriate step content
   const renderStepContent = () => {
@@ -325,14 +672,19 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                 <DropzoneContainer
                   {...getRootProps()}
                   isDragActive={isDragActive}
+                  isDisabled={uploading || totalMediaCount >= MAX_MEDIA_COUNT}
                 >
-                  <input {...getInputProps({ capture: "environment" })} />
+                  <input {...getInputProps()} />
                   <DropzoneIcon>
                     <FaCloudUploadAlt />
                   </DropzoneIcon>
                   <DropzoneText>
                     {isDragActive
                       ? "Drop your files here"
+                      : uploading
+                      ? "Uploading..."
+                      : totalMediaCount >= MAX_MEDIA_COUNT
+                      ? `Maximum ${MAX_MEDIA_COUNT} files reached`
                       : "Drag photos and videos here, or click to browse"}
                   </DropzoneText>
                   <MediaTypeIcons>
@@ -340,14 +692,18 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                     <FaVideo />
                   </MediaTypeIcons>
                   <DropzoneSubtext>
-                    You can add up to 25 photos and videos. Max file size: 25MB
+                    You can add up to {MAX_MEDIA_COUNT} photos and videos. Max
+                    file size: {MAX_FILE_SIZE / (1024 * 1024)}MB
                   </DropzoneSubtext>
                 </DropzoneContainer>
 
                 {/* Camera trigger outside the Dropzone */}
                 <CameraControlsContainer>
                   <label htmlFor="camera-input">
-                    <CameraButton as="div">
+                    <CameraButton
+                      as="div"
+                      disabled={uploading || totalMediaCount >= MAX_MEDIA_COUNT}
+                    >
                       <FaCamera />
                       <span>Take Photo</span>
                     </CameraButton>
@@ -359,6 +715,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                     capture="environment"
                     style={{ display: "none" }}
                     onChange={handleCameraFile}
+                    disabled={uploading || totalMediaCount >= MAX_MEDIA_COUNT}
                   />
                 </CameraControlsContainer>
               </>
@@ -369,8 +726,9 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                     {getCurrentMedia()?.error && (
                       <RetryButton
                         onClick={() => retryUpload(getCurrentMedia())}
+                        disabled={uploading}
                       >
-                        Retry Upload
+                        <FaExclamationTriangle /> Retry Upload
                       </RetryButton>
                     )}
 
@@ -383,6 +741,11 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                         }
                         controls
                         className={getCurrentMedia()?.filter || ""}
+                        onError={(e) => {
+                          console.error("Video loading error", e);
+                          e.target.onerror = null; // Prevent infinite error loop
+                          toast.error("Error loading video preview");
+                        }}
                       />
                     ) : (
                       <PreviewImage
@@ -391,8 +754,16 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                           getCurrentMedia()?.preview
                         }
                         className={getCurrentMedia()?.filter || ""}
+                        alt="Media preview"
+                        onError={(e) => {
+                          console.error("Image loading error", e);
+                          e.target.onerror = null; // Prevent infinite error loop
+                          e.target.src = pandaImg; // Fallback image
+                          toast.error("Error loading image preview");
+                        }}
                       />
                     )}
+
                     {getCurrentMedia()?.uploading && (
                       <ProgressOverlay>
                         <ProgressText>
@@ -407,34 +778,34 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                           ? removeExistingMedia(getCurrentMedia().id)
                           : removePreviewFile(getCurrentMedia().id)
                       }
+                      disabled={uploading}
+                      aria-label="Remove media"
                     >
                       <FaTimes />
                     </RemoveMediaButton>
                   </CurrentMediaPreview>
 
-                  {existingMedia.length + mediaPreviews.length > 1 && (
+                  {totalMediaCount > 1 && (
                     <>
                       <NavButtons>
                         <NavButton
                           onClick={prevPreview}
                           disabled={activePreviewIndex === 0}
+                          aria-label="Previous media"
                         >
                           <FaArrowLeft />
                         </NavButton>
                         <NavButton
                           onClick={nextPreview}
-                          disabled={
-                            activePreviewIndex ===
-                            existingMedia.length + mediaPreviews.length - 1
-                          }
+                          disabled={activePreviewIndex === totalMediaCount - 1}
+                          aria-label="Next media"
                         >
                           <FaArrowRight />
                         </NavButton>
                       </NavButtons>
 
                       <PaginationIndicator>
-                        {activePreviewIndex + 1} /{" "}
-                        {existingMedia.length + mediaPreviews.length}
+                        {activePreviewIndex + 1} / {totalMediaCount}
                       </PaginationIndicator>
                     </>
                   )}
@@ -443,11 +814,13 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                 <FilterSection>
                   <FilterTitle>Filters</FilterTitle>
                   <FilterList>
-                    {filters.map((filter, index) => (
+                    {FILTERS.map((filter, index) => (
                       <FilterItem
                         key={filter.name}
                         onClick={() => applyFilter(index)}
                         className={selectedFilter === index ? "active" : ""}
+                        aria-label={`${filter.name} filter`}
+                        aria-selected={selectedFilter === index}
                       >
                         <FilterPreviewImage
                           src={
@@ -455,10 +828,9 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                             getCurrentMedia()?.mediaUrl ||
                             pandaImg
                           }
-                          alt={filter.name}
+                          alt={`${filter.name} filter preview`}
                           className={filter.class}
                         />
-
                         <FilterName>{filter.name}</FilterName>
                       </FilterItem>
                     ))}
@@ -466,28 +838,38 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                 </FilterSection>
 
                 <ActionButtonsRow>
-                  <AddMoreWrapper {...getRootProps()}>
-                    <MediaActionButton as="div">
+                  <AddMoreWrapper
+                    {...getRootProps()}
+                    disabled={uploading || totalMediaCount >= MAX_MEDIA_COUNT}
+                  >
+                    <MediaActionButton
+                      as="div"
+                      disabled={uploading || totalMediaCount >= MAX_MEDIA_COUNT}
+                    >
                       <FaImage />
                       <span>Add More</span>
                     </MediaActionButton>
                     <input {...getInputProps()} />
                   </AddMoreWrapper>
 
-                  <label htmlFor="camera-input">
-                    <MediaActionButton as="div">
+                  <label htmlFor="camera-input-2">
+                    <MediaActionButton
+                      as="div"
+                      disabled={uploading || totalMediaCount >= MAX_MEDIA_COUNT}
+                    >
                       <FaCamera />
                       <span>Add Photo</span>
                     </MediaActionButton>
                   </label>
 
                   <input
-                    id="camera-input"
+                    id="camera-input-2"
                     type="file"
                     accept="image/*"
                     capture="environment"
                     style={{ display: "none" }}
                     onChange={handleCameraFile}
+                    disabled={uploading || totalMediaCount >= MAX_MEDIA_COUNT}
                   />
                 </ActionButtonsRow>
               </MediaPreviewSection>
@@ -502,20 +884,28 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
             <FormSection>
               <InputGroup focused={captionFocused}>
-                <InputLabel>Caption</InputLabel>
+                <InputLabel htmlFor="caption-input">Caption</InputLabel>
                 <TextInput
+                  id="caption-input"
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
                   placeholder="Write a caption..."
                   onFocus={() => setCaptionFocused(true)}
                   onBlur={() => setCaptionFocused(false)}
                   required
+                  maxLength={2200} // Instagram's limit
                 />
+                <CharacterCount warning={caption.length > 2000}>
+                  {caption.length}/2200
+                </CharacterCount>
               </InputGroup>
 
               <InputGroup focused={contentFocused}>
-                <InputLabel>Content (optional)</InputLabel>
+                <InputLabel htmlFor="content-input">
+                  Content (optional)
+                </InputLabel>
                 <TextArea
+                  id="content-input"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="Add more details about your post..."
@@ -526,8 +916,9 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
               </InputGroup>
 
               <InputGroup focused={tagInputFocused}>
-                <InputLabel>Tags (optional)</InputLabel>
+                <InputLabel htmlFor="tags-input">Tags (optional)</InputLabel>
                 <TextInput
+                  id="tags-input"
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
                   placeholder="Add tags separated by commas..."
@@ -540,7 +931,11 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                     <TagSuggestionsLabel>Suggestions:</TagSuggestionsLabel>
                     <TagsList>
                       {tagSuggestions.map((tag) => (
-                        <TagSuggestion key={tag} onClick={() => addTag(tag)}>
+                        <TagSuggestion
+                          key={tag}
+                          onClick={() => addTag(tag)}
+                          aria-label={`Add ${tag} tag`}
+                        >
                           <FaHashtag />
                           <span>{tag}</span>
                         </TagSuggestion>
@@ -572,14 +967,13 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                           getCurrentMedia()?.preview
                         }
                         className={getCurrentMedia()?.filter || ""}
+                        alt="Post preview"
                       />
                     )}
 
-                    {existingMedia.length + mediaPreviews.length > 1 && (
+                    {totalMediaCount > 1 && (
                       <PostPreviewPagination>
-                        {[
-                          ...Array(existingMedia.length + mediaPreviews.length),
-                        ].map((_, i) => (
+                        {[...Array(totalMediaCount)].map((_, i) => (
                           <PaginationDot
                             key={i}
                             active={i === activePreviewIndex}
@@ -619,47 +1013,55 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
   return (
     <WorkflowContainer>
-      <StepIndicator>
+      {/* Accessible step indicators */}
+      <StepIndicator role="navigation" aria-label="Post creation steps">
         <StepCircle
           active={currentStep === 1}
           completed={currentStep > 1}
           onClick={() => setCurrentStep(1)}
+          aria-label="Step 1: Add media"
+          aria-current={currentStep === 1 ? "step" : undefined}
         >
           {currentStep > 1 ? <FaCheck /> : 1}
         </StepCircle>
-        <StepConnector completed={currentStep > 1} />
+        <StepConnector completed={currentStep > 1} aria-hidden="true" />
         <StepCircle
           active={currentStep === 2}
           completed={currentStep > 2}
           onClick={() => !isMediaStepEmpty && setCurrentStep(2)}
+          aria-label="Step 2: Add details"
+          aria-current={currentStep === 2 ? "step" : undefined}
+          aria-disabled={isMediaStepEmpty}
         >
           {currentStep > 2 ? <FaCheck /> : 2}
         </StepCircle>
       </StepIndicator>
 
-      <main aria-label="Create Post Workflow">
-        {renderStepContent()}
-        <button aria-label="Remove media" onClick={removePreviewFile}>
-          <FaTimes />
-        </button>
-      </main>
+      <main aria-label="Create Post Workflow">{renderStepContent()}</main>
 
       {loading && (
-        <LoadingOverlay>
+        <LoadingOverlay aria-live="polite" aria-busy="true">
           <LoadingSpinner />
         </LoadingOverlay>
       )}
 
       <NavigationButtons>
         {currentStep > 1 && (
-          <BackButton onClick={() => setCurrentStep((prev) => prev - 1)}>
+          <BackButton
+            onClick={() => setCurrentStep((prev) => prev - 1)}
+            aria-label="Go back to previous step"
+          >
             <FaArrowLeft />
             <span>Back</span>
           </BackButton>
         )}
 
         {currentStep === 1 && !isMediaStepEmpty && (
-          <NextButton onClick={() => setCurrentStep(2)}>
+          <NextButton
+            onClick={() => setCurrentStep(2)}
+            disabled={uploading}
+            aria-label="Continue to next step"
+          >
             <span>Next</span>
             <FaArrowRight />
           </NextButton>
@@ -674,6 +1076,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
               !caption.trim() ||
               (mediaPreviews.length === 0 && existingMedia.length === 0)
             }
+            aria-label={isEditing ? "Update post" : "Publish post"}
           >
             <FaCheck />
             <span>
@@ -691,7 +1094,12 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
         )}
       </NavigationButtons>
 
-      <CancelButton onClick={() => navigate(-1)}>Cancel</CancelButton>
+      <CancelButton
+        onClick={() => navigate(-1)}
+        aria-label="Cancel and go back"
+      >
+        Cancel
+      </CancelButton>
     </WorkflowContainer>
   );
 };
@@ -771,16 +1179,17 @@ const DropzoneContainer = styled.div`
   border-radius: 8px;
   padding: 3rem 2rem;
   text-align: center;
-  cursor: pointer;
+  cursor: ${(props) => (props.isDisabled ? "not-allowed" : "pointer")};
   transition: all 0.3s ease;
   min-height: 300px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  opacity: ${(props) => (props.isDisabled ? 0.7 : 1)};
 
   &:hover {
-    border-color: #ff7e5f;
+    border-color: ${(props) => (props.isDisabled ? "#444444" : "#ff7e5f")};
   }
 `;
 
@@ -895,9 +1304,15 @@ const RemoveMediaButton = styled.button`
   cursor: pointer;
   transition: background-color 0.3s ease;
   font-size: 1.25rem;
+  opacity: ${(props) => (props.disabled ? 0.5 : 1)};
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: ${(props) =>
+      props.disabled ? "rgba(0, 0, 0, 0.6)" : "rgba(0, 0, 0, 0.8)"};
+  }
+
+  &:disabled {
+    cursor: not-allowed;
   }
 `;
 
@@ -971,11 +1386,11 @@ const FilterList = styled.div`
   }
 
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: #333;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #ccc;
+    background: #666;
     border-radius: 4px;
   }
 `;
@@ -1006,6 +1421,7 @@ const FilterItem = styled.div`
 const FilterName = styled.span`
   font-size: 0.875rem;
   color: #bbbbbb;
+  margin-top: 0.5rem;
 `;
 
 // Details Step
@@ -1036,6 +1452,14 @@ const InputLabel = styled.label`
   color: #aaaaaa;
   margin-bottom: 0.5rem;
   display: block;
+`;
+
+const CharacterCount = styled.div`
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: 0.75rem;
+  color: ${(props) => (props.warning ? "#ffaa00" : "#888")};
 `;
 
 const TextInput = styled.input`
@@ -1278,9 +1702,14 @@ const NextButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  opacity: ${(props) => (props.disabled ? 0.7 : 1)};
 
   &:hover {
-    background-color: #ff6a4b;
+    background-color: ${(props) => (props.disabled ? "#ff7e5f" : "#ff6a4b")};
+  }
+
+  &:disabled {
+    cursor: not-allowed;
   }
 `;
 
@@ -1335,11 +1764,12 @@ const CameraButton = styled.button`
   border: none;
   border-radius: 8px;
   color: white;
-  cursor: pointer;
+  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
   margin-top: 1rem;
+  opacity: ${(props) => (props.disabled ? 0.7 : 1)};
 
   &:hover {
-    background-color: #444;
+    background-color: ${(props) => (props.disabled ? "#333" : "#444")};
   }
 
   svg {
@@ -1381,14 +1811,15 @@ const MediaActionButton = styled.button`
   padding: 0.65rem 1.5rem;
   font-size: 0.95rem;
   font-weight: 500;
-  cursor: pointer;
+  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
   transition: all 0.3s ease;
   min-width: 140px;
+  opacity: ${(props) => (props.disabled ? 0.7 : 1)};
 
   &:hover {
-    background-color: #ff7e5f;
-    color: #fff;
-    border-color: #ff7e5f;
+    background-color: ${(props) => (props.disabled ? "#2e2e2e" : "#ff7e5f")};
+    color: ${(props) => (props.disabled ? "#ffffff" : "#fff")};
+    border-color: ${(props) => (props.disabled ? "#444" : "#ff7e5f")};
   }
 
   svg {
@@ -1410,6 +1841,8 @@ const ActionButtonsRow = styled.div`
 
 const AddMoreWrapper = styled.div`
   position: relative;
+  opacity: ${(props) => (props.disabled ? 0.7 : 1)};
+  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
 `;
 
 const FilterPreviewImage = styled.img`
@@ -1436,6 +1869,10 @@ const FilterPreviewImage = styled.img`
 `;
 
 const RetryButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 5;
   background-color: #ff7e5f;
   color: white;
   border: none;
@@ -1444,9 +1881,21 @@ const RetryButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: ${(props) => (props.disabled ? 0.7 : 1)};
 
   &:hover {
-    background-color: #ff6a4b;
+    background-color: ${(props) => (props.disabled ? "#ff7e5f" : "#ff6a4b")};
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+
+  svg {
+    font-size: 1rem;
   }
 `;
 
@@ -1458,6 +1907,7 @@ const ProgressOverlay = styled.div`
   bottom: 0;
   background: rgba(0, 0, 0, 0.6);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   z-index: 2;
@@ -1467,6 +1917,7 @@ const ProgressText = styled.div`
   color: white;
   font-size: 1.25rem;
   font-weight: bold;
+  margin-bottom: 1rem;
 `;
 
 const LoadingOverlay = styled.div`
