@@ -202,7 +202,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
             );
 
             console.log("✅ Upload completed for", file.name);
-            resolve();
+            resolve({ success: true, id, uploaded });
           } catch (err) {
             if (!axios.isCancel(err)) {
               console.error("❌ Upload failed:", err.message);
@@ -214,13 +214,30 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                 p.id === id ? { ...p, error: true, uploading: false } : p
               )
             );
-            resolve(); // ✅ Always resolve so Promise.all doesn't hang
+            resolve({ success: false, id });
           }
         });
       });
 
       try {
+        const uploadResults = await Promise.all(newUploads);
+
         await Promise.all(newUploads);
+        setMediaPreviews((prev) =>
+          prev.map((preview) => {
+            const result = uploadResults.find((res) => res.id === preview.id);
+            if (result?.success && result?.uploaded) {
+              return {
+                ...preview,
+                uploading: false,
+                mediaUrl: result.uploaded.mediaUrl,
+                cloudinaryId: result.uploaded.cloudinaryId,
+                mediaType: result.uploaded.mediaType,
+              };
+            }
+            return preview;
+          })
+        );
         console.log("🟢 All uploads completed");
       } catch (err) {
         console.error("Upload batch error:", err);
