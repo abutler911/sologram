@@ -442,17 +442,17 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 <CameraButton
                   type="button"
                   onClick={(e) => {
-                    e.stopPropagation(); // Prevent dropzone click
+                    e.stopPropagation();
                     cameraInputRef.current?.click();
                   }}
                 >
-                  <FaCamera /> Take Photo
+                  <FaCamera />
+                  <span>Take Photo</span>
                 </CameraButton>
                 <GalleryButton
                   type="button"
                   onClick={(e) => {
-                    e.stopPropagation(); // Prevent dropzone click
-                    // Create a file input that doesn't use the capture attribute
+                    e.stopPropagation();
                     const galleryInput = document.createElement("input");
                     galleryInput.type = "file";
                     galleryInput.accept = "image/*,video/*";
@@ -474,7 +474,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
                     }, 1000);
                   }}
                 >
-                  <FaImage /> Choose from Gallery
+                  <FaImage />
+                  <span>Choose from Gallery</span>
                 </GalleryButton>
               </ButtonGroup>
               <input
@@ -890,53 +891,33 @@ const UploadIcon = styled.div`
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 10px;
-  margin-top: 20px;
+  gap: 15px;
+  margin-top: 25px;
   flex-wrap: wrap;
   justify-content: center;
+  width: 100%;
+  max-width: 500px;
 `;
 
-const CameraButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: ${COLORS.elevatedBackground};
-  color: ${COLORS.textPrimary};
-  border: none;
-  border-radius: 4px;
-  padding: 10px 20px;
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover {
-    background-color: ${COLORS.buttonHover};
-  }
-
+const CameraButton = styled(MediaButton)`
   svg {
     color: ${COLORS.primaryGreen};
-    font-size: 18px;
+  }
+
+  &:hover {
+    border-color: ${COLORS.primaryGreen};
+    box-shadow: 0 4px 12px ${COLORS.primaryGreen}40;
   }
 `;
 
-const GalleryButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: ${COLORS.elevatedBackground};
-  color: ${COLORS.textPrimary};
-  border: none;
-  border-radius: 4px;
-  padding: 10px 20px;
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover {
-    background-color: ${COLORS.buttonHover};
-  }
-
+const GalleryButton = styled(MediaButton)`
   svg {
     color: ${COLORS.primaryBlue};
-    font-size: 18px;
+  }
+
+  &:hover {
+    border-color: ${COLORS.primaryBlue};
+    box-shadow: 0 4px 12px ${COLORS.primaryBlue}40;
   }
 `;
 
@@ -1120,6 +1101,73 @@ const NavButton = styled.button`
   }
 `;
 
+const MediaButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: ${COLORS.cardBackground};
+  color: ${COLORS.textPrimary};
+  border: 2px solid ${COLORS.border};
+  border-radius: 8px;
+  padding: 15px 25px;
+  width: 220px;
+  height: 60px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-weight: 600;
+  font-size: 15px;
+  box-shadow: 0 2px 8px ${COLORS.shadow};
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 0;
+    background: linear-gradient(
+      to bottom,
+      ${COLORS.primaryPurple}10,
+      transparent
+    );
+    transition: height 0.25s ease;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: ${COLORS.primaryPurple};
+    box-shadow: 0 4px 12px ${COLORS.primaryPurple}40;
+
+    &::before {
+      height: 100%;
+    }
+
+    svg {
+      transform: scale(1.2);
+    }
+  }
+
+  &:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px ${COLORS.shadow};
+  }
+
+  svg {
+    font-size: 22px;
+    transition: transform 0.2s ease;
+    z-index: 1;
+  }
+
+  span {
+    z-index: 1;
+  }
+`;
+
 const MediaCounter = styled.div`
   background: rgba(0, 0, 0, 0.6);
   color: white;
@@ -1199,30 +1247,49 @@ const FilterPreview = styled.img`
 
 const AddMoreSection = styled.div`
   display: flex;
-  gap: 10px;
-  margin-top: 20px;
+  gap: 15px;
+  margin-top: 25px;
   flex-wrap: wrap;
+  justify-content: center;
 `;
 
 const AddMoreButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 8px;
-  background-color: ${COLORS.elevatedBackground};
+  justify-content: center;
+  gap: 12px;
+  background-color: ${COLORS.cardBackground};
   color: ${COLORS.textPrimary};
-  border: none;
-  border-radius: 4px;
-  padding: 10px 20px;
+  border: 2px solid ${COLORS.border};
+  border-radius: 8px;
+  padding: 12px 20px;
+  min-width: 180px;
+  height: 48px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.25s ease;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 2px 8px ${COLORS.shadow};
 
   &:hover {
-    background-color: ${COLORS.buttonHover};
+    transform: translateY(-2px);
+    border-color: ${COLORS.accentPurple};
+    box-shadow: 0 4px 12px ${COLORS.accentPurple}40;
+
+    svg {
+      transform: scale(1.2);
+    }
+  }
+
+  &:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px ${COLORS.shadow};
   }
 
   svg {
-    color: ${COLORS.accentPurple};
     font-size: 18px;
+    color: ${COLORS.accentPurple};
+    transition: transform 0.2s ease;
   }
 `;
 
