@@ -5,6 +5,7 @@ import PostCreator from "../components/posts/PostCreator";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import { COLORS, THEME } from "../theme"; // Import your theme
 
 const CreatePost = () => {
   const { user, loading } = useContext(AuthContext);
@@ -40,12 +41,13 @@ const CreatePost = () => {
 
 // Styled Components
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   padding: 2rem 0;
+
   @media (max-width: 768px) {
     padding: 0;
-    background-color: #121212;
+    background-color: ${COLORS.background};
   }
 `;
 
@@ -54,6 +56,7 @@ const Container = styled.div`
   max-width: 1000px;
   margin: 0 auto;
   padding: 0 2rem;
+
   @media (max-width: 768px) {
     padding: 0;
   }
@@ -66,25 +69,25 @@ const PageHeader = styled.div`
 
 const HeaderIcon = styled.div`
   font-size: 2.5rem;
-  color: #ff7e5f;
+  color: ${COLORS.primaryPurple};
   margin-bottom: 1rem;
 `;
 
 const HeaderTitle = styled.h1`
   font-size: 2.5rem;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
   margin-bottom: 0.5rem;
 `;
 
 const HeaderSubtitle = styled.p`
   font-size: 1.125rem;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
 `;
 
 const CenteredMessage = styled.div`
   text-align: center;
   padding: 3rem;
-  color: #aaa;
+  color: ${COLORS.textTertiary};
   font-size: 1.125rem;
 `;
 

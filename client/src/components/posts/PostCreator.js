@@ -63,6 +63,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const [media, setMedia] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [caption, setCaption] = useState(initialData?.caption || "");
+  const [content, setContent] = useState(initialData?.content || "");
   const [tags, setTags] = useState(
     initialData?.tags ? initialData.tags.join(", ") : ""
   );
@@ -303,6 +304,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
     }
   };
 
+  // Apply filter to current media
   const applyFilter = (filterId) => {
     setActiveFilter(filterId);
 
@@ -368,7 +370,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
       // Create the payload
       const payload = {
         caption,
-        content: "", // Add empty content for PostCard
+        content, // Add content field from state
         tags: tags, // Send as string to let server handle splitting
         media: mediaItems,
       };
@@ -649,22 +651,33 @@ function PostCreator({ initialData = null, isEditing = false }) {
       ) : (
         <DetailsSection>
           <FormGroup>
-            <Label htmlFor="caption">Caption</Label>
-            <Textarea
-              id="caption"
+            <Label htmlFor="caption-input">Caption</Label>
+            <Input
+              id="caption-input"
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
               placeholder="Write a caption..."
-              rows={4}
               required
             />
-            <CharCount>{caption.length}/2200</CharCount>
+            <CharCount>{caption.length}/100</CharCount>
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="tags">Tags (comma separated)</Label>
+            <Label htmlFor="content-input">Content (optional)</Label>
+            <Textarea
+              id="content-input"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Add more details about your post..."
+              rows={4}
+            />
+            <CharCount>{content.length}/2000</CharCount>
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="tags-input">Tags (comma separated)</Label>
             <Input
-              id="tags"
+              id="tags-input"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               placeholder="travel, nature, food..."
@@ -731,6 +744,30 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 </NavigationButtons>
               )}
             </PreviewContainer>
+
+            <PostPreviewContent>
+              <PostPreviewCaption>
+                {caption || "Your caption will appear here"}
+              </PostPreviewCaption>
+
+              {content && (
+                <PostPreviewContentText>
+                  {content || "Your additional content will appear here"}
+                </PostPreviewContentText>
+              )}
+
+              {tags && (
+                <PostPreviewTags>
+                  {tags
+                    .split(",")
+                    .map((tag) => tag.trim())
+                    .filter((tag) => tag)
+                    .map((tag) => (
+                      <PostPreviewTag key={tag}>#{tag}</PostPreviewTag>
+                    ))}
+                </PostPreviewTags>
+              )}
+            </PostPreviewContent>
           </MediaPreview>
 
           <ButtonRow>
@@ -1330,6 +1367,42 @@ const PublishButton = styled.button`
   &:hover:not(:disabled) {
     background-color: ${THEME.button.action.hoverBackground};
   }
+`;
+
+const PostPreviewContent = styled.div`
+  padding: 1rem;
+  background-color: ${COLORS.elevatedBackground};
+`;
+
+const PostPreviewCaption = styled.h3`
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: ${COLORS.textPrimary};
+`;
+
+const PostPreviewContentText = styled.p`
+  font-size: 0.85rem;
+  color: ${COLORS.textSecondary};
+  margin: 8px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+`;
+
+const PostPreviewTags = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+`;
+
+const PostPreviewTag = styled.span`
+  color: ${COLORS.primaryBlue};
+  font-size: 0.75rem;
+  margin-right: 5px;
 `;
 
 export default PostCreator;

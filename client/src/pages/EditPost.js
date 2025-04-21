@@ -6,6 +6,7 @@ import { FaEdit } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import PostCreator from "../components/posts/PostCreator";
+import { COLORS, THEME } from "../theme"; // Import your theme
 
 const EditPost = () => {
   const { id } = useParams();
@@ -83,13 +84,13 @@ const EditPost = () => {
 
 // Styled Components
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   padding: 2rem 0;
 
   @media (max-width: 768px) {
     padding: 0;
-    background-color: #121212;
+    background-color: ${COLORS.background};
   }
 `;
 
@@ -111,19 +112,19 @@ const PageHeader = styled.div`
 
 const HeaderIcon = styled.div`
   font-size: 2.5rem;
-  color: #4a90e2;
+  color: ${COLORS.primaryBlue};
   margin-bottom: 1rem;
 `;
 
 const HeaderTitle = styled.h1`
   font-size: 2.5rem;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
   margin-bottom: 0.5rem;
 `;
 
 const HeaderSubtitle = styled.p`
   font-size: 1.125rem;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
 `;
 
 // Loading styles
@@ -136,8 +137,8 @@ const LoadingContainer = styled.div`
 `;
 
 const LoadingSpinner = styled.div`
-  border: 4px solid #333333;
-  border-top: 4px solid #ff7e5f;
+  border: 4px solid ${COLORS.border};
+  border-top: 4px solid ${COLORS.primaryPurple};
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -156,7 +157,7 @@ const LoadingSpinner = styled.div`
 
 const LoadingText = styled.div`
   font-size: 1.125rem;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
 `;
 
 // Error styles
@@ -170,8 +171,8 @@ const ErrorContainer = styled.div`
 `;
 
 const ErrorMessage = styled.div`
-  background-color: rgba(248, 215, 218, 0.2);
-  color: #ff6b6b;
+  background-color: rgba(244, 67, 54, 0.1);
+  color: ${COLORS.error};
   padding: 1rem 2rem;
   border-radius: 4px;
   margin-bottom: 2rem;
@@ -179,8 +180,8 @@ const ErrorMessage = styled.div`
 `;
 
 const BackButton = styled.button`
-  background-color: #333333;
-  color: white;
+  background-color: ${COLORS.elevatedBackground};
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 4px;
   padding: 0.75rem 1.5rem;
@@ -189,7 +190,7 @@ const BackButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #444444;
+    background-color: ${COLORS.buttonHover};
   }
 `;
 
