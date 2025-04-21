@@ -136,10 +136,14 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
     return () => {
       mountedRef.current = false;
 
-      // Revoke object URLs to prevent memory leaks
+      // Safely revoke object URLs
       mediaPreviews.forEach((media) => {
         if (media.preview) {
-          URL.revokeObjectURL(media.preview);
+          try {
+            URL.revokeObjectURL(media.preview);
+          } catch (err) {
+            console.error("Failed to revoke object URL:", err);
+          }
         }
       });
     };
@@ -216,6 +220,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                 ? {
                     ...p,
                     uploading: false,
+                    error: false, // Explicitly mark as not an error
                     mediaUrl: result.mediaUrl,
                     cloudinaryId: result.cloudinaryId,
                     mediaType: result.mediaType,
@@ -636,7 +641,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
         media.uploading ? { ...media, uploading: false, error: true } : media
       )
     );
-    toast.info("Reset stuck uploads");
+    toast.success("Upload state reset. You can now continue.");
   };
 
   // Render step content
@@ -730,15 +735,20 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                       <PreviewImage
                         src={
                           getCurrentMedia()?.mediaUrl ||
-                          getCurrentMedia()?.preview
+                          (getCurrentMedia()?.preview &&
+                          !getCurrentMedia()?.error
+                            ? getCurrentMedia()?.preview
+                            : pandaImg)
                         }
                         className={getCurrentMedia()?.filter || ""}
                         alt="Media preview"
                         onError={(e) => {
                           console.error("Image loading error", e);
-                          e.target.onerror = null;
+                          // Prevent infinite error loops
+                          e.target.onError = null;
+                          // Use a fallback image instead of trying to load the blob URL again
                           e.target.src = pandaImg;
-                          toast.error("Error loading image preview");
+                          // Don't show an error toast as it might be annoying with multiple failures
                         }}
                       />
                     )}
@@ -1237,6 +1247,7 @@ const PreviewImage = styled.img`
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  background-color: #333; /* Add a background color to show when image fails */
 
   &.filter-warm {
     filter: saturate(1.5) sepia(0.2) contrast(1.1);
