@@ -1,4 +1,4 @@
-export const uploadToCloudinary = async (file, onProgress) => {
+export const uploadToCloudinary = async (file, onProgress, cancelToken) => {
   return new Promise((resolve, reject) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -6,6 +6,14 @@ export const uploadToCloudinary = async (file, onProgress) => {
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "https://api.cloudinary.com/v1_1/ds5rxplmr/auto/upload");
+
+    // Add cancel token support if provided
+    if (cancelToken) {
+      cancelToken.promise.then(() => {
+        xhr.abort();
+        reject(new Error("Upload cancelled"));
+      });
+    }
 
     xhr.upload.addEventListener("progress", (event) => {
       if (event.lengthComputable && onProgress) {
@@ -17,14 +25,14 @@ export const uploadToCloudinary = async (file, onProgress) => {
     xhr.onload = () => {
       try {
         const res = JSON.parse(xhr.responseText || "{}");
-
         if (xhr.status === 200 && res.secure_url) {
-          resolve({
+          const result = {
             mediaUrl: res.secure_url,
             cloudinaryId: res.public_id,
             mediaType: file.type.startsWith("video") ? "video" : "image",
-          });
+          };
           console.log("✅ Upload successful:", res.secure_url);
+          resolve(result);
         } else {
           const errorMsg =
             res.error?.message || `Upload failed (status ${xhr.status})`;

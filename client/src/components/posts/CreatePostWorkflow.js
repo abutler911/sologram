@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useMemo,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useDropzone } from "react-dropzone";
@@ -90,15 +96,18 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
   const navigate = useNavigate();
 
   // Check if we have any pending uploads
-  const hasPendingUploads = mediaPreviews.some(
-    (media) => media.uploading || !media.mediaUrl
-  );
+  const hasPendingUploads = useMemo(() => {
+    return mediaPreviews.some((media) => media.uploading || !media.mediaUrl);
+  }, [mediaPreviews]);
 
   // Calculate the total number of media items
   const totalMediaCount = existingMedia.length + mediaPreviews.length;
 
   // Reset component on unmount to prevent memory leaks
   useEffect(() => {
+    console.log("MediaPreviews changed:", mediaPreviews);
+    console.log("Uploading status:", uploading);
+    console.log("hasPendingUploads:", hasPendingUploads);
     return () => {
       mountedRef.current = false;
       // Cancel any ongoing uploads when component unmounts
@@ -183,7 +192,8 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
 
             if (!mountedRef.current) return;
 
-            resolve({ success: true, id, uploaded }); // ✅ critical fix: pass uploaded
+            // Important: resolve with both success flag and uploaded data
+            resolve({ success: true, id, uploaded });
           } catch (err) {
             if (!axios.isCancel(err)) {
               console.error("❌ Upload failed:", err.message);
@@ -204,7 +214,7 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
       try {
         const uploadResults = await Promise.all(newUploads);
 
-        // ✅ Merge upload data into mediaPreviews once
+        // Critical fix: properly update mediaPreviews with upload results
         setMediaPreviews((prev) => {
           const updated = prev.map((preview) => {
             const result = uploadResults.find((res) => res.id === preview.id);
@@ -770,6 +780,9 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
                         <ProgressText>
                           Uploading... {getCurrentMedia()?.progress || 0}%
                         </ProgressText>
+                        <ProgressBar
+                          progress={getCurrentMedia()?.progress || 0}
+                        />
                       </ProgressOverlay>
                     )}
 
@@ -1057,10 +1070,10 @@ const CreatePostWorkflow = ({ initialData = null, isEditing = false }) => {
           </BackButton>
         )}
 
-        {currentStep === 1 && !isMediaStepEmpty && (
+        {currentStep === 1 && totalMediaCount > 0 && (
           <NextButton
             onClick={() => setCurrentStep(2)}
-            disabled={uploading}
+            disabled={uploading || hasPendingUploads}
             aria-label="Continue to next step"
           >
             <span>Next</span>
@@ -1912,6 +1925,24 @@ const ProgressOverlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 2;
+`;
+
+const ProgressBar = styled.div`
+  width: 80%;
+  height: 12px;
+  background-color: #333;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    display: block;
+    height: 100%;
+    width: ${(props) => `${props.progress}%`};
+    background-color: #ff7e5f;
+    transition: width 0.3s ease;
+  }
 `;
 
 const ProgressText = styled.div`
