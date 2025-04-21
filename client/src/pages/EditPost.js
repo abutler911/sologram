@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { FaEdit } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import CreatePostWorkflow from "../components/posts/CreatePostWorkflow";
+import PostCreator from "../components/posts/PostCreator";
 
 const EditPost = () => {
   const { id } = useParams();
@@ -75,7 +75,7 @@ const EditPost = () => {
           <HeaderSubtitle>Update and refine your content</HeaderSubtitle>
         </PageHeader>
 
-        <CreatePostWorkflow initialData={post} isEditing={true} />
+        <PostCreator initialData={post} isEditing={true} />
       </Container>
     </PageWrapper>
   );

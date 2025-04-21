@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import styled from "styled-components";
 import { FaCamera } from "react-icons/fa";
-import CreatePostWorkflow from "../components/posts/CreatePostWorkflow";
+import PostCreator from "../components/posts/PostCreator";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -32,8 +32,7 @@ const CreatePost = () => {
           <HeaderTitle>Create New Post</HeaderTitle>
           <HeaderSubtitle>Share your moments with your audience</HeaderSubtitle>
         </PageHeader>
-
-        <CreatePostWorkflow />
+        <PostCreator />
       </Container>
     </PageWrapper>
   );
@@ -44,7 +43,6 @@ const PageWrapper = styled.div`
   background-color: #121212;
   min-height: 100vh;
   padding: 2rem 0;
-
   @media (max-width: 768px) {
     padding: 0;
     background-color: #121212;
@@ -56,7 +54,6 @@ const Container = styled.div`
   max-width: 1000px;
   margin: 0 auto;
   padding: 0 2rem;
-
   @media (max-width: 768px) {
     padding: 0;
   }
