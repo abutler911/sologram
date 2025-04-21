@@ -87,20 +87,27 @@ function PostCreator({ initialData = null, isEditing = false }) {
   // Load existing media when editing
   useEffect(() => {
     if (isEditing && initialData?.media?.length > 0) {
-      const existingMedia = initialData.media.map((item) => ({
-        id:
-          item._id ||
-          `existing_${Date.now()}_${Math.random()
-            .toString(36)
-            .substring(2, 8)}`,
-        mediaUrl: item.mediaUrl,
-        cloudinaryId: item.cloudinaryId,
-        mediaType: item.mediaType,
-        filter: item.filter || "none",
-        isExisting: true,
-        uploading: false,
-        error: false,
-      }));
+      const existingMedia = initialData.media.map((item) => {
+        const filter = item.filter || "none";
+        const filterClass =
+          filters.find((f) => f.id === filter)?.className || "";
+
+        return {
+          id:
+            item._id ||
+            `existing_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 8)}`,
+          mediaUrl: item.mediaUrl,
+          cloudinaryId: item.cloudinaryId,
+          mediaType: item.mediaType,
+          filter: filter,
+          filterClass: filterClass,
+          isExisting: true,
+          uploading: false,
+          error: false,
+        };
+      });
 
       setMedia(existingMedia);
     }
@@ -146,6 +153,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
           previewUrl: objectUrl,
           type: isVideo ? "video" : "image",
           filter: "none",
+          filterClass: "", // Initialize with empty filter class
           uploading: true,
           progress: 0,
           error: false,
@@ -169,6 +177,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
                       ...item,
                       mediaUrl: result.mediaUrl,
                       cloudinaryId: result.cloudinaryId,
+                      mediaType: result.mediaType,
                       uploading: false,
                     }
                   : item
@@ -211,9 +220,73 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const handleCameraCapture = async (event) => {
     const file = event.target.files?.[0];
     if (file) {
-      await onDrop([file]);
-      // Reset the input so the same file can be selected again
-      event.target.value = "";
+      const id = `camera_${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(2, 8)}`;
+      const isVideo = file.type.startsWith("video/");
+
+      try {
+        const objectUrl = URL.createObjectURL(file);
+
+        // Add to media with uploading status
+        setMedia((current) => [
+          ...current,
+          {
+            id,
+            file,
+            previewUrl: objectUrl,
+            type: isVideo ? "video" : "image",
+            filter: "none",
+            filterClass: "",
+            uploading: true,
+            progress: 0,
+            error: false,
+          },
+        ]);
+
+        // Start upload
+        const onProgress = (percent) => {
+          if (!mountedRef.current) return;
+          setMedia((prev) =>
+            prev.map((p) => (p.id === id ? { ...p, progress: percent } : p))
+          );
+        };
+
+        const result = await uploadFile(file, onProgress);
+
+        if (!mountedRef.current) return;
+
+        // Update state with success
+        setMedia((prev) =>
+          prev.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  uploading: false,
+                  mediaUrl: result.mediaUrl,
+                  cloudinaryId: result.cloudinaryId,
+                  mediaType: result.mediaType,
+                }
+              : p
+          )
+        );
+
+        toast.success("Upload complete");
+      } catch (error) {
+        console.error("Camera upload error:", error);
+
+        if (mountedRef.current) {
+          setMedia((prev) =>
+            prev.map((p) =>
+              p.id === id ? { ...p, uploading: false, error: true } : p
+            )
+          );
+          toast.error("Upload failed");
+        }
+      } finally {
+        // Reset input so camera can be triggered again
+        if (event.target) event.target.value = "";
+      }
     }
   };
 
@@ -230,14 +303,18 @@ function PostCreator({ initialData = null, isEditing = false }) {
     }
   };
 
-  // Apply filter to current media
   const applyFilter = (filterId) => {
     setActiveFilter(filterId);
+
+    // Find the class name associated with this filter ID
+    const filterClass = filters.find((f) => f.id === filterId)?.className || "";
 
     // Update the filter on the current media item
     setMedia((currentMedia) =>
       currentMedia.map((item, index) =>
-        index === currentIndex ? { ...item, filter: filterId } : item
+        index === currentIndex
+          ? { ...item, filter: filterId, filterClass }
+          : item
       )
     );
   };
@@ -284,13 +361,14 @@ function PostCreator({ initialData = null, isEditing = false }) {
         .map((item) => ({
           mediaUrl: item.mediaUrl,
           cloudinaryId: item.cloudinaryId,
-          mediaType: item.mediaType || item.type,
-          filter: item.filter,
+          mediaType: item.type || item.mediaType,
+          filter: item.filter || "none", // Ensure filter is always set
         }));
 
       // Create the payload
       const payload = {
         caption,
+        content: "", // Add empty content for PostCard
         tags: tags, // Send as string to let server handle splitting
         media: mediaItems,
       };
@@ -409,15 +487,18 @@ function PostCreator({ initialData = null, isEditing = false }) {
           ) : (
             <MediaPreview>
               <PreviewContainer>
-                {media[currentIndex].type === "video" ? (
+                {media[currentIndex].type === "video" ||
+                media[currentIndex].mediaType === "video" ? (
                   <VideoPreview
                     src={
                       media[currentIndex].mediaUrl ||
                       media[currentIndex].previewUrl
                     }
                     className={
+                      media[currentIndex].filterClass ||
                       filters.find((f) => f.id === media[currentIndex].filter)
-                        ?.className || ""
+                        ?.className ||
+                      ""
                     }
                     controls
                     onError={(e) => {
@@ -431,8 +512,10 @@ function PostCreator({ initialData = null, isEditing = false }) {
                       media[currentIndex].previewUrl
                     }
                     className={
+                      media[currentIndex].filterClass ||
                       filters.find((f) => f.id === media[currentIndex].filter)
-                        ?.className || ""
+                        ?.className ||
+                      ""
                     }
                     alt="Preview"
                     onError={(e) => {
@@ -591,15 +674,18 @@ function PostCreator({ initialData = null, isEditing = false }) {
           <MediaPreview small>
             <h3>Preview</h3>
             <PreviewContainer>
-              {media[currentIndex].type === "video" ? (
+              {media[currentIndex].type === "video" ||
+              media[currentIndex].mediaType === "video" ? (
                 <VideoPreview
                   src={
                     media[currentIndex].mediaUrl ||
                     media[currentIndex].previewUrl
                   }
                   className={
+                    media[currentIndex].filterClass ||
                     filters.find((f) => f.id === media[currentIndex].filter)
-                      ?.className || ""
+                      ?.className ||
+                    ""
                   }
                   controls
                   onError={(e) => {
@@ -613,8 +699,10 @@ function PostCreator({ initialData = null, isEditing = false }) {
                     media[currentIndex].previewUrl
                   }
                   className={
+                    media[currentIndex].filterClass ||
                     filters.find((f) => f.id === media[currentIndex].filter)
-                      ?.className || ""
+                      ?.className ||
+                    ""
                   }
                   alt="Preview"
                   onError={(e) => {
