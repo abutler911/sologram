@@ -1,18 +1,25 @@
-import React, { useState, useContext, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useContext,
+  useRef,
+  useEffect,
+  useCallback,
+  memo,
+  Suspense,
+  lazy,
+} from "react";
 import { Link } from "react-router-dom";
 import styled, { keyframes, css } from "styled-components";
-import {
-  FaHeart,
-  FaRegHeart,
-  FaEllipsisH,
-  FaChevronLeft,
-  FaChevronRight,
-  FaEdit,
-  FaTrash,
-  FaCalendarAlt,
-} from "react-icons/fa";
+// Import individual icons instead of the whole library
+import FaHeart from "@react-icons/all-files/fa/FaHeart";
+import FaRegHeart from "@react-icons/all-files/fa/FaRegHeart";
+import FaEllipsisH from "@react-icons/all-files/fa/FaEllipsisH";
+import FaChevronLeft from "@react-icons/all-files/fa/FaChevronLeft";
+import FaChevronRight from "@react-icons/all-files/fa/FaChevronRight";
+import FaEdit from "@react-icons/all-files/fa/FaEdit";
+import FaTrash from "@react-icons/all-files/fa/FaTrash";
+import FaCalendarAlt from "@react-icons/all-files/fa/FaCalendarAlt";
 import { format } from "date-fns";
-import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../../context/AuthContext";
@@ -47,31 +54,28 @@ const scaleIn = keyframes`
   }
 `;
 
-// Add a pulse animation for mobile interactions
+// Simplified pulse animation for mobile interactions
 const pulse = keyframes`
   0% {
     transform: scale(1);
-    opacity: 1;
   }
   50% {
     transform: scale(1.05);
-    opacity: 0.9;
   }
   100% {
     transform: scale(1);
-    opacity: 1;
   }
 `;
 
-// Add a slide-in animation for card appearance
+// Simplified slide-in animation for card appearance
 const slideIn = keyframes`
   0% {
-    transform: translateY(30px);
     opacity: 0;
+    transform: translateY(20px);
   }
   100% {
-    transform: translateY(0);
     opacity: 1;
+    transform: translateY(0);
   }
 `;
 
@@ -86,33 +90,20 @@ const fontFaceStyles = css`
   }
 `;
 
-const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
+// Create a lazy-loaded FullscreenModal component
+const FullscreenModalLazy = lazy(() =>
+  Promise.resolve({
+    default: ({ onClick, children }) => (
+      <FullscreenModal onClick={onClick}>{children}</FullscreenModal>
+    ),
+  })
+);
+
+// Main component wrapped with memo to reduce re-renders
+const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   // Add a ref for the intersection observer
   const cardRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
-
-  // Set up intersection observer for animation on scroll
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.unobserve(entry.target);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
-
-    return () => {
-      if (cardRef.current) {
-        observer.unobserve(cardRef.current);
-      }
-    };
-  }, []);
   const [post, setPost] = useState(initialPost);
   const { isAuthenticated } = useContext(AuthContext);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
@@ -134,6 +125,31 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
   // Format date as MMM d, yyyy (e.g., "Mar 15, 2025")
   const formattedDate = format(new Date(post.createdAt), "MMM d, yyyy");
 
+  // Optimize intersection observer for better performance
+  useEffect(() => {
+    const options = {
+      threshold: 0.1,
+      rootMargin: "100px 0px", // Start loading earlier
+    };
+
+    const handleIntersection = (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(handleIntersection, options);
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   // Close the actions menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -148,18 +164,22 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
     };
   }, []);
 
-  const handleTouchStart = (e) => {
-    setIsPressing(true);
+  // Memoize handlers with useCallback
+  const handleTouchStart = useCallback(
+    (e) => {
+      setIsPressing(true);
 
-    longPressTimeoutRef.current = setTimeout(() => {
-      setIsLongPressing(true);
-      setShowFullscreen(true);
-      // Store the current index when opening fullscreen
-      setFullscreenIndex(currentMediaIndex);
-    }, 500);
-  };
+      longPressTimeoutRef.current = setTimeout(() => {
+        setIsLongPressing(true);
+        setShowFullscreen(true);
+        // Store the current index when opening fullscreen
+        setFullscreenIndex(currentMediaIndex);
+      }, 500);
+    },
+    [currentMediaIndex]
+  );
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = useCallback(() => {
     setIsPressing(false);
 
     if (longPressTimeoutRef.current) {
@@ -167,16 +187,16 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
       longPressTimeoutRef.current = null;
     }
     setIsLongPressing(false);
-  };
+  }, []);
 
-  const handleTouchMove = () => {
+  const handleTouchMove = useCallback(() => {
     // Cancel long press if user moves finger
     if (longPressTimeoutRef.current) {
       clearTimeout(longPressTimeoutRef.current);
       longPressTimeoutRef.current = null;
     }
     setIsPressing(false);
-  };
+  }, []);
 
   const fullscreenSwipeHandlers = useSwipeable({
     onSwipedLeft: () => {
@@ -194,44 +214,43 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
     trackTouch: true,
   });
 
-  const handleFullscreenDoubleTap = () => {
+  const handleFullscreenDoubleTap = useCallback(() => {
     setIsZoomed(!isZoomed);
-  };
+  }, [isZoomed]);
 
-  const closeFullscreen = () => {
+  const closeFullscreen = useCallback(() => {
     setShowFullscreen(false);
     setIsZoomed(false);
-  };
+  }, []);
 
-  const handleLike = async () => {
+  // Replace axios with native fetch
+  const handleLike = useCallback(async () => {
     // Prevent multiple clicks or if already liked
     if (isLiking || hasLiked) return;
 
     setIsLiking(true);
 
     try {
-      const response = await axios.put(`/api/posts/${post._id}/like`);
-      if (response.data.success) {
-        setPost({ ...post, likes: post.likes + 1 });
+      const response = await fetch(`/api/posts/${post._id}/like`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setPost((prevPost) => ({ ...prevPost, likes: prevPost.likes + 1 }));
         setHasLiked(true);
       }
     } catch (err) {
       console.error("Error liking post:", err);
-
-      if (
-        err.response?.status === 400 &&
-        err.response?.data?.message?.includes("already liked")
-      ) {
-        setHasLiked(true);
-        toast.error(err.response.data.message);
-      } else {
-        toast.error("Failed to like post");
-        setTimeout(() => setIsLiking(false), 2000);
-      }
+      toast.error("Failed to like post");
+      setTimeout(() => setIsLiking(false), 2000);
     }
-  };
+  }, [post._id, isLiking, hasLiked]);
 
-  const handleDoubleTapLike = () => {
+  const handleDoubleTapLike = useCallback(() => {
     if (!hasLiked && !isLiking) {
       setIsDoubleTapLiking(true);
       handleLike();
@@ -241,85 +260,94 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
         setIsDoubleTapLiking(false);
       }, 1000);
     }
-  };
+  }, [hasLiked, isLiking, handleLike]);
 
-  const confirmDelete = () => {
+  const confirmDelete = useCallback(() => {
     setShowDeleteModal(true);
     setShowActions(false);
-  };
+  }, []);
 
-  const cancelDelete = () => {
+  const cancelDelete = useCallback(() => {
     setShowDeleteModal(false);
-  };
+  }, []);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     try {
-      await axios.delete(`/api/posts/${post._id}`, {
+      const response = await fetch(`/api/posts/${post._id}`, {
+        method: "DELETE",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
         },
       });
 
-      if (typeof onDelete === "function") {
-        onDelete(post._id);
+      if (response.ok) {
+        if (typeof onDelete === "function") {
+          onDelete(post._id);
+        } else {
+          console.warn("onDelete is not a function. Check parent component.");
+        }
+        setShowDeleteModal(false);
+        toast.success("Post deleted successfully");
       } else {
-        console.warn("onDelete is not a function. Check parent component.");
+        throw new Error("Delete failed");
       }
-
-      setShowDeleteModal(false);
-      toast.success("Post deleted successfully");
     } catch (err) {
       console.error("Error deleting post:", err);
-
-      if (err.response) {
-        toast.error(err.response.data.message || "Failed to delete post");
-      } else {
-        toast.error("Failed to delete post");
-      }
-
+      toast.error("Failed to delete post");
       setShowDeleteModal(false);
     }
-  };
+  }, [post._id, onDelete]);
 
-  const handleNext = (e) => {
-    if (e) e.preventDefault();
-    if (currentMediaIndex < post.media.length - 1) {
-      setCurrentMediaIndex(currentMediaIndex + 1);
-    }
-  };
+  const handleNext = useCallback(
+    (e) => {
+      if (e) e.preventDefault();
+      if (currentMediaIndex < post.media.length - 1) {
+        setCurrentMediaIndex((prev) => prev + 1);
+      }
+    },
+    [currentMediaIndex, post.media.length]
+  );
 
-  const handlePrev = (e) => {
-    if (e) e.preventDefault();
-    if (currentMediaIndex > 0) {
-      setCurrentMediaIndex(currentMediaIndex - 1);
-    }
-  };
+  const handlePrev = useCallback(
+    (e) => {
+      if (e) e.preventDefault();
+      if (currentMediaIndex > 0) {
+        setCurrentMediaIndex((prev) => prev - 1);
+      }
+    },
+    [currentMediaIndex]
+  );
 
   // Configure swipe handlers
   const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => handleNext(),
-    onSwipedRight: () => handlePrev(),
+    onSwipedLeft: handleNext,
+    onSwipedRight: handlePrev,
     preventDefaultTouchmoveEvent: true,
     trackMouse: true,
     trackTouch: true,
   });
 
-  const handleMediaClick = (e) => {
-    if (isLongPressing) {
-      // Don't navigate if it was a long press
-      e.preventDefault();
-      return;
-    }
+  const handleMediaClick = useCallback(
+    (e) => {
+      if (isLongPressing) {
+        // Don't navigate if it was a long press
+        e.preventDefault();
+        return;
+      }
 
-    if (hasMultipleMedia) {
-      e.preventDefault();
-    }
-  };
+      if (hasMultipleMedia) {
+        e.preventDefault();
+      }
+    },
+    [isLongPressing, hasMultipleMedia]
+  );
 
-  // Check if it's a mobile device
+  // Check if it's a mobile device - moved outside component body
   const isMobile =
-    window.innerWidth <= 768 ||
-    window.matchMedia("(display-mode: standalone)").matches;
+    typeof window !== "undefined" &&
+    (window.innerWidth <= 768 ||
+      window.matchMedia("(display-mode: standalone)").matches);
 
   return (
     <CardWrapper
@@ -328,18 +356,26 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
       style={{
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? "translateY(0)" : "translateY(20px)",
-        transition: "opacity 0.5s ease, transform 0.5s ease",
       }}
     >
       <Card>
         <CardHeader>
           <UserInfo>
-            <UserAvatarImage src={AUTHOR_IMAGE} alt="Andrew's avatar" />
+            <UserAvatarImage
+              src={AUTHOR_IMAGE}
+              alt="Andrew's avatar"
+              width="44"
+              height="44"
+              loading="eager"
+            />
             <Username className="paradise-font">{AUTHOR_NAME}</Username>
           </UserInfo>
           {isAuthenticated && (
             <ActionsContainer ref={actionsRef}>
-              <ActionsButton onClick={() => setShowActions(!showActions)}>
+              <ActionsButton
+                onClick={() => setShowActions(!showActions)}
+                aria-label="Post options"
+              >
                 <FaEllipsisH />
               </ActionsButton>
               {showActions && (
@@ -368,11 +404,7 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
             isPressing={isPressing}
           >
             <MediaCarousel {...swipeHandlers}>
-              <MediaTrack
-                style={{
-                  transform: `translateX(-${currentMediaIndex * 100}%)`,
-                }}
-              >
+              <MediaTrack currentIndex={currentMediaIndex}>
                 {post.media.map((media, index) => (
                   <MediaItem key={index}>
                     {media.mediaType === "image" ? (
@@ -382,10 +414,27 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
                           height: 614,
                           crop: "thumb",
                           quality: "auto",
-                          format: "auto",
+                          format: "webp", // Use WebP for better compression
                           gravity: "auto",
                         })}
-                        alt={post.caption}
+                        srcSet={`
+                          ${getTransformedImageUrl(media.mediaUrl, {
+                            width: 307,
+                            height: 307,
+                            crop: "thumb",
+                            quality: "auto",
+                            format: "webp",
+                          })} 307w,
+                          ${getTransformedImageUrl(media.mediaUrl, {
+                            width: 614,
+                            height: 614,
+                            crop: "thumb",
+                            quality: "auto",
+                            format: "webp",
+                          })} 614w
+                        `}
+                        sizes="(max-width: 768px) 100vw, 614px"
+                        alt={post.caption || "Post image"}
                         width="614"
                         height="614"
                         loading={
@@ -407,6 +456,7 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
                         controls
                         preload="metadata"
                         className={media.filter}
+                        aria-label={post.caption || "Post video"}
                       />
                     )}
                   </MediaItem>
@@ -497,31 +547,43 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
         </CardContent>
       </Card>
 
-      {/* Fullscreen image modal */}
+      {/* Fullscreen image modal - lazy loaded */}
       {showFullscreen && (
-        <FullscreenModal onClick={closeFullscreen}>
-          <FullscreenWrapper
-            {...fullscreenSwipeHandlers}
-            onDoubleClick={handleFullscreenDoubleTap}
-          >
-            <FullscreenImage
-              src={post.media[fullscreenIndex].mediaUrl}
-              alt={post.caption || "Fullscreen view"}
-              style={{
-                transform: isZoomed ? "scale(2)" : "scale(1)",
-                transition: "transform 0.3s ease",
-              }}
-            />
-            {post.media.length > 1 && (
-              <FullscreenIndicator>
-                {fullscreenIndex + 1} / {post.media.length}
-              </FullscreenIndicator>
-            )}
-          </FullscreenWrapper>
-          <CloseFullscreenButton onClick={closeFullscreen}>
-            ×
-          </CloseFullscreenButton>
-        </FullscreenModal>
+        <Suspense fallback={<div>Loading...</div>}>
+          <FullscreenModalLazy onClick={closeFullscreen}>
+            <FullscreenWrapper
+              {...fullscreenSwipeHandlers}
+              onDoubleClick={handleFullscreenDoubleTap}
+            >
+              <FullscreenImage
+                src={getTransformedImageUrl(
+                  post.media[fullscreenIndex].mediaUrl,
+                  {
+                    quality: "auto",
+                    format: "webp",
+                  }
+                )}
+                alt={post.caption || "Fullscreen view"}
+                style={{
+                  transform: isZoomed ? "scale(2)" : "scale(1)",
+                  transition: "transform 0.3s ease",
+                }}
+                loading="eager"
+              />
+              {post.media.length > 1 && (
+                <FullscreenIndicator>
+                  {fullscreenIndex + 1} / {post.media.length}
+                </FullscreenIndicator>
+              )}
+            </FullscreenWrapper>
+            <CloseFullscreenButton
+              onClick={closeFullscreen}
+              aria-label="Close fullscreen view"
+            >
+              ×
+            </CloseFullscreenButton>
+          </FullscreenModalLazy>
+        </Suspense>
       )}
 
       {/* Delete confirmation modal */}
@@ -545,7 +607,7 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
       )}
     </CardWrapper>
   );
-};
+});
 
 // New wrapper component to handle mobile layout
 const CardWrapper = styled.div`
@@ -558,24 +620,20 @@ const CardWrapper = styled.div`
   padding: 10px;
   margin: 10px 0;
   background: ${COLORS.background}50;
-  transition: box-shadow 0.3s ease;
+  transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.3s ease;
+  will-change: transform, opacity;
 
   &:hover {
     box-shadow: 0 0 20px ${COLORS.primaryPurple}20;
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    justify-content: stretch;
-    width: 100vw;
-    margin: 0;
-    padding: 0;
-    border: none;
-    border-radius: 0;
-    background: transparent;
-
-    &:hover {
-      box-shadow: none;
-    }
+    justify-content: center; /* Changed from stretch to center */
+    width: calc(100% - 20px); /* Add some margin on both sides */
+    max-width: 500px; /* Control maximum width */
+    margin: 10px auto; /* Center horizontally with auto margins */
+    padding: 6px;
+    border: 1px solid ${COLORS.primaryPurple}20; /* Lighter border for mobile */
   }
 `;
 
@@ -592,6 +650,7 @@ const Card = styled.article`
   max-width: 614px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s ease, box-shadow 0.3s ease;
+  will-change: transform;
 
   &:hover {
     transform: translateY(-3px);
@@ -600,6 +659,7 @@ const Card = styled.article`
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     max-width: 100%;
+    width: 100%; /* Ensure it fills the wrapper */
     border-radius: 8px;
     margin-bottom: 16px;
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
@@ -657,6 +717,7 @@ const Username = styled.span`
   color: ${COLORS.primaryPurple};
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease, filter 0.3s ease;
+  will-change: transform, filter;
 
   &:hover {
     transform: scale(1.08);
@@ -736,6 +797,7 @@ const MediaContainer = styled(Link)`
   flex-shrink: 0;
   transition: opacity 0.2s ease, transform 0.3s ease;
   opacity: ${(props) => (props.isPressing ? 0.8 : 1)};
+  will-change: transform, opacity;
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     border-radius: 6px;
@@ -759,6 +821,8 @@ const MediaTrack = styled.div`
   height: 100%;
   width: 100%;
   transition: transform 0.3s ease;
+  will-change: transform;
+  transform: translateX(-${(props) => props.currentIndex * 100}%);
 `;
 
 const MediaItem = styled.div`
@@ -772,6 +836,8 @@ const PostImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: opacity 0.3s ease;
+  will-change: transform;
 
   &.filter-warm {
     filter: saturate(1.5) sepia(0.2) contrast(1.1);
@@ -829,6 +895,7 @@ const NavigationArrow = styled.button`
   opacity: 0;
   transition: opacity 0.2s, background-color 0.2s, transform 0.2s;
   z-index: 2;
+  will-change: transform, opacity;
 
   &:hover {
     opacity: 0.95 !important;
@@ -938,6 +1005,7 @@ const HeartAnimation = styled.div`
   opacity: 0;
   animation: ${scaleIn} 1s ease forwards;
   z-index: 3;
+  will-change: transform, opacity;
 
   svg {
     filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.6));
@@ -978,6 +1046,7 @@ const LikeButton = styled.button`
   display: flex;
   align-items: center;
   transition: transform 0.3s, color 0.3s;
+  will-change: transform;
 
   &:hover {
     transform: ${(props) =>
@@ -1046,7 +1115,15 @@ const CardContent = styled.div`
   border-top: 1px solid ${COLORS.divider}40;
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    padding: 0.8rem 1.1rem 1.2rem;
+    padding: 1rem 1.2rem 1.4rem;
+    background: linear-gradient(
+      160deg,
+      ${THEME.post.background} 0%,
+      ${COLORS.cardBackground}EE 100%
+    );
+    border-top: 1px solid ${COLORS.primaryPurple}20;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
   }
 `;
 
@@ -1059,6 +1136,7 @@ const PostTitle = styled.h2`
   word-break: break-word;
   transition: transform 0.3s ease;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  will-change: transform;
 `;
 
 const Content = styled.p`
@@ -1072,6 +1150,7 @@ const Content = styled.p`
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   transition: transform 0.2s ease;
+  will-change: transform;
 `;
 
 const TagsContainer = styled.div`
@@ -1085,6 +1164,7 @@ const Tag = styled.span`
   color: ${COLORS.accentBlue};
   font-size: 0.85rem;
   transition: color 0.2s ease, transform 0.2s ease;
+  will-change: transform;
 
   &:hover {
     color: ${COLORS.primaryBlue};
@@ -1102,6 +1182,7 @@ const ViewPostLink = styled(Link)`
   border-radius: 12px;
   transition: all 0.2s ease;
   background-color: ${COLORS.elevatedBackground}50;
+  will-change: transform;
 
   &:hover {
     text-decoration: none;
@@ -1154,6 +1235,7 @@ const DeleteModalContent = styled.div`
   text-align: center;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   border: 1px solid ${COLORS.divider};
+  will-change: transform, opacity;
 
   h3 {
     color: ${COLORS.textPrimary};
@@ -1268,6 +1350,7 @@ const UserAvatarImage = styled.img`
   border: 2px solid ${COLORS.primaryPurple};
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease, border-color 0.3s ease;
+  will-change: transform;
 
   &:hover {
     transform: scale(1.08);
@@ -1312,6 +1395,7 @@ const CloseFullscreenButton = styled.button`
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  will-change: transform;
 
   &:hover {
     background: ${COLORS.elevatedBackground};
@@ -1340,5 +1424,8 @@ const FullscreenIndicator = styled.div`
   font-size: 14px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 `;
+
+// Add display name for debugging
+PostCard.displayName = "PostCard";
 
 export default PostCard;
