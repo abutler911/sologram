@@ -33,7 +33,7 @@ const About = () => {
         <Title>{aboutData.title}</Title>
         {aboutData.profileImageUrl && (
           <ProfileImageContainer>
-            <ProfileImage src={aboutData.profileImageUrl} alt="Andrew" />
+            <ProfileImage src={aboutData.profileImageUrl} alt="Profile" />
           </ProfileImageContainer>
         )}
         <Content>

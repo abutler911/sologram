@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { FaArrowLeft, FaShieldAlt } from "react-icons/fa";
 import { sanity } from "../lib/sanityClient";
 import MainLayout from "../components/layout/MainLayout";
+import { COLORS } from "../theme"; // Import the theme colors
 
 const Privacy = () => {
   const [policy, setPolicy] = useState(null);
@@ -85,7 +86,7 @@ const Privacy = () => {
 
 // Full-width page wrapper that fills the viewport
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   width: 100%;
   display: flex;
@@ -97,7 +98,7 @@ const Container = styled.div`
   width: 100%;
   max-width: 1000px; /* Increased from 800px for wider content */
   padding: 2rem;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
   box-sizing: border-box;
 
   @media (max-width: 1024px) {
@@ -124,13 +125,13 @@ const Container = styled.div`
 const BackLink = styled(Link)`
   display: inline-flex;
   align-items: center;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   text-decoration: none;
   margin-bottom: 1.5rem;
   transition: color 0.3s;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.primaryPurple};
   }
 
   svg {
@@ -139,10 +140,10 @@ const BackLink = styled(Link)`
 `;
 
 const ContentCard = styled.div`
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
   padding: 2rem;
-  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 10px ${COLORS.shadow};
 
   @media (max-width: 768px) {
     padding: 1.5rem;
@@ -165,7 +166,7 @@ const PageHeader = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 1rem;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid ${COLORS.divider};
   padding-bottom: 1rem;
 `;
 
@@ -173,8 +174,8 @@ const LogoIcon = styled.div`
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
-  background-color: #ff7e5f;
-  color: white;
+  background-color: ${COLORS.primaryPurple};
+  color: ${COLORS.textPrimary};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -191,7 +192,7 @@ const LogoIcon = styled.div`
 
 const PageTitle = styled.h1`
   font-size: 1.75rem;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
   margin: 0;
 
   @media (max-width: 480px) {
@@ -200,11 +201,11 @@ const PageTitle = styled.h1`
 `;
 
 const LastUpdated = styled.p`
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   font-style: italic;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid ${COLORS.divider};
 `;
 
 const Section = styled.section`
@@ -213,19 +214,19 @@ const Section = styled.section`
 
 const SectionTitle = styled.h2`
   font-size: 1.25rem;
-  color: #ff7e5f;
+  color: ${COLORS.primaryBlue};
   margin: 0 0 1rem 0;
 `;
 
 const Paragraph = styled.p`
-  color: #bbbbbb;
+  color: ${COLORS.textSecondary};
   margin-bottom: 1rem;
   line-height: 1.6;
 `;
 
 const List = styled.ul`
   margin: 0 0 1rem 1.5rem;
-  color: #bbbbbb;
+  color: ${COLORS.textSecondary};
 `;
 
 const ListItem = styled.li`
