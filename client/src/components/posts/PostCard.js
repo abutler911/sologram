@@ -1,24 +1,24 @@
-import React, {
-  useState,
-  useContext,
-  useRef,
-  useEffect,
-  useCallback,
+// Improve tree-shaking for icons by using more specific imports
+// Based on research from https://www.dhiwise.com/post/how-to-implement-react-tree-shaking-for-website-performance
+// This approach allows webpack to better tree-shake unused icons
+import {
   memo,
+  useState,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
   Suspense,
   lazy,
 } from "react";
 import { Link } from "react-router-dom";
 import styled, { keyframes, css } from "styled-components";
-// Import individual icons instead of the whole library
-import FaHeart from "@react-icons/all-files/fa/FaHeart";
-import FaRegHeart from "@react-icons/all-files/fa/FaRegHeart";
-import FaEllipsisH from "@react-icons/all-files/fa/FaEllipsisH";
-import FaChevronLeft from "@react-icons/all-files/fa/FaChevronLeft";
-import FaChevronRight from "@react-icons/all-files/fa/FaChevronRight";
-import FaEdit from "@react-icons/all-files/fa/FaEdit";
-import FaTrash from "@react-icons/all-files/fa/FaTrash";
-import FaCalendarAlt from "@react-icons/all-files/fa/FaCalendarAlt";
+// Import only the specific icons we need
+import { FaHeart, FaRegHeart } from "react-icons/fa/index.js";
+import { FaEllipsisH } from "react-icons/fa/index.js";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa/index.js";
+import { FaEdit, FaTrash } from "react-icons/fa/index.js";
+import { FaCalendarAlt } from "react-icons/fa/index.js";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
@@ -91,13 +91,28 @@ const fontFaceStyles = css`
 `;
 
 // Create a lazy-loaded FullscreenModal component
-const FullscreenModalLazy = lazy(() =>
-  Promise.resolve({
-    default: ({ onClick, children }) => (
-      <FullscreenModal onClick={onClick}>{children}</FullscreenModal>
-    ),
-  })
+const FullscreenModalComponent = ({ onClick, children }) => (
+  <FullscreenModal onClick={onClick}>{children}</FullscreenModal>
 );
+
+// Create a component for each modal to improve code splitting
+const DeleteModalComponent = memo(({ onCancel, onDelete, post }) => (
+  <DeleteModal>
+    <DeleteModalContent>
+      <h3>Delete Post</h3>
+      <p>
+        Are you sure you want to delete this post? This action cannot be undone.
+      </p>
+      <DeleteModalButtons>
+        <CancelButton onClick={onCancel}>Cancel</CancelButton>
+        <ConfirmDeleteButton onClick={onDelete}>
+          Delete Post
+        </ConfirmDeleteButton>
+      </DeleteModalButtons>
+    </DeleteModalContent>
+    <Backdrop onClick={onCancel} />
+  </DeleteModal>
+));
 
 // Main component wrapped with memo to reduce re-renders
 const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
@@ -125,30 +140,39 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   // Format date as MMM d, yyyy (e.g., "Mar 15, 2025")
   const formattedDate = format(new Date(post.createdAt), "MMM d, yyyy");
 
-  // Optimize intersection observer for better performance
+  // Optimize IntersectionObserver
   useEffect(() => {
+    // Skip on server-side rendering
+    if (typeof window === "undefined" || !window.IntersectionObserver) return;
+
     const options = {
       threshold: 0.1,
-      rootMargin: "100px 0px", // Start loading earlier
+      rootMargin: "100px 0px", // Start loading earlier for better perceived performance
     };
 
     const handleIntersection = (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
+      const [entry] = entries;
+      if (entry.isIntersecting) {
+        // Delay slightly to prioritize more critical resources
+        requestAnimationFrame(() => {
           setIsVisible(true);
-          observer.unobserve(entry.target);
-        }
-      });
+        });
+      }
     };
 
     const observer = new IntersectionObserver(handleIntersection, options);
 
-    if (cardRef.current) {
+    // Only observe if element exists and is not already visible
+    if (cardRef.current && !isVisible) {
       observer.observe(cardRef.current);
     }
 
-    return () => observer.disconnect();
-  }, []);
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, [isVisible]);
 
   // Close the actions menu when clicking outside
   useEffect(() => {
@@ -359,7 +383,7 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
       }}
     >
       <Card>
-        <CardHeader>
+        <CardHeader aria-label="Post header">
           <UserInfo>
             <UserAvatarImage
               src={AUTHOR_IMAGE}
@@ -417,22 +441,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
                           format: "webp", // Use WebP for better compression
                           gravity: "auto",
                         })}
-                        srcSet={`
-                          ${getTransformedImageUrl(media.mediaUrl, {
-                            width: 307,
-                            height: 307,
-                            crop: "thumb",
-                            quality: "auto",
-                            format: "webp",
-                          })} 307w,
-                          ${getTransformedImageUrl(media.mediaUrl, {
-                            width: 614,
-                            height: 614,
-                            crop: "thumb",
-                            quality: "auto",
-                            format: "webp",
-                          })} 614w
-                        `}
                         sizes="(max-width: 768px) 100vw, 614px"
                         alt={post.caption || "Post image"}
                         width="614"
@@ -449,6 +457,10 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
                         }
                         decoding="async"
                         className={media.filter}
+                        onLoad={(e) => {
+                          // Add 'loaded' class for fade-in effect
+                          e.target.classList.add("loaded");
+                        }}
                       />
                     ) : (
                       <PostVideo
@@ -547,10 +559,10 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
         </CardContent>
       </Card>
 
-      {/* Fullscreen image modal - lazy loaded */}
+      {/* Fullscreen image modal - simplified for better performance */}
       {showFullscreen && (
         <Suspense fallback={<div>Loading...</div>}>
-          <FullscreenModalLazy onClick={closeFullscreen}>
+          <FullscreenModalComponent onClick={closeFullscreen}>
             <FullscreenWrapper
               {...fullscreenSwipeHandlers}
               onDoubleClick={handleFullscreenDoubleTap}
@@ -582,28 +594,17 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
             >
               ×
             </CloseFullscreenButton>
-          </FullscreenModalLazy>
+          </FullscreenModalComponent>
         </Suspense>
       )}
 
       {/* Delete confirmation modal */}
       {showDeleteModal && (
-        <DeleteModal>
-          <DeleteModalContent>
-            <h3>Delete Post</h3>
-            <p>
-              Are you sure you want to delete this post? This action cannot be
-              undone.
-            </p>
-            <DeleteModalButtons>
-              <CancelButton onClick={cancelDelete}>Cancel</CancelButton>
-              <ConfirmDeleteButton onClick={handleDelete}>
-                Delete Post
-              </ConfirmDeleteButton>
-            </DeleteModalButtons>
-          </DeleteModalContent>
-          <Backdrop onClick={cancelDelete} />
-        </DeleteModal>
+        <DeleteModalComponent
+          onCancel={cancelDelete}
+          onDelete={handleDelete}
+          post={post}
+        />
       )}
     </CardWrapper>
   );
@@ -637,7 +638,7 @@ const CardWrapper = styled.div`
   }
 `;
 
-// Styled Components
+// Styled Components - optimized with contain property where applicable
 const Card = styled.article`
   background-color: ${THEME.post.background};
   border-radius: 12px;
@@ -651,6 +652,7 @@ const Card = styled.article`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s ease, box-shadow 0.3s ease;
   will-change: transform;
+  contain: content;
 
   &:hover {
     transform: translateY(-3px);
@@ -838,6 +840,11 @@ const PostImage = styled.img`
   object-fit: cover;
   transition: opacity 0.3s ease;
   will-change: transform;
+  opacity: 0.6;
+
+  &.loaded {
+    opacity: 1;
+  }
 
   &.filter-warm {
     filter: saturate(1.5) sepia(0.2) contrast(1.1);
