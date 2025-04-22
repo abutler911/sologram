@@ -661,10 +661,12 @@ const Card = styled.article`
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     max-width: 100%;
-    width: 100%; /* Ensure it fills the wrapper */
-    border-radius: 8px;
-    margin-bottom: 16px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+    width: 100vw; /* Full viewport width */
+    border-radius: 0; /* No border radius on mobile */
+    margin-bottom: 0; /* Remove bottom margin */
+    border-left: none; /* Remove left border */
+    border-right: none; /* Remove right border */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     background: linear-gradient(
       160deg,
       ${THEME.post.background} 0%,
@@ -687,15 +689,14 @@ const CardHeader = styled.header`
   background-color: ${THEME.post.header};
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    padding: 16px 18px;
+    padding: 16px;
     background: linear-gradient(
       90deg,
       ${THEME.post.header} 0%,
       ${COLORS.primaryPurple}20 50%,
       ${THEME.post.header} 100%
     );
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
+    border-radius: 0;
     border-bottom: 1px solid ${COLORS.primaryPurple}30;
   }
 `;
@@ -802,8 +803,9 @@ const MediaContainer = styled(Link)`
   will-change: transform, opacity;
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    border-radius: 0;
+    box-shadow: none;
+    width: 100%;
 
     &:active {
       transform: scale(0.98);
@@ -1122,15 +1124,14 @@ const CardContent = styled.div`
   border-top: 1px solid ${COLORS.divider}40;
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    padding: 1rem 1.2rem 1.4rem;
+    padding: 1rem 1rem 1.2rem;
     background: linear-gradient(
       160deg,
       ${THEME.post.background} 0%,
       ${COLORS.cardBackground}EE 100%
     );
     border-top: 1px solid ${COLORS.primaryPurple}20;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
+    border-radius: 0;
   }
 `;
 
