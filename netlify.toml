@@ -17,6 +17,6 @@
       font-src 'self' https://fonts.gstatic.com;
       img-src 'self' https://res.cloudinary.com data: blob:;
       media-src 'self' https://res.cloudinary.com blob:;
-      connect-src 'self' https://sologram-api.onrender.com https://cdn.onesignal.com https://www.google-analytics.com https://api.cloudinary.com;
+      connect-src 'self' https://sologram-api.onrender.com https://cdn.onesignal.com https://www.google-analytics.com https://api.cloudinary.com https://*.sanity.io https://cdn.sanity.io;
       frame-src 'self';
     """

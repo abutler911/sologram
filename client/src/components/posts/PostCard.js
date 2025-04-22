@@ -574,7 +574,6 @@ const CardWrapper = styled.div`
   margin: 10px 0;
   background: ${COLORS.background}50;
   transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.3s ease;
-  will-change: transform, opacity;
   contain: layout;
 
   &:hover {
@@ -1112,7 +1111,6 @@ const Content = styled.p`
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   transition: transform 0.2s ease;
-  will-change: transform;
 `;
 
 const TagsContainer = styled.div`
@@ -1144,7 +1142,6 @@ const ViewPostLink = styled(Link)`
   border-radius: 12px;
   transition: all 0.2s ease;
   background-color: ${COLORS.elevatedBackground}50;
-  will-change: transform;
 
   &:hover {
     text-decoration: none;
