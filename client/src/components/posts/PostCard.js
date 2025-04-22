@@ -486,12 +486,29 @@ const CardWrapper = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
+  border-radius: 14px;
+  border: 1px solid ${COLORS.primaryPurple}30;
+  padding: 10px;
+  margin: 10px 0;
+  background: ${COLORS.background}50;
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 0 20px ${COLORS.primaryPurple}20;
+  }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     justify-content: stretch;
     width: 100vw;
     margin: 0;
     padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+
+    &:hover {
+      box-shadow: none;
+    }
   }
 `;
 
