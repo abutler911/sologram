@@ -18,7 +18,7 @@ import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../../context/AuthContext";
 import pandaImg from "../../assets/andy.jpg";
 import { getTransformedImageUrl } from "../../utils/cloudinary";
-import { COLORS, THEME } from "../../theme"; // Import the theme
+import { COLORS, THEME } from "../../theme";
 
 // Constants for personalization
 const AUTHOR_IMAGE = pandaImg;
@@ -497,21 +497,21 @@ const CardWrapper = styled.div`
 
 // Styled Components
 const Card = styled.article`
-  background-color: ${COLORS.cardBackground};
+  background-color: ${THEME.post.background};
   border-radius: 12px;
-  border: 1px solid ${COLORS.border};
+  border: 1px solid ${THEME.post.border};
   overflow: hidden;
   margin-bottom: 24px;
   display: flex;
   flex-direction: column;
   width: 100%;
   max-width: 614px;
-  box-shadow: 0 1px 2px ${COLORS.shadow};
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px ${COLORS.shadow};
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -532,8 +532,9 @@ const CardHeader = styled.header`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 14px 18px;
   border-bottom: 1px solid ${COLORS.divider};
+  background-color: ${THEME.post.header};
 `;
 
 const UserInfo = styled.div`
@@ -549,17 +550,16 @@ const Username = styled.span`
   font-family: "Autography", cursive;
   font-size: 2rem;
   font-weight: 400;
-  letter-spacing: 0.7px;
+  letter-spacing: 0.8px;
   line-height: 1.3;
   margin-top: 2px;
   color: ${COLORS.primaryPurple};
-
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease, filter 0.3s ease;
 
   &:hover {
-    transform: scale(1.07);
-    filter: brightness(1.1);
+    transform: scale(1.08);
+    filter: brightness(1.2);
   }
 `;
 
@@ -567,14 +567,15 @@ const ActionsButton = styled.button`
   background: none;
   border: none;
   color: ${COLORS.textPrimary};
-  font-size: 1rem;
+  font-size: 1.1rem;
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, transform 0.2s;
 
   &:hover {
     background-color: ${COLORS.elevatedBackground};
+    transform: scale(1.1);
   }
 `;
 
@@ -583,11 +584,12 @@ const ActionsMenu = styled.div`
   right: 0;
   top: 40px;
   background-color: ${COLORS.elevatedBackground};
-  border-radius: 4px;
-  box-shadow: 0 2px 12px ${COLORS.shadow};
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   z-index: 10;
   overflow: hidden;
   width: 180px;
+  backdrop-filter: blur(5px);
 `;
 
 const ActionItem = styled.button`
@@ -602,11 +604,11 @@ const ActionItem = styled.button`
   display: flex;
   align-items: center;
   text-decoration: none;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, color 0.2s;
 
   &:hover {
-    background-color: ${COLORS.primaryPurple}20;
-    color: ${COLORS.primaryPurple};
+    background-color: ${COLORS.primaryPurple}30;
+    color: ${COLORS.accentPurple};
   }
 
   svg {
@@ -615,7 +617,7 @@ const ActionItem = styled.button`
   }
 
   &:hover svg {
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.accentPurple};
   }
 
   &:not(:last-child) {
@@ -704,27 +706,28 @@ const NavigationArrow = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(60, 40, 90, 0.6);
   color: white;
   border: none;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, background-color 0.2s, transform 0.2s;
   z-index: 2;
 
   &:hover {
-    opacity: 0.9 !important;
-    background-color: rgba(0, 0, 0, 0.7);
+    opacity: 0.95 !important;
+    background-color: ${COLORS.primaryPurple}A0;
+    transform: translateY(-50%) scale(1.1);
   }
 
   ${Card}:hover & {
-    opacity: 0.7;
+    opacity: 0.8;
   }
 
   &.prev {
@@ -741,9 +744,9 @@ const NavigationArrow = styled.button`
   }
 
   @media (max-width: 768px) {
-    opacity: 0.7;
-    width: 36px;
-    height: 36px;
+    opacity: 0.8;
+    width: 40px;
+    height: 40px;
   }
 `;
 
@@ -754,24 +757,31 @@ const IndicatorDots = styled.div`
   right: 0;
   display: flex;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   z-index: 2;
 `;
 
 const Dot = styled.button`
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background-color: ${(props) =>
     props.active ? COLORS.primaryPurple : "rgba(255, 255, 255, 0.4)"};
   border: none;
   cursor: pointer;
   padding: 0;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+
+  &:hover {
+    transform: scale(1.2);
+    background-color: ${(props) =>
+      props.active ? COLORS.accentPurple : "rgba(255, 255, 255, 0.6)"};
+  }
 
   @media (max-width: 768px) {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
   }
 `;
 
@@ -781,19 +791,20 @@ const HeartAnimation = styled.div`
   left: 50%;
   transform: translate(-50%, -50%);
   color: ${COLORS.primaryPurple};
-  font-size: 80px;
+  font-size: 90px;
   opacity: 0;
   animation: ${scaleIn} 1s ease forwards;
   z-index: 3;
 
   svg {
-    filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.6));
   }
 `;
 
 const CardActions = styled.div`
-  padding: 8px 16px;
+  padding: 10px 18px;
   border-bottom: 1px solid ${COLORS.divider};
+  background-color: ${THEME.post.footer};
 `;
 
 const ActionGroup = styled.div`
@@ -807,18 +818,20 @@ const LikeButton = styled.button`
   border: none;
   color: ${(props) =>
     props.liked ? COLORS.primaryPurple : COLORS.textPrimary};
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   cursor: ${(props) =>
     props.disabled && !props.liked ? "default" : "pointer"};
   padding: 8px;
   margin-left: -8px;
   display: flex;
   align-items: center;
-  transition: transform 0.2s;
+  transition: transform 0.3s, color 0.3s;
 
   &:hover {
     transform: ${(props) =>
-      !props.disabled || props.liked ? "scale(1.1)" : "none"};
+      !props.disabled || props.liked ? "scale(1.15)" : "none"};
+    color: ${(props) =>
+      !props.disabled && !props.liked ? COLORS.accentPurple : ""};
   }
 
   &:active {
@@ -831,45 +844,57 @@ const DateDisplay = styled.div`
   display: flex;
   align-items: center;
   color: ${COLORS.textTertiary};
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  background-color: ${COLORS.cardBackground}90;
+  padding: 4px 8px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 
   svg {
-    margin-right: 4px;
-    font-size: 0.75rem;
+    margin-right: 6px;
+    font-size: 0.8rem;
+    color: ${COLORS.accentPurple};
   }
 `;
 
 const LikesCounter = styled.div`
-  padding: 0 16px;
-  margin-top: 8px;
-  font-size: 0.875rem;
+  padding: 8px 18px 0;
+  margin-top: 4px;
+  font-size: 0.9rem;
   color: ${COLORS.textPrimary};
 `;
 
 const CardContent = styled.div`
-  padding: 1rem 1rem 1.25rem;
+  padding: 1.2rem 1.2rem 1.4rem;
   display: flex;
   flex-direction: column;
+  background: linear-gradient(
+    180deg,
+    ${THEME.post.background} 0%,
+    ${COLORS.cardBackground} 100%
+  );
+  border-top: 1px solid ${COLORS.divider}40;
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    padding: 0.75rem 1rem 1rem;
+    padding: 0.8rem 1.1rem 1.2rem;
   }
 `;
 
 const PostTitle = styled.h2`
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: ${COLORS.textPrimary};
-  margin: 0 0 12px 0;
+  margin: 0 0 14px 0;
   line-height: 1.3;
   word-break: break-word;
-  transition: transform 0.2s ease;
+  transition: transform 0.3s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 `;
 
 const Content = styled.p`
   color: ${COLORS.textSecondary};
-  font-size: 0.875rem;
-  margin: 8px 0;
+  font-size: 0.9rem;
+  margin: 10px 0;
   word-break: break-word;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -882,24 +907,37 @@ const Content = styled.p`
 const TagsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 8px 0;
+  gap: 10px;
+  margin: 12px 0 8px;
 `;
 
 const Tag = styled.span`
-  color: ${COLORS.primaryBlue};
-  font-size: 0.875rem;
+  color: ${COLORS.accentBlue};
+  font-size: 0.85rem;
+  transition: color 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    color: ${COLORS.primaryBlue};
+    transform: translateX(2px);
+  }
 `;
 
 const ViewPostLink = styled(Link)`
   color: ${COLORS.textTertiary};
-  font-size: 0.75rem;
-  margin-top: 8px;
+  font-size: 0.8rem;
+  margin-top: 12px;
   text-decoration: none;
+  align-self: flex-end;
+  padding: 4px 10px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  background-color: ${COLORS.elevatedBackground}50;
 
   &:hover {
-    text-decoration: underline;
-    color: ${COLORS.primaryBlue};
+    text-decoration: none;
+    color: ${COLORS.textPrimary};
+    background-color: ${COLORS.elevatedBackground};
+    transform: translateY(-2px);
   }
 `;
 
@@ -916,13 +954,15 @@ const DeleteModal = styled.div`
 `;
 
 const DeleteModalContent = styled.div`
-  background-color: ${COLORS.elevatedBackground};
-  border-radius: 8px;
-  padding: 24px;
+  background-color: ${COLORS.cardBackground};
+  border-radius: 12px;
+  padding: 28px;
   width: 90%;
   max-width: 400px;
   z-index: 1001;
   text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  border: 1px solid ${COLORS.divider};
 
   h3 {
     color: ${COLORS.textPrimary};
@@ -955,13 +995,13 @@ const CancelButton = styled.button`
   width: 100%;
 
   &:hover {
-    background-color: ${COLORS.primaryBlue}10;
+    background-color: ${COLORS.primaryBlue}20;
   }
 `;
 
 const ConfirmDeleteButton = styled.button`
   background: none;
-  color: #ed4956;
+  color: ${COLORS.error};
   border: none;
   border-radius: 4px;
   padding: 12px;
@@ -972,7 +1012,7 @@ const ConfirmDeleteButton = styled.button`
   border-top: 1px solid ${COLORS.divider};
 
   &:hover {
-    background-color: rgba(237, 73, 86, 0.1);
+    background-color: ${COLORS.error}20;
   }
 `;
 
@@ -982,7 +1022,8 @@ const Backdrop = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.65);
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(3px);
   z-index: 1000;
 `;
 
@@ -991,18 +1032,30 @@ const PostLink = styled(Link)`
   color: inherit;
   display: block;
 
-  &:hover ${PostTitle}, &:hover ${Content} {
-    transform: translateX(2px);
+  &:hover ${PostTitle} {
+    transform: translateX(3px);
+    color: ${COLORS.textPrimary};
+  }
+
+  &:hover ${Content} {
+    transform: translateX(3px);
   }
 `;
 
 const UserAvatarImage = styled.img`
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   object-fit: cover;
   margin-right: 12px;
   border: 2px solid ${COLORS.primaryPurple};
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease, border-color 0.3s ease;
+
+  &:hover {
+    transform: scale(1.08);
+    border-color: ${COLORS.accentPurple};
+  }
 `;
 
 const FullscreenModal = styled.div`
@@ -1011,28 +1064,42 @@ const FullscreenModal = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: rgba(0, 0, 0, 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
+  backdrop-filter: blur(10px);
 `;
 
 const FullscreenImage = styled.img`
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
 `;
 
 const CloseFullscreenButton = styled.button`
   position: absolute;
   top: 20px;
   right: 20px;
-  background: none;
+  background: ${COLORS.elevatedBackground}80;
   border: none;
   color: white;
-  font-size: 32px;
+  font-size: 36px;
   cursor: pointer;
+  height: 50px;
+  width: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${COLORS.elevatedBackground};
+    transform: scale(1.1);
+  }
 `;
 
 const FullscreenWrapper = styled.div`
@@ -1046,14 +1113,15 @@ const FullscreenWrapper = styled.div`
 
 const FullscreenIndicator = styled.div`
   position: absolute;
-  bottom: 20px;
+  bottom: 30px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: ${COLORS.elevatedBackground}CC;
   color: white;
-  padding: 5px 10px;
+  padding: 8px 16px;
   border-radius: 20px;
   font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 `;
 
 export default PostCard;
