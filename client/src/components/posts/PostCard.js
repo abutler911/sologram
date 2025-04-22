@@ -47,6 +47,34 @@ const scaleIn = keyframes`
   }
 `;
 
+// Add a pulse animation for mobile interactions
+const pulse = keyframes`
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+`;
+
+// Add a slide-in animation for card appearance
+const slideIn = keyframes`
+  0% {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+`;
+
 // Define the font-face directly in the styles
 const fontFaceStyles = css`
   @font-face {
@@ -59,6 +87,32 @@ const fontFaceStyles = css`
 `;
 
 const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
+  // Add a ref for the intersection observer
+  const cardRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Set up intersection observer for animation on scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => {
+      if (cardRef.current) {
+        observer.unobserve(cardRef.current);
+      }
+    };
+  }, []);
   const [post, setPost] = useState(initialPost);
   const { isAuthenticated } = useContext(AuthContext);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
@@ -262,8 +316,21 @@ const PostCard = ({ post: initialPost, onDelete, index = 0 }) => {
     }
   };
 
+  // Check if it's a mobile device
+  const isMobile =
+    window.innerWidth <= 768 ||
+    window.matchMedia("(display-mode: standalone)").matches;
+
   return (
-    <CardWrapper>
+    <CardWrapper
+      ref={cardRef}
+      className={isVisible ? "visible" : ""}
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateY(0)" : "translateY(20px)",
+        transition: "opacity 0.5s ease, transform 0.5s ease",
+      }}
+    >
       <Card>
         <CardHeader>
           <UserInfo>
@@ -533,14 +600,18 @@ const Card = styled.article`
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     max-width: 100%;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-    margin-bottom: 0;
-    box-shadow: none;
-    &:hover {
-      transform: none;
-      box-shadow: none;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+    background: linear-gradient(
+      160deg,
+      ${THEME.post.background} 0%,
+      ${COLORS.cardBackground} 100%
+    );
+
+    &:active {
+      transform: scale(0.99);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     }
   }
 `;
@@ -552,6 +623,19 @@ const CardHeader = styled.header`
   padding: 14px 18px;
   border-bottom: 1px solid ${COLORS.divider};
   background-color: ${THEME.post.header};
+
+  @media (max-width: 768px), screen and (display-mode: standalone) {
+    padding: 16px 18px;
+    background: linear-gradient(
+      90deg,
+      ${THEME.post.header} 0%,
+      ${COLORS.primaryPurple}20 50%,
+      ${THEME.post.header} 100%
+    );
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom: 1px solid ${COLORS.primaryPurple}30;
+  }
 `;
 
 const UserInfo = styled.div`
@@ -650,8 +734,17 @@ const MediaContainer = styled(Link)`
   overflow: hidden;
   background-color: #000;
   flex-shrink: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.3s ease;
   opacity: ${(props) => (props.isPressing ? 0.8 : 1)};
+
+  @media (max-width: 768px), screen and (display-mode: standalone) {
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
 `;
 
 const MediaCarousel = styled.div`
@@ -760,10 +853,30 @@ const NavigationArrow = styled.button`
     cursor: not-allowed;
   }
 
-  @media (max-width: 768px) {
-    opacity: 0.8;
-    width: 40px;
-    height: 40px;
+  @media (max-width: 768px), screen and (display-mode: standalone) {
+    opacity: 0.9;
+    width: 46px;
+    height: 46px;
+    background: ${COLORS.primaryPurple}99;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+
+    &:active {
+      opacity: 1;
+      transform: translateY(-50%) scale(0.95);
+      background-color: ${COLORS.primaryPurple};
+    }
+
+    &.prev {
+      left: 10px;
+    }
+
+    &.next {
+      right: 10px;
+    }
+
+    svg {
+      font-size: 1.2rem;
+    }
   }
 `;
 
@@ -796,9 +909,22 @@ const Dot = styled.button`
       props.active ? COLORS.accentPurple : "rgba(255, 255, 255, 0.6)"};
   }
 
-  @media (max-width: 768px) {
-    width: 10px;
-    height: 10px;
+  @media (max-width: 768px), screen and (display-mode: standalone) {
+    width: 12px;
+    height: 12px;
+    margin: 0 2px;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+
+    ${(props) =>
+      props.active &&
+      `
+      background-color: ${COLORS.primaryPurple};
+      box-shadow: 0 0 8px ${COLORS.primaryPurple}90;
+    `}
+
+    &:active {
+      transform: scale(0.9);
+    }
   }
 `;
 
@@ -815,6 +941,15 @@ const HeartAnimation = styled.div`
 
   svg {
     filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.6));
+  }
+
+  @media (max-width: 768px), screen and (display-mode: standalone) {
+    font-size: 120px;
+    color: ${COLORS.accentPurple};
+
+    svg {
+      filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.8));
+    }
   }
 `;
 
@@ -854,6 +989,24 @@ const LikeButton = styled.button`
   &:active {
     transform: ${(props) =>
       !props.disabled || props.liked ? "scale(0.9)" : "none"};
+  }
+
+  @media (max-width: 768px), screen and (display-mode: standalone) {
+    font-size: 1.8rem;
+    padding: 10px;
+    position: relative;
+
+    ${(props) =>
+      props.liked &&
+      `
+      animation: ${pulse} 0.8s ease-in-out;
+      filter: drop-shadow(0 0 8px ${COLORS.primaryPurple}90);
+    `}
+
+    &:active {
+      transform: ${(props) =>
+        !props.disabled || props.liked ? "scale(0.8)" : "none"};
+    }
   }
 `;
 
@@ -956,6 +1109,27 @@ const ViewPostLink = styled(Link)`
     background-color: ${COLORS.elevatedBackground};
     transform: translateY(-2px);
   }
+
+  @media (max-width: 768px), screen and (display-mode: standalone) {
+    font-size: 0.9rem;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-weight: 500;
+    background: linear-gradient(
+      135deg,
+      ${COLORS.primaryPurple}80 0%,
+      ${COLORS.primaryPurple}40 100%
+    );
+    color: ${COLORS.textPrimary};
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    margin-top: 16px;
+    align-self: center;
+
+    &:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+  }
 `;
 
 const DeleteModal = styled.div`
@@ -991,6 +1165,32 @@ const DeleteModalContent = styled.div`
   p {
     color: ${COLORS.textSecondary};
     margin-bottom: 24px;
+  }
+
+  @media (max-width: 768px), screen and (display-mode: standalone) {
+    border-radius: 16px;
+    padding: 24px 20px;
+    background: linear-gradient(
+      145deg,
+      ${COLORS.cardBackground} 0%,
+      ${COLORS.elevatedBackground} 100%
+    );
+    border: 1px solid ${COLORS.primaryPurple}30;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7),
+      inset 0 1px 1px ${COLORS.primaryPurple}20;
+
+    h3 {
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+      color: ${COLORS.accentPurple};
+    }
+
+    p {
+      font-size: 1.05rem;
+      margin-bottom: 30px;
+    }
+
+    animation: ${slideIn} 0.3s ease-out forwards;
   }
 `;
 
