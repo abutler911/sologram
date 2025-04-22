@@ -261,7 +261,7 @@ const Content = styled.p`
   padding: 1.5rem;
   border-radius: 16px;
   border-left: 3px solid ${COLORS.primaryPurple};
-  font-style: italic;
+  font-style: normal;
   white-space: pre-wrap;
   letter-spacing: 0.3px;
   position: relative;
