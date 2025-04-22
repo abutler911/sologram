@@ -582,9 +582,9 @@ const CardWrapper = styled.div`
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    width: 100vw;
-    max-width: 100vw;
-    margin: 0;
+    width: 90%;
+    max-width: none;
+    margin: 10px auto;
     padding: 0;
     border: none;
     border-radius: 0;
@@ -614,11 +614,9 @@ const Card = styled.article`
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     max-width: 100%;
-    width: 100vw;
-    border-radius: 0;
-    margin-bottom: 0;
-    border-left: none;
-    border-right: none;
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     background: linear-gradient(
       160deg,
@@ -649,7 +647,8 @@ const CardHeader = styled.header`
       ${COLORS.primaryPurple}20 50%,
       ${THEME.post.header} 100%
     );
-    border-radius: 0;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
     border-bottom: 1px solid ${COLORS.primaryPurple}30;
   }
 `;
@@ -756,9 +755,8 @@ const MediaContainer = styled(Link)`
   will-change: transform, opacity;
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    border-radius: 0;
-    box-shadow: none;
-    width: 100%;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 
     &:active {
       transform: scale(0.98);
@@ -1086,7 +1084,8 @@ const CardContent = styled.div`
       ${COLORS.cardBackground}EE 100%
     );
     border-top: 1px solid ${COLORS.primaryPurple}20;
-    border-radius: 0;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
   }
 `;
 
