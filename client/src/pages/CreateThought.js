@@ -98,8 +98,8 @@ const CreateThought = () => {
       return;
     }
 
-    if (content.length > 280) {
-      toast.error("Content must be 280 characters or less");
+    if (content.length > 800) {
+      toast.error("Content must be 800 characters or less");
       return;
     }
 
@@ -157,11 +157,19 @@ const CreateThought = () => {
               onChange={(e) => setContent(e.target.value)}
               placeholder="What's on your mind?"
               required
-              maxLength={280}
+              maxLength={800}
             />
-            <CharCount className={content.length > 200 ? "warning" : ""}>
-              {content.length}/280
-            </CharCount>
+            <ProgressWrapper>
+              <ProgressBar
+                percentage={(content.length / 800) * 100}
+                charCount={content.length}
+              />
+              {content.length > 800 && (
+                <CharWarning>
+                  Thought is too long! Keep it under 800 characters.
+                </CharWarning>
+              )}
+            </ProgressWrapper>
           </FormGroup>
 
           <MoodSelector>
@@ -237,7 +245,10 @@ const CreateThought = () => {
             )}
           </FormGroup>
 
-          <SubmitButton type="submit" disabled={loading || !content.trim()}>
+          <SubmitButton
+            type="submit"
+            disabled={loading || !content.trim() || content.length > 800}
+          >
             <FaPaperPlane />
             <span>{loading ? "Posting..." : "Post Thought"}</span>
           </SubmitButton>
@@ -548,6 +559,68 @@ const AccessDenied = styled.div`
     color: #aaaaaa;
     margin-bottom: 2rem;
   }
+`;
+
+const ProgressWrapper = styled.div`
+  width: 100%;
+  margin-top: 0.5rem;
+`;
+
+const ProgressBar = styled.div`
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background-color: #333;
+  margin-bottom: 0.5rem;
+
+  &::after {
+    content: "${(props) => props.charCount}/800";
+    position: absolute;
+    top: -1.75rem;
+    right: 0;
+    font-size: 0.85rem;
+    color: ${(props) => (props.charCount > 800 ? "#ff4d4d" : "#aaa")};
+  }
+
+  &::before {
+    content: "";
+    display: block;
+    height: 100%;
+    width: ${(props) =>
+      props.charCount > 800 ? "100%" : `${props.percentage}%`};
+    background-color: ${(props) => {
+      const c = props.charCount;
+      const p = props.percentage;
+      if (c > 800) return "#ff4d4d"; // over limit — red
+      if (p > 90) return "#ff4d4d"; // almost there — red
+      if (p > 65) return "#ffc107"; // getting close — yellow
+      return "#7be0ad"; // chill zone — green
+    }};
+    border-radius: 5px;
+    transition: width 0.3s ease, background-color 0.3s ease;
+    animation: ${(props) =>
+      props.charCount > 800 ? "pulseRed 1s infinite ease-in-out" : "none"};
+  }
+
+  @keyframes pulseRed {
+    0% {
+      box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 8px rgba(255, 77, 77, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 77, 77, 0);
+    }
+  }
+`;
+
+const CharWarning = styled.div`
+  color: #ff4d4d;
+  font-size: 0.9rem;
+  margin-top: -0.5rem;
+  margin-bottom: 1rem;
+  text-align: right;
 `;
 
 export default CreateThought;

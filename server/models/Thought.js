@@ -7,8 +7,9 @@ const ThoughtSchema = new mongoose.Schema(
       type: String,
       required: [true, "Thought content is required"],
       trim: true,
-      maxlength: [280, "Thoughts cannot exceed 280 characters"],
+      maxlength: [800, "Thoughts cannot exceed 800 characters"],
     },
+
     media: {
       mediaType: {
         type: String,
