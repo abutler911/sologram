@@ -1,6 +1,3 @@
-// Improve tree-shaking for icons by using more specific imports
-// Based on research from https://www.dhiwise.com/post/how-to-implement-react-tree-shaking-for-website-performance
-// This approach allows webpack to better tree-shake unused icons
 import {
   memo,
   useState,
@@ -13,7 +10,6 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import styled, { keyframes, css } from "styled-components";
-// Import only the specific icons we need
 import { FaHeart, FaRegHeart } from "react-icons/fa/index.js";
 import { FaEllipsisH } from "react-icons/fa/index.js";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa/index.js";
@@ -27,59 +23,28 @@ import pandaImg from "../../assets/andy.jpg";
 import { getTransformedImageUrl } from "../../utils/cloudinary";
 import { COLORS, THEME } from "../../theme";
 
-// Constants for personalization
 const AUTHOR_IMAGE = pandaImg;
 const AUTHOR_NAME = "Andrew";
 
-// Animation keyframes
 const scaleIn = keyframes`
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  15% {
-    transform: scale(1.3);
-    opacity: 1;
-  }
-  30% {
-    transform: scale(0.95);
-  }
-  45%, 80% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0);
-    opacity: 0;
-  }
+  0% { transform: scale(0); opacity: 0; }
+  15% { transform: scale(1.3); opacity: 1; }
+  30% { transform: scale(0.95); }
+  45%, 80% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
 `;
 
-// Simplified pulse animation for mobile interactions
 const pulse = keyframes`
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 `;
 
-// Simplified slide-in animation for card appearance
 const slideIn = keyframes`
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
 `;
 
-// Define the font-face directly in the styles
 const fontFaceStyles = css`
   @font-face {
     font-family: "ParadiseSignature";
@@ -90,12 +55,10 @@ const fontFaceStyles = css`
   }
 `;
 
-// Create a lazy-loaded FullscreenModal component
 const FullscreenModalComponent = ({ onClick, children }) => (
   <FullscreenModal onClick={onClick}>{children}</FullscreenModal>
 );
 
-// Create a component for each modal to improve code splitting
 const DeleteModalComponent = memo(({ onCancel, onDelete, post }) => (
   <DeleteModal>
     <DeleteModalContent>
@@ -114,9 +77,12 @@ const DeleteModalComponent = memo(({ onCancel, onDelete, post }) => (
   </DeleteModal>
 ));
 
-// Main component wrapped with memo to reduce re-renders
+const isMobile =
+  typeof window !== "undefined" &&
+  (window.innerWidth <= 768 ||
+    window.matchMedia("(display-mode: standalone)").matches);
+
 const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
-  // Add a ref for the intersection observer
   const cardRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
   const [post, setPost] = useState(initialPost);
@@ -136,24 +102,19 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   const [isPressing, setIsPressing] = useState(false);
 
   const hasMultipleMedia = post.media && post.media.length > 1;
-
-  // Format date as MMM d, yyyy (e.g., "Mar 15, 2025")
   const formattedDate = format(new Date(post.createdAt), "MMM d, yyyy");
 
-  // Optimize IntersectionObserver
   useEffect(() => {
-    // Skip on server-side rendering
     if (typeof window === "undefined" || !window.IntersectionObserver) return;
 
     const options = {
       threshold: 0.1,
-      rootMargin: "100px 0px", // Start loading earlier for better perceived performance
+      rootMargin: "100px 0px",
     };
 
     const handleIntersection = (entries) => {
       const [entry] = entries;
       if (entry.isIntersecting) {
-        // Delay slightly to prioritize more critical resources
         requestAnimationFrame(() => {
           setIsVisible(true);
         });
@@ -162,7 +123,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
 
     const observer = new IntersectionObserver(handleIntersection, options);
 
-    // Only observe if element exists and is not already visible
     if (cardRef.current && !isVisible) {
       observer.observe(cardRef.current);
     }
@@ -174,7 +134,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
     };
   }, [isVisible]);
 
-  // Close the actions menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (actionsRef.current && !actionsRef.current.contains(event.target)) {
@@ -188,7 +147,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
     };
   }, []);
 
-  // Memoize handlers with useCallback
   const handleTouchStart = useCallback(
     (e) => {
       setIsPressing(true);
@@ -196,7 +154,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
       longPressTimeoutRef.current = setTimeout(() => {
         setIsLongPressing(true);
         setShowFullscreen(true);
-        // Store the current index when opening fullscreen
         setFullscreenIndex(currentMediaIndex);
       }, 500);
     },
@@ -214,7 +171,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   }, []);
 
   const handleTouchMove = useCallback(() => {
-    // Cancel long press if user moves finger
     if (longPressTimeoutRef.current) {
       clearTimeout(longPressTimeoutRef.current);
       longPressTimeoutRef.current = null;
@@ -247,9 +203,7 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
     setIsZoomed(false);
   }, []);
 
-  // Replace axios with native fetch
   const handleLike = useCallback(async () => {
-    // Prevent multiple clicks or if already liked
     if (isLiking || hasLiked) return;
 
     setIsLiking(true);
@@ -259,8 +213,14 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
         },
       });
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -269,8 +229,14 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
       }
     } catch (err) {
       console.error("Error liking post:", err);
-      toast.error("Failed to like post");
-      setTimeout(() => setIsLiking(false), 2000);
+
+      if (err.message?.includes("already liked")) {
+        setHasLiked(true);
+        toast.error(err.message);
+      } else {
+        toast.error("Failed to like post");
+        setTimeout(() => setIsLiking(false), 2000);
+      }
     }
   }, [post._id, isLiking, hasLiked]);
 
@@ -279,7 +245,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
       setIsDoubleTapLiking(true);
       handleLike();
 
-      // Reset animation after it completes
       setTimeout(() => {
         setIsDoubleTapLiking(false);
       }, 1000);
@@ -343,7 +308,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
     [currentMediaIndex]
   );
 
-  // Configure swipe handlers
   const swipeHandlers = useSwipeable({
     onSwipedLeft: handleNext,
     onSwipedRight: handlePrev,
@@ -355,7 +319,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   const handleMediaClick = useCallback(
     (e) => {
       if (isLongPressing) {
-        // Don't navigate if it was a long press
         e.preventDefault();
         return;
       }
@@ -366,12 +329,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
     },
     [isLongPressing, hasMultipleMedia]
   );
-
-  // Check if it's a mobile device - moved outside component body
-  const isMobile =
-    typeof window !== "undefined" &&
-    (window.innerWidth <= 768 ||
-      window.matchMedia("(display-mode: standalone)").matches);
 
   return (
     <CardWrapper
@@ -438,10 +395,10 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
                           height: 614,
                           crop: "thumb",
                           quality: "auto",
-                          format: "webp", // Use WebP for better compression
+                          format: "webp",
                           gravity: "auto",
                         })}
-                        sizes="(max-width: 768px) 100vw, 614px"
+                        sizes="100vw"
                         alt={post.caption || "Post image"}
                         width="614"
                         height="614"
@@ -458,7 +415,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
                         decoding="async"
                         className={media.filter}
                         onLoad={(e) => {
-                          // Add 'loaded' class for fade-in effect
                           e.target.classList.add("loaded");
                         }}
                       />
@@ -468,7 +424,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
                         controls
                         preload="metadata"
                         className={media.filter}
-                        aria-label={post.caption || "Post video"}
                       />
                     )}
                   </MediaItem>
@@ -559,7 +514,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
         </CardContent>
       </Card>
 
-      {/* Fullscreen image modal - simplified for better performance */}
       {showFullscreen && (
         <Suspense fallback={<div>Loading...</div>}>
           <FullscreenModalComponent onClick={closeFullscreen}>
@@ -598,7 +552,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
         </Suspense>
       )}
 
-      {/* Delete confirmation modal */}
       {showDeleteModal && (
         <DeleteModalComponent
           onCancel={cancelDelete}
@@ -610,7 +563,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   );
 });
 
-// New wrapper component to handle mobile layout
 const CardWrapper = styled.div`
   ${fontFaceStyles}
   width: 100%;
@@ -623,22 +575,23 @@ const CardWrapper = styled.div`
   background: ${COLORS.background}50;
   transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.3s ease;
   will-change: transform, opacity;
+  contain: layout;
 
   &:hover {
     box-shadow: 0 0 20px ${COLORS.primaryPurple}20;
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    justify-content: center; /* Changed from stretch to center */
-    width: calc(100% - 20px); /* Add some margin on both sides */
-    max-width: 500px; /* Control maximum width */
-    margin: 10px auto; /* Center horizontally with auto margins */
-    padding: 6px;
-    border: 1px solid ${COLORS.primaryPurple}20; /* Lighter border for mobile */
+    width: 100vw;
+    max-width: 100vw;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
   }
 `;
 
-// Styled Components - optimized with contain property where applicable
 const Card = styled.article`
   background-color: ${THEME.post.background};
   border-radius: 12px;
@@ -661,11 +614,11 @@ const Card = styled.article`
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     max-width: 100%;
-    width: 100vw; /* Full viewport width */
-    border-radius: 0; /* No border radius on mobile */
-    margin-bottom: 0; /* Remove bottom margin */
-    border-left: none; /* Remove left border */
-    border-right: none; /* Remove right border */
+    width: 100vw;
+    border-radius: 0;
+    margin-bottom: 0;
+    border-left: none;
+    border-right: none;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     background: linear-gradient(
       160deg,
@@ -827,6 +780,7 @@ const MediaTrack = styled.div`
   transition: transform 0.3s ease;
   will-change: transform;
   transform: translateX(-${(props) => props.currentIndex * 100}%);
+  contain: layout;
 `;
 
 const MediaItem = styled.div`
@@ -834,6 +788,7 @@ const MediaItem = styled.div`
   width: 100%;
   height: 100%;
   position: relative;
+  contain: content;
 `;
 
 const PostImage = styled.img`
@@ -1433,7 +1388,6 @@ const FullscreenIndicator = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 `;
 
-// Add display name for debugging
 PostCard.displayName = "PostCard";
 
 export default PostCard;
