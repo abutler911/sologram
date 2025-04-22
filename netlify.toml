@@ -12,11 +12,11 @@
   [headers.values]
     Content-Security-Policy = """
       default-src 'self';
-      script-src 'self' 'nonce-abc123' https://cdn.sanity.io https://www.googletagmanager.com https://cdn.onesignal.com;
+      script-src 'self' 'unsafe-inline' https://cdn.sanity.io https://www.googletagmanager.com https://cdn.onesignal.com;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com;
-      img-src 'self' https://res.cloudinary.com data: blob:;
+      img-src 'self' https://res.cloudinary.com https://cdn.sanity.io data: blob:;
       media-src 'self' https://res.cloudinary.com blob:;
-      connect-src 'self' https://sologram-api.onrender.com https://cdn.onesignal.com https://www.google-analytics.com https://api.cloudinary.com https://*.sanity.io https://cdn.sanity.io;
+      connect-src 'self' https://*.sanity.io https://cdn.sanity.io https://sologram-api.onrender.com https://cdn.onesignal.com https://www.google-analytics.com https://api.cloudinary.com;
       frame-src 'self';
     """
