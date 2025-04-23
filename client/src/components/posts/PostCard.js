@@ -636,15 +636,20 @@ const CardHeader = styled.header`
   justify-content: space-between;
   padding: 14px 18px;
   border-bottom: 1px solid ${COLORS.divider};
-  background-color: ${THEME.post.header};
+  background: linear-gradient(
+    to right,
+    ${COLORS.primaryPurple}10,
+    ${COLORS.primaryPurple}15,
+    ${COLORS.primaryPurple}10
+  );
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     padding: 16px;
     background: linear-gradient(
       90deg,
-      ${THEME.post.header} 0%,
-      ${COLORS.primaryPurple}20 50%,
-      ${THEME.post.header} 100%
+      ${COLORS.primaryPurple}15 0%,
+      ${COLORS.primaryPurple}25 50%,
+      ${COLORS.primaryPurple}15 100%
     );
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
