@@ -201,8 +201,11 @@ const DefaultAvatar = styled.div`
   span {
     position: relative;
     z-index: 2;
-    transform: rotate(-5deg);
-    display: inline-block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
   }
 
   /* Adjust for mobile */
@@ -210,6 +213,7 @@ const DefaultAvatar = styled.div`
     font-size: 1.5rem;
   }
 `;
+
 const UserDetails = styled.div`
   display: flex;
   flex-direction: column;
@@ -636,7 +640,7 @@ const ThoughtCard = ({
               <img src={defaultUser.avatar} alt="User avatar" />
             ) : (
               <DefaultAvatar mood={thought.mood}>
-                <span>{defaultUser.username.charAt(0)}</span>
+                <span>{defaultUser.username.charAt(0).toUpperCase()}</span>
               </DefaultAvatar>
             )}
           </Avatar>
