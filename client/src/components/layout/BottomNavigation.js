@@ -15,7 +15,8 @@ import {
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-hot-toast";
 import { requestNotificationPermission } from "../../utils/oneSignal";
-import { COLORS, THEME } from "../../theme"; // Import the theme
+import { COLORS, THEME } from "../../theme";
+import { registerOneSignalPlayerId } from "../../utils/registerOneSignalPlayerId";
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -63,6 +64,7 @@ const BottomNavigation = () => {
         const permission = await Notification.requestPermission();
         if (permission === "granted") {
           toast.success("Successfully subscribed to notifications!");
+          await registerOneSignalPlayerId();
         } else {
           toast(
             "You can enable notifications anytime from your browser settings."
@@ -76,16 +78,19 @@ const BottomNavigation = () => {
         if (typeof window.OneSignal.showSlidedownPrompt === "function") {
           await window.OneSignal.showSlidedownPrompt();
           toast.success("Successfully subscribed to notifications!");
+          await registerOneSignalPlayerId();
         } else if (
           typeof window.OneSignal.registerForPushNotifications === "function"
         ) {
           await window.OneSignal.registerForPushNotifications();
           toast.success("Successfully subscribed to notifications!");
+          await registerOneSignalPlayerId();
         } else {
           // Try using our helper function
           const result = await requestNotificationPermission();
           if (result) {
             toast.success("Successfully subscribed to notifications!");
+            await registerOneSignalPlayerId();
           } else {
             toast("You can subscribe to notifications anytime.");
           }
