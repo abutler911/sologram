@@ -30,7 +30,6 @@ const float = keyframes`
   100% { transform: translateY(0px); }
 `;
 
-// ThoughtCard styled components
 const Card = styled.div`
   position: relative;
   background: ${COLORS.cardBackground};
@@ -43,6 +42,10 @@ const Card = styled.div`
   animation: ${fadeIn} 0.4s ease-out;
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  width: 98%;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
 
   &:before {
     content: "";
@@ -115,6 +118,11 @@ const UserInfo = styled.div`
   gap: 0.85rem;
   position: relative;
   z-index: 2;
+
+  /* Adjust for mobile */
+  @media (max-width: 480px) {
+    gap: 0.5rem;
+  }
 `;
 
 const Avatar = styled.div`
@@ -124,6 +132,12 @@ const Avatar = styled.div`
   overflow: hidden;
   box-shadow: 0 0 0 2px ${COLORS.primaryPurple};
   position: relative;
+
+  /* Adjust for mobile */
+  @media (max-width: 480px) {
+    width: 45px;
+    height: 45px;
+  }
 
   /* Inner glow effect */
   &:after {
@@ -255,8 +269,8 @@ const ActionButton = styled.button`
 const Content = styled.p`
   font-family: "Lora", serif;
   color: ${COLORS.textPrimary};
-  font-size: 1rem;
-  line-height: 1.7;
+  font-size: 0.7rem;
+  line-height: 1.3;
   background: rgba(255, 255, 255, 0.03);
   padding: 1.5rem;
   border-radius: 16px;
@@ -269,7 +283,7 @@ const Content = styled.p`
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 
   &:first-letter {
-    font-size: 1.3em;
+    font-size: 1.2em;
     font-weight: 500;
     color: ${COLORS.primaryPurple};
   }
@@ -282,6 +296,7 @@ const Media = styled.div`
   box-shadow: 0 5px 15px ${COLORS.shadow};
   position: relative;
   z-index: 2;
+  width: 100%;
 
   &:before {
     content: "";
@@ -298,7 +313,7 @@ const Media = styled.div`
 
   img {
     width: 100%;
-    max-height: 400px;
+    max-height: 350px;
     object-fit: cover;
     transform-origin: center;
     transition: transform 0.6s cubic-bezier(0.33, 1, 0.68, 1), filter 0.6s ease;
@@ -425,6 +440,12 @@ const ActionBar = styled.div`
   border-top: 1px solid ${COLORS.divider};
   position: relative;
   z-index: 2;
+
+  @media (max-width: 480px) {
+    flex-wrap: wrap;
+    justify-content: space-around;
+    gap: 0.5rem;
+  }
 `;
 
 const ActionIcon = styled.div`
@@ -457,6 +478,11 @@ const ActionItem = styled.div`
   transition: all 0.3s;
   position: relative;
   overflow: hidden;
+
+  /* Adjust for mobile */
+  @media (max-width: 480px) {
+    padding: 0.3rem 0.5rem;
+  }
 
   &:before {
     content: "";
