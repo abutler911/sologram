@@ -24,6 +24,22 @@ export const initializeOneSignal = async (userId) => {
         enable: false,
       },
       allowLocalhostAsSecureOrigin: true,
+      promptOptions: {
+        slidedown: {
+          prompts: [
+            {
+              type: "push",
+              autoPrompt: false,
+              text: {
+                actionMessage:
+                  "Would you like to receive notifications when new content is posted?",
+                acceptButton: "Allow",
+                cancelButton: "No Thanks",
+              },
+            },
+          ],
+        },
+      },
     });
 
     console.log("[Notifications] OneSignal initialized successfully");
@@ -48,26 +64,54 @@ export const subscribeToNotifications = async () => {
       }
     }
 
-    // Register for push notifications
+    // Try different methods to request permission
     console.log("[Notifications] Requesting permission...");
-    await OneSignal.registerForPushNotifications();
 
-    // We don't have a direct way to check if it succeeded, so we'll consider it a success
-    // if no error was thrown
-    console.log("[Notifications] Subscription requested successfully");
-
-    // Try to get player ID and register with server
     try {
-      const playerId = await getPlayerId();
-      if (playerId) {
-        await registerPlayerIdWithServer(playerId);
+      // Method 1: Try showSlidedownPrompt if available
+      if (typeof OneSignal.showSlidedownPrompt === "function") {
+        console.log("[Notifications] Using showSlidedownPrompt method");
+        await OneSignal.showSlidedownPrompt();
       }
-    } catch (error) {
-      console.error("[Notifications] Error getting player ID:", error);
-      // Continue anyway as we might still be subscribed
-    }
+      // Method 2: Try showNativePrompt if available
+      else if (typeof OneSignal.showNativePrompt === "function") {
+        console.log("[Notifications] Using showNativePrompt method");
+        await OneSignal.showNativePrompt();
+      }
+      // Method 3: Try showHttpPrompt if available
+      else if (typeof OneSignal.showHttpPrompt === "function") {
+        console.log("[Notifications] Using showHttpPrompt method");
+        await OneSignal.showHttpPrompt();
+      }
+      // Method 4: Generic push.push method as fallback
+      else {
+        console.log("[Notifications] Using generic push method");
+        OneSignal.push(function () {
+          OneSignal.showSlidedownPrompt();
+        });
+      }
 
-    return true;
+      console.log("[Notifications] Permission prompt shown");
+
+      // Wait a moment to see if user granted permission
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Try to get player ID and register with server
+      try {
+        const playerId = await getPlayerId();
+        if (playerId) {
+          await registerPlayerIdWithServer(playerId);
+          return true;
+        }
+      } catch (error) {
+        console.error("[Notifications] Error getting player ID:", error);
+      }
+
+      return true; // Consider it a success if we got this far
+    } catch (error) {
+      console.error("[Notifications] Error showing prompt:", error);
+      return false;
+    }
   } catch (error) {
     console.error("[Notifications] Error subscribing to notifications:", error);
     return false;
@@ -80,10 +124,32 @@ export const getPlayerId = async () => {
     // Wait a moment to ensure OneSignal has time to generate ID
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Use the available method to get player ID
-    const playerId = await OneSignal.getUserId();
-    console.log("[Notifications] Got player ID:", playerId);
-    return playerId;
+    // Try different methods to get player ID
+    let playerId = null;
+
+    if (typeof OneSignal.getUserId === "function") {
+      playerId = await OneSignal.getUserId();
+    } else if (typeof OneSignal.getPlayerId === "function") {
+      playerId = await OneSignal.getPlayerId();
+    } else {
+      // Last resort: Use push() method
+      await new Promise((resolve) => {
+        OneSignal.push(function () {
+          OneSignal.getUserId(function (id) {
+            playerId = id;
+            resolve();
+          });
+        });
+      });
+    }
+
+    if (playerId) {
+      console.log("[Notifications] Got player ID:", playerId);
+      return playerId;
+    } else {
+      console.warn("[Notifications] No player ID available");
+      return null;
+    }
   } catch (error) {
     console.error("[Notifications] Error getting player ID:", error);
     return null;

@@ -3,7 +3,10 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { FaBell, FaTimes } from "react-icons/fa";
 import { toast } from "react-hot-toast";
-import { subscribeToNotifications } from "../../utils/notificationService";
+import {
+  subscribeToNotifications,
+  getPlayerId,
+} from "../../utils/notificationService";
 
 const SubscribeBanner = ({ user }) => {
   const [showBanner, setShowBanner] = useState(false);
@@ -16,6 +19,21 @@ const SubscribeBanner = ({ user }) => {
     }
 
     const checkBannerStatus = async () => {
+      // Check if already subscribed via player ID
+      try {
+        const playerId = await getPlayerId();
+        if (playerId) {
+          console.log(
+            "[SubscribeBanner] User already has player ID:",
+            playerId
+          );
+          return; // Don't show banner if user already has a player ID
+        }
+      } catch (error) {
+        // Continue anyway, better to show banner if in doubt
+        console.error("[SubscribeBanner] Error checking player ID:", error);
+      }
+
       // Check if banner was recently dismissed
       const dismissed =
         localStorage.getItem("subscribeBannerDismissed") === "true";
@@ -27,7 +45,7 @@ const SubscribeBanner = ({ user }) => {
         if (daysSinceDismissed <= 7) return;
       }
 
-      // Simply show the banner if it hasn't been dismissed
+      // Show the banner if not already subscribed and not recently dismissed
       setShowBanner(true);
     };
 
@@ -55,7 +73,17 @@ const SubscribeBanner = ({ user }) => {
       setIsLoading(false);
 
       if (success) {
-        toast.success("You're now subscribed to notifications!");
+        // Double check if we got a player ID
+        const playerId = await getPlayerId();
+
+        if (playerId) {
+          toast.success("You're now subscribed to notifications!");
+        } else {
+          toast.success(
+            "Notification prompt shown. Please accept to receive notifications."
+          );
+        }
+
         setShowBanner(false);
         localStorage.setItem("subscribeBannerDismissed", "true");
         localStorage.setItem(
