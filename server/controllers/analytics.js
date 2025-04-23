@@ -2,19 +2,17 @@
 const Post = require("../models/Post");
 const Like = require("../models/Like");
 const Story = require("../models/Story");
-const Subscriber = require("../models/Subscriber");
 const Notification = require("../models/Notification");
+const User = require("../models/User"); // Updated from Subscriber
 
 /**
  * Get open rate data for recent notifications, grouped by date
- * @route   GET /api/analytics/subscribers/open-rates
- * @access  Private (Admin only)
  */
 exports.getOpenRateAnalytics = async (req, res) => {
   try {
     const recentNotifications = await Notification.find({ isTemplate: false })
       .sort({ createdAt: -1 })
-      .limit(50); // You can adjust to 30/90/etc. for your chart needs
+      .limit(50);
 
     const dailyStats = {};
 
@@ -33,7 +31,7 @@ exports.getOpenRateAnalytics = async (req, res) => {
     });
 
     const openRateData = Object.entries(dailyStats)
-      .reverse() // oldest to newest
+      .reverse()
       .map(([date, { sent, opened }]) => ({
         date,
         rate: sent > 0 ? parseFloat(((opened / sent) * 100).toFixed(1)) : 0,
@@ -42,26 +40,18 @@ exports.getOpenRateAnalytics = async (req, res) => {
     res.status(200).json({ success: true, data: openRateData });
   } catch (err) {
     console.error("Open rate analytics error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-      error: process.env.NODE_ENV === "development" ? err.message : undefined,
-    });
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
 /**
- * Get basic analytics for the entire platform
- * @route   GET /api/analytics
- * @access  Private (Admin only)
+ * Get platform-wide analytics
  */
 exports.getAnalytics = async (req, res) => {
   try {
-    // Optional query parameters
-    const { timeRange } = req.query; // Values: 'all', 'month', 'week'
-
-    // Create date filters based on timeRange
+    const { timeRange } = req.query;
     const dateFilter = {};
+
     if (timeRange === "week") {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
@@ -72,41 +62,33 @@ exports.getAnalytics = async (req, res) => {
       dateFilter.createdAt = { $gte: monthAgo };
     }
 
-    // Get total posts count
     const totalPosts = await Post.countDocuments(dateFilter);
 
-    // Get total likes count
     const likesAggregation = await Post.aggregate([
       { $match: dateFilter },
       { $group: { _id: null, totalLikes: { $sum: "$likes" } } },
     ]);
-    const totalLikes =
-      likesAggregation.length > 0 ? likesAggregation[0].totalLikes : 0;
+    const totalLikes = likesAggregation[0]?.totalLikes || 0;
 
-    // Get total stories count
     const totalStories = await Story.countDocuments({
       ...dateFilter,
-      archived: true, // Count only archived stories to prevent double counting
+      archived: true,
     });
 
-    // Get total subscribers count
-    const totalSubscribers = await Subscriber.countDocuments({
-      isActive: true,
+    const totalSubscribers = await User.countDocuments({
+      oneSignalPlayerId: { $exists: true },
     });
 
-    // Get most recent posts
     const recentPosts = await Post.find(dateFilter)
       .sort({ createdAt: -1 })
       .limit(5)
       .select("caption content likes createdAt");
 
-    // Get most popular posts
     const popularPosts = await Post.find(dateFilter)
       .sort({ likes: -1 })
       .limit(5)
       .select("caption content likes createdAt");
 
-    // Get post counts aggregated by month
     const postsByMonth = await Post.aggregate([
       { $match: dateFilter },
       {
@@ -122,7 +104,6 @@ exports.getAnalytics = async (req, res) => {
       { $sort: { "_id.year": 1, "_id.month": 1 } },
     ]);
 
-    // Transform month data to a more frontend-friendly format
     const formattedPostsByMonth = postsByMonth.map((item) => {
       const date = new Date(item._id.year, item._id.month - 1);
       return {
@@ -135,11 +116,8 @@ exports.getAnalytics = async (req, res) => {
       };
     });
 
-    // Optional: Calculate growth percentages
     let growth = null;
-
     if (timeRange !== "all") {
-      // If we're looking at a specific time range, compare with the previous period
       const previousDateFilter = {};
       if (timeRange === "week") {
         const twoWeeksAgo = new Date();
@@ -155,20 +133,14 @@ exports.getAnalytics = async (req, res) => {
         previousDateFilter.createdAt = { $gte: twoMonthsAgo, $lt: monthAgo };
       }
 
-      // Get post count from previous period
       const previousPeriodPosts = await Post.countDocuments(previousDateFilter);
-
-      // Calculate growth percentage
       if (previousPeriodPosts > 0) {
         const postGrowth =
           ((totalPosts - previousPeriodPosts) / previousPeriodPosts) * 100;
-        growth = {
-          posts: parseFloat(postGrowth.toFixed(1)),
-        };
+        growth = { posts: parseFloat(postGrowth.toFixed(1)) };
       }
     }
 
-    // Return all the analytics data
     res.status(200).json({
       success: true,
       data: {
@@ -184,41 +156,25 @@ exports.getAnalytics = async (req, res) => {
     });
   } catch (err) {
     console.error("Analytics error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-      error: process.env.NODE_ENV === "development" ? err.message : undefined,
-    });
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
 /**
- * Get post engagement metrics
- * @route   GET /api/analytics/posts/:id/engagement
- * @access  Private (Admin only)
+ * Post engagement metrics
  */
 exports.getPostEngagement = async (req, res) => {
   try {
     const { id } = req.params;
-
     const post = await Post.findById(id);
-
     if (!post) {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Post not found" });
     }
 
-    // Get like count from post
     const likeCount = post.likes || 0;
-
-    // Get unique IP count from likes collection
     const uniqueIPs = await Like.countDocuments({ post: id });
-
-    // Calculate approximate conversion rate
-    // This assumes every IP that viewed the post is stored. In a real app,
-    // you'd have a dedicated view tracking system
     const conversionRate =
       uniqueIPs > 0 ? ((likeCount / uniqueIPs) * 100).toFixed(1) : 0;
 
@@ -234,38 +190,29 @@ exports.getPostEngagement = async (req, res) => {
     });
   } catch (err) {
     console.error("Post engagement analytics error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-      error: process.env.NODE_ENV === "development" ? err.message : undefined,
-    });
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
 /**
- * Get subscriber analytics
- * @route   GET /api/analytics/subscribers
- * @access  Private (Admin only)
+ * Subscriber analytics using User model
  */
 exports.getSubscriberAnalytics = async (req, res) => {
   try {
-    // Get total subscriber count
-    const totalSubscribers = await Subscriber.countDocuments({
-      isActive: true,
+    const totalSubscribers = await User.countDocuments({
+      oneSignalPlayerId: { $exists: true },
     });
 
-    // Get subscribers by device type
-    const deviceBreakdown = await Subscriber.aggregate([
-      { $match: { isActive: true } },
+    const deviceBreakdown = await User.aggregate([
+      { $match: { oneSignalPlayerId: { $exists: true } } },
       {
         $group: {
-          _id: "$deviceType",
+          _id: "$deviceType", // Optional field
           count: { $sum: 1 },
         },
       },
     ]);
 
-    // Format device breakdown
     const formattedDeviceBreakdown = deviceBreakdown.map((item) => ({
       deviceType: item._id || "unknown",
       count: item.count,
@@ -274,19 +221,17 @@ exports.getSubscriberAnalytics = async (req, res) => {
       ),
     }));
 
-    // Get new subscribers this month
     const monthStart = new Date();
     monthStart.setDate(1);
     monthStart.setHours(0, 0, 0, 0);
 
-    const newSubscribers = await Subscriber.countDocuments({
-      isActive: true,
+    const newSubscribers = await User.countDocuments({
+      oneSignalPlayerId: { $exists: true },
       createdAt: { $gte: monthStart },
     });
 
-    // Get subscriber growth over time
-    const subscribersByMonth = await Subscriber.aggregate([
-      { $match: { isActive: true } },
+    const subscribersByMonth = await User.aggregate([
+      { $match: { oneSignalPlayerId: { $exists: true } } },
       {
         $group: {
           _id: {
@@ -299,7 +244,6 @@ exports.getSubscriberAnalytics = async (req, res) => {
       { $sort: { "_id.year": 1, "_id.month": 1 } },
     ]);
 
-    // Format subscriber growth
     const formattedGrowth = subscribersByMonth.map((item) => {
       const date = new Date(item._id.year, item._id.month - 1);
       return {
@@ -322,10 +266,6 @@ exports.getSubscriberAnalytics = async (req, res) => {
     });
   } catch (err) {
     console.error("Subscriber analytics error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-      error: process.env.NODE_ENV === "development" ? err.message : undefined,
-    });
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
