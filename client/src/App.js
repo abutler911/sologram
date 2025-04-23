@@ -88,29 +88,27 @@ function App() {
   };
 
   return (
-    <AuthProvider>
-      <HelmetProvider>
-        <Router>
-          <ScrollToTop />
-          <PageTracker />
-          <div className="app">
-            <Toaster position="top-right" />
-            {!networkStatus && (
-              <OfflineIndicator>
-                You are currently offline. Some features may be limited.
-              </OfflineIndicator>
-            )}
-            <AppRoutes
-              homeRef={homeRef}
-              handleSearch={handleSearch}
-              handleClearSearch={handleClearSearch}
-            />
-            <InstallPrompt />
-            <FloatingActionButtonAdjuster />
-          </div>
-        </Router>
-      </HelmetProvider>
-    </AuthProvider>
+    <HelmetProvider>
+      <Router>
+        <ScrollToTop />
+        <PageTracker />
+        <div className="app">
+          <Toaster position="top-right" />
+          {!networkStatus && (
+            <OfflineIndicator>
+              You are currently offline. Some features may be limited.
+            </OfflineIndicator>
+          )}
+          <AppRoutes
+            homeRef={homeRef}
+            handleSearch={handleSearch}
+            handleClearSearch={handleClearSearch}
+          />
+          <InstallPrompt />
+          <FloatingActionButtonAdjuster />
+        </div>
+      </Router>
+    </HelmetProvider>
   );
 }
 

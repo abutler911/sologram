@@ -7,6 +7,7 @@ import axios from "axios";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { initOneSignal } from "./utils/oneSignal";
 import ReactGA from "react-ga4";
+import { AuthProvider } from "./context/AuthContext";
 
 import AutographyFont from "./assets/fonts/Autography.otf";
 
@@ -189,7 +190,9 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <GlobalStyle />
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </React.StrictMode>
 );
 
