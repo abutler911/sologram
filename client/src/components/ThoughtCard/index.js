@@ -176,10 +176,40 @@ const DefaultAvatar = styled.div`
     ${COLORS.primaryBlue}
   );
   color: #ffffff;
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-`;
+  font-family: "Pacifico", "Brush Script MT", cursive;
+  position: relative;
 
+  /* Add a subtle glow effect */
+  &:after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.3) 0%,
+      transparent 70%
+    );
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  span {
+    position: relative;
+    z-index: 2;
+    transform: rotate(-5deg);
+    display: inline-block;
+  }
+
+  /* Adjust for mobile */
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+  }
+`;
 const UserDetails = styled.div`
   display: flex;
   flex-direction: column;
@@ -606,7 +636,7 @@ const ThoughtCard = ({
               <img src={defaultUser.avatar} alt="User avatar" />
             ) : (
               <DefaultAvatar mood={thought.mood}>
-                {defaultUser.username.charAt(0)}
+                <span>{defaultUser.username.charAt(0)}</span>
               </DefaultAvatar>
             )}
           </Avatar>
