@@ -62,26 +62,24 @@ const BottomNavigation = () => {
 
   return (
     <NavContainer className="bottom-nav">
-      {/* First nav item */}
+      {/* Left side: 2 icons */}
       <NavItem to="/" active={isActive("/")}>
         <FaHome />
         <NavLabel>Home</NavLabel>
       </NavItem>
 
-      {/* Second nav item */}
       <NavItem to="/collections" active={isActive("/collections")}>
         <FaFolder />
         <NavLabel>Collections</NavLabel>
       </NavItem>
 
-      {/* Center create button - only for authenticated users */}
+      {/* Center create button - only for admin users */}
       {isAdmin && (
         <CreateButtonWrapper>
           <CreateButton onClick={toggleCreateOptions}>
             <FaPlus />
           </CreateButton>
-          <NavLabel style={{ opacity: 0 }}>Create</NavLabel>{" "}
-          {/* Invisible label to maintain spacing */}
+          <NavLabel style={{ opacity: 0 }}>Create</NavLabel>
           {showCreateOptions && (
             <CreateOptionsOverlay onClick={() => setShowCreateOptions(false)}>
               <CreateOptions onClick={(e) => e.stopPropagation()}>
@@ -124,43 +122,31 @@ const BottomNavigation = () => {
           )}
         </CreateButtonWrapper>
       )}
+
+      {/* Center brand for non-authenticated users */}
       {!isAuthenticated && (
         <BrandCenter>
           <BrandText>SoloGram</BrandText>
         </BrandCenter>
       )}
 
-      {/* Fourth nav item */}
-      {isAuthenticated ? (
-        <NavItem to="/story-archive" active={isActive("/story-archive")}>
-          <FaBell />
-          <NavLabel>Stories</NavLabel>
-        </NavItem>
-      ) : (
-        <NavItem to="/thoughts" active={isActive("/thoughts")}>
-          <FaLightbulb />
-          <NavLabel>Thoughts</NavLabel>
-        </NavItem>
-      )}
+      {/* Right side: 2 icons */}
+      <NavItem to="/thoughts" active={isActive("/thoughts")}>
+        <FaLightbulb />
+        <NavLabel>Thoughts</NavLabel>
+      </NavItem>
 
-      {/* Fifth nav item */}
+      {/* Admin button for authenticated users, Subscribe button for non-authenticated users */}
       {isAuthenticated ? (
-        <NavItem to="/thoughts" active={isActive("/thoughts")}>
-          <FaLightbulb />
-          <NavLabel>Thoughts</NavLabel>
+        <NavItem to="/admin" active={isActive("/admin")}>
+          <FaUser />
+          <NavLabel>Admin</NavLabel>
         </NavItem>
       ) : (
         <NavAction onClick={handleSubscribeClick}>
           <FaBell />
           <NavLabel>Subscribe</NavLabel>
         </NavAction>
-      )}
-
-      {isAdmin && (
-        <NavItem to="/admin" active={isActive("/admin")}>
-          <FaUser />
-          <NavLabel>Admin</NavLabel>
-        </NavItem>
       )}
     </NavContainer>
   );
