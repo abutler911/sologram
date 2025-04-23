@@ -1,33 +1,27 @@
 // theme.js - Modern Twilight Color Palette
-
 // Primary Colors
 export const COLORS = {
   // Primary colors
-  primaryPurple: "#5E35B1",
+  primaryPurple: "#7B53DB", // Updated to a more vibrant purple
   primaryBlue: "#1E88E5",
   primaryGreen: "#43A047",
-
   // Accent colors
-  accentPurple: "#9575CD",
+  accentPurple: "#A387E5", // Adjusted accent to match new primary purple
   accentBlue: "#64B5F6",
   accentGreen: "#81C784",
-
   // Background colors
   background: "#121212",
   cardBackground: "#1E1E1E",
   elevatedBackground: "#2A2A2A",
-
   // Text colors
   textPrimary: "#FFFFFF",
   textSecondary: "#DDDDDD",
   textTertiary: "#AAAAAA",
-
   // Functional colors
   error: "#F44336",
   success: "#43A047",
   warning: "#FFA000",
   info: "#64B5F6",
-
   // UI element colors
   border: "#444444",
   divider: "#333333",
@@ -52,7 +46,7 @@ export const THEME = {
     primary: {
       background: COLORS.primaryPurple,
       text: COLORS.textPrimary,
-      hoverBackground: "#4527A0", // Darker purple on hover
+      hoverBackground: "#6437C8", // Darker purple on hover (adjusted)
     },
     secondary: {
       background: COLORS.elevatedBackground,
