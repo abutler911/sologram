@@ -70,7 +70,8 @@ function App() {
     };
   }, [networkStatus]);
   useEffect(() => {
-    if (user?._id) {
+    if (user && user._id) {
+      console.log("[App] Initializing OneSignal for user:", user._id);
       initOneSignal(user._id);
       subscribeToPush();
     }

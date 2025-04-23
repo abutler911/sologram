@@ -2,9 +2,12 @@ import OneSignal from "react-onesignal";
 
 export const initOneSignal = async (userId) => {
   const appId = process.env.REACT_APP_ONESIGNAL_APP_ID;
-
-  if (!appId || !userId) {
-    console.error("[OneSignal] Missing App ID or userId");
+  if (!appId) {
+    console.warn("[OneSignal] Missing App ID");
+    return false;
+  }
+  if (!userId) {
+    console.warn("[OneSignal] Missing user ID");
     return false;
   }
 
