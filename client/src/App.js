@@ -70,9 +70,28 @@ function App() {
     console.log("[OneSignal] Init triggered with userId:", user._id);
 
     const setupNotifications = async () => {
-      const ready = await initOneSignal(user._id);
-      if (ready) {
-        await subscribeToPush();
+      try {
+        // If OneSignal is already initialized, don't reinitialize
+        if (window.OneSignal?.initialized) {
+          console.log("[OneSignal] Already initialized");
+          return;
+        }
+
+        const ready = await initOneSignal(user._id);
+
+        // We don't want to automatically prompt for permission here
+        // Let the SubscribeBanner handle that
+        if (ready) {
+          // Just check if already subscribed
+          const isSubscribed =
+            await window.OneSignal.isPushNotificationsEnabled();
+          console.log("[OneSignal] User subscription status:", isSubscribed);
+
+          // Set a flag to prevent duplicate initialization
+          window.OneSignal.initialized = true;
+        }
+      } catch (error) {
+        console.error("[OneSignal] Setup error:", error);
       }
     };
 

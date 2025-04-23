@@ -16,6 +16,7 @@ const SubscribeBanner = ({ user }) => {
     }
 
     const checkBannerStatus = async () => {
+      // Let the app fully load before showing notification banner
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
       const dismissed =
@@ -28,16 +29,18 @@ const SubscribeBanner = ({ user }) => {
         if (daysSinceDismissed <= 7) return;
       }
 
-      const oneSignalReady = await initOneSignal();
-
-      if (!oneSignalReady) {
-        console.log(
-          "[SubscribeBanner] OneSignal not available, skipping banner"
-        );
-        return;
-      }
-
       try {
+        // Make sure OneSignal is initialized first with the user ID
+        const oneSignalReady = await initOneSignal(user._id);
+
+        if (!oneSignalReady) {
+          console.log(
+            "[SubscribeBanner] OneSignal not available, skipping banner"
+          );
+          return;
+        }
+
+        // Check if already subscribed
         const isEnabled = await window.OneSignal.isPushNotificationsEnabled();
         const permission = await window.OneSignal.getNotificationPermission();
 
@@ -45,12 +48,15 @@ const SubscribeBanner = ({ user }) => {
           setShowBanner(true);
         }
       } catch (err) {
-        console.error("Error checking OneSignal status:", err);
+        console.error(
+          "[SubscribeBanner] Error checking OneSignal status:",
+          err
+        );
       }
     };
 
     checkBannerStatus();
-  }, []);
+  }, [user?._id]);
 
   const handleDismiss = () => {
     setShowBanner(false);
