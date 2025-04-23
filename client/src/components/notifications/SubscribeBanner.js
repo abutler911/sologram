@@ -64,11 +64,59 @@ const SubscribeBanner = ({ user }) => {
     localStorage.setItem("subscribeBannerDismissedAt", Date.now().toString());
   };
 
+  // Add this to the SubscribeBanner.js file
+  const checkServerConnection = async () => {
+    try {
+      const response = await fetch("/api/health", {
+        method: "GET",
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      });
+      return response.ok;
+    } catch (error) {
+      console.error("[SubscribeBanner] Server connection check failed:", error);
+      return false;
+    }
+  };
+
   const handleSubscribeClick = async () => {
     const loadingToast = toast.loading("Preparing notifications...");
 
+    const isServerConnected = await checkServerConnection();
+    if (!isServerConnected) {
+      toast.dismiss(loadingToast);
+      toast.error(
+        "Cannot connect to server. Please check your internet connection."
+      );
+      return;
+    }
+
+    // Add a timeout to ensure the toast is dismissed if the process hangs
+    const toastTimeout = setTimeout(() => {
+      toast.dismiss(loadingToast);
+      toast.error("The subscription process timed out. Please try again.");
+    }, 15000);
+
     try {
+      console.log("[SubscribeBanner] Subscribe button clicked");
+
+      // Make sure OneSignal is initialized first
+      try {
+        await initOneSignal(user._id);
+      } catch (initError) {
+        console.error("[SubscribeBanner] OneSignal init error:", initError);
+        clearTimeout(toastTimeout);
+        toast.dismiss(loadingToast);
+        toast.error(
+          "Failed to initialize notification service. Please try again."
+        );
+        return;
+      }
+
+      // Now try to subscribe
       const result = await subscribeToPush();
+      clearTimeout(toastTimeout);
       toast.dismiss(loadingToast);
 
       if (result) {
@@ -83,8 +131,9 @@ const SubscribeBanner = ({ user }) => {
         toast.error("Unable to subscribe. Check your browser settings.");
       }
     } catch (error) {
+      clearTimeout(toastTimeout);
       toast.dismiss(loadingToast);
-      console.error("Subscription error:", error);
+      console.error("[SubscribeBanner] Subscription error:", error);
       toast.error("Something went wrong. Try again later.");
     }
   };
