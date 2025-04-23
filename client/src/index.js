@@ -5,7 +5,7 @@ import { createGlobalStyle } from "styled-components";
 import App from "./App";
 import axios from "axios";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
-import { initializeOneSignal } from "./utils/oneSignal";
+import { initOneSignal } from "./utils/oneSignal";
 import ReactGA from "react-ga4";
 
 import AutographyFont from "./assets/fonts/Autography.otf";
@@ -22,7 +22,7 @@ axios.defaults.baseURL = process.env.REACT_APP_API_URL || "";
 
 // Initialize OneSignal with a delay to ensure DOM is fully loaded
 setTimeout(() => {
-  initializeOneSignal()
+  initOneSignal()
     .then((success) => {
       if (success) {
         console.log("[OneSignal] Initialization complete and successful");

@@ -20,7 +20,7 @@ import {
 import { AuthContext } from "../../context/AuthContext";
 import HeaderSubscriptionBanner from "../subscription/HeaderSubscriptionBanner";
 import { toast } from "react-hot-toast";
-import { requestNotificationPermission } from "../../utils/oneSignal";
+import { subscribeToPush } from "../../utils/oneSignal";
 import { COLORS, THEME } from "../../theme";
 import { registerOneSignalPlayerId } from "../../utils/registerOneSignalPlayerId";
 
@@ -93,7 +93,7 @@ const Header = ({ onSearch, onClearSearch }) => {
           await registerOneSignalPlayerId();
         } else {
           // Try using our helper function
-          const result = await requestNotificationPermission();
+          const result = await subscribeToPush();
           if (result) {
             toast.success("Successfully subscribed to notifications!");
             await registerOneSignalPlayerId();

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import { toast } from "react-hot-toast";
 import { FaBell } from "react-icons/fa";
-import { requestNotificationPermission } from "../../utils/oneSignal";
+import { subscribeToPush } from "../../utils/oneSignal";
 
 const SubscriptionForm = () => {
   const [loading, setLoading] = useState(false);
@@ -12,7 +12,7 @@ const SubscriptionForm = () => {
     setLoading(true);
 
     try {
-      const result = await requestNotificationPermission();
+      const result = await subscribeToPush();
 
       if (result) {
         toast.success("Successfully subscribed to notifications!");

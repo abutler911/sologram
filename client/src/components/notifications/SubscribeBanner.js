@@ -3,13 +3,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { FaBell, FaTimes } from "react-icons/fa";
-import {
-  initializeOneSignal,
-  isOneSignalReady,
-  requestNotificationPermission,
-  checkNotificationCompatibility,
-  getNotificationDiagnostics,
-} from "../../utils/oneSignal";
+import { initOneSignal, subscribeToPush } from "../../utils/oneSignal";
 import { toast } from "react-hot-toast";
 
 const SubscribeBanner = () => {
@@ -29,9 +23,9 @@ const SubscribeBanner = () => {
         if (daysSinceDismissed <= 7) return;
       }
 
-      const oneSignalReady = await initializeOneSignal();
+      const oneSignalReady = await initOneSignal();
 
-      if (!oneSignalReady || !isOneSignalReady()) {
+      if (!oneSignalReady) {
         console.log(
           "[SubscribeBanner] OneSignal not available, skipping banner"
         );
@@ -63,7 +57,7 @@ const SubscribeBanner = () => {
     const loadingToast = toast.loading("Preparing notifications...");
 
     try {
-      const isCompatible = checkNotificationCompatibility();
+      const isCompatible = "Notification" in window;
 
       if (!isCompatible) {
         toast.dismiss(loadingToast);
@@ -71,7 +65,7 @@ const SubscribeBanner = () => {
         return;
       }
 
-      const result = await requestNotificationPermission();
+      const result = await subscribeToPush();
       toast.dismiss(loadingToast);
 
       if (result) {
@@ -85,8 +79,7 @@ const SubscribeBanner = () => {
     } catch (error) {
       toast.dismiss(loadingToast);
       console.error("Error in handleSubscribeClick:", error);
-      const diagnostics = getNotificationDiagnostics();
-      console.debug("Notification diagnostics:", diagnostics);
+
       toast.error("Notification system failed. Try again later.");
     }
   };

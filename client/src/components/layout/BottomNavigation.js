@@ -14,7 +14,7 @@ import {
 } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-hot-toast";
-import { requestNotificationPermission } from "../../utils/oneSignal";
+import { subscribeToPush } from "../../utils/oneSignal";
 import { COLORS, THEME } from "../../theme";
 import { registerOneSignalPlayerId } from "../../utils/registerOneSignalPlayerId";
 
@@ -87,7 +87,7 @@ const BottomNavigation = () => {
           await registerOneSignalPlayerId();
         } else {
           // Try using our helper function
-          const result = await requestNotificationPermission();
+          const result = await subscribeToPush();
           if (result) {
             toast.success("Successfully subscribed to notifications!");
             await registerOneSignalPlayerId();
