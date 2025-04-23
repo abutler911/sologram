@@ -5,13 +5,13 @@ import { FaBell, FaTimes } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import {
   initializeOneSignal,
-  isSubscribed,
-  subscribeToNotifications,
   getNotificationPermission,
+  subscribeToNotifications,
 } from "../../utils/notificationService";
 
 const SubscribeBanner = ({ user }) => {
   const [showBanner, setShowBanner] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!user?._id) {
@@ -20,7 +20,7 @@ const SubscribeBanner = ({ user }) => {
     }
 
     const checkBannerStatus = async () => {
-      // Wait for page to fully load before checking notification status
+      // Wait a moment for page to load
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
       // Check if banner was recently dismissed
@@ -35,32 +35,16 @@ const SubscribeBanner = ({ user }) => {
       }
 
       try {
-        // Initialize OneSignal
-        const initialized = await initializeOneSignal(user._id);
-        if (!initialized) {
-          console.log("[SubscribeBanner] Failed to initialize OneSignal");
-          return;
-        }
-
-        // Check current subscription status
-        const subscribed = await isSubscribed();
-        if (subscribed) {
-          console.log("[SubscribeBanner] Already subscribed");
-          return;
-        }
-
-        // Check if permission is denied
+        // Check notification permission status
         const permission = await getNotificationPermission();
-        if (permission === "denied") {
-          console.log("[SubscribeBanner] Notification permission denied");
-          return;
-        }
 
-        // Show banner if not subscribed and permission not denied
-        setShowBanner(true);
+        // Only show banner if permission is not granted or denied
+        if (permission !== "granted" && permission !== "denied") {
+          setShowBanner(true);
+        }
       } catch (error) {
         console.error(
-          "[SubscribeBanner] Error checking notification status:",
+          "[SubscribeBanner] Error checking notification permission:",
           error
         );
       }
@@ -76,15 +60,20 @@ const SubscribeBanner = ({ user }) => {
   };
 
   const handleSubscribeClick = async () => {
-    const loadingToast = toast.loading("Preparing notifications...");
+    if (isLoading) return;
+
+    setIsLoading(true);
+    const loadingToast = toast.loading("Setting up notifications...");
 
     try {
       // Try to subscribe the user
       const success = await subscribeToNotifications(user?._id);
+
       toast.dismiss(loadingToast);
+      setIsLoading(false);
 
       if (success) {
-        toast.success("Subscribed to notifications!");
+        toast.success("You're now subscribed to notifications!");
         setShowBanner(false);
         localStorage.setItem("subscribeBannerDismissed", "true");
         localStorage.setItem(
@@ -92,19 +81,18 @@ const SubscribeBanner = ({ user }) => {
           Date.now().toString()
         );
       } else {
-        // Check what went wrong
+        // Get current permission status
         const permission = await getNotificationPermission();
 
         if (permission === "denied") {
-          toast.error(
-            "Notification permission denied. Please update your browser settings."
-          );
+          toast.error("Permission denied. Please check your browser settings.");
         } else {
-          toast.error("Unable to subscribe. Please try again later.");
+          toast.error("Couldn't subscribe to notifications. Please try again.");
         }
       }
     } catch (error) {
       toast.dismiss(loadingToast);
+      setIsLoading(false);
       console.error("[SubscribeBanner] Subscription error:", error);
       toast.error("Something went wrong. Please try again later.");
     }
@@ -127,10 +115,10 @@ const SubscribeBanner = ({ user }) => {
       </BannerContent>
 
       <BannerActions>
-        <SubscribeButton onClick={handleSubscribeClick}>
-          Subscribe Now
+        <SubscribeButton onClick={handleSubscribeClick} disabled={isLoading}>
+          {isLoading ? "Setting up..." : "Subscribe Now"}
         </SubscribeButton>
-        <DismissButton onClick={handleDismiss}>
+        <DismissButton onClick={handleDismiss} disabled={isLoading}>
           <FaTimes />
         </DismissButton>
       </BannerActions>
@@ -248,9 +236,14 @@ const SubscribeButton = styled.button`
   cursor: pointer;
   margin-right: 1rem;
   transition: background-color 0.3s;
+  opacity: ${(props) => (props.disabled ? 0.7 : 1)};
 
   &:hover {
-    background-color: #ff6347;
+    background-color: ${(props) => (props.disabled ? "#ff7e5f" : "#ff6347")};
+  }
+
+  &:disabled {
+    cursor: not-allowed;
   }
 
   @media (max-width: 768px) {
@@ -275,9 +268,14 @@ const DismissButton = styled.button`
   border: none;
   cursor: pointer;
   transition: background-color 0.3s;
+  opacity: ${(props) => (props.disabled ? 0.7 : 1)};
 
   &:hover {
-    background-color: #e0e0e0;
+    background-color: ${(props) => (props.disabled ? "#f2f2f2" : "#e0e0e0")};
+  }
+
+  &:disabled {
+    cursor: not-allowed;
   }
 
   @media (max-width: 480px) {

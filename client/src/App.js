@@ -70,17 +70,15 @@ function App() {
 
     console.log("[OneSignal] Init triggered with userId:", user._id);
 
-    const setupOneSignal = async () => {
+    const setupNotifications = async () => {
       try {
-        // We don't need to immediately subscribe here, just initialize
-        // SubscribeBanner will handle the subscription flow
         await initializeOneSignal(user._id);
       } catch (error) {
         console.error("[App] OneSignal initialization error:", error);
       }
     };
 
-    setupOneSignal();
+    setupNotifications();
   }, [user?._id]);
 
   // 🔍 Search handlers
