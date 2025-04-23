@@ -3,11 +3,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { FaBell, FaTimes } from "react-icons/fa";
 import { toast } from "react-hot-toast";
-import {
-  initializeOneSignal,
-  getNotificationPermission,
-  subscribeToNotifications,
-} from "../../utils/notificationService";
+import { subscribeToNotifications } from "../../utils/notificationService";
 
 const SubscribeBanner = ({ user }) => {
   const [showBanner, setShowBanner] = useState(false);
@@ -20,9 +16,6 @@ const SubscribeBanner = ({ user }) => {
     }
 
     const checkBannerStatus = async () => {
-      // Wait a moment for page to load
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-
       // Check if banner was recently dismissed
       const dismissed =
         localStorage.getItem("subscribeBannerDismissed") === "true";
@@ -34,23 +27,12 @@ const SubscribeBanner = ({ user }) => {
         if (daysSinceDismissed <= 7) return;
       }
 
-      try {
-        // Check notification permission status
-        const permission = await getNotificationPermission();
-
-        // Only show banner if permission is not granted or denied
-        if (permission !== "granted" && permission !== "denied") {
-          setShowBanner(true);
-        }
-      } catch (error) {
-        console.error(
-          "[SubscribeBanner] Error checking notification permission:",
-          error
-        );
-      }
+      // Simply show the banner if it hasn't been dismissed
+      setShowBanner(true);
     };
 
-    checkBannerStatus();
+    // Wait a moment before checking
+    setTimeout(checkBannerStatus, 3000);
   }, [user?._id]);
 
   const handleDismiss = () => {
@@ -67,7 +49,7 @@ const SubscribeBanner = ({ user }) => {
 
     try {
       // Try to subscribe the user
-      const success = await subscribeToNotifications(user?._id);
+      const success = await subscribeToNotifications();
 
       toast.dismiss(loadingToast);
       setIsLoading(false);
@@ -81,14 +63,9 @@ const SubscribeBanner = ({ user }) => {
           Date.now().toString()
         );
       } else {
-        // Get current permission status
-        const permission = await getNotificationPermission();
-
-        if (permission === "denied") {
-          toast.error("Permission denied. Please check your browser settings.");
-        } else {
-          toast.error("Couldn't subscribe to notifications. Please try again.");
-        }
+        toast.error(
+          "Couldn't enable notifications. Please check your browser settings and try again."
+        );
       }
     } catch (error) {
       toast.dismiss(loadingToast);

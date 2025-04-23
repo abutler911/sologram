@@ -1,48 +1,32 @@
 // src/utils/notificationService.js
 import OneSignal from "react-onesignal";
-import axios from "axios";
 
-// Check if OneSignal is already initialized
+// Track initialization state
 let isInitialized = false;
 
-// Initialize OneSignal with your app ID
+// Initialize OneSignal
 export const initializeOneSignal = async (userId) => {
-  try {
-    // Prevent multiple initializations
-    if (isInitialized) {
-      console.log("[Notifications] OneSignal already initialized");
-      return true;
-    }
+  if (isInitialized) {
+    console.log("[Notifications] OneSignal already initialized");
+    return true;
+  }
 
+  try {
     if (!process.env.REACT_APP_ONESIGNAL_APP_ID) {
       console.error("[Notifications] Missing OneSignal App ID");
       return false;
     }
 
+    // Initialize with minimal options
     await OneSignal.init({
       appId: process.env.REACT_APP_ONESIGNAL_APP_ID,
-      allowLocalhostAsSecureOrigin: true,
       notifyButton: {
         enable: false,
       },
-      serviceWorkerParam: {
-        scope: "/",
-      },
+      allowLocalhostAsSecureOrigin: true,
     });
 
     console.log("[Notifications] OneSignal initialized successfully");
-
-    // Use a custom tag for user ID instead of setExternalUserId
-    if (userId) {
-      try {
-        // Set a tag with the user ID
-        await OneSignal.sendTag("userId", userId.toString());
-        console.log("[Notifications] Set user ID tag:", userId);
-      } catch (tagError) {
-        console.error("[Notifications] Error setting user ID tag:", tagError);
-      }
-    }
-
     isInitialized = true;
     return true;
   } catch (error) {
@@ -51,144 +35,89 @@ export const initializeOneSignal = async (userId) => {
   }
 };
 
-// Check if notifications are already enabled
-export const isSubscribed = async () => {
-  try {
-    // Make sure OneSignal is initialized
-    if (!isInitialized) {
-      await initializeOneSignal();
-    }
-
-    const state = await OneSignal.getNotificationPermission();
-    return state === "granted";
-  } catch (error) {
-    console.error("[Notifications] Error checking subscription status:", error);
-    return false;
-  }
-};
-
-// Get current OneSignal permission state
-export const getNotificationPermission = async () => {
-  try {
-    // Make sure OneSignal is initialized
-    if (!isInitialized) {
-      await initializeOneSignal();
-    }
-
-    return await OneSignal.getNotificationPermission();
-  } catch (error) {
-    console.error("[Notifications] Error getting permission:", error);
-    return "default";
-  }
-};
-
-// Register for push notifications
-export const subscribeToNotifications = async (userId) => {
+// Subscribe to notifications
+export const subscribeToNotifications = async () => {
   try {
     console.log("[Notifications] Starting subscription process");
 
-    // Make sure OneSignal is initialized
     if (!isInitialized) {
-      const initialized = await initializeOneSignal(userId);
+      const initialized = await initializeOneSignal();
       if (!initialized) {
         console.error("[Notifications] Failed to initialize OneSignal");
         return false;
       }
     }
 
-    // Set user ID tag if provided
-    if (userId) {
-      try {
-        await OneSignal.sendTag("userId", userId.toString());
-      } catch (tagError) {
-        console.error("[Notifications] Error setting user ID tag:", tagError);
-      }
-    }
-
-    // Check current permission status
-    const permission = await OneSignal.getNotificationPermission();
-    console.log("[Notifications] Current permission status:", permission);
-
-    if (permission === "denied") {
-      console.warn("[Notifications] Permission already denied");
-      return false;
-    }
-
     // Register for push notifications
     console.log("[Notifications] Requesting permission...");
     await OneSignal.registerForPushNotifications();
 
-    // Check if permission was granted
-    const newPermission = await OneSignal.getNotificationPermission();
-    console.log("[Notifications] New permission status:", newPermission);
+    // We don't have a direct way to check if it succeeded, so we'll consider it a success
+    // if no error was thrown
+    console.log("[Notifications] Subscription requested successfully");
 
-    if (newPermission === "granted") {
-      // Get the player ID (different methods depending on OneSignal version)
-      let playerId;
-      try {
-        // Try getUserId method first
-        playerId = await OneSignal.getUserId();
-      } catch (error) {
-        // If getUserId doesn't exist, try getPlayerId
-        try {
-          playerId = await OneSignal.getPlayerId();
-        } catch (error2) {
-          console.error("[Notifications] Could not get player ID:", error2);
-        }
-      }
-
+    // Try to get player ID and register with server
+    try {
+      const playerId = await getPlayerId();
       if (playerId) {
-        // Register player ID with the server
         await registerPlayerIdWithServer(playerId);
-        console.log(
-          "[Notifications] Successfully subscribed with player ID:",
-          playerId
-        );
-        return true;
       }
+    } catch (error) {
+      console.error("[Notifications] Error getting player ID:", error);
+      // Continue anyway as we might still be subscribed
     }
 
-    console.warn("[Notifications] Subscription failed or was denied");
-    return false;
+    return true;
   } catch (error) {
     console.error("[Notifications] Error subscribing to notifications:", error);
     return false;
   }
 };
 
-// Register OneSignal player ID with your server
+// Get OneSignal player ID
+export const getPlayerId = async () => {
+  try {
+    // Wait a moment to ensure OneSignal has time to generate ID
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // Use the available method to get player ID
+    const playerId = await OneSignal.getUserId();
+    console.log("[Notifications] Got player ID:", playerId);
+    return playerId;
+  } catch (error) {
+    console.error("[Notifications] Error getting player ID:", error);
+    return null;
+  }
+};
+
+// Register OneSignal player ID with server
 const registerPlayerIdWithServer = async (playerId) => {
+  if (!playerId) return false;
+
   try {
     console.log("[Notifications] Registering player ID with server:", playerId);
 
     const token = localStorage.getItem("token");
-    if (!token) {
-      console.warn("[Notifications] No auth token found for API request");
-    }
 
-    const response = await axios.post(
-      "/api/subscribers/register",
-      { playerId },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      }
-    );
+    const response = await fetch("/api/subscribers/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+      body: JSON.stringify({ playerId }),
+    });
 
-    if (response.status === 200) {
-      console.log(
-        "[Notifications] Player ID registered successfully with server"
-      );
+    if (response.ok) {
+      console.log("[Notifications] Player ID registered successfully");
       return true;
+    } else {
+      console.error(
+        "[Notifications] Failed to register player ID:",
+        response.status
+      );
+      return false;
     }
-
-    console.warn(
-      "[Notifications] Server returned non-200 status:",
-      response.status
-    );
-    return false;
   } catch (error) {
     console.error(
       "[Notifications] Error registering player ID with server:",
