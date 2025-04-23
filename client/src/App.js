@@ -4,6 +4,9 @@ import { Toaster, toast } from "react-hot-toast";
 import styled from "styled-components";
 import ReactGA from "react-ga4";
 import { HelmetProvider } from "react-helmet-async";
+import { useContext } from "react";
+import { AuthContext } from "./context/AuthContext";
+import { initOneSignal, subscribeToPush } from "./utils/oneSignal";
 
 import ScrollToTop from "./components/ScrollToTop";
 import InstallPrompt from "./components/pwa/InstallPrompt";
@@ -43,6 +46,7 @@ const OfflineIndicator = styled.div`
 function App() {
   const [networkStatus, setNetworkStatus] = useState(navigator.onLine);
   const homeRef = useRef(null);
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     const handleOnline = () => setNetworkStatus(true);
@@ -65,7 +69,12 @@ function App() {
       window.removeEventListener("offline", handleOffline);
     };
   }, [networkStatus]);
-
+  useEffect(() => {
+    if (user?._id) {
+      initOneSignal(user._id);
+      subscribeToPush();
+    }
+  }, [user]);
   const handleSearch = (query) => {
     if (homeRef.current?.handleHeaderSearch) {
       homeRef.current.handleHeaderSearch(query);

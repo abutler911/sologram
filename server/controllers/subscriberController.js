@@ -340,57 +340,6 @@ const subscriberController = {
       });
     }
   },
-
-  // Register a subscriber
-  registerSubscriber: async (req, res) => {
-    try {
-      const { oneSignalId } = req.body;
-
-      if (!oneSignalId) {
-        return res.status(400).json({
-          success: false,
-          message: "OneSignal ID is required",
-        });
-      }
-
-      // Save to database if you have a Subscriber model
-      if (typeof Subscriber !== "undefined") {
-        try {
-          // Check if already exists
-          let subscriber = await Subscriber.findOne({ oneSignalId });
-
-          if (subscriber) {
-            // Update existing
-            subscriber.active = true;
-            subscriber.lastActive = new Date();
-            await subscriber.save();
-          } else {
-            // Create new
-            subscriber = new Subscriber({
-              oneSignalId,
-              active: true,
-              lastActive: new Date(),
-              userId: req.user?._id, // If user is logged in
-            });
-            await subscriber.save();
-          }
-        } catch (dbErr) {
-          console.error("Error saving subscriber to database:", dbErr);
-        }
-      }
-
-      return res.status(200).json({
-        success: true,
-        message: "Subscriber registered successfully",
-      });
-    } catch (err) {
-      console.error("Error registering subscriber:", err);
-      return res.status(500).json({
-        success: false,
-        message: "Server error registering subscriber",
-      });
-    }
-  },
 };
 
 module.exports = subscriberController;

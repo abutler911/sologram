@@ -1,13 +1,36 @@
-// routes/subscribers.js
 const express = require("express");
 const router = express.Router();
 const { protect, authorize } = require("../middleware/auth");
 const subscriberController = require("../controllers/subscriberController");
 
-// Public routes
-router.post("/register", subscriberController.registerSubscriber);
+// NEW: Authenticated user registers OneSignal player ID
+router.post("/register", protect, async (req, res) => {
+  const { playerId } = req.body;
 
-// Admin routes - protected and require admin role
+  if (!playerId) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Missing playerId" });
+  }
+
+  try {
+    const user = req.user;
+    user.oneSignalPlayerId = playerId;
+    await user.save();
+
+    console.log(
+      `[OneSignal] Player ID registered for user ${user.username}: ${playerId}`
+    );
+    res.status(200).json({ success: true, playerId, user: user._id });
+  } catch (err) {
+    console.error("[OneSignal] Error registering playerId:", err);
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to register playerId" });
+  }
+});
+
+// Admin routes (keep these!)
 router.get(
   "/stats",
   protect,
@@ -50,7 +73,6 @@ router.patch(
   authorize("admin"),
   subscriberController.cancelScheduledNotification
 );
-
 router.get(
   "/platform-stats",
   protect,

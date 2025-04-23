@@ -50,6 +50,11 @@ const UserSchema = new mongoose.Schema({
     enum: ["admin", "creator", "user"],
     default: "user",
   },
+  oneSignalPlayerId: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
