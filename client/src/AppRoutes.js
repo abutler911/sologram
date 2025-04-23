@@ -9,7 +9,7 @@ import Footer from "./components/layout/Footer";
 import BottomNavigation from "./components/layout/BottomNavigation";
 import SubscribeBanner from "./components/notifications/SubscribeBanner";
 
-const AppRoutes = ({ homeRef, handleSearch, handleClearSearch }) => {
+const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
   const Home = React.lazy(() => import("./pages/Home"));
   const Login = React.lazy(() => import("./pages/Login"));
   const Register = React.lazy(() => import("./pages/Register"));
@@ -52,7 +52,7 @@ const AppRoutes = ({ homeRef, handleSearch, handleClearSearch }) => {
                 onClearSearch={handleClearSearch}
               />
               <main className="main-content">
-                <SubscribeBanner />
+                <SubscribeBanner user={user} />
                 <Home ref={homeRef} />
               </main>
               <Footer />

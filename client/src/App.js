@@ -101,6 +101,7 @@ function App() {
             </OfflineIndicator>
           )}
           <AppRoutes
+            user={user}
             homeRef={homeRef}
             handleSearch={handleSearch}
             handleClearSearch={handleClearSearch}

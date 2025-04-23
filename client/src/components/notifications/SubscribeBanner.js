@@ -6,12 +6,17 @@ import { FaBell, FaTimes } from "react-icons/fa";
 import { initOneSignal, subscribeToPush } from "../../utils/oneSignal";
 import { toast } from "react-hot-toast";
 
-const SubscribeBanner = () => {
+const SubscribeBanner = ({ user }) => {
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
+    if (!user?._id) {
+      console.log("[SubscribeBanner] Skipping init — no user yet");
+      return;
+    }
+
     const checkBannerStatus = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait before showing
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
       const dismissed =
         localStorage.getItem("subscribeBannerDismissed") === "true";
