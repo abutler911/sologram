@@ -5,7 +5,7 @@ import styled from "styled-components";
 import ReactGA from "react-ga4";
 import { HelmetProvider } from "react-helmet-async";
 
-import { AuthContext, AuthProvider } from "./context/AuthContext";
+import { AuthContext } from "./context/AuthContext";
 import { initOneSignal, subscribeToPush } from "./utils/oneSignal";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 
@@ -66,6 +66,8 @@ function App() {
 
   useEffect(() => {
     if (!user?._id) return;
+
+    console.log("[OneSignal] Init triggered with userId:", user._id);
 
     const setupNotifications = async () => {
       const ready = await initOneSignal(user._id);
