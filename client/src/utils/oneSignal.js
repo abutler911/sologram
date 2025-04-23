@@ -53,6 +53,10 @@ export const subscribeToPush = async () => {
     await OneSignal.showSlidedownPrompt();
 
     const playerId = await OneSignal.getUserId();
+    if (!playerId) {
+      console.warn("[OneSignal] No Player ID received after prompt");
+      return false;
+    }
     console.log("[OneSignal] Got Player ID:", playerId);
 
     if (playerId) {
@@ -68,7 +72,8 @@ export const subscribeToPush = async () => {
         console.log("[OneSignal] Player ID saved to backend");
         return true;
       } else {
-        console.warn("[OneSignal] Backend rejected Player ID");
+        const errorText = await response.text();
+        console.warn("[OneSignal] Backend rejected Player ID:", errorText);
       }
     }
 

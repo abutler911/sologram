@@ -64,18 +64,18 @@ function App() {
     };
   }, [networkStatus]);
 
-  // ✅ OneSignal init when user is available
   useEffect(() => {
+    if (!user?._id) return;
+
     const setupNotifications = async () => {
-      if (user?._id) {
-        const ready = await initOneSignal(user._id);
-        if (ready) {
-          await subscribeToPush();
-        }
+      const ready = await initOneSignal(user._id);
+      if (ready) {
+        await subscribeToPush();
       }
     };
+
     setupNotifications();
-  }, [user]);
+  }, [user?._id]);
 
   // 🔍 Search handlers
   const handleSearch = (query) => {
