@@ -301,13 +301,13 @@ const HomeContainer = styled.div`
   padding: 0.75rem 2rem;
 
   @media (max-width: 768px) {
-    max-width: 100vw;
-    padding: ${(props) => (props.isPWA ? "0.5rem 0.5rem" : "0.5rem 1rem")};
+    max-width: 100%;
+    padding: ${(props) => (props.isPWA ? "0.5rem 0.25rem" : "0.5rem 0.5rem")};
     box-sizing: border-box;
   }
 
   @media (max-width: 480px) {
-    padding: ${(props) => (props.isPWA ? "0.25rem 0.25rem" : "0.5rem 0.75rem")};
+    padding: ${(props) => (props.isPWA ? "0.25rem 0" : "0.5rem 0.25rem")};
   }
 
   & > section {
@@ -363,10 +363,9 @@ const PostGrid = styled.div`
   width: 100%;
 
   @media (max-width: 768px) {
-    grid-template-columns: ${(props) =>
-      props.isPWA ? "1fr" : "repeat(auto-fit, minmax(240px, 1fr))"};
+    grid-template-columns: 1fr; /* Always one column on mobile/PWA */
     gap: ${(props) => (props.isPWA ? "0.5rem" : "0.75rem")};
-    padding: ${(props) => (props.isPWA ? "0.125rem 0" : "0 0.5rem")};
+    padding: ${(props) => (props.isPWA ? "0" : "0 0.25rem")};
     width: 100%;
     border-radius: ${(props) => (props.isPWA ? "0" : "6px")};
   }
@@ -374,11 +373,12 @@ const PostGrid = styled.div`
 
 const GridItem = styled.div`
   display: flex;
+  justify-content: center; /* Center the card */
   height: 100%;
   max-width: 100%;
 
   @media (max-width: 768px) {
-    width: ${(props) => (props.isPWA ? "calc(100vw - 1.5rem)" : "100%")};
+    width: 100%;
     max-width: 100%;
   }
 `;

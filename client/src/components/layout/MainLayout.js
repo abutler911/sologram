@@ -45,11 +45,20 @@ const LayoutWrapper = styled.div`
   min-height: 100vh;
   background-color: ${COLORS.background};
   transition: background-color 0.3s ease-in-out;
+  width: 100%;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 
   @media (min-width: 768px) {
     .bottom-navigation {
       display: none;
     }
+  }
+
+  main {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 `;
 

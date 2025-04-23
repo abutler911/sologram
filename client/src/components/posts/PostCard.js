@@ -581,10 +581,10 @@ const CardWrapper = styled.div`
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    width: 90%;
+    width: 96%;
     max-width: none;
     margin: 10px auto;
-    padding: 0;
+    padding: 2px;
     border: none;
     border-radius: 0;
     background: transparent;
