@@ -1,34 +1,30 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { BrowserRouter as Router, useLocation } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
 import styled from "styled-components";
 import ReactGA from "react-ga4";
 import { HelmetProvider } from "react-helmet-async";
-import { useContext } from "react";
-import { AuthContext } from "./context/AuthContext";
+
+import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { initOneSignal, subscribeToPush } from "./utils/oneSignal";
+import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 
 import ScrollToTop from "./components/ScrollToTop";
 import InstallPrompt from "./components/pwa/InstallPrompt";
 import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButtonAdjuster";
-
-import { AuthProvider } from "./context/AuthContext";
-
-import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import AppRoutes from "./AppRoutes";
 
+// Register service worker just once
 serviceWorkerRegistration.register();
 
 const PageTracker = () => {
   const location = useLocation();
-
   useEffect(() => {
     ReactGA.send({
       hitType: "pageview",
       page: location.pathname + location.search,
     });
   }, [location]);
-
   return null;
 };
 
@@ -48,19 +44,17 @@ function App() {
   const homeRef = useRef(null);
   const { user } = useContext(AuthContext);
 
+  // ✅ Network listener
   useEffect(() => {
     const handleOnline = () => setNetworkStatus(true);
     const handleOffline = () => setNetworkStatus(false);
-
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
-    if (networkStatus) {
-      if (localStorage.getItem("wasOffline") === "true") {
-        toast.success("You are back online");
-        localStorage.removeItem("wasOffline");
-      }
-    } else {
+    if (networkStatus && localStorage.getItem("wasOffline") === "true") {
+      toast.success("You are back online");
+      localStorage.removeItem("wasOffline");
+    } else if (!networkStatus) {
       localStorage.setItem("wasOffline", "true");
     }
 
@@ -69,23 +63,27 @@ function App() {
       window.removeEventListener("offline", handleOffline);
     };
   }, [networkStatus]);
+
+  // ✅ OneSignal init when user is available
   useEffect(() => {
-    if (user && user._id) {
-      console.log("[App] Initializing OneSignal for user:", user._id);
-      initOneSignal(user._id);
-      subscribeToPush();
-    }
+    const setupNotifications = async () => {
+      if (user?._id) {
+        const ready = await initOneSignal(user._id);
+        if (ready) {
+          await subscribeToPush();
+        }
+      }
+    };
+    setupNotifications();
   }, [user]);
+
+  // 🔍 Search handlers
   const handleSearch = (query) => {
-    if (homeRef.current?.handleHeaderSearch) {
-      homeRef.current.handleHeaderSearch(query);
-    }
+    homeRef.current?.handleHeaderSearch?.(query);
   };
 
   const handleClearSearch = () => {
-    if (homeRef.current?.clearSearch) {
-      homeRef.current.clearSearch();
-    }
+    homeRef.current?.clearSearch?.();
   };
 
   return (
