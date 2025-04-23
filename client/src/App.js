@@ -6,7 +6,7 @@ import ReactGA from "react-ga4";
 import { HelmetProvider } from "react-helmet-async";
 
 import { AuthContext } from "./context/AuthContext";
-import { initOneSignal, subscribeToPush } from "./utils/oneSignal";
+import { initializeOneSignal } from "./utils/notificationService";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 
 import ScrollToTop from "./components/ScrollToTop";
@@ -64,38 +64,23 @@ function App() {
     };
   }, [networkStatus]);
 
+  // Initialize OneSignal once when user loads
   useEffect(() => {
     if (!user?._id) return;
 
     console.log("[OneSignal] Init triggered with userId:", user._id);
 
-    const setupNotifications = async () => {
+    const setupOneSignal = async () => {
       try {
-        // If OneSignal is already initialized, don't reinitialize
-        if (window.OneSignal?.initialized) {
-          console.log("[OneSignal] Already initialized");
-          return;
-        }
-
-        const ready = await initOneSignal(user._id);
-
-        // We don't want to automatically prompt for permission here
-        // Let the SubscribeBanner handle that
-        if (ready) {
-          // Just check if already subscribed
-          const isSubscribed =
-            await window.OneSignal.isPushNotificationsEnabled();
-          console.log("[OneSignal] User subscription status:", isSubscribed);
-
-          // Set a flag to prevent duplicate initialization
-          window.OneSignal.initialized = true;
-        }
+        // We don't need to immediately subscribe here, just initialize
+        // SubscribeBanner will handle the subscription flow
+        await initializeOneSignal(user._id);
       } catch (error) {
-        console.error("[OneSignal] Setup error:", error);
+        console.error("[App] OneSignal initialization error:", error);
       }
     };
 
-    setupNotifications();
+    setupOneSignal();
   }, [user?._id]);
 
   // 🔍 Search handlers

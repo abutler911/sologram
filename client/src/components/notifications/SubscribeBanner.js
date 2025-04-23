@@ -1,10 +1,14 @@
 // components/notifications/SubscribeBanner.js
-
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { FaBell, FaTimes } from "react-icons/fa";
-import { initOneSignal, subscribeToPush } from "../../utils/oneSignal";
 import { toast } from "react-hot-toast";
+import {
+  initializeOneSignal,
+  isSubscribed,
+  subscribeToNotifications,
+  getNotificationPermission,
+} from "../../utils/notificationService";
 
 const SubscribeBanner = ({ user }) => {
   const [showBanner, setShowBanner] = useState(false);
@@ -16,9 +20,10 @@ const SubscribeBanner = ({ user }) => {
     }
 
     const checkBannerStatus = async () => {
-      // Let the app fully load before showing notification banner
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      // Wait for page to fully load before checking notification status
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
+      // Check if banner was recently dismissed
       const dismissed =
         localStorage.getItem("subscribeBannerDismissed") === "true";
       const dismissedAt = localStorage.getItem("subscribeBannerDismissedAt");
@@ -30,27 +35,33 @@ const SubscribeBanner = ({ user }) => {
       }
 
       try {
-        // Make sure OneSignal is initialized first with the user ID
-        const oneSignalReady = await initOneSignal(user._id);
-
-        if (!oneSignalReady) {
-          console.log(
-            "[SubscribeBanner] OneSignal not available, skipping banner"
-          );
+        // Initialize OneSignal
+        const initialized = await initializeOneSignal(user._id);
+        if (!initialized) {
+          console.log("[SubscribeBanner] Failed to initialize OneSignal");
           return;
         }
 
-        // Check if already subscribed
-        const isEnabled = await window.OneSignal.isPushNotificationsEnabled();
-        const permission = await window.OneSignal.getNotificationPermission();
-
-        if (!isEnabled && permission !== "denied") {
-          setShowBanner(true);
+        // Check current subscription status
+        const subscribed = await isSubscribed();
+        if (subscribed) {
+          console.log("[SubscribeBanner] Already subscribed");
+          return;
         }
-      } catch (err) {
+
+        // Check if permission is denied
+        const permission = await getNotificationPermission();
+        if (permission === "denied") {
+          console.log("[SubscribeBanner] Notification permission denied");
+          return;
+        }
+
+        // Show banner if not subscribed and permission not denied
+        setShowBanner(true);
+      } catch (error) {
         console.error(
-          "[SubscribeBanner] Error checking OneSignal status:",
-          err
+          "[SubscribeBanner] Error checking notification status:",
+          error
         );
       }
     };
@@ -64,62 +75,15 @@ const SubscribeBanner = ({ user }) => {
     localStorage.setItem("subscribeBannerDismissedAt", Date.now().toString());
   };
 
-  // Add this to the SubscribeBanner.js file
-  const checkServerConnection = async () => {
-    try {
-      const response = await fetch("/api/health", {
-        method: "GET",
-        headers: {
-          "Cache-Control": "no-cache",
-        },
-      });
-      return response.ok;
-    } catch (error) {
-      console.error("[SubscribeBanner] Server connection check failed:", error);
-      return false;
-    }
-  };
-
   const handleSubscribeClick = async () => {
     const loadingToast = toast.loading("Preparing notifications...");
 
-    const isServerConnected = await checkServerConnection();
-    if (!isServerConnected) {
-      toast.dismiss(loadingToast);
-      toast.error(
-        "Cannot connect to server. Please check your internet connection."
-      );
-      return;
-    }
-
-    // Add a timeout to ensure the toast is dismissed if the process hangs
-    const toastTimeout = setTimeout(() => {
-      toast.dismiss(loadingToast);
-      toast.error("The subscription process timed out. Please try again.");
-    }, 15000);
-
     try {
-      console.log("[SubscribeBanner] Subscribe button clicked");
-
-      // Make sure OneSignal is initialized first
-      try {
-        await initOneSignal(user._id);
-      } catch (initError) {
-        console.error("[SubscribeBanner] OneSignal init error:", initError);
-        clearTimeout(toastTimeout);
-        toast.dismiss(loadingToast);
-        toast.error(
-          "Failed to initialize notification service. Please try again."
-        );
-        return;
-      }
-
-      // Now try to subscribe
-      const result = await subscribeToPush();
-      clearTimeout(toastTimeout);
+      // Try to subscribe the user
+      const success = await subscribeToNotifications(user?._id);
       toast.dismiss(loadingToast);
 
-      if (result) {
+      if (success) {
         toast.success("Subscribed to notifications!");
         setShowBanner(false);
         localStorage.setItem("subscribeBannerDismissed", "true");
@@ -128,13 +92,21 @@ const SubscribeBanner = ({ user }) => {
           Date.now().toString()
         );
       } else {
-        toast.error("Unable to subscribe. Check your browser settings.");
+        // Check what went wrong
+        const permission = await getNotificationPermission();
+
+        if (permission === "denied") {
+          toast.error(
+            "Notification permission denied. Please update your browser settings."
+          );
+        } else {
+          toast.error("Unable to subscribe. Please try again later.");
+        }
       }
     } catch (error) {
-      clearTimeout(toastTimeout);
       toast.dismiss(loadingToast);
       console.error("[SubscribeBanner] Subscription error:", error);
-      toast.error("Something went wrong. Try again later.");
+      toast.error("Something went wrong. Please try again later.");
     }
   };
 
@@ -166,7 +138,7 @@ const SubscribeBanner = ({ user }) => {
   );
 };
 
-// Styled components remain the same...
+// Styled components
 const Banner = styled.div`
   display: flex;
   align-items: center;
