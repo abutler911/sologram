@@ -62,30 +62,24 @@ const SubscribeBanner = ({ user }) => {
     const loadingToast = toast.loading("Preparing notifications...");
 
     try {
-      const isCompatible = "Notification" in window;
-
-      if (!isCompatible) {
-        toast.dismiss(loadingToast);
-        toast.error("Your browser doesn't support notifications.");
-        return;
-      }
-
       const result = await subscribeToPush();
       toast.dismiss(loadingToast);
 
       if (result) {
+        toast.success("Subscribed to notifications!");
         setShowBanner(false);
         localStorage.setItem("subscribeBannerDismissed", "true");
         localStorage.setItem(
           "subscribeBannerDismissedAt",
           Date.now().toString()
         );
+      } else {
+        toast.error("Unable to subscribe. Check your browser settings.");
       }
     } catch (error) {
       toast.dismiss(loadingToast);
-      console.error("Error in handleSubscribeClick:", error);
-
-      toast.error("Notification system failed. Try again later.");
+      console.error("Subscription error:", error);
+      toast.error("Something went wrong. Try again later.");
     }
   };
 

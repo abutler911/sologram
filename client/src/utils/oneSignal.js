@@ -40,46 +40,45 @@ export const subscribeToPush = async () => {
 
     const permission = await OneSignal.getNotificationPermission();
     if (permission === "denied") {
-      console.warn("[OneSignal] Permission denied in browser");
+      console.warn("[OneSignal] User has denied notifications");
       return false;
     }
 
-    const alreadySubscribed = await OneSignal.isPushNotificationsEnabled();
-    if (alreadySubscribed) {
+    const isSubscribed = await OneSignal.isPushNotificationsEnabled();
+    if (isSubscribed) {
       console.log("[OneSignal] Already subscribed");
       return true;
     }
 
+    // Trigger the slide-down prompt
     await OneSignal.showSlidedownPrompt();
+    await OneSignal.registerForPushNotifications();
+
+    // Give some delay before checking
+    await new Promise((res) => setTimeout(res, 1500));
 
     const playerId = await OneSignal.getUserId();
     if (!playerId) {
-      console.warn("[OneSignal] No Player ID received after prompt");
+      console.warn("[OneSignal] Failed to get Player ID after prompt");
       return false;
     }
-    console.log("[OneSignal] Got Player ID:", playerId);
 
-    if (playerId) {
-      const response = await fetch("/api/subscribers/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ playerId }),
-      });
+    // Save to backend
+    const response = await fetch("/api/subscribers/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ playerId }),
+    });
 
-      if (response.ok) {
-        console.log("[OneSignal] Player ID saved to backend");
-        return true;
-      } else {
-        const errorText = await response.text();
-        console.warn("[OneSignal] Backend rejected Player ID:", errorText);
-      }
+    if (!response.ok) {
+      console.warn("[OneSignal] Failed to save Player ID to backend");
+      return false;
     }
 
-    return false;
-  } catch (error) {
-    console.error("[OneSignal] Error subscribing:", error);
+    console.log("[OneSignal] Subscribed and saved successfully:", playerId);
+    return true;
+  } catch (err) {
+    console.error("[OneSignal] subscribeToPush error:", err);
     return false;
   }
 };

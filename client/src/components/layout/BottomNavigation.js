@@ -32,77 +32,27 @@ const BottomNavigation = () => {
   };
 
   const handleSubscribeClick = async () => {
-    // Show loading toast while we check OneSignal
-    const loadingToast = toast.loading("Preparing subscription...");
+    const loadingToast = toast.loading("Preparing notifications...");
 
     try {
-      // Check if OneSignal is available in window object
-      if (!window.OneSignal) {
-        // Try again after a short delay
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        if (!window.OneSignal) {
-          toast.dismiss(loadingToast);
-          toast.error(
-            "Notification service isn't ready yet. Please try again in a moment."
-          );
-          return;
-        }
-      }
-
-      // Dismiss the loading toast
+      const result = await subscribeToPush();
       toast.dismiss(loadingToast);
 
-      // Check if native API is available (fallback)
-      const useNativeAPI =
-        !window.OneSignal.showSlidedownPrompt &&
-        "Notification" in window &&
-        Notification.permission !== "denied";
+      if (result) {
+        toast.success("Subscribed to notifications!");
 
-      if (useNativeAPI) {
-        // Use the browser's native notification API as fallback
-        const permission = await Notification.requestPermission();
-        if (permission === "granted") {
-          toast.success("Successfully subscribed to notifications!");
-          await registerOneSignalPlayerId();
-        } else {
-          toast(
-            "You can enable notifications anytime from your browser settings."
-          );
-        }
-        return;
+        localStorage.setItem("subscribeBannerDismissed", "true");
+        localStorage.setItem(
+          "subscribeBannerDismissedAt",
+          Date.now().toString()
+        );
+      } else {
+        toast.error("Unable to subscribe. Check your browser settings.");
       }
-
-      // Try using OneSignal API
-      try {
-        if (typeof window.OneSignal.showSlidedownPrompt === "function") {
-          await window.OneSignal.showSlidedownPrompt();
-          toast.success("Successfully subscribed to notifications!");
-          await registerOneSignalPlayerId();
-        } else if (
-          typeof window.OneSignal.registerForPushNotifications === "function"
-        ) {
-          await window.OneSignal.registerForPushNotifications();
-          toast.success("Successfully subscribed to notifications!");
-          await registerOneSignalPlayerId();
-        } else {
-          // Try using our helper function
-          const result = await subscribeToPush();
-          if (result) {
-            toast.success("Successfully subscribed to notifications!");
-            await registerOneSignalPlayerId();
-          } else {
-            toast("You can subscribe to notifications anytime.");
-          }
-        }
-      } catch (oneSignalError) {
-        console.error("OneSignal specific error:", oneSignalError);
-        toast.error("There was a problem subscribing to notifications.");
-      }
-    } catch (err) {
-      console.error("Error in handleSubscribeClick:", err);
+    } catch (error) {
       toast.dismiss(loadingToast);
-      toast.error("There was a problem with the notification system.");
+      console.error("Subscription error:", error);
+      toast.error("Something went wrong. Try again later.");
     }
   };
 
