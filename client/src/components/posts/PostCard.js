@@ -26,6 +26,11 @@ import { COLORS, THEME } from "../../theme";
 const AUTHOR_IMAGE = pandaImg;
 const AUTHOR_NAME = "Andrew";
 
+const fadeIn = keyframes`
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+`;
+
 const scaleIn = keyframes`
   0% { transform: scale(0); opacity: 0; }
   15% { transform: scale(1.3); opacity: 1; }
@@ -38,6 +43,11 @@ const pulse = keyframes`
   0% { transform: scale(1); }
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
+`;
+
+const shimmer = keyframes`
+  0% { background-position: -100% 0 }
+  100% { background-position: 200% 0 }
 `;
 
 const slideIn = keyframes`
@@ -449,9 +459,9 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
                 >
                   <FaChevronRight />
                 </NavigationArrow>
-                <IndicatorDots>
+                <ProgressIndicator>
                   {post.media.map((_, index) => (
-                    <Dot
+                    <ProgressDot
                       key={index}
                       active={index === currentMediaIndex}
                       onClick={(e) => {
@@ -461,7 +471,7 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
                       aria-label={`Go to slide ${index + 1}`}
                     />
                   ))}
-                </IndicatorDots>
+                </ProgressIndicator>
               </>
             )}
 
@@ -491,9 +501,9 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
         </CardActions>
 
         <LikesCounter>
-          <strong>
+          <span>
             {post.likes} {post.likes === 1 ? "like" : "likes"}
-          </strong>
+          </span>
         </LikesCounter>
 
         <CardContent>
@@ -510,7 +520,10 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
             </TagsContainer>
           )}
 
-          <ViewPostLink to={`/post/${post._id}`}>View post</ViewPostLink>
+          <ViewPostLink to={`/post/${post._id}`}>
+            View Post
+            <ViewPostArrow>→</ViewPostArrow>
+          </ViewPostLink>
         </CardContent>
       </Card>
 
@@ -566,66 +579,83 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
 const CardWrapper = styled.div`
   ${fontFaceStyles}
   width: 100%;
+  max-width: 600px;
   display: flex;
   justify-content: center;
-  border-radius: 14px;
-  border: 1px solid ${COLORS.primaryBlue}40;
-  padding: 10px;
-  margin: 10px 0;
-  background: ${COLORS.elevatedBackground}90;
-  transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.3s ease;
+  border-radius: 16px;
+  margin: 24px auto;
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  animation: ${fadeIn} 0.6s ease-out;
   contain: layout;
 
-  &:hover {
-    box-shadow: 0 0 20px ${COLORS.primaryTeal}30;
-  }
-
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    width: 96%;
-    max-width: none;
-    margin: 10px auto;
-    padding: 2px;
-    border: none;
-    border-radius: 0;
-    background: transparent;
+    width: 94%;
+    margin: 14px auto;
+    padding: 0;
+    max-width: 480px;
   }
 `;
 
 const Card = styled.article`
+  position: relative;
   background-color: ${COLORS.cardBackground};
-  border-radius: 12px;
-  border: 1px solid ${COLORS.border};
+  border-radius: 16px;
+  border: 1px solid rgba(203, 213, 224, 0.4);
   overflow: hidden;
-  margin-bottom: 24px;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  max-width: 614px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
-  will-change: transform;
-  contain: content;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1),
+    box-shadow 0.3s ease-in-out;
+  will-change: transform, box-shadow;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    padding: 1px;
+    background: linear-gradient(
+      to bottom right,
+      rgba(255, 255, 255, 0.1),
+      ${COLORS.primaryBlue}10,
+      ${COLORS.primaryTeal}15
+    );
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: source-out;
+    pointer-events: none;
+  }
 
   &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    &::after {
+      background: linear-gradient(
+        to bottom right,
+        rgba(255, 255, 255, 0.2),
+        ${COLORS.primaryBlue}20,
+        ${COLORS.primaryTeal}30
+      );
+    }
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    max-width: 100%;
-    width: 100%;
-    border-radius: 8px;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
     background: linear-gradient(
       160deg,
       ${COLORS.cardBackground} 0%,
-      ${COLORS.elevatedBackground} 100%
+      ${COLORS.elevatedBackground}80 100%
     );
 
     &:active {
       transform: scale(0.99);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     }
   }
 `;
@@ -635,12 +665,12 @@ const CardHeader = styled.header`
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px;
-  border-bottom: 1px solid ${COLORS.divider};
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
   background: linear-gradient(
     to bottom,
-    ${COLORS.primaryBlue}40,
-    ${COLORS.primaryBlue}20 80%,
-    ${COLORS.primaryBlue}05
+    rgba(26, 95, 122, 0.08),
+    rgba(26, 95, 122, 0.03) 80%,
+    rgba(26, 95, 122, 0.01)
   );
   position: relative;
 
@@ -657,19 +687,20 @@ const CardHeader = styled.header`
       ${COLORS.primaryTeal},
       ${COLORS.primaryGreen}
     );
+    border-radius: 3px 3px 0 0;
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    padding: 16px;
+    padding: 14px 16px;
     background: linear-gradient(
       to bottom,
-      ${COLORS.primaryBlue}50,
-      ${COLORS.primaryBlue}30 80%,
-      ${COLORS.primaryBlue}10
+      rgba(26, 95, 122, 0.12),
+      rgba(26, 95, 122, 0.05) 80%,
+      rgba(26, 95, 122, 0.01)
     );
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    border-bottom: 1px solid ${COLORS.primaryBlue}40;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom: 1px solid rgba(26, 95, 122, 0.15);
   }
 `;
 
@@ -684,34 +715,41 @@ const ActionsContainer = styled.div`
 
 const Username = styled.span`
   font-family: "Autography", cursive;
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 400;
   letter-spacing: 0.8px;
-  line-height: 1.3;
+  line-height: 1;
   margin-top: 2px;
   color: ${COLORS.primaryBlue};
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease, filter 0.3s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
   will-change: transform, filter;
 
   &:hover {
-    transform: scale(1.08);
-    filter: brightness(1.2);
+    transform: scale(1.05) translateY(-1px);
+    filter: brightness(1.15);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
   }
 `;
 
 const ActionsButton = styled.button`
   background: none;
   border: none;
-  color: ${COLORS.textPrimary};
-  font-size: 1.1rem;
+  color: ${COLORS.textSecondary};
+  font-size: 1rem;
   cursor: pointer;
-  padding: 8px;
+  padding: 6px;
   border-radius: 50%;
-  transition: background-color 0.2s, transform 0.2s;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
 
   &:hover {
-    background-color: ${COLORS.elevatedBackground};
+    background-color: rgba(226, 232, 240, 0.5);
+    color: ${COLORS.primaryBlue};
     transform: scale(1.1);
   }
 `;
@@ -719,14 +757,15 @@ const ActionsButton = styled.button`
 const ActionsMenu = styled.div`
   position: absolute;
   right: 0;
-  top: 40px;
-  background-color: ${COLORS.elevatedBackground};
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  top: 38px;
+  background-color: ${COLORS.cardBackground};
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.06);
   z-index: 10;
   overflow: hidden;
   width: 180px;
-  backdrop-filter: blur(5px);
+  transform-origin: top right;
+  animation: ${fadeIn} 0.2s ease-out;
 `;
 
 const ActionItem = styled.button`
@@ -734,27 +773,32 @@ const ActionItem = styled.button`
   padding: 12px 16px;
   border: none;
   background: none;
-  color: ${COLORS.textPrimary};
+  color: ${COLORS.textSecondary};
   text-align: left;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
   text-decoration: none;
-  transition: background-color 0.2s, color 0.2s;
-
-  &:hover {
-    background-color: ${COLORS.primaryBlue}30;
-    color: ${COLORS.accentBlue};
-  }
+  transition: all 0.2s ease;
+  position: relative;
 
   svg {
     margin-right: 12px;
+    font-size: 0.9rem;
     color: ${COLORS.textSecondary};
+    transition: all 0.2s ease;
   }
 
-  &:hover svg {
-    color: ${COLORS.accentBlue};
+  &:hover {
+    background-color: ${COLORS.primaryBlue}08;
+    color: ${COLORS.primaryBlue};
+
+    svg {
+      color: ${COLORS.primaryBlue};
+      transform: scale(1.1);
+    }
   }
 
   &:not(:last-child) {
@@ -765,21 +809,28 @@ const ActionItem = styled.button`
 const MediaContainer = styled(Link)`
   position: relative;
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 4/3;
   display: block;
   overflow: hidden;
-  background-color: #000;
-  flex-shrink: 0;
-  transition: opacity 0.2s ease, transform 0.3s ease;
-  opacity: ${(props) => (props.isPressing ? 0.8 : 1)};
+  background-color: rgba(0, 0, 0, 0.03);
+  transition: opacity 0.2s ease;
+  opacity: ${(props) => (props.isPressing ? 0.85 : 1)};
   will-change: transform, opacity;
 
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+    pointer-events: none;
+    z-index: 1;
+  }
+
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    border-radius: 0;
 
     &:active {
-      transform: scale(0.98);
+      transform: scale(0.99);
     }
   }
 `;
@@ -789,13 +840,18 @@ const MediaCarousel = styled.div`
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.01) 0%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
 `;
 
 const MediaTrack = styled.div`
   display: flex;
   height: 100%;
   width: 100%;
-  transition: transform 0.3s ease;
+  transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   will-change: transform;
   transform: translateX(-${(props) => props.currentIndex * 100}%);
   contain: layout;
@@ -807,34 +863,44 @@ const MediaItem = styled.div`
   height: 100%;
   position: relative;
   contain: content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to bottom, #f8f9fa05, #e2e8f005);
 `;
 
 const PostImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: opacity 0.3s ease;
-  will-change: transform;
-  opacity: 0.6;
+  transition: opacity 0.5s ease,
+    transform 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+  opacity: 0.92;
+  transform: scale(1.01);
+  will-change: opacity, transform;
 
   &.loaded {
     opacity: 1;
   }
 
+  ${MediaContainer}:hover & {
+    transform: scale(1.03);
+  }
+
   &.filter-warm {
-    filter: saturate(1.5) sepia(0.2) contrast(1.1);
+    filter: saturate(1.1) sepia(0.15) contrast(1.05);
   }
 
   &.filter-cool {
-    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
+    filter: saturate(0.95) hue-rotate(15deg) brightness(1.05);
   }
 
   &.filter-grayscale {
-    filter: grayscale(1);
+    filter: grayscale(0.8);
   }
 
   &.filter-vintage {
-    filter: sepia(0.4) saturate(1.3) contrast(1.2);
+    filter: sepia(0.25) saturate(1.1) contrast(1.1);
   }
 `;
 
@@ -844,19 +910,19 @@ const PostVideo = styled.video`
   object-fit: cover;
 
   &.filter-warm {
-    filter: saturate(1.5) sepia(0.2) contrast(1.1);
+    filter: saturate(1.1) sepia(0.15) contrast(1.05);
   }
 
   &.filter-cool {
-    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
+    filter: saturate(0.95) hue-rotate(15deg) brightness(1.05);
   }
 
   &.filter-grayscale {
-    filter: grayscale(1);
+    filter: grayscale(0.8);
   }
 
   &.filter-vintage {
-    filter: sepia(0.4) saturate(1.3) contrast(1.2);
+    filter: sepia(0.25) saturate(1.1) contrast(1.1);
   }
 `;
 
@@ -864,50 +930,51 @@ const NavigationArrow = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(26, 95, 122, 0.6);
+  background-color: rgba(24, 92, 120, 0.6);
   color: white;
   border: none;
   border-radius: 50%;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s, background-color 0.2s, transform 0.2s;
+  transition: all 0.2s ease;
   z-index: 2;
   will-change: transform, opacity;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 
   &:hover {
-    opacity: 0.95 !important;
-    background-color: ${COLORS.primaryBlue}A0;
+    opacity: 1 !important;
+    background-color: ${COLORS.primaryBlue}cc;
     transform: translateY(-50%) scale(1.1);
   }
 
-  ${Card}:hover & {
-    opacity: 0.8;
+  ${MediaContainer}:hover & {
+    opacity: 0.85;
   }
 
   &.prev {
-    left: 16px;
+    left: 12px;
   }
 
   &.next {
-    right: 16px;
+    right: 12px;
   }
 
   &:disabled {
-    opacity: 0.3;
+    opacity: 0.15;
     cursor: not-allowed;
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    opacity: 0.9;
-    width: 46px;
-    height: 46px;
-    background: ${COLORS.primaryBlue}99;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    opacity: 0.7;
+    width: 36px;
+    height: 36px;
+    background: ${COLORS.primaryBlue}bb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 
     &:active {
       opacity: 1;
@@ -916,64 +983,83 @@ const NavigationArrow = styled.button`
     }
 
     &:disabled {
-      opacity: 0.4;
-      background: rgba(60, 60, 70, 0.6);
+      opacity: 0.2;
+      background: rgba(60, 60, 70, 0.4);
     }
 
     &.prev {
-      left: 10px;
+      left: 8px;
     }
 
     &.next {
-      right: 10px;
+      right: 8px;
     }
 
     svg {
-      font-size: 1.2rem;
+      font-size: 1rem;
     }
   }
 `;
 
-const IndicatorDots = styled.div`
+const ProgressIndicator = styled.div`
   position: absolute;
   bottom: 16px;
   left: 0;
   right: 0;
   display: flex;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   z-index: 2;
 `;
 
-const Dot = styled.button`
-  width: 8px;
-  height: 8px;
+const ProgressDot = styled.button`
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? COLORS.primaryBlue : "rgba(255, 255, 255, 0.4)"};
+    props.active ? "rgba(255, 255, 255, 0.9)" : "rgba(255, 255, 255, 0.35)"};
   border: none;
   cursor: pointer;
   padding: 0;
-  transition: all 0.3s ease;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+
+  &:after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: ${(props) =>
+      props.active
+        ? `linear-gradient(90deg, ${COLORS.primaryTeal}80, ${COLORS.primaryBlue}80)`
+        : "transparent"};
+    opacity: ${(props) => (props.active ? 1 : 0)};
+    transition: opacity 0.2s ease;
+  }
 
   &:hover {
-    transform: scale(1.2);
-    background-color: ${(props) =>
-      props.active ? COLORS.accentBlue : "rgba(255, 255, 255, 0.6)"};
+    transform: scale(1.3);
+    background-color: rgba(255, 255, 255, 1);
+
+    &:after {
+      opacity: 1;
+    }
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    width: 12px;
-    height: 12px;
-    margin: 0 2px;
-    box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+    width: 7px;
+    height: 7px;
+    margin: 0 1px;
 
     ${(props) =>
       props.active &&
       `
-      background-color: ${COLORS.primaryBlue};
-      box-shadow: 0 0 8px ${COLORS.primaryBlue}90;
+      transform: scale(1.2);
+      box-shadow: 0 0 6px ${COLORS.primaryTeal}90;
     `}
 
     &:active {
@@ -988,30 +1074,27 @@ const HeartAnimation = styled.div`
   left: 50%;
   transform: translate(-50%, -50%);
   color: ${COLORS.primaryTeal};
-  font-size: 90px;
+  font-size: 72px;
   opacity: 0;
   animation: ${scaleIn} 1s ease forwards;
   z-index: 3;
   will-change: transform, opacity;
-
-  svg {
-    filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.6));
-  }
+  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    font-size: 120px;
+    font-size: 90px;
     color: ${COLORS.accentTeal};
 
     svg {
-      filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.8));
+      filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.5));
     }
   }
 `;
 
 const CardActions = styled.div`
-  padding: 10px 18px;
-  border-bottom: 1px solid ${COLORS.divider};
-  background-color: ${COLORS.elevatedBackground}90;
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid ${COLORS.divider}80;
+  background-color: ${COLORS.cardBackground};
 `;
 
 const ActionGroup = styled.div`
@@ -1023,22 +1106,23 @@ const ActionGroup = styled.div`
 const LikeButton = styled.button`
   background: none;
   border: none;
-  color: ${(props) => (props.liked ? COLORS.primaryTeal : COLORS.textPrimary)};
-  font-size: 1.6rem;
+  color: ${(props) =>
+    props.liked ? COLORS.primaryTeal : COLORS.textSecondary};
+  font-size: 1.4rem;
   cursor: ${(props) =>
     props.disabled && !props.liked ? "default" : "pointer"};
-  padding: 8px;
-  margin-left: -8px;
+  padding: 6px;
+  margin-left: -6px;
   display: flex;
   align-items: center;
-  transition: transform 0.3s, color 0.3s;
-  will-change: transform;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  will-change: transform, color;
 
   &:hover {
     transform: ${(props) =>
       !props.disabled || props.liked ? "scale(1.15)" : "none"};
     color: ${(props) =>
-      !props.disabled && !props.liked ? COLORS.accentTeal : ""};
+      !props.disabled && !props.liked ? COLORS.primaryTeal : ""};
   }
 
   &:active {
@@ -1046,21 +1130,27 @@ const LikeButton = styled.button`
       !props.disabled || props.liked ? "scale(0.9)" : "none"};
   }
 
+  ${(props) =>
+    props.liked &&
+    `
+    filter: drop-shadow(0 0 2px ${COLORS.primaryTeal}50);
+  `}
+
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    font-size: 1.8rem;
-    padding: 10px;
+    font-size: 1.5rem;
+    padding: 6px;
     position: relative;
 
     ${(props) =>
       props.liked &&
       `
       animation: ${pulse} 0.8s ease-in-out;
-      filter: drop-shadow(0 0 8px ${COLORS.primaryTeal}90);
+      filter: drop-shadow(0 0 4px ${COLORS.primaryTeal}70);
     `}
 
     &:active {
       transform: ${(props) =>
-        !props.disabled || props.liked ? "scale(0.8)" : "none"};
+        !props.disabled || props.liked ? "scale(0.85)" : "none"};
     }
   }
 `;
@@ -1069,24 +1159,54 @@ const DateDisplay = styled.div`
   display: flex;
   align-items: center;
   color: ${COLORS.textTertiary};
-  font-size: 0.8rem;
-  background-color: ${COLORS.cardBackground}90;
-  padding: 4px 8px;
+  font-size: 0.75rem;
+  background-color: ${COLORS.elevatedBackground}50;
+  padding: 4px 10px;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
 
   svg {
     margin-right: 6px;
-    font-size: 0.8rem;
-    color: ${COLORS.accentBlue};
+    font-size: 0.75rem;
+    color: ${COLORS.textSecondary};
+  }
+
+  &:hover {
+    background-color: ${COLORS.elevatedBackground}80;
+    transform: translateY(-1px);
   }
 `;
 
 const LikesCounter = styled.div`
-  padding: 8px 18px 0;
-  margin-top: 4px;
-  font-size: 0.9rem;
-  color: ${COLORS.textPrimary};
+  padding: 6px 16px 0;
+  margin-top: 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: ${COLORS.textSecondary};
+
+  span {
+    position: relative;
+
+    &:after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -2px;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, ${COLORS.primaryTeal}30, transparent);
+      transform-origin: left;
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+      opacity: 0;
+    }
+
+    &:hover:after {
+      transform: scaleX(1);
+      opacity: 1;
+    }
+  }
 `;
 
 const CardContent = styled.div`
@@ -1096,39 +1216,41 @@ const CardContent = styled.div`
   background: linear-gradient(
     180deg,
     ${COLORS.cardBackground} 0%,
-    ${COLORS.elevatedBackground} 100%
+    ${COLORS.elevatedBackground}40 100%
   );
-  border-top: 1px solid ${COLORS.divider}40;
+  border-top: 1px solid ${COLORS.divider}20;
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     padding: 1rem 1rem 1.2rem;
     background: linear-gradient(
       160deg,
       ${COLORS.cardBackground} 0%,
-      ${COLORS.elevatedBackground}EE 100%
+      ${COLORS.elevatedBackground}80 100%
     );
-    border-top: 1px solid ${COLORS.primaryBlue}20;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
+    border-top: 1px solid ${COLORS.primaryBlue}10;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
   }
 `;
 
 const PostTitle = styled.h2`
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 1.15rem;
+  font-weight: 600;
   color: ${COLORS.textPrimary};
-  margin: 0 0 14px 0;
-  line-height: 1.3;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
   word-break: break-word;
-  transition: transform 0.3s ease;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, color 0.2s ease;
   will-change: transform;
+  position: relative;
+  letter-spacing: -0.01em;
 `;
 
 const Content = styled.p`
   color: ${COLORS.textSecondary};
-  font-size: 0.9rem;
-  margin: 10px 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 8px 0;
   word-break: break-word;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1136,64 +1258,114 @@ const Content = styled.p`
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   transition: transform 0.2s ease;
+  letter-spacing: 0.01em;
 `;
 
 const TagsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   margin: 12px 0 8px;
 `;
 
 const Tag = styled.span`
-  color: ${COLORS.accentBlue};
-  font-size: 0.85rem;
-  transition: color 0.2s ease, transform 0.2s ease;
+  color: ${COLORS.primaryBlue};
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
   will-change: transform;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: ${COLORS.primaryBlue}08;
 
   &:hover {
-    color: ${COLORS.primaryBlue};
-    transform: translateX(2px);
+    color: ${COLORS.primaryTeal};
+    transform: translateX(2px) translateY(-1px);
+    background-color: ${COLORS.primaryBlue}12;
   }
 `;
 
 const ViewPostLink = styled(Link)`
-  color: ${COLORS.textTertiary};
+  color: ${COLORS.textSecondary};
   font-size: 0.8rem;
-  margin-top: 12px;
+  font-weight: 500;
+  margin-top: 14px;
   text-decoration: none;
   align-self: flex-end;
-  padding: 4px 10px;
-  border-radius: 12px;
-  transition: all 0.2s ease;
-  background-color: ${COLORS.elevatedBackground}50;
+  padding: 5px 14px;
+  border-radius: 30px;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background-color: ${COLORS.elevatedBackground}70;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+    transition: left 0.5s ease;
+  }
 
   &:hover {
     text-decoration: none;
-    color: ${COLORS.textPrimary};
-    background-color: ${COLORS.elevatedBackground};
+    color: white;
+    background: linear-gradient(
+      90deg,
+      ${COLORS.primaryBlue},
+      ${COLORS.primaryTeal}
+    );
     transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(13, 115, 119, 0.2);
+
+    &:before {
+      left: 200%;
+      transition: left 0.8s ease-in-out;
+    }
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    font-size: 0.9rem;
-    padding: 8px 14px;
-    border-radius: 20px;
+    font-size: 0.82rem;
+    padding: 6px 16px;
+    border-radius: 30px;
     font-weight: 500;
     background: linear-gradient(
-      135deg,
-      ${COLORS.primaryBlue}80 0%,
-      ${COLORS.primaryBlue}40 100%
+      90deg,
+      ${COLORS.primaryBlue}90,
+      ${COLORS.primaryTeal}90
     );
     color: white;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 6px rgba(26, 95, 122, 0.2);
     margin-top: 16px;
     align-self: center;
 
     &:active {
       transform: translateY(2px);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
+  }
+`;
+
+const ViewPostArrow = styled.span`
+  display: inline-block;
+  transition: transform 0.3s ease;
+  font-size: 14px;
+  line-height: 1;
+  margin-top: 1px;
+
+  ${ViewPostLink}:hover & {
+    transform: translateX(3px);
   }
 `;
 
@@ -1211,26 +1383,50 @@ const DeleteModal = styled.div`
 
 const DeleteModalContent = styled.div`
   background-color: ${COLORS.cardBackground};
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 28px;
   width: 90%;
-  max-width: 400px;
+  max-width: 380px;
   z-index: 1001;
   text-align: center;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
   border: 1px solid ${COLORS.divider};
   will-change: transform, opacity;
+  animation: ${fadeIn} 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+  position: relative;
+
+  &:after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    padding: 1px;
+    background: linear-gradient(
+      to bottom right,
+      rgba(255, 255, 255, 0.8),
+      rgba(255, 255, 255, 0.1)
+    );
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: source-out;
+    pointer-events: none;
+  }
 
   h3 {
     color: ${COLORS.textPrimary};
     margin-top: 0;
     margin-bottom: 16px;
     font-weight: 600;
+    font-size: 1.25rem;
   }
 
   p {
     color: ${COLORS.textSecondary};
     margin-bottom: 24px;
+    font-size: 0.95rem;
+    line-height: 1.5;
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -1239,20 +1435,20 @@ const DeleteModalContent = styled.div`
     background: linear-gradient(
       145deg,
       ${COLORS.cardBackground} 0%,
-      ${COLORS.elevatedBackground} 100%
+      ${COLORS.elevatedBackground}40 100%
     );
-    border: 1px solid ${COLORS.primaryBlue}30;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7),
-      inset 0 1px 1px ${COLORS.primaryBlue}20;
+    border: 1px solid ${COLORS.primaryBlue}20;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5),
+      inset 0 1px 1px rgba(255, 255, 255, 0.1);
 
     h3 {
       font-size: 1.3rem;
       margin-bottom: 20px;
-      color: ${COLORS.accentBlue};
+      color: ${COLORS.primaryBlue};
     }
 
     p {
-      font-size: 1.05rem;
+      font-size: 1rem;
       margin-bottom: 30px;
     }
 
@@ -1262,40 +1458,53 @@ const DeleteModalContent = styled.div`
 
 const DeleteModalButtons = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+  justify-content: center;
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+  }
 `;
 
 const CancelButton = styled.button`
   background: none;
-  color: ${COLORS.primaryBlue};
-  border: none;
-  border-radius: 4px;
-  padding: 12px;
-  font-weight: 600;
+  color: ${COLORS.textSecondary};
+  border: 1px solid ${COLORS.divider};
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 500;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: background-color 0.3s;
-  width: 100%;
+  transition: all 0.2s ease;
+  flex: 1;
 
   &:hover {
-    background-color: ${COLORS.primaryBlue}20;
+    background-color: ${COLORS.elevatedBackground};
+    color: ${COLORS.primaryBlue};
+  }
+
+  @media (max-width: 480px) {
+    margin-top: 8px;
   }
 `;
 
 const ConfirmDeleteButton = styled.button`
-  background: none;
+  background-color: ${COLORS.error}10;
   color: ${COLORS.error};
-  border: none;
-  border-radius: 4px;
-  padding: 12px;
-  font-weight: 600;
+  border: 1px solid ${COLORS.error}40;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 500;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: background-color 0.3s;
-  width: 100%;
-  border-top: 1px solid ${COLORS.divider};
+  transition: all 0.2s ease;
+  flex: 1;
 
   &:hover {
-    background-color: ${COLORS.error}20;
+    background-color: ${COLORS.error};
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(224, 36, 36, 0.2);
   }
 `;
 
@@ -1305,41 +1514,10 @@ const Backdrop = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(3px);
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
   z-index: 1000;
-`;
-
-const PostLink = styled(Link)`
-  text-decoration: none;
-  color: inherit;
-  display: block;
-
-  &:hover ${PostTitle} {
-    transform: translateX(3px);
-    color: ${COLORS.textPrimary};
-  }
-
-  &:hover ${Content} {
-    transform: translateX(3px);
-  }
-`;
-
-const UserAvatarImage = styled.img`
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-right: 12px;
-  border: 2px solid ${COLORS.primaryBlue};
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease, border-color 0.3s ease;
-  will-change: transform;
-
-  &:hover {
-    transform: scale(1.08);
-    border-color: ${COLORS.accentBlue};
-  }
+  animation: ${fadeIn} 0.2s ease-out;
 `;
 
 const FullscreenModal = styled.div`
@@ -1354,37 +1532,7 @@ const FullscreenModal = styled.div`
   justify-content: center;
   z-index: 2000;
   backdrop-filter: blur(10px);
-`;
-
-const FullscreenImage = styled.img`
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-`;
-
-const CloseFullscreenButton = styled.button`
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: ${COLORS.elevatedBackground}80;
-  border: none;
-  color: white;
-  font-size: 36px;
-  cursor: pointer;
-  height: 50px;
-  width: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  will-change: transform;
-
-  &:hover {
-    background: ${COLORS.elevatedBackground};
-    transform: scale(1.1);
-  }
+  animation: ${fadeIn} 0.3s ease-out;
 `;
 
 const FullscreenWrapper = styled.div`
@@ -1396,17 +1544,52 @@ const FullscreenWrapper = styled.div`
   position: relative;
 `;
 
+const FullscreenImage = styled.img`
+  max-width: 95%;
+  max-height: 90%;
+  object-fit: contain;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border-radius: 2px;
+`;
+
 const FullscreenIndicator = styled.div`
   position: absolute;
   bottom: 30px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: ${COLORS.elevatedBackground}CC;
+  background-color: rgba(0, 0, 0, 0.6);
   color: white;
-  padding: 8px 16px;
+  padding: 6px 14px;
   border-radius: 20px;
-  font-size: 14px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const CloseFullscreenButton = styled.button`
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  color: white;
+  font-size: 26px;
+  cursor: pointer;
+  height: 42px;
+  width: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  will-change: transform;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  &:hover {
+    background: rgba(26, 95, 122, 0.7);
+    transform: scale(1.05);
+  }
 `;
 
 PostCard.displayName = "PostCard";
