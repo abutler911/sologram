@@ -266,7 +266,8 @@ const Header = ({ onSearch, onClearSearch }) => {
             )}
             {isAuthenticated && (
               <Greeting>
-                Hi, <span className="autography">{user?.firstName}</span>
+                <span className="greeting-text">Hi,</span>{" "}
+                <span className="autography">{user?.firstName}</span>
               </Greeting>
             )}
 
@@ -1090,30 +1091,103 @@ const RegisterButton = styled(Link)`
 `;
 
 const Greeting = styled.div`
-  font-size: 0.95rem;
-  margin-right: 1rem;
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-right: 1.25rem;
   color: white;
-  background-color: rgba(255, 255, 255, 0.15);
-  padding: 0.4rem 0.75rem;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  padding: 0.5rem 1rem 0.5rem 1.1rem;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+
+  /* Subtle shine effect */
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    transition: left 0.5s ease;
+  }
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(20, 255, 236, 0.15);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(255, 255, 255, 0.09) 100%
+    );
+    border-color: rgba(255, 255, 255, 0.25);
+
+    &:before {
+      left: 100%;
+    }
+  }
+
+  .greeting-text {
+    display: inline-block;
+    position: relative;
+
+    &:after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -3px;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(20, 255, 236, 0.3),
+        transparent
+      );
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+      transform-origin: center;
+    }
+  }
+
+  &:hover .greeting-text:after {
+    transform: scaleX(1);
   }
 
   .autography {
     font-family: "Autography", cursive;
     color: ${COLORS.accentTeal};
-    font-size: 1.4rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 500;
     letter-spacing: 0.5px;
-    line-height: 1.2;
+    margin-left: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
     display: inline-block;
-    margin-left: 0.25rem;
+    transform-origin: bottom left;
     position: relative;
-    top: 2px;
+    top: 1px;
+  }
+
+  &:hover .autography {
+    transform: scale(1.08);
+    color: ${COLORS.accentTeal};
+    text-shadow: 0 2px 8px rgba(20, 255, 236, 0.35);
   }
 
   @media (max-width: 768px) {
