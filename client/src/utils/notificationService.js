@@ -299,3 +299,69 @@ if (typeof window !== "undefined") {
 
   window.showTestNotification = showTestNotification;
 }
+
+export const directRegister = () => {
+  // Direct OneSignal registration without any of our abstraction
+  window.OneSignal = window.OneSignal || [];
+  window.OneSignal.push(function () {
+    console.log("[DirectRegister] Attempting direct registration");
+
+    // Skip initialization if already done
+    if (window.OneSignal.__initAlreadyCalled) {
+      console.log(
+        "[DirectRegister] OneSignal already initialized, skipping init"
+      );
+    } else {
+      // Initialize if needed
+      window.OneSignal.init({
+        appId: process.env.REACT_APP_ONESIGNAL_APP_ID,
+        allowLocalhostAsSecureOrigin: true,
+        notifyButton: { enable: false },
+      });
+      console.log("[DirectRegister] OneSignal initialization called");
+    }
+
+    // Now register
+    window.OneSignal.registerForPushNotifications()
+      .then(function () {
+        console.log("[DirectRegister] Registration function completed");
+        return window.OneSignal.getUserId();
+      })
+      .then(function (playerId) {
+        console.log("[DirectRegister] Got player ID:", playerId);
+
+        // If we have a player ID, register with server
+        if (playerId) {
+          const token = localStorage.getItem("token");
+          return fetch("/api/subscribers/register", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : "",
+            },
+            body: JSON.stringify({ playerId }),
+          });
+        }
+      })
+      .then(function (response) {
+        if (response) return response.json();
+      })
+      .then(function (data) {
+        if (data) console.log("[DirectRegister] Server response:", data);
+
+        // Now try to enable
+        return window.OneSignal.isPushNotificationsEnabled();
+      })
+      .then(function (isEnabled) {
+        console.log("[DirectRegister] Push enabled status:", isEnabled);
+      })
+      .catch(function (error) {
+        console.error("[DirectRegister] Error during registration:", error);
+      });
+  });
+};
+
+// Expose to window
+if (typeof window !== "undefined") {
+  window.directRegister = directRegister;
+}
