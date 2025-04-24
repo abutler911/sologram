@@ -71,8 +71,17 @@ export const subscribeToPush = async () => {
       // Set a timeout to prevent hanging
       const timeoutId = setTimeout(() => {
         console.error("[OneSignal] Subscription process timed out");
-        resolve(false);
-      }, 15000);
+        // Try directly showing the native browser permission dialog as fallback
+        Notification.requestPermission()
+          .then((permission) => {
+            if (permission === "granted") {
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          })
+          .catch(() => resolve(false));
+      }, 5000);
 
       OneSignal.push(async () => {
         try {
@@ -94,86 +103,28 @@ export const subscribeToPush = async () => {
             return resolve(false);
           }
 
-          console.log("[OneSignal] Checking if already subscribed");
-          const subscribed = await OneSignal.isPushNotificationsEnabled();
-          console.log("[OneSignal] Already subscribed:", subscribed);
-
-          if (!subscribed) {
-            console.log("[OneSignal] Not subscribed, showing prompt");
-
-            // This is the critical part that might be hanging
-            try {
-              // Use a more reliable method with timeout
-              const promptResult = await Promise.race([
-                OneSignal.registerForPushNotifications(),
-                new Promise((res) =>
-                  setTimeout(() => {
-                    console.log(
-                      "[OneSignal] Prompt display timed out, continuing anyway"
-                    );
-                    res();
-                  }, 5000)
-                ),
-              ]);
-
-              console.log("[OneSignal] Prompt shown, result:", promptResult);
-            } catch (promptError) {
-              console.error("[OneSignal] Error showing prompt:", promptError);
-              // Continue anyway to check if permission was granted
-            }
-          }
-
-          // Give time for the browser to process
-          await new Promise((r) => setTimeout(r, 1000));
-
-          // Check if permission was granted
-          console.log("[OneSignal] Checking final subscription state");
-          const finalSubscriptionState =
-            await OneSignal.isPushNotificationsEnabled();
-          console.log(
-            "[OneSignal] Final subscription state:",
-            finalSubscriptionState
-          );
-
-          if (!finalSubscriptionState) {
-            console.warn("[OneSignal] User did not grant permission");
+          // Try directly with browser API first for more reliability
+          const browserPermission = await Notification.requestPermission();
+          if (browserPermission === "granted") {
             clearTimeout(timeoutId);
-            return resolve(false);
+            return resolve(true);
           }
 
-          // Get the player ID and register with your server
-          console.log("[OneSignal] Getting player ID");
-          const playerId = await OneSignal.getUserId();
-          console.log("[OneSignal] Player ID:", playerId);
+          // If browser permission didn't work, try with OneSignal UI
+          try {
+            await OneSignal.registerForPushNotifications();
 
-          if (playerId) {
-            try {
-              console.log("[OneSignal] Registering player ID with server");
-              const token = localStorage.getItem("token");
+            // Give time for the browser to process
+            await new Promise((r) => setTimeout(r, 1000));
 
-              const response = await fetch("/api/subscribers/register", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: token ? `Bearer ${token}` : "",
-                },
-                body: JSON.stringify({ playerId }),
-              });
+            // Check if permission was granted
+            const finalSubscriptionState =
+              await OneSignal.isPushNotificationsEnabled();
 
-              if (!response.ok) {
-                throw new Error(`Server returned ${response.status}`);
-              }
-
-              console.log("[OneSignal] Player ID registered successfully");
-              clearTimeout(timeoutId);
-              return resolve(true);
-            } catch (error) {
-              console.error("[OneSignal] Server registration error:", error);
-              clearTimeout(timeoutId);
-              return resolve(false);
-            }
-          } else {
-            console.warn("[OneSignal] No player ID available");
+            clearTimeout(timeoutId);
+            return resolve(finalSubscriptionState);
+          } catch (error) {
+            console.error("[OneSignal] Error showing prompt:", error);
             clearTimeout(timeoutId);
             return resolve(false);
           }
