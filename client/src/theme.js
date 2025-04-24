@@ -1,55 +1,50 @@
-// theme.js - Light Mode with SoloGram Color Palette
+// theme.js - Masculine Blue/Green Theme
 export const COLORS = {
   // Primary brand colors
-  primaryPurple: "#7B53DB",
-  primaryBlue: "#1E88E5",
-  primaryGreen: "#43A047",
-
+  primaryBlue: "#1A5F7A", // Deep ocean blue
+  primaryTeal: "#0D7377", // Rich teal
+  primaryGreen: "#2E8B57", // Forest green
   // Accent colors
-  accentPurple: "#A387E5",
-  accentBlue: "#64B5F6",
-  accentGreen: "#81C784",
-
+  accentBlue: "#42BFDD", // Bright blue accent
+  accentTeal: "#14FFEC", // Electric teal (use sparingly)
+  accentGreen: "#57C84D", // Vibrant green
   // Background colors
-  background: "#FFFFFF",
-  cardBackground: "#F9F9F9",
-  elevatedBackground: "#F0F0F0",
-
+  background: "#F5F5F5", // Slightly off-white for less eye strain
+  cardBackground: "#FFFFFF", // White cards for contrast
+  elevatedBackground: "#E8E8E8", // Slightly darker for elevated elements
   // Text colors
-  textPrimary: "#212121", // Dark text for light backgrounds
-  textSecondary: "#424242",
-  textTertiary: "#757575",
-
+  textPrimary: "#212121", // Near-black text for high contrast
+  textSecondary: "#2C3E50", // Deep blue-gray text
+  textTertiary: "#546E7A", // Muted blue-gray text
   // Functional colors
-  error: "#D32F2F",
-  success: "#388E3C",
-  warning: "#FBC02D",
-  info: "#1976D2",
-
+  error: "#D32F2F", // Standard red for errors
+  success: "#388E3C", // Green for success messages
+  warning: "#F57C00", // Amber orange for warnings
+  info: "#0277BD", // Deep blue for info
   // UI element colors
-  border: "#E0E0E0",
-  divider: "#E0E0E0",
-  buttonHover: "#E8E8E8",
+  border: "#CFD8DC", // Light blue-gray borders
+  divider: "#ECEFF1", // Very light dividers
+  buttonHover: "#E1E5E8", // Subtle hover state
   shadow: "rgba(0, 0, 0, 0.1)",
 };
 
 export const THEME = {
   header: {
-    background: COLORS.primaryPurple,
-    text: COLORS.textPrimary,
-    icon: COLORS.textPrimary,
+    background: COLORS.primaryBlue,
+    text: "#FFFFFF", // White text on dark header
+    icon: "#FFFFFF", // White icons for contrast
   },
   banner: {
     background: COLORS.elevatedBackground,
     text: COLORS.textPrimary,
-    title: COLORS.primaryBlue,
+    title: COLORS.primaryTeal,
     icon: COLORS.primaryGreen,
   },
   button: {
     primary: {
-      background: COLORS.primaryPurple,
+      background: COLORS.primaryBlue,
       text: "#FFFFFF",
-      hoverBackground: "#6437C8",
+      hoverBackground: "#14445E", // Darker blue on hover
     },
     secondary: {
       background: COLORS.elevatedBackground,
@@ -59,7 +54,7 @@ export const THEME = {
     action: {
       background: COLORS.primaryGreen,
       text: "#FFFFFF",
-      hoverBackground: "#2E7D32",
+      hoverBackground: "#1F6E3C", // Darker green on hover
     },
   },
   post: {
@@ -68,13 +63,13 @@ export const THEME = {
     footer: COLORS.elevatedBackground,
     border: COLORS.border,
     icon: {
-      active: COLORS.primaryPurple,
+      active: COLORS.primaryTeal,
       inactive: COLORS.textTertiary,
     },
   },
   story: {
     border: {
-      active: `linear-gradient(45deg, ${COLORS.primaryPurple}, ${COLORS.primaryBlue}, ${COLORS.primaryGreen})`,
+      active: `linear-gradient(45deg, ${COLORS.primaryBlue}, ${COLORS.primaryTeal}, ${COLORS.primaryGreen})`,
       inactive: COLORS.border,
     },
     background: COLORS.cardBackground,
