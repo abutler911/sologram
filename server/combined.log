@@ -133,3 +133,15 @@
 {"level":"info","message":"Database connection established"}
 {"level":"info","message":"Story archiving service initialized"}
 {"level":"info","message":"Server started on port 5000 in development mode"}
+{"level":"info","message":"Starting server in development mode"}
+{"level":"info","message":"Attempting to connect to MongoDB at mongodb+srv://***:***@cluster0.ysefn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"}
+{"level":"info","message":"MongoDB Connected: cluster0-shard-00-01.ysefn.mongodb.net"}
+{"level":"info","message":"Agenda initialized"}
+{"level":"info","message":"Server listening on port 5000"}
+{"level":"info","message":"Graceful shutdown initiated"}
+{"level":"info","message":"Starting server in development mode"}
+{"level":"info","message":"Attempting to connect to MongoDB at mongodb+srv://***:***@cluster0.ysefn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"}
+{"level":"info","message":"MongoDB Connected: cluster0-shard-00-00.ysefn.mongodb.net"}
+{"level":"info","message":"Agenda initialized"}
+{"level":"info","message":"Server listening on port 5000"}
+{"level":"info","message":"Graceful shutdown initiated"}

@@ -176,6 +176,41 @@ async function startServer() {
       });
     }
 
+    // Add this to your server code
+    app.get("/api/onesignal-test", async (req, res) => {
+      try {
+        // Get app details from OneSignal
+        const response = await axios.get(
+          `https://onesignal.com/api/v1/apps/${process.env.ONESIGNAL_APP_ID}`,
+          {
+            headers: {
+              Authorization: `Basic ${process.env.ONESIGNAL_REST_API_KEY}`,
+            },
+          }
+        );
+
+        // Return app details
+        res.status(200).json({
+          success: true,
+          message: "OneSignal connection successful",
+          appName: response.data.name,
+          playerCount: response.data.players,
+          messageable: response.data.messageable_players,
+        });
+      } catch (error) {
+        res.status(500).json({
+          success: false,
+          message: "OneSignal connection failed",
+          error: error.response?.data || error.message,
+          appId: process.env.ONESIGNAL_APP_ID ? "Configured" : "Missing",
+          apiKey: process.env.ONESIGNAL_REST_API_KEY
+            ? "Configured (length: " +
+              process.env.ONESIGNAL_REST_API_KEY.length +
+              ")"
+            : "Missing",
+        });
+      }
+    });
     app.use(globalErrorHandler);
 
     const server = app.listen(PORT, () => {
