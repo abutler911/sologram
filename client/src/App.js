@@ -62,17 +62,10 @@ function App() {
   useEffect(() => {
     if (!user?._id) return;
 
-    console.log("[OneSignal] Init triggered with userId:", user._id);
-
-    const setupNotifications = async () => {
-      try {
-        await initializeOneSignal(user._id);
-      } catch (error) {
-        console.error("[App] OneSignal initialization error:", error);
-      }
-    };
-
-    setupNotifications();
+    console.log("[App] Initializing OneSignal for user:", user._id);
+    initializeOneSignal(user._id).catch((error) => {
+      console.error("[App] OneSignal initialization error:", error);
+    });
   }, [user?._id]);
 
   // 🔍 Search handlers
