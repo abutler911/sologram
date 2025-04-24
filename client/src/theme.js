@@ -1,38 +1,37 @@
 // theme.js - Masculine Blue/Green Theme
 export const COLORS = {
-  // Primary brand colors
-  primaryBlue: "#1A5F7A", // Deep ocean blue
-  primaryTeal: "#0D7377", // Rich teal
-  primaryGreen: "#2E8B57", // Forest green
-  // Accent colors
-  accentBlue: "#42BFDD", // Bright blue accent
-  accentTeal: "#14FFEC", // Electric teal (use sparingly)
-  accentGreen: "#57C84D", // Vibrant green
-  // Background colors
-  background: "#F5F5F5", // Slightly off-white for less eye strain
-  cardBackground: "#FFFFFF", // White cards for contrast
-  elevatedBackground: "#E8E8E8", // Slightly darker for elevated elements
-  // Text colors
-  textPrimary: "#212121", // Near-black text for high contrast
-  textSecondary: "#2C3E50", // Deep blue-gray text
-  textTertiary: "#546E7A", // Muted blue-gray text
-  // Functional colors
-  error: "#D32F2F", // Standard red for errors
-  success: "#388E3C", // Green for success messages
-  warning: "#F57C00", // Amber orange for warnings
-  info: "#0277BD", // Deep blue for info
-  // UI element colors
-  border: "#CFD8DC", // Light blue-gray borders
-  divider: "#ECEFF1", // Very light dividers
-  buttonHover: "#E1E5E8", // Subtle hover state
+  primaryBlue: "#1A5F7A",
+  primaryTeal: "#0D7377",
+  primaryGreen: "#2E8B57",
+
+  accentBlue: "#42BFDD",
+  accentTeal: "#14FFEC",
+  accentGreen: "#57C84D",
+
+  background: "#E5E9ED",
+  cardBackground: "#FFFFFF",
+  elevatedBackground: "#DBE0E4",
+
+  textPrimary: "#212121",
+  textSecondary: "#2C3E50",
+  textTertiary: "#546E7A",
+
+  error: "#D32F2F",
+  success: "#388E3C",
+  warning: "#F57C00",
+  info: "#0277BD",
+
+  border: "#CFD8DC",
+  divider: "#ECEFF1",
+  buttonHover: "#E1E5E8",
   shadow: "rgba(0, 0, 0, 0.1)",
 };
 
 export const THEME = {
   header: {
     background: COLORS.primaryBlue,
-    text: "#FFFFFF", // White text on dark header
-    icon: "#FFFFFF", // White icons for contrast
+    text: "#FFFFFF",
+    icon: "#FFFFFF",
   },
   banner: {
     background: COLORS.elevatedBackground,
@@ -44,7 +43,7 @@ export const THEME = {
     primary: {
       background: COLORS.primaryBlue,
       text: "#FFFFFF",
-      hoverBackground: "#14445E", // Darker blue on hover
+      hoverBackground: "#14445E",
     },
     secondary: {
       background: COLORS.elevatedBackground,
@@ -54,7 +53,7 @@ export const THEME = {
     action: {
       background: COLORS.primaryGreen,
       text: "#FFFFFF",
-      hoverBackground: "#1F6E3C", // Darker green on hover
+      hoverBackground: "#1F6E3C",
     },
   },
   post: {
