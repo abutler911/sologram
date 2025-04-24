@@ -56,8 +56,8 @@ const Card = styled.div`
     height: 5px;
     background: ${(props) =>
       props.mood
-        ? `linear-gradient(to right, ${COLORS.primaryPurple}, ${COLORS.primaryBlue}, ${COLORS.primaryGreen})`
-        : `linear-gradient(to right, ${COLORS.primaryPurple}, ${COLORS.primaryBlue})`};
+        ? `linear-gradient(to right, ${COLORS.primaryBlue}, ${COLORS.primaryTeal}, ${COLORS.primaryGreen})`
+        : `linear-gradient(to right, ${COLORS.primaryBlue}, ${COLORS.primaryTeal})`};
     opacity: ${(props) => (props.pinned ? 1 : 0.7)};
   }
 
@@ -71,8 +71,8 @@ const Card = styled.div`
     border-radius: 24px;
     background: ${(props) =>
       props.mood
-        ? `linear-gradient(45deg, ${COLORS.primaryPurple}05, transparent 40%)`
-        : `linear-gradient(45deg, ${COLORS.primaryPurple}05, transparent 40%)`};
+        ? `linear-gradient(45deg, ${COLORS.primaryBlue}05, transparent 40%)`
+        : `linear-gradient(45deg, ${COLORS.primaryBlue}05, transparent 40%)`};
     pointer-events: none;
     z-index: 1;
   }
@@ -82,14 +82,14 @@ const Card = styled.div`
     background-color: ${COLORS.elevatedBackground};
     box-shadow: 0 15px 35px ${COLORS.shadow};
     border-color: ${(props) =>
-      props.mood ? `${COLORS.primaryPurple}40` : `${COLORS.primaryPurple}40`};
+      props.mood ? `${COLORS.primaryBlue}40` : `${COLORS.primaryBlue}40`};
   }
 
   ${(props) =>
     props.pinned &&
     `
-    border-color: ${COLORS.primaryPurple}80;
-    box-shadow: 0 10px 35px ${COLORS.primaryPurple}30;
+    border-color: ${COLORS.primaryBlue}80;
+    box-shadow: 0 10px 35px ${COLORS.primaryBlue}30;
   `}
 `;
 
@@ -130,7 +130,7 @@ const Avatar = styled.div`
   height: 52px;
   border-radius: 50%;
   overflow: hidden;
-  box-shadow: 0 0 0 2px ${COLORS.primaryPurple};
+  box-shadow: 0 0 0 2px ${COLORS.primaryBlue};
   position: relative;
 
   /* Adjust for mobile */
@@ -148,7 +148,7 @@ const Avatar = styled.div`
     right: 0;
     bottom: 0;
     border-radius: 50%;
-    box-shadow: inset 0 0 15px ${COLORS.primaryPurple};
+    box-shadow: inset 0 0 15px ${COLORS.primaryBlue};
     opacity: 0.3;
     transition: opacity 0.3s;
   }
@@ -172,8 +172,8 @@ const DefaultAvatar = styled.div`
   justify-content: center;
   background: linear-gradient(
     45deg,
-    ${COLORS.primaryPurple},
-    ${COLORS.primaryBlue}
+    ${COLORS.primaryBlue},
+    ${COLORS.primaryTeal}
   );
   color: #ffffff;
   font-size: 1.8rem;
@@ -226,7 +226,7 @@ const Username = styled.div`
   font-family: "Autography", cursive;
   font-weight: normal;
   font-size: 1.9rem;
-  color: ${COLORS.accentPurple};
+  color: ${COLORS.accentBlue};
   text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
   letter-spacing: 0.5px;
   margin-bottom: 2px;
@@ -241,15 +241,15 @@ const Username = styled.div`
 
 const UserHandle = styled.div`
   font-family: "Space Grotesk", sans-serif;
-  background-color: rgba(149, 117, 205, 0.1);
+  background-color: rgba(66, 191, 221, 0.1);
   padding: 0.15rem 0.6rem;
   border-radius: 999px;
-  color: ${COLORS.accentPurple};
+  color: ${COLORS.accentBlue};
   font-size: 0.75rem;
   display: inline-block;
   margin-top: 2px;
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(149, 117, 205, 0.1);
+  border: 1px solid rgba(66, 191, 221, 0.1);
 `;
 
 const UserDivider = styled.div`
@@ -258,8 +258,8 @@ const UserDivider = styled.div`
   background: linear-gradient(
     to right,
     transparent,
-    ${COLORS.primaryPurple},
-    ${COLORS.primaryBlue}
+    ${COLORS.primaryBlue},
+    ${COLORS.primaryTeal}
   );
   opacity: 0.7;
   margin: 2px 0 4px;
@@ -296,7 +296,7 @@ const ActionButton = styled.button`
   }
 
   &.pinned {
-    color: ${COLORS.accentGreen};
+    color: ${COLORS.accentTeal};
   }
 `;
 
@@ -308,7 +308,7 @@ const Content = styled.p`
   background: rgba(255, 255, 255, 0.03);
   padding: 1.5rem;
   border-radius: 16px;
-  border-left: 3px solid ${COLORS.primaryPurple};
+  border-left: 3px solid ${COLORS.primaryBlue};
   font-style: normal;
   white-space: pre-wrap;
   letter-spacing: 0.3px;
@@ -319,7 +319,7 @@ const Content = styled.p`
   &:first-letter {
     font-size: 1.2em;
     font-weight: 500;
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.primaryBlue};
   }
 `;
 
@@ -373,10 +373,10 @@ const Tag = styled.span`
   font-family: "Space Grotesk", sans-serif;
   background: linear-gradient(
     120deg,
-    ${COLORS.primaryPurple}30,
-    ${COLORS.primaryPurple}10
+    ${COLORS.primaryBlue}30,
+    ${COLORS.primaryBlue}10
   );
-  color: ${COLORS.primaryPurple};
+  color: ${COLORS.primaryBlue};
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
   font-size: 0.65rem;
@@ -386,7 +386,7 @@ const Tag = styled.span`
   overflow: hidden;
   letter-spacing: 0.3px;
   backdrop-filter: blur(4px);
-  border: 1px solid ${COLORS.primaryPurple}30;
+  border: 1px solid ${COLORS.primaryBlue}30;
 
   &:before {
     content: "";
@@ -406,7 +406,7 @@ const Tag = styled.span`
 
   &:hover {
     transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 3px 10px ${COLORS.primaryPurple}40;
+    box-shadow: 0 3px 10px ${COLORS.primaryBlue}40;
 
     &:before {
       animation: ${shimmer} 1.5s infinite;
@@ -430,7 +430,7 @@ const MoodIndicator = styled.div`
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  color: ${COLORS.primaryBlue};
+  color: ${COLORS.primaryTeal};
   font-size: 0.7rem;
   font-weight: 500;
   text-transform: capitalize;
@@ -438,12 +438,12 @@ const MoodIndicator = styled.div`
   border-radius: 999px;
   background: linear-gradient(
     120deg,
-    ${COLORS.primaryBlue}20,
-    ${COLORS.primaryBlue}05
+    ${COLORS.primaryTeal}20,
+    ${COLORS.primaryTeal}05
   );
-  box-shadow: 0 0 10px ${COLORS.primaryBlue}30;
+  box-shadow: 0 0 10px ${COLORS.primaryTeal}30;
   backdrop-filter: blur(4px);
-  border: 1px solid ${COLORS.primaryBlue}20;
+  border: 1px solid ${COLORS.primaryTeal}20;
   position: relative;
   overflow: hidden;
 `;
@@ -483,8 +483,7 @@ const ActionBar = styled.div`
 `;
 
 const ActionIcon = styled.div`
-  color: ${(props) =>
-    props.liked ? COLORS.primaryPurple : COLORS.textTertiary};
+  color: ${(props) => (props.liked ? COLORS.primaryTeal : COLORS.textTertiary)};
   transition: color 0.3s, transform 0.3s;
   font-size: 0.9rem;
 
@@ -534,17 +533,17 @@ const ActionItem = styled.div`
 
   &:nth-child(1):hover {
     &:before {
-      background-color: ${COLORS.primaryPurple}10;
+      background-color: ${COLORS.primaryTeal}10;
       transform: scale(1);
     }
 
     ${ActionIcon} {
-      color: ${COLORS.primaryPurple};
+      color: ${COLORS.primaryTeal};
       transform: scale(1.2);
     }
 
     ${ActionCount} {
-      color: ${COLORS.primaryPurple};
+      color: ${COLORS.primaryTeal};
     }
   }
 
@@ -582,12 +581,12 @@ const ActionItem = styled.div`
 
   &:nth-child(4):hover {
     &:before {
-      background-color: ${COLORS.accentPurple}10;
+      background-color: ${COLORS.accentBlue}10;
       transform: scale(1);
     }
 
     ${ActionIcon} {
-      color: ${COLORS.accentPurple};
+      color: ${COLORS.accentBlue};
       transform: scale(1.2);
     }
   }
@@ -599,8 +598,8 @@ const PinnedBadge = styled.div`
   right: 1.5rem;
   background: linear-gradient(
     45deg,
-    ${COLORS.primaryPurple},
-    ${COLORS.primaryBlue}
+    ${COLORS.primaryBlue},
+    ${COLORS.primaryTeal}
   );
   color: #ffffff;
   font-size: 0.75rem;
