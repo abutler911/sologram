@@ -21,7 +21,6 @@ import {
   FaClock,
   FaSearch,
   FaTimes,
-  FaUser,
   FaExpandAlt,
   FaCompressAlt,
   FaPrint,
@@ -45,7 +44,6 @@ const PostDetail = () => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
   const [showFullscreenMedia, setShowFullscreenMedia] = useState(false);
-  const [relatedPosts, setRelatedPosts] = useState([]);
   const [mediaHovering, setMediaHovering] = useState(false);
   const [readingTime, setReadingTime] = useState("< 1 min read");
   const contentRef = useRef(null);
@@ -117,11 +115,6 @@ const PostDetail = () => {
           setReadingTime(time);
         }
 
-        // Fetch related posts if there are tags
-        if (response.data.data.tags && response.data.data.tags.length > 0) {
-          fetchRelatedPosts(response.data.data.tags, response.data.data._id);
-        }
-
         setError(null);
         ReactGA.event("view_post", {
           post_id: response.data.data._id,
@@ -140,24 +133,6 @@ const PostDetail = () => {
 
     fetchPost();
   }, [id]);
-
-  // Fetch related posts based on tags
-  const fetchRelatedPosts = async (tags, currentPostId) => {
-    try {
-      const response = await axios.get("/api/posts", {
-        params: { tags: tags.join(","), limit: 3 },
-      });
-
-      // Filter out the current post
-      const filteredPosts = response.data.data
-        .filter((post) => post._id !== currentPostId)
-        .slice(0, 3);
-
-      setRelatedPosts(filteredPosts);
-    } catch (err) {
-      console.error("Error fetching related posts:", err);
-    }
-  };
 
   // Open delete confirmation modal
   const openDeleteModal = () => {
@@ -374,11 +349,11 @@ const PostDetail = () => {
           )}
 
           <ContentContainer>
-            {/* Author Section */}
+            {/* Author Section with Andrew's avatar */}
             <AuthorSection>
-              <AuthorAvatar src="/default-avatar.png" alt="Author" />
+              <AuthorCircle>A</AuthorCircle>
               <AuthorInfo>
-                <AuthorName>Post Author</AuthorName>
+                <AuthorName>Andrew</AuthorName>
                 <ReadingTime>
                   <FaClock />
                   <span>{readingTime}</span>
@@ -419,24 +394,6 @@ const PostDetail = () => {
                 <span>{post.likes} likes</span>
               </LikesCount>
             </MetaData>
-
-            {/* Content and Table of Contents for long posts */}
-            {post.content && post.content.length > 500 && (
-              <TableOfContents>
-                <TOCTitle>Table of Contents</TOCTitle>
-                <TOCItem href="#post-content" level={0}>
-                  Introduction
-                </TOCItem>
-                <TOCItem href="#post-tags" level={0}>
-                  Tags
-                </TOCItem>
-                {relatedPosts.length > 0 && (
-                  <TOCItem href="#related-posts" level={0}>
-                    Related Posts
-                  </TOCItem>
-                )}
-              </TableOfContents>
-            )}
 
             {post.content && (
               <PostContent id="post-content" ref={contentRef}>
@@ -484,42 +441,6 @@ const PostDetail = () => {
                   </Tag>
                 ))}
               </TagsContainer>
-            )}
-
-            {/* Related Posts Section */}
-            {relatedPosts.length > 0 && (
-              <RelatedPostsSection id="related-posts">
-                <SectionTitle>Related Posts</SectionTitle>
-                <RelatedPostsGrid>
-                  {relatedPosts.map((relatedPost) => (
-                    <RelatedPostCard
-                      to={`/post/${relatedPost._id}`}
-                      key={relatedPost._id}
-                    >
-                      {relatedPost.media && relatedPost.media.length > 0 && (
-                        <RelatedPostImage
-                          src={relatedPost.media[0].mediaUrl}
-                          alt={relatedPost.caption}
-                        />
-                      )}
-                      <RelatedPostInfo>
-                        <RelatedPostTitle>
-                          {relatedPost.caption}
-                        </RelatedPostTitle>
-                        <RelatedPostMeta>
-                          <FaCalendarAlt />
-                          <span>
-                            {format(
-                              new Date(relatedPost.createdAt),
-                              "MMM d, yyyy"
-                            )}
-                          </span>
-                        </RelatedPostMeta>
-                      </RelatedPostInfo>
-                    </RelatedPostCard>
-                  ))}
-                </RelatedPostsGrid>
-              </RelatedPostsSection>
             )}
           </ContentContainer>
         </PostContainer>
@@ -940,7 +861,7 @@ const ContentContainer = styled.div`
   }
 `;
 
-// Author Section
+// Author Section with custom circle avatar for Andrew
 const AuthorSection = styled.div`
   display: flex;
   align-items: center;
@@ -957,13 +878,19 @@ const AuthorSection = styled.div`
   }
 `;
 
-const AuthorAvatar = styled.img`
+const AuthorCircle = styled.div`
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  object-fit: cover;
+  background-color: ${COLORS.primaryBlue};
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
   margin-right: 1rem;
-  border: 2px solid ${COLORS.primaryBlue};
+  border: 2px solid ${COLORS.primaryTeal};
 `;
 
 const AuthorInfo = styled.div`
@@ -1121,41 +1048,6 @@ const LikesCount = styled.div`
   }
 `;
 
-// Table of Contents
-const TableOfContents = styled.div`
-  background-color: ${COLORS.elevatedBackground};
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-
-  @media print {
-    background-color: transparent;
-    border: 1px solid ${COLORS.border};
-  }
-`;
-
-const TOCTitle = styled.h4`
-  color: ${COLORS.textPrimary};
-  margin: 0 0 1rem 0;
-  font-size: 1.1rem;
-`;
-
-const TOCItem = styled.a`
-  display: block;
-  color: ${COLORS.textSecondary};
-  padding: 0.5rem 0;
-  text-decoration: none;
-  transition: color 0.2s;
-  border-left: 2px solid ${COLORS.border};
-  padding-left: 1rem;
-  margin-left: ${(props) => props.level * 0.5}rem;
-
-  &:hover {
-    color: ${COLORS.primaryTeal};
-    border-left-color: ${COLORS.primaryTeal};
-  }
-`;
-
 // Updated post content
 const PostContent = styled.div`
   font-size: 1.125rem;
@@ -1256,98 +1148,6 @@ const Tag = styled.span`
   }
 
   svg {
-    font-size: 0.75rem;
-    color: ${COLORS.primaryBlue};
-  }
-`;
-
-// Related Posts Section
-const RelatedPostsSection = styled.div`
-  margin-top: 3rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid ${COLORS.divider};
-
-  @media print {
-    display: none;
-  }
-`;
-
-const SectionTitle = styled.h3`
-  color: ${COLORS.textPrimary};
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  position: relative;
-  padding-left: 1rem;
-
-  &:before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: linear-gradient(
-      to bottom,
-      ${COLORS.primaryBlue},
-      ${COLORS.primaryTeal}
-    );
-    border-radius: 4px;
-  }
-`;
-
-const RelatedPostsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1.5rem;
-
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const RelatedPostCard = styled(Link)`
-  display: block;
-  text-decoration: none;
-  background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px ${COLORS.shadow};
-  transition: transform 0.3s, box-shadow 0.3s;
-
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px ${COLORS.shadow};
-  }
-`;
-
-const RelatedPostImage = styled.img`
-  width: 100%;
-  height: 140px;
-  object-fit: cover;
-`;
-
-const RelatedPostInfo = styled.div`
-  padding: 1rem;
-`;
-
-const RelatedPostTitle = styled.h4`
-  color: ${COLORS.textPrimary};
-  font-size: 1rem;
-  margin: 0 0 0.5rem 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-`;
-
-const RelatedPostMeta = styled.div`
-  color: ${COLORS.textTertiary};
-  font-size: 0.75rem;
-  display: flex;
-  align-items: center;
-
-  svg {
-    margin-right: 0.25rem;
     font-size: 0.75rem;
     color: ${COLORS.primaryBlue};
   }
