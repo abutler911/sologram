@@ -7,6 +7,7 @@ const helmet = require("helmet");
 const path = require("path");
 const winston = require("winston");
 const rateLimit = require("express-rate-limit");
+const subscriberRoutes = require("./routes/subscribers");
 const mongoSanitize = require("express-mongo-sanitize");
 const {
   setupAgenda,
@@ -87,6 +88,7 @@ app.use("/api/archived-stories", archivedStoryRoutes);
 app.use("/api/subscribers", subscriberRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/thoughts", thoughtsRoutes);
+app.use("/api/subscribers", subscriberRoutes);
 
 app.set("trust proxy", 1);
 
