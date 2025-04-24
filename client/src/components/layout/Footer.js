@@ -51,7 +51,7 @@ const Footer = () => {
 
 const FooterContainer = styled.footer`
   background-color: ${COLORS.cardBackground};
-  border-top: 1px solid ${COLORS.divider};
+  border-top: 1px solid ${COLORS.border};
   padding: 2rem 0;
   padding-bottom: calc(2rem + env(safe-area-inset-bottom));
   margin-bottom: 65px;
@@ -81,7 +81,7 @@ const TopSection = styled.div`
 const LogoSection = styled.div`
   display: flex;
   flex-direction: column;
-  color: ${COLORS.primaryPurple};
+  color: ${COLORS.primaryBlue};
 
   .logo {
     display: flex;
@@ -99,7 +99,7 @@ const LogoSection = styled.div`
   .tagline {
     font-size: 0.9rem;
     font-style: italic;
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryTeal};
   }
 `;
 
@@ -159,7 +159,7 @@ const CreatedWithLove = styled.p`
 `;
 
 const HeartIcon = styled(FaHeart)`
-  color: ${COLORS.primaryPurple};
+  color: ${COLORS.primaryTeal};
   margin: 0 0.25rem;
 `;
 

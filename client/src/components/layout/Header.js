@@ -465,7 +465,7 @@ const Header = ({ onSearch, onClearSearch }) => {
   );
 };
 
-// Styled Components (updated with Modern Twilight theme)
+// Styled Components (updated with Masculine Blue/Green theme)
 const HeaderWrapper = styled.div`
   position: sticky;
   top: 0;
@@ -474,7 +474,7 @@ const HeaderWrapper = styled.div`
 `;
 
 const HeaderContainer = styled.header`
-  background-color: ${COLORS.primaryPurple};
+  background-color: ${COLORS.primaryBlue};
 `;
 
 const HeaderContent = styled.div`
@@ -525,7 +525,7 @@ const Logo = styled(Link)`
     font-family: "Sora", sans-serif;
     font-size: 2.2rem;
     font-weight: 600;
-    color: ${COLORS.textPrimary};
+    color: white;
     letter-spacing: 1px;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
@@ -545,7 +545,7 @@ const Logo = styled(Link)`
     font-size: 0.95rem;
     font-style: italic;
     font-weight: 400;
-    color: ${COLORS.accentBlue};
+    color: ${COLORS.accentTeal};
     margin-top: 0.4rem;
     margin-left: 0; /* override previous indent */
     text-align: left;
@@ -593,7 +593,7 @@ const DesktopNavigation = styled.nav`
 `;
 
 const NavLink = styled(Link)`
-  color: ${(props) => (props.active ? COLORS.accentGreen : COLORS.textPrimary)};
+  color: ${(props) => (props.active ? COLORS.accentTeal : "white")};
   text-decoration: none;
   font-weight: ${(props) =>
     props.active ? "600" : "500"}; // Bolder for active state
@@ -608,12 +608,12 @@ const NavLink = styled(Link)`
     bottom: -2px; // Moved down slightly
     width: ${(props) => (props.active ? "100%" : "0")};
     height: 2px;
-    background-color: ${COLORS.primaryGreen};
+    background-color: ${COLORS.primaryTeal};
     transition: width 0.3s ease;
   }
 
   &:hover {
-    color: ${COLORS.accentGreen};
+    color: ${COLORS.accentTeal};
 
     &:after {
       width: 100%;
@@ -654,14 +654,14 @@ const ActionButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${COLORS.textPrimary};
+  color: white;
   font-size: 1.125rem;
   padding: 0.5rem;
   cursor: pointer;
   transition: color 0.3s;
 
   &:hover {
-    color: ${COLORS.accentGreen};
+    color: ${COLORS.accentTeal};
   }
 `;
 
@@ -684,7 +684,7 @@ const SearchForm = styled.form`
 const SearchInput = styled.input`
   background: transparent;
   border: none;
-  color: ${COLORS.textPrimary};
+  color: white;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   width: 100%;
@@ -708,12 +708,12 @@ const ClearButton = styled.button`
   font-size: 0.75rem;
 
   &:hover {
-    color: ${COLORS.accentGreen};
+    color: ${COLORS.accentTeal};
   }
 `;
 
 const SearchSubmit = styled.button`
-  background-color: ${COLORS.primaryBlue};
+  background-color: ${COLORS.primaryTeal};
   border: none;
   color: white;
   display: flex;
@@ -724,7 +724,7 @@ const SearchSubmit = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: ${THEME.button.action.hoverBackground};
+    background-color: ${COLORS.accentTeal};
   }
 `;
 
@@ -742,7 +742,7 @@ const CloseSearchButton = styled.button`
 
   &:hover {
     background-color: rgba(0, 0, 0, 0.3);
-    color: ${COLORS.textPrimary};
+    color: white;
   }
 
   @media (min-width: 768px) {
@@ -755,7 +755,7 @@ const CreateNewButtonDesktop = styled(Link)`
   align-items: center;
   gap: 0.5rem;
   background-color: ${(props) =>
-    props.thoughts ? COLORS.primaryBlue : COLORS.primaryGreen};
+    props.thoughts ? COLORS.primaryTeal : COLORS.primaryGreen};
   color: white;
   text-decoration: none;
   padding: 0.5rem 1rem;
@@ -766,9 +766,7 @@ const CreateNewButtonDesktop = styled(Link)`
 
   &:hover {
     background-color: ${(props) =>
-      props.thoughts
-        ? THEME.button.action.hoverBackground
-        : COLORS.accentGreen};
+      props.thoughts ? COLORS.accentTeal : COLORS.accentGreen};
   }
 
   @media (max-width: 768px) {
@@ -791,12 +789,12 @@ const UserButton = styled.button`
 
   .arrow-icon {
     font-size: 0.75rem;
-    color: ${COLORS.textPrimary};
+    color: white;
     transition: transform 0.2s;
   }
 
   &:hover .arrow-icon {
-    color: ${COLORS.accentGreen};
+    color: ${COLORS.accentTeal};
   }
 
   @media (max-width: 768px) {
@@ -812,10 +810,10 @@ const UserAvatar = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${COLORS.textPrimary};
+  color: white;
 
   &:hover {
-    color: ${COLORS.accentGreen};
+    color: ${COLORS.accentTeal};
     background-color: rgba(255, 255, 255, 0.3);
   }
 `;
@@ -865,7 +863,7 @@ const UserMenuItem = styled(Link)`
 
   &:hover {
     background-color: ${COLORS.elevatedBackground};
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.primaryBlue};
   }
 
   svg {
@@ -874,7 +872,7 @@ const UserMenuItem = styled(Link)`
   }
 
   &:hover svg {
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.primaryBlue};
   }
 `;
 
@@ -893,7 +891,7 @@ const UserMenuButton = styled.button`
 
   &:hover {
     background-color: ${COLORS.elevatedBackground};
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.primaryBlue};
   }
 
   svg {
@@ -902,7 +900,7 @@ const UserMenuButton = styled.button`
   }
 
   &:hover svg {
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.primaryBlue};
   }
 `;
 
@@ -911,7 +909,7 @@ const LoginButton = styled(Link)`
   align-items: center;
   gap: 0.5rem;
   background-color: rgba(255, 255, 255, 0.15);
-  color: ${COLORS.textPrimary};
+  color: white;
   text-decoration: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -920,7 +918,7 @@ const LoginButton = styled(Link)`
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.25);
-    color: ${COLORS.textPrimary};
+    color: white;
   }
 
   @media (max-width: 768px) {
@@ -934,12 +932,12 @@ const MobileMenuToggle = styled.button`
   background: none;
   border: none;
   font-size: 1.25rem;
-  color: ${COLORS.textPrimary};
+  color: white;
   cursor: pointer;
   padding: 0.5rem;
 
   &:hover {
-    color: ${COLORS.accentGreen};
+    color: ${COLORS.accentTeal};
   }
 
   @media (max-width: 768px) {
@@ -970,13 +968,13 @@ const MobileMenuHeader = styled.div`
   align-items: center;
   padding: 1rem;
   border-bottom: 1px solid ${COLORS.divider};
-  background-color: ${COLORS.primaryPurple};
+  background-color: ${COLORS.primaryBlue};
 `;
 
 const MobileMenuLogo = styled.div`
   display: flex;
   align-items: center;
-  color: ${COLORS.textPrimary};
+  color: white;
   font-weight: 700;
 
   svg {
@@ -988,11 +986,11 @@ const MobileMenuCloseBtn = styled.button`
   background: none;
   border: none;
   font-size: 1.25rem;
-  color: ${COLORS.textPrimary};
+  color: white;
   cursor: pointer;
 
   &:hover {
-    color: ${COLORS.accentGreen};
+    color: ${COLORS.accentTeal};
   }
 `;
 
@@ -1010,16 +1008,16 @@ const MobileMenuItem = styled(Link)`
   align-items: center;
   padding: 0.75rem 1rem;
   color: ${(props) =>
-    props.active ? COLORS.primaryPurple : COLORS.textSecondary};
+    props.active ? COLORS.primaryBlue : COLORS.textSecondary};
   text-decoration: none;
   font-weight: 500;
   border-radius: 4px;
   background-color: ${(props) =>
-    props.active ? `rgba(94, 53, 177, 0.1)` : "transparent"};
+    props.active ? `rgba(26, 95, 122, 0.1)` : "transparent"};
 
   &:hover {
     background-color: ${COLORS.elevatedBackground};
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.primaryBlue};
   }
 
   svg {
@@ -1043,7 +1041,7 @@ const MobileMenuLogoutButton = styled.button`
 
   &:hover {
     background-color: ${COLORS.elevatedBackground};
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.primaryBlue};
   }
 
   svg {
@@ -1055,7 +1053,7 @@ const ExternalMenuItem = styled.a`
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem;
-  color: ${COLORS.primaryBlue};
+  color: ${COLORS.primaryTeal};
   font-weight: 600;
   border-radius: 4px;
   text-decoration: none;
@@ -1066,7 +1064,7 @@ const ExternalMenuItem = styled.a`
 
   svg {
     margin-right: 0.75rem;
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryTeal};
   }
 `;
 
@@ -1075,7 +1073,7 @@ const RegisterButton = styled(Link)`
   align-items: center;
   gap: 0.5rem;
   background-color: ${COLORS.primaryGreen};
-  color: ${COLORS.textPrimary};
+  color: white;
   text-decoration: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -1094,7 +1092,7 @@ const RegisterButton = styled(Link)`
 const Greeting = styled.div`
   font-size: 0.95rem;
   margin-right: 1rem;
-  color: ${COLORS.textPrimary};
+  color: white;
   background-color: rgba(255, 255, 255, 0.15);
   padding: 0.4rem 0.75rem;
   border-radius: 20px;
@@ -1107,7 +1105,7 @@ const Greeting = styled.div`
 
   .autography {
     font-family: "Autography", cursive;
-    color: ${COLORS.accentGreen};
+    color: ${COLORS.accentTeal};
     font-size: 1.4rem;
     font-weight: 700;
     letter-spacing: 0.5px;
@@ -1134,7 +1132,7 @@ const MobileGreeting = styled.div`
 
   .autography {
     font-family: "Autography", cursive;
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.primaryBlue};
     font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: 1px;

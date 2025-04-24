@@ -59,6 +59,8 @@ const LayoutWrapper = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-top: 1rem; /* Add some space between header and content */
+    padding: 0 1rem; /* Add side padding for content */
   }
 `;
 
