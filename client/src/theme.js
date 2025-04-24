@@ -1,35 +1,38 @@
-// theme.js - Modern Twilight Color Palette
-// Primary Colors
+// theme.js - Light Mode with SoloGram Color Palette
 export const COLORS = {
-  // Primary colors
-  primaryPurple: "#7B53DB", // Updated to a more vibrant purple
+  // Primary brand colors
+  primaryPurple: "#7B53DB",
   primaryBlue: "#1E88E5",
   primaryGreen: "#43A047",
+
   // Accent colors
-  accentPurple: "#A387E5", // Adjusted accent to match new primary purple
+  accentPurple: "#A387E5",
   accentBlue: "#64B5F6",
   accentGreen: "#81C784",
+
   // Background colors
-  background: "#121212",
-  cardBackground: "#1E1E1E",
-  elevatedBackground: "#2A2A2A",
+  background: "#FFFFFF",
+  cardBackground: "#F9F9F9",
+  elevatedBackground: "#F0F0F0",
+
   // Text colors
-  textPrimary: "#FFFFFF",
-  textSecondary: "#DDDDDD",
-  textTertiary: "#AAAAAA",
+  textPrimary: "#212121", // Dark text for light backgrounds
+  textSecondary: "#424242",
+  textTertiary: "#757575",
+
   // Functional colors
-  error: "#F44336",
-  success: "#43A047",
-  warning: "#FFA000",
-  info: "#64B5F6",
+  error: "#D32F2F",
+  success: "#388E3C",
+  warning: "#FBC02D",
+  info: "#1976D2",
+
   // UI element colors
-  border: "#444444",
-  divider: "#333333",
-  buttonHover: "#333333",
-  shadow: "rgba(0, 0, 0, 0.2)",
+  border: "#E0E0E0",
+  divider: "#E0E0E0",
+  buttonHover: "#E8E8E8",
+  shadow: "rgba(0, 0, 0, 0.1)",
 };
 
-// You can add theme presets for different UI components
 export const THEME = {
   header: {
     background: COLORS.primaryPurple,
@@ -38,25 +41,25 @@ export const THEME = {
   },
   banner: {
     background: COLORS.elevatedBackground,
-    text: COLORS.textSecondary,
+    text: COLORS.textPrimary,
     title: COLORS.primaryBlue,
     icon: COLORS.primaryGreen,
   },
   button: {
     primary: {
       background: COLORS.primaryPurple,
-      text: COLORS.textPrimary,
-      hoverBackground: "#6437C8", // Darker purple on hover (adjusted)
+      text: "#FFFFFF",
+      hoverBackground: "#6437C8",
     },
     secondary: {
       background: COLORS.elevatedBackground,
-      text: COLORS.textSecondary,
+      text: COLORS.textPrimary,
       hoverBackground: COLORS.buttonHover,
     },
     action: {
-      background: COLORS.primaryBlue,
-      text: COLORS.textPrimary,
-      hoverBackground: "#1565C0", // Darker blue on hover
+      background: COLORS.primaryGreen,
+      text: "#FFFFFF",
+      hoverBackground: "#2E7D32",
     },
   },
   post: {
@@ -74,7 +77,7 @@ export const THEME = {
       active: `linear-gradient(45deg, ${COLORS.primaryPurple}, ${COLORS.primaryBlue}, ${COLORS.primaryGreen})`,
       inactive: COLORS.border,
     },
-    background: COLORS.elevatedBackground,
+    background: COLORS.cardBackground,
   },
 };
 
