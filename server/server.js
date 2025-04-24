@@ -19,7 +19,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const Post = require("./models/Post");
 
-// Error handling
+// Global error handling for unhandled exceptions
 process.on("uncaughtException", (err) => {
   console.error("UNCAUGHT EXCEPTION! 💥", err);
   setTimeout(() => process.exit(1), 1000);
@@ -28,12 +28,12 @@ process.on("unhandledRejection", (reason) => {
   console.error("UNHANDLED REJECTION! 💥", reason);
   setTimeout(() => process.exit(1), 1000);
 });
-
 process.on("SIGTERM", () => {
   console.log("👋 SIGTERM RECEIVED. Shutting down gracefully");
   setTimeout(() => process.exit(0), 2000);
 });
 
+// Logger setup
 const logger = winston.createLogger({
   level: "info",
   format: winston.format.json(),
@@ -43,6 +43,7 @@ const logger = winston.createLogger({
   ],
 });
 
+// CORS options
 const corsOptions = {
   origin:
     process.env.NODE_ENV === "production"
@@ -58,18 +59,21 @@ const corsOptions = {
   maxAge: 86400,
 };
 
+// Rate limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
 });
+
+// Middleware
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "300mb" }));
 app.use(express.urlencoded({ extended: true, limit: "300mb" }));
 app.use(mongoSanitize());
-app.use(cors(corsOptions));
 app.use(helmet());
 app.use(morgan("dev"));
 
+// Routes
 const postRoutes = require("./routes/posts");
 const storyRoutes = require("./routes/stories");
 const authRoutes = require("./routes/auth");
@@ -88,26 +92,72 @@ app.use("/api/subscribers", subscriberRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/thoughts", thoughtsRoutes);
 
-app.set("trust proxy", 1);
-
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on("finish", () => {
-    logger.info({
-      method: req.method,
-      url: req.originalUrl,
-      status: res.statusCode,
-      duration: `${Date.now() - start}ms`,
-    });
-  });
-  next();
-});
+// Logging all requests except health
 app.use((req, res, next) => {
   if (!req.originalUrl.includes("/health")) {
     console.log(`${req.method} ${req.originalUrl}`);
   }
   next();
 });
+
+// API health check
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    memory: process.memoryUsage(),
+    mongodb:
+      mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+  });
+});
+
+// Root route
+app.get("/", (req, res) => {
+  res.send("🚀 SoloGram backend is live!");
+});
+
+// DB test route
+app.get("/api/test-db", async (req, res) => {
+  try {
+    const count = await Post.countDocuments();
+    res.status(200).json({ connected: true, posts: count });
+  } catch (err) {
+    res.status(500).json({ connected: false, error: err.message });
+  }
+});
+
+// Test OneSignal API connection
+app.get("/api/onesignal-test", async (req, res) => {
+  try {
+    const response = await axios.get(
+      `https://onesignal.com/api/v1/apps/${process.env.ONESIGNAL_APP_ID}`,
+      {
+        headers: {
+          Authorization: `Basic ${process.env.ONESIGNAL_REST_API_KEY}`,
+        },
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "OneSignal connection successful",
+      appName: response.data.name,
+      playerCount: response.data.players,
+      messageable: response.data.messageable_players,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "OneSignal connection failed",
+      error: error.response?.data || error.message,
+      appId: process.env.ONESIGNAL_APP_ID ? "Configured" : "Missing",
+      apiKey: process.env.ONESIGNAL_REST_API_KEY
+        ? `Configured (length: ${process.env.ONESIGNAL_REST_API_KEY.length})`
+        : "Missing",
+    });
+  }
+});
+
+// Global error handler
 const globalErrorHandler = (err, req, res, next) => {
   logger.error({
     message: "Server error",
@@ -122,7 +172,19 @@ const globalErrorHandler = (err, req, res, next) => {
     error: process.env.NODE_ENV === "development" ? err.message : undefined,
   });
 };
+app.use(globalErrorHandler);
 
+// ✅ Production static file serving (React) – placed last
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../client/build")));
+
+  // React catch-all for non-API routes
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
+  });
+}
+
+// Server start logic
 async function startServer() {
   try {
     logger.info(
@@ -147,72 +209,6 @@ async function startServer() {
     } catch (err) {
       logger.error("Agenda failed to initialize:", err.message);
     }
-
-    app.get("/health", (req, res) => {
-      res.status(200).json({
-        status: "ok",
-        memory: process.memoryUsage(),
-        mongodb:
-          mongoose.connection.readyState === 1 ? "connected" : "disconnected",
-      });
-    });
-
-    app.get("/", (req, res) => {
-      res.send("🚀 SoloGram backend is live!");
-    });
-
-    app.get("/api/test-db", async (req, res) => {
-      try {
-        const count = await Post.countDocuments();
-        res.status(200).json({ connected: true, posts: count });
-      } catch (err) {
-        res.status(500).json({ connected: false, error: err.message });
-      }
-    });
-
-    if (process.env.NODE_ENV === "production") {
-      app.use(express.static(path.join(__dirname, "../client/build")));
-      app.get("*", (req, res) => {
-        res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
-      });
-    }
-
-    // Add this to your server code
-    app.get("/api/onesignal-test", async (req, res) => {
-      try {
-        // Get app details from OneSignal
-        const response = await axios.get(
-          `https://onesignal.com/api/v1/apps/${process.env.ONESIGNAL_APP_ID}`,
-          {
-            headers: {
-              Authorization: `Basic ${process.env.ONESIGNAL_REST_API_KEY}`,
-            },
-          }
-        );
-
-        // Return app details
-        res.status(200).json({
-          success: true,
-          message: "OneSignal connection successful",
-          appName: response.data.name,
-          playerCount: response.data.players,
-          messageable: response.data.messageable_players,
-        });
-      } catch (error) {
-        res.status(500).json({
-          success: false,
-          message: "OneSignal connection failed",
-          error: error.response?.data || error.message,
-          appId: process.env.ONESIGNAL_APP_ID ? "Configured" : "Missing",
-          apiKey: process.env.ONESIGNAL_REST_API_KEY
-            ? "Configured (length: " +
-              process.env.ONESIGNAL_REST_API_KEY.length +
-              ")"
-            : "Missing",
-        });
-      }
-    });
-    app.use(globalErrorHandler);
 
     const server = app.listen(PORT, () => {
       logger.info(`Server listening on port ${PORT}`);
