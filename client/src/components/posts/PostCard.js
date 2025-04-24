@@ -1592,6 +1592,39 @@ const CloseFullscreenButton = styled.button`
   }
 `;
 
+const PostLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+  display: block;
+
+  &:hover ${PostTitle} {
+    transform: translateX(3px);
+    color: ${COLORS.primaryBlue};
+  }
+
+  &:hover ${Content} {
+    transform: translateX(3px);
+  }
+`;
+
+const UserAvatarImage = styled.img`
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 10px;
+  border: 2px solid ${COLORS.primaryTeal}40;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  will-change: transform;
+
+  &:hover {
+    transform: scale(1.08);
+    border-color: ${COLORS.primaryTeal};
+    box-shadow: 0 3px 10px rgba(13, 115, 119, 0.25);
+  }
+`;
+
 PostCard.displayName = "PostCard";
 
 export default PostCard;
