@@ -4,18 +4,12 @@ import { Toaster, toast } from "react-hot-toast";
 import styled from "styled-components";
 import ReactGA from "react-ga4";
 import { HelmetProvider } from "react-helmet-async";
-
 import { AuthContext } from "./context/AuthContext";
 import { initializeOneSignal } from "./utils/notificationService";
-import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
-
 import ScrollToTop from "./components/ScrollToTop";
 import InstallPrompt from "./components/pwa/InstallPrompt";
 import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButtonAdjuster";
 import AppRoutes from "./AppRoutes";
-
-// Register service worker just once
-serviceWorkerRegistration.register();
 
 const PageTracker = () => {
   const location = useLocation();

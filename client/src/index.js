@@ -7,6 +7,7 @@ import axios from "axios";
 import ReactGA from "react-ga4";
 import { AuthProvider } from "./context/AuthContext";
 import AutographyFont from "./assets/fonts/Autography.otf";
+import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 
 if (process.env.NODE_ENV === "production") {
   ReactGA.initialize(process.env.REACT_APP_GA_MEASUREMENT_ID, {

@@ -1,4 +1,4 @@
-// client/src/utils/notificationService.js
+// utils/notificationService.js
 
 // Track initialization state
 let isInitializing = false;
@@ -70,6 +70,10 @@ export const initializeOneSignal = async (userId) => {
         notifyButton: {
           enable: false,
         },
+        // Ensure service worker path is correct
+        serviceWorkerPath: "/OneSignalSDKWorker.js",
+        serviceWorkerUpdaterPath: "/OneSignalSDKUpdaterWorker.js",
+        // Use slidedown prompt for better UX
         promptOptions: {
           slidedown: {
             prompts: [
@@ -93,11 +97,10 @@ export const initializeOneSignal = async (userId) => {
         window.OneSignal.setExternalUserId(userId.toString());
         console.log("[OneSignal] Set external user ID:", userId);
       }
-
-      isInitialized = true;
-      console.log("[OneSignal] Initialized successfully");
     });
 
+    isInitialized = true;
+    console.log("[OneSignal] Initialized successfully");
     return true;
   } catch (error) {
     console.error("[OneSignal] Initialization error:", error);
@@ -124,74 +127,113 @@ export const subscribeToNotifications = async () => {
       }
     }
 
-    return new Promise((resolve) => {
-      window.OneSignal.push(async function () {
-        try {
-          // Check if push is supported
-          const isPushSupported =
-            await window.OneSignal.isPushNotificationsSupported();
-          if (!isPushSupported) {
-            console.warn(
-              "[OneSignal] Push notifications not supported on this browser"
-            );
-            return resolve(false);
-          }
-
-          // Check current permission state
-          const permission = await window.OneSignal.getNotificationPermission();
-          console.log("[OneSignal] Current permission:", permission);
-
-          if (permission === "denied") {
-            console.warn("[OneSignal] Notifications already denied by user");
-            return resolve(false);
-          }
-
-          // Check if already subscribed
-          const isSubscribed =
-            await window.OneSignal.isPushNotificationsEnabled();
-          console.log("[OneSignal] Already subscribed:", isSubscribed);
-
-          if (!isSubscribed) {
-            // Show the slidedown prompt
-            console.log("[OneSignal] Showing subscription prompt");
-            await window.OneSignal.showSlidedownPrompt();
-
-            // Wait a moment for user to interact with prompt
-            await new Promise((r) => setTimeout(r, 2000));
-
-            // Check if user accepted
-            const finalSubscriptionState =
-              await window.OneSignal.isPushNotificationsEnabled();
-            console.log(
-              "[OneSignal] Final subscription state:",
-              finalSubscriptionState
-            );
-
-            if (!finalSubscriptionState) {
-              console.warn("[OneSignal] User did not accept notifications");
+    // Using a timeout promise to prevent hanging if OneSignal has issues
+    return await Promise.race([
+      new Promise((resolve) => {
+        window.OneSignal.push(async function () {
+          try {
+            // Check if push is supported on this browser
+            const isPushSupported =
+              await window.OneSignal.isPushNotificationsSupported();
+            if (!isPushSupported) {
+              console.warn(
+                "[OneSignal] Push notifications not supported on this browser"
+              );
               return resolve(false);
             }
+
+            // Check current permission state
+            const permission =
+              await window.OneSignal.getNotificationPermission();
+            console.log("[OneSignal] Current permission:", permission);
+
+            if (permission === "denied") {
+              console.warn("[OneSignal] Notifications already denied by user");
+              return resolve(false);
+            }
+
+            // Check if already subscribed
+            const isSubscribed =
+              await window.OneSignal.isPushNotificationsEnabled();
+            console.log("[OneSignal] Already subscribed:", isSubscribed);
+
+            if (!isSubscribed) {
+              // Show the slidedown prompt
+              console.log("[OneSignal] Showing subscription prompt");
+              await window.OneSignal.showSlidedownPrompt();
+
+              // Wait a moment for user to interact with prompt
+              await new Promise((r) => setTimeout(r, 2000));
+
+              // Check if user accepted
+              const finalSubscriptionState =
+                await window.OneSignal.isPushNotificationsEnabled();
+              console.log(
+                "[OneSignal] Final subscription state:",
+                finalSubscriptionState
+              );
+
+              if (!finalSubscriptionState) {
+                console.warn("[OneSignal] User did not accept notifications");
+                return resolve(false);
+              }
+            }
+
+            // Get player ID and register with server
+            const playerId = await getPlayerId();
+            console.log("[OneSignal] Player ID:", playerId);
+
+            if (playerId) {
+              const registered = await registerPlayerIdWithServer(playerId);
+              return resolve(registered);
+            }
+
+            resolve(false);
+          } catch (error) {
+            console.error("[OneSignal] Subscription error:", error);
+            resolve(false);
           }
-
-          // Get player ID and register with server
-          const playerId = await window.OneSignal.getUserId();
-          console.log("[OneSignal] Player ID:", playerId);
-
-          if (playerId) {
-            const registered = await registerPlayerIdWithServer(playerId);
-            return resolve(registered);
-          }
-
+        });
+      }),
+      // 5 second timeout to prevent hanging
+      new Promise((resolve) => {
+        setTimeout(() => {
+          console.warn("[OneSignal] Subscription process timed out");
           resolve(false);
-        } catch (error) {
-          console.error("[OneSignal] Subscription error:", error);
-          resolve(false);
-        }
-      });
-    });
+        }, 5000);
+      }),
+    ]);
   } catch (error) {
     console.error("[OneSignal] Fatal error in subscribeToPush:", error);
     return false;
+  }
+};
+
+/**
+ * Get current OneSignal player ID if available
+ * @returns {Promise<string|null>} The player ID or null if not available
+ */
+export const getPlayerId = async () => {
+  try {
+    if (!window.OneSignal) {
+      return null;
+    }
+
+    // Wait for init if needed
+    if (!isInitialized) {
+      await initializeOneSignal();
+    }
+
+    return new Promise((resolve) => {
+      window.OneSignal.push(function () {
+        window.OneSignal.getUserId(function (playerId) {
+          resolve(playerId);
+        });
+      });
+    });
+  } catch (error) {
+    console.error("[OneSignal] Error getting player ID:", error);
+    return null;
   }
 };
 
@@ -232,33 +274,5 @@ export const registerPlayerIdWithServer = async (playerId) => {
   } catch (error) {
     console.error("[OneSignal] Server registration error:", error);
     return false;
-  }
-};
-
-/**
- * Get current OneSignal player ID if available
- * @returns {Promise<string|null>} The player ID or null if not available
- */
-export const getPlayerId = async () => {
-  try {
-    if (!window.OneSignal) {
-      return null;
-    }
-
-    // Wait for init if needed
-    if (!isInitialized) {
-      await initializeOneSignal();
-    }
-
-    return new Promise((resolve) => {
-      window.OneSignal.push(function () {
-        window.OneSignal.getUserId(function (playerId) {
-          resolve(playerId);
-        });
-      });
-    });
-  } catch (error) {
-    console.error("[OneSignal] Error getting player ID:", error);
-    return null;
   }
 };
