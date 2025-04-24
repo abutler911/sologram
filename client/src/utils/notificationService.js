@@ -177,14 +177,17 @@ export const registerPlayerIdWithServer = async (playerId) => {
 
     const token = localStorage.getItem("token");
 
-    const response = await fetch("/api/subscribers/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token ? `Bearer ${token}` : "",
-      },
-      body: JSON.stringify({ playerId }),
-    });
+    const response = await fetch(
+      "https://sologram-api.onrender.com/api/subscribers/register",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({ playerId }),
+      }
+    );
 
     const data = await response.json();
 
