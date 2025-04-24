@@ -569,15 +569,15 @@ const CardWrapper = styled.div`
   display: flex;
   justify-content: center;
   border-radius: 14px;
-  border: 1px solid ${COLORS.primaryPurple}30;
+  border: 1px solid ${COLORS.primaryBlue}40;
   padding: 10px;
   margin: 10px 0;
-  background: ${COLORS.background}50;
+  background: ${COLORS.elevatedBackground}90;
   transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.3s ease;
   contain: layout;
 
   &:hover {
-    box-shadow: 0 0 20px ${COLORS.primaryPurple}20;
+    box-shadow: 0 0 20px ${COLORS.primaryTeal}30;
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -592,23 +592,23 @@ const CardWrapper = styled.div`
 `;
 
 const Card = styled.article`
-  background-color: ${THEME.post.background};
+  background-color: ${COLORS.cardBackground};
   border-radius: 12px;
-  border: 1px solid ${THEME.post.border};
+  border: 1px solid ${COLORS.border};
   overflow: hidden;
   margin-bottom: 24px;
   display: flex;
   flex-direction: column;
   width: 100%;
   max-width: 614px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   transition: transform 0.2s ease, box-shadow 0.3s ease;
   will-change: transform;
   contain: content;
 
   &:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -619,8 +619,8 @@ const Card = styled.article`
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     background: linear-gradient(
       160deg,
-      ${THEME.post.background} 0%,
-      ${COLORS.cardBackground} 100%
+      ${COLORS.cardBackground} 0%,
+      ${COLORS.elevatedBackground} 100%
     );
 
     &:active {
@@ -638,9 +638,9 @@ const CardHeader = styled.header`
   border-bottom: 1px solid ${COLORS.divider};
   background: linear-gradient(
     to bottom,
-    ${COLORS.primaryPurple}30,
-    ${COLORS.primaryPurple}15 80%,
-    ${COLORS.primaryPurple}05
+    ${COLORS.primaryBlue}40,
+    ${COLORS.primaryBlue}20 80%,
+    ${COLORS.primaryBlue}05
   );
   position: relative;
 
@@ -653,9 +653,9 @@ const CardHeader = styled.header`
     height: 3px;
     background: linear-gradient(
       to right,
-      ${COLORS.primaryPurple},
       ${COLORS.primaryBlue},
-      ${COLORS.primaryPurple}
+      ${COLORS.primaryTeal},
+      ${COLORS.primaryGreen}
     );
   }
 
@@ -663,13 +663,13 @@ const CardHeader = styled.header`
     padding: 16px;
     background: linear-gradient(
       to bottom,
-      ${COLORS.primaryPurple}40,
-      ${COLORS.primaryPurple}20 80%,
-      ${COLORS.primaryPurple}05
+      ${COLORS.primaryBlue}50,
+      ${COLORS.primaryBlue}30 80%,
+      ${COLORS.primaryBlue}10
     );
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
-    border-bottom: 1px solid ${COLORS.primaryPurple}40;
+    border-bottom: 1px solid ${COLORS.primaryBlue}40;
   }
 `;
 
@@ -689,7 +689,7 @@ const Username = styled.span`
   letter-spacing: 0.8px;
   line-height: 1.3;
   margin-top: 2px;
-  color: ${COLORS.primaryPurple};
+  color: ${COLORS.primaryBlue};
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease, filter 0.3s ease;
   will-change: transform, filter;
@@ -744,8 +744,8 @@ const ActionItem = styled.button`
   transition: background-color 0.2s, color 0.2s;
 
   &:hover {
-    background-color: ${COLORS.primaryPurple}30;
-    color: ${COLORS.accentPurple};
+    background-color: ${COLORS.primaryBlue}30;
+    color: ${COLORS.accentBlue};
   }
 
   svg {
@@ -754,7 +754,7 @@ const ActionItem = styled.button`
   }
 
   &:hover svg {
-    color: ${COLORS.accentPurple};
+    color: ${COLORS.accentBlue};
   }
 
   &:not(:last-child) {
@@ -864,7 +864,7 @@ const NavigationArrow = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(60, 40, 90, 0.6);
+  background-color: rgba(26, 95, 122, 0.6);
   color: white;
   border: none;
   border-radius: 50%;
@@ -881,7 +881,7 @@ const NavigationArrow = styled.button`
 
   &:hover {
     opacity: 0.95 !important;
-    background-color: ${COLORS.primaryPurple}A0;
+    background-color: ${COLORS.primaryBlue}A0;
     transform: translateY(-50%) scale(1.1);
   }
 
@@ -906,13 +906,18 @@ const NavigationArrow = styled.button`
     opacity: 0.9;
     width: 46px;
     height: 46px;
-    background: ${COLORS.primaryPurple}99;
+    background: ${COLORS.primaryBlue}99;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 
     &:active {
       opacity: 1;
       transform: translateY(-50%) scale(0.95);
-      background-color: ${COLORS.primaryPurple};
+      background-color: ${COLORS.primaryBlue};
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      background: rgba(60, 60, 70, 0.6);
     }
 
     &.prev {
@@ -945,7 +950,7 @@ const Dot = styled.button`
   height: 8px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? COLORS.primaryPurple : "rgba(255, 255, 255, 0.4)"};
+    props.active ? COLORS.primaryBlue : "rgba(255, 255, 255, 0.4)"};
   border: none;
   cursor: pointer;
   padding: 0;
@@ -955,7 +960,7 @@ const Dot = styled.button`
   &:hover {
     transform: scale(1.2);
     background-color: ${(props) =>
-      props.active ? COLORS.accentPurple : "rgba(255, 255, 255, 0.6)"};
+      props.active ? COLORS.accentBlue : "rgba(255, 255, 255, 0.6)"};
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -967,8 +972,8 @@ const Dot = styled.button`
     ${(props) =>
       props.active &&
       `
-      background-color: ${COLORS.primaryPurple};
-      box-shadow: 0 0 8px ${COLORS.primaryPurple}90;
+      background-color: ${COLORS.primaryBlue};
+      box-shadow: 0 0 8px ${COLORS.primaryBlue}90;
     `}
 
     &:active {
@@ -982,7 +987,7 @@ const HeartAnimation = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: ${COLORS.primaryPurple};
+  color: ${COLORS.primaryTeal};
   font-size: 90px;
   opacity: 0;
   animation: ${scaleIn} 1s ease forwards;
@@ -995,7 +1000,7 @@ const HeartAnimation = styled.div`
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     font-size: 120px;
-    color: ${COLORS.accentPurple};
+    color: ${COLORS.accentTeal};
 
     svg {
       filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.8));
@@ -1006,7 +1011,7 @@ const HeartAnimation = styled.div`
 const CardActions = styled.div`
   padding: 10px 18px;
   border-bottom: 1px solid ${COLORS.divider};
-  background-color: ${THEME.post.footer};
+  background-color: ${COLORS.elevatedBackground}90;
 `;
 
 const ActionGroup = styled.div`
@@ -1018,8 +1023,7 @@ const ActionGroup = styled.div`
 const LikeButton = styled.button`
   background: none;
   border: none;
-  color: ${(props) =>
-    props.liked ? COLORS.primaryPurple : COLORS.textPrimary};
+  color: ${(props) => (props.liked ? COLORS.primaryTeal : COLORS.textPrimary)};
   font-size: 1.6rem;
   cursor: ${(props) =>
     props.disabled && !props.liked ? "default" : "pointer"};
@@ -1034,7 +1038,7 @@ const LikeButton = styled.button`
     transform: ${(props) =>
       !props.disabled || props.liked ? "scale(1.15)" : "none"};
     color: ${(props) =>
-      !props.disabled && !props.liked ? COLORS.accentPurple : ""};
+      !props.disabled && !props.liked ? COLORS.accentTeal : ""};
   }
 
   &:active {
@@ -1051,7 +1055,7 @@ const LikeButton = styled.button`
       props.liked &&
       `
       animation: ${pulse} 0.8s ease-in-out;
-      filter: drop-shadow(0 0 8px ${COLORS.primaryPurple}90);
+      filter: drop-shadow(0 0 8px ${COLORS.primaryTeal}90);
     `}
 
     &:active {
@@ -1074,7 +1078,7 @@ const DateDisplay = styled.div`
   svg {
     margin-right: 6px;
     font-size: 0.8rem;
-    color: ${COLORS.accentPurple};
+    color: ${COLORS.accentBlue};
   }
 `;
 
@@ -1091,8 +1095,8 @@ const CardContent = styled.div`
   flex-direction: column;
   background: linear-gradient(
     180deg,
-    ${THEME.post.background} 0%,
-    ${COLORS.cardBackground} 100%
+    ${COLORS.cardBackground} 0%,
+    ${COLORS.elevatedBackground} 100%
   );
   border-top: 1px solid ${COLORS.divider}40;
 
@@ -1100,10 +1104,10 @@ const CardContent = styled.div`
     padding: 1rem 1rem 1.2rem;
     background: linear-gradient(
       160deg,
-      ${THEME.post.background} 0%,
-      ${COLORS.cardBackground}EE 100%
+      ${COLORS.cardBackground} 0%,
+      ${COLORS.elevatedBackground}EE 100%
     );
-    border-top: 1px solid ${COLORS.primaryPurple}20;
+    border-top: 1px solid ${COLORS.primaryBlue}20;
     border-bottom-left-radius: 8px;
     border-bottom-right-radius: 8px;
   }
@@ -1178,10 +1182,10 @@ const ViewPostLink = styled(Link)`
     font-weight: 500;
     background: linear-gradient(
       135deg,
-      ${COLORS.primaryPurple}80 0%,
-      ${COLORS.primaryPurple}40 100%
+      ${COLORS.primaryBlue}80 0%,
+      ${COLORS.primaryBlue}40 100%
     );
-    color: ${COLORS.textPrimary};
+    color: white;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     margin-top: 16px;
     align-self: center;
@@ -1237,14 +1241,14 @@ const DeleteModalContent = styled.div`
       ${COLORS.cardBackground} 0%,
       ${COLORS.elevatedBackground} 100%
     );
-    border: 1px solid ${COLORS.primaryPurple}30;
+    border: 1px solid ${COLORS.primaryBlue}30;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7),
-      inset 0 1px 1px ${COLORS.primaryPurple}20;
+      inset 0 1px 1px ${COLORS.primaryBlue}20;
 
     h3 {
       font-size: 1.3rem;
       margin-bottom: 20px;
-      color: ${COLORS.accentPurple};
+      color: ${COLORS.accentBlue};
     }
 
     p {
@@ -1327,14 +1331,14 @@ const UserAvatarImage = styled.img`
   border-radius: 50%;
   object-fit: cover;
   margin-right: 12px;
-  border: 2px solid ${COLORS.primaryPurple};
+  border: 2px solid ${COLORS.primaryBlue};
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease, border-color 0.3s ease;
   will-change: transform;
 
   &:hover {
     transform: scale(1.08);
-    border-color: ${COLORS.accentPurple};
+    border-color: ${COLORS.accentBlue};
   }
 `;
 
