@@ -1,167 +1,213 @@
-// src/utils/notificationService.js
-import OneSignal from "react-onesignal";
+// client/src/utils/notificationService.js
 
 // Track initialization state
+let isInitializing = false;
 let isInitialized = false;
 
-// Initialize OneSignal
+/**
+ * Wait for OneSignal SDK to be loaded
+ * @returns {Promise<void>}
+ */
+const waitForOneSignalSDK = () => {
+  return new Promise((resolve, reject) => {
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max
+
+    const checkForOneSignal = () => {
+      attempts++;
+
+      if (window.OneSignal) {
+        console.log("[OneSignal] SDK found after", attempts, "attempts");
+        resolve();
+      } else if (attempts >= maxAttempts) {
+        reject(new Error("OneSignal SDK not loaded after 5 seconds"));
+      } else {
+        setTimeout(checkForOneSignal, 100);
+      }
+    };
+
+    checkForOneSignal();
+  });
+};
+
+/**
+ * Initialize OneSignal with the current user
+ * @param {string} userId - The user ID to associate with this device
+ * @returns {Promise<boolean>} - Whether initialization was successful
+ */
 export const initializeOneSignal = async (userId) => {
+  // Prevent multiple simultaneous initialization attempts
+  if (isInitializing) {
+    console.log("[OneSignal] Initialization already in progress");
+    return false;
+  }
+
+  // Skip if already initialized
   if (isInitialized) {
-    console.log("[Notifications] OneSignal already initialized");
+    console.log("[OneSignal] Already initialized");
     return true;
   }
 
+  isInitializing = true;
+
   try {
-    if (!process.env.REACT_APP_ONESIGNAL_APP_ID) {
-      console.error("[Notifications] Missing OneSignal App ID");
+    // Check for required app ID
+    const appId = process.env.REACT_APP_ONESIGNAL_APP_ID;
+    if (!appId) {
+      console.error("[OneSignal] Missing App ID in environment variables");
       return false;
     }
 
-    // Initialize with minimal options
-    await OneSignal.init({
-      appId: process.env.REACT_APP_ONESIGNAL_APP_ID,
-      notifyButton: {
-        enable: false,
-      },
-      allowLocalhostAsSecureOrigin: true,
-      promptOptions: {
-        slidedown: {
-          prompts: [
-            {
-              type: "push",
-              autoPrompt: false,
-              text: {
-                actionMessage:
-                  "Would you like to receive notifications when new content is posted?",
-                acceptButton: "Allow",
-                cancelButton: "No Thanks",
-              },
-            },
-          ],
+    // Wait for OneSignal to be available
+    await waitForOneSignalSDK();
+
+    // Initialize OneSignal
+    window.OneSignal = window.OneSignal || [];
+    window.OneSignal.push(function () {
+      window.OneSignal.init({
+        appId: appId,
+        allowLocalhostAsSecureOrigin: true,
+        notifyButton: {
+          enable: false,
         },
-      },
+        promptOptions: {
+          slidedown: {
+            prompts: [
+              {
+                type: "push",
+                autoPrompt: false,
+                text: {
+                  actionMessage:
+                    "Would you like to receive notifications when new content is posted?",
+                  acceptButton: "Allow",
+                  cancelButton: "No Thanks",
+                },
+              },
+            ],
+          },
+        },
+      });
+
+      // Set external user ID if provided
+      if (userId) {
+        window.OneSignal.setExternalUserId(userId.toString());
+        console.log("[OneSignal] Set external user ID:", userId);
+      }
+
+      isInitialized = true;
+      console.log("[OneSignal] Initialized successfully");
     });
 
-    console.log("[Notifications] OneSignal initialized successfully");
-    isInitialized = true;
     return true;
   } catch (error) {
-    console.error("[Notifications] Error initializing OneSignal:", error);
+    console.error("[OneSignal] Initialization error:", error);
     return false;
+  } finally {
+    isInitializing = false;
   }
 };
 
-// Subscribe to notifications
+/**
+ * Show notification permission prompt and subscribe user
+ * @returns {Promise<boolean>} Whether subscription was successful
+ */
 export const subscribeToNotifications = async () => {
   try {
-    console.log("[Notifications] Starting subscription process");
+    console.log("[OneSignal] Starting subscription process");
 
+    // Make sure OneSignal is initialized first
     if (!isInitialized) {
       const initialized = await initializeOneSignal();
       if (!initialized) {
-        console.error("[Notifications] Failed to initialize OneSignal");
+        console.error("[OneSignal] Failed to initialize");
         return false;
       }
     }
 
-    // Try different methods to request permission
-    console.log("[Notifications] Requesting permission...");
+    return new Promise((resolve) => {
+      window.OneSignal.push(async function () {
+        try {
+          // Check if push is supported
+          const isPushSupported =
+            await window.OneSignal.isPushNotificationsSupported();
+          if (!isPushSupported) {
+            console.warn(
+              "[OneSignal] Push notifications not supported on this browser"
+            );
+            return resolve(false);
+          }
 
-    try {
-      // Method 1: Try showSlidedownPrompt if available
-      if (typeof OneSignal.showSlidedownPrompt === "function") {
-        console.log("[Notifications] Using showSlidedownPrompt method");
-        await OneSignal.showSlidedownPrompt();
-      }
-      // Method 2: Try showNativePrompt if available
-      else if (typeof OneSignal.showNativePrompt === "function") {
-        console.log("[Notifications] Using showNativePrompt method");
-        await OneSignal.showNativePrompt();
-      }
-      // Method 3: Try showHttpPrompt if available
-      else if (typeof OneSignal.showHttpPrompt === "function") {
-        console.log("[Notifications] Using showHttpPrompt method");
-        await OneSignal.showHttpPrompt();
-      }
-      // Method 4: Generic push.push method as fallback
-      else {
-        console.log("[Notifications] Using generic push method");
-        OneSignal.push(function () {
-          OneSignal.showSlidedownPrompt();
-        });
-      }
+          // Check current permission state
+          const permission = await window.OneSignal.getNotificationPermission();
+          console.log("[OneSignal] Current permission:", permission);
 
-      console.log("[Notifications] Permission prompt shown");
+          if (permission === "denied") {
+            console.warn("[OneSignal] Notifications already denied by user");
+            return resolve(false);
+          }
 
-      // Wait a moment to see if user granted permission
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+          // Check if already subscribed
+          const isSubscribed =
+            await window.OneSignal.isPushNotificationsEnabled();
+          console.log("[OneSignal] Already subscribed:", isSubscribed);
 
-      // Try to get player ID and register with server
-      try {
-        const playerId = await getPlayerId();
-        if (playerId) {
-          await registerPlayerIdWithServer(playerId);
-          return true;
+          if (!isSubscribed) {
+            // Show the slidedown prompt
+            console.log("[OneSignal] Showing subscription prompt");
+            await window.OneSignal.showSlidedownPrompt();
+
+            // Wait a moment for user to interact with prompt
+            await new Promise((r) => setTimeout(r, 2000));
+
+            // Check if user accepted
+            const finalSubscriptionState =
+              await window.OneSignal.isPushNotificationsEnabled();
+            console.log(
+              "[OneSignal] Final subscription state:",
+              finalSubscriptionState
+            );
+
+            if (!finalSubscriptionState) {
+              console.warn("[OneSignal] User did not accept notifications");
+              return resolve(false);
+            }
+          }
+
+          // Get player ID and register with server
+          const playerId = await window.OneSignal.getUserId();
+          console.log("[OneSignal] Player ID:", playerId);
+
+          if (playerId) {
+            const registered = await registerPlayerIdWithServer(playerId);
+            return resolve(registered);
+          }
+
+          resolve(false);
+        } catch (error) {
+          console.error("[OneSignal] Subscription error:", error);
+          resolve(false);
         }
-      } catch (error) {
-        console.error("[Notifications] Error getting player ID:", error);
-      }
-
-      return true; // Consider it a success if we got this far
-    } catch (error) {
-      console.error("[Notifications] Error showing prompt:", error);
-      return false;
-    }
+      });
+    });
   } catch (error) {
-    console.error("[Notifications] Error subscribing to notifications:", error);
+    console.error("[OneSignal] Fatal error in subscribeToPush:", error);
     return false;
   }
 };
 
-// Get OneSignal player ID
-export const getPlayerId = async () => {
-  try {
-    // Wait a moment to ensure OneSignal has time to generate ID
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Try different methods to get player ID
-    let playerId = null;
-
-    if (typeof OneSignal.getUserId === "function") {
-      playerId = await OneSignal.getUserId();
-    } else if (typeof OneSignal.getPlayerId === "function") {
-      playerId = await OneSignal.getPlayerId();
-    } else {
-      // Last resort: Use push() method
-      await new Promise((resolve) => {
-        OneSignal.push(function () {
-          OneSignal.getUserId(function (id) {
-            playerId = id;
-            resolve();
-          });
-        });
-      });
-    }
-
-    if (playerId) {
-      console.log("[Notifications] Got player ID:", playerId);
-      return playerId;
-    } else {
-      console.warn("[Notifications] No player ID available");
-      return null;
-    }
-  } catch (error) {
-    console.error("[Notifications] Error getting player ID:", error);
-    return null;
+/**
+ * Register OneSignal player ID with server
+ * @param {string} playerId - The OneSignal player ID
+ * @returns {Promise<boolean>} Whether registration was successful
+ */
+export const registerPlayerIdWithServer = async (playerId) => {
+  if (!playerId) {
+    console.warn("[OneSignal] No player ID provided");
+    return false;
   }
-};
-
-// Register OneSignal player ID with server
-const registerPlayerIdWithServer = async (playerId) => {
-  if (!playerId) return false;
 
   try {
-    console.log("[Notifications] Registering player ID with server:", playerId);
+    console.log("[OneSignal] Registering player ID with server:", playerId);
 
     const token = localStorage.getItem("token");
 
@@ -174,21 +220,45 @@ const registerPlayerIdWithServer = async (playerId) => {
       body: JSON.stringify({ playerId }),
     });
 
-    if (response.ok) {
-      console.log("[Notifications] Player ID registered successfully");
+    const data = await response.json();
+
+    if (data.success) {
+      console.log("[OneSignal] Player ID registered successfully");
       return true;
     } else {
-      console.error(
-        "[Notifications] Failed to register player ID:",
-        response.status
-      );
+      console.error("[OneSignal] Server registration failed:", data.message);
       return false;
     }
   } catch (error) {
-    console.error(
-      "[Notifications] Error registering player ID with server:",
-      error
-    );
+    console.error("[OneSignal] Server registration error:", error);
     return false;
+  }
+};
+
+/**
+ * Get current OneSignal player ID if available
+ * @returns {Promise<string|null>} The player ID or null if not available
+ */
+export const getPlayerId = async () => {
+  try {
+    if (!window.OneSignal) {
+      return null;
+    }
+
+    // Wait for init if needed
+    if (!isInitialized) {
+      await initializeOneSignal();
+    }
+
+    return new Promise((resolve) => {
+      window.OneSignal.push(function () {
+        window.OneSignal.getUserId(function (playerId) {
+          resolve(playerId);
+        });
+      });
+    });
+  } catch (error) {
+    console.error("[OneSignal] Error getting player ID:", error);
+    return null;
   }
 };

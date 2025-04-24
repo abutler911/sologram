@@ -4,7 +4,6 @@ import ReactDOM from "react-dom/client";
 import { createGlobalStyle } from "styled-components";
 import App from "./App";
 import axios from "axios";
-import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import ReactGA from "react-ga4";
 import { AuthProvider } from "./context/AuthContext";
 import AutographyFont from "./assets/fonts/Autography.otf";
