@@ -174,6 +174,11 @@ const globalErrorHandler = (err, req, res, next) => {
 };
 app.use(globalErrorHandler);
 
+app.post("/api/test-live", (req, res) => {
+  console.log("🔥 /api/test-live route hit");
+  res.json({ success: true, from: "Live Server" });
+});
+
 // ✅ Production static file serving (React) – placed last
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/build")));
