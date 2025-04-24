@@ -145,3 +145,19 @@
 {"level":"info","message":"Agenda initialized"}
 {"level":"info","message":"Server listening on port 5000"}
 {"level":"info","message":"Graceful shutdown initiated"}
+{"level":"info","message":"Starting server in development mode"}
+{"level":"info","message":"Attempting to connect to MongoDB at mongodb+srv://***:***@cluster0.ysefn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"}
+{"level":"info","message":"MongoDB Connected: cluster0-shard-00-02.ysefn.mongodb.net"}
+{"level":"info","message":"Agenda initialized"}
+{"level":"info","message":"Server listening on port 5000"}
+{"level":"info","message":{"duration":"5ms","method":"GET","status":200,"url":"/"}}
+{"level":"info","message":{"duration":"4ms","method":"GET","status":404,"url":"/favicon.ico"}}
+{"level":"info","message":{"duration":"2ms","method":"GET","status":500,"url":"/api/onesignal-test"}}
+{"level":"info","message":{"duration":"2ms","method":"GET","status":404,"url":"/favicon.ico"}}
+{"level":"info","message":"Starting server in development mode"}
+{"level":"info","message":"Attempting to connect to MongoDB at mongodb+srv://***:***@cluster0.ysefn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"}
+{"level":"info","message":"MongoDB Connected: cluster0-shard-00-01.ysefn.mongodb.net"}
+{"level":"info","message":"Agenda initialized"}
+{"level":"info","message":"Server listening on port 5000"}
+{"level":"info","message":{"duration":"576ms","method":"GET","status":200,"url":"/api/onesignal-test"}}
+{"level":"info","message":{"duration":"5ms","method":"GET","status":404,"url":"/favicon.ico"}}
