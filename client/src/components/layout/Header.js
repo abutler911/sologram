@@ -357,7 +357,8 @@ const Header = ({ onSearch, onClearSearch }) => {
         </MobileMenuHeader>
         {isAuthenticated && (
           <MobileGreeting>
-            Hi, <span className="autography">{user?.firstName}</span>
+            <span className="greeting-text">Welcome back,</span>
+            <span className="autography">{user?.firstName}</span>
           </MobileGreeting>
         )}
 
@@ -1196,22 +1197,82 @@ const Greeting = styled.div`
 `;
 
 const MobileGreeting = styled.div`
-  font-size: 1rem;
-  padding: 0.75rem 1rem 1rem;
+  position: relative;
+  font-size: 0.95rem;
+  margin: 1.25rem 1rem;
+  padding: 1rem 1.25rem;
   color: ${COLORS.textPrimary};
-  background-color: ${COLORS.elevatedBackground};
-  margin: 0 1rem;
-  border-radius: 20px;
+  border-radius: 16px;
   text-align: center;
+  background: linear-gradient(
+    145deg,
+    ${COLORS.cardBackground} 0%,
+    ${COLORS.elevatedBackground}80 100%
+  );
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid ${COLORS.border};
+  overflow: hidden;
+
+  /* Glowing highlight on top */
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      to right,
+      ${COLORS.primaryBlue},
+      ${COLORS.primaryTeal},
+      ${COLORS.primaryGreen}
+    );
+    border-radius: 2px;
+  }
+
+  /* Subtle inner light effect */
+  &:after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at center top,
+      ${COLORS.primaryTeal}10 0%,
+      transparent 70%
+    );
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  .greeting-text {
+    font-weight: 500;
+    color: ${COLORS.textSecondary};
+    margin-right: 0.25rem;
+  }
 
   .autography {
     font-family: "Autography", cursive;
     color: ${COLORS.primaryBlue};
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-    display: inline-block;
-    margin-left: 0.25rem;
+    font-size: 1.8rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-top: 0.25rem;
+    margin-bottom: 0.125rem;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    animation: floatEffect 3s infinite ease-in-out;
+  }
+
+  @keyframes floatEffect {
+    0% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+    100% {
+      transform: translateY(0);
+    }
   }
 `;
 
