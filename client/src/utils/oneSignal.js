@@ -254,3 +254,91 @@ export const debugOneSignal = async () => {
     console.error("Debug error:", error);
   }
 };
+
+export const registerDirectly = async () => {
+  try {
+    console.log("[OneSignal] Starting direct registration");
+
+    // First, ensure OneSignal is loaded
+    if (!window.OneSignal) {
+      console.error("[OneSignal] OneSignal not loaded");
+      return false;
+    }
+
+    // Get app ID
+    const appId = process.env.REACT_APP_ONESIGNAL_APP_ID;
+    if (!appId) {
+      console.error("[OneSignal] App ID not found");
+      return false;
+    }
+
+    // Basic initialization
+    window.OneSignal.push(function () {
+      window.OneSignal.init({
+        appId: appId,
+        allowLocalhostAsSecureOrigin: true,
+        notifyButton: { enable: false },
+      });
+
+      // Register without UI
+      window.OneSignal.registerForPushNotifications({
+        modalPrompt: false,
+      })
+        .then(function () {
+          console.log("[OneSignal] Registration successful");
+
+          // Get player ID
+          return window.OneSignal.getUserId();
+        })
+        .then(function (playerId) {
+          console.log("[OneSignal] Player ID:", playerId);
+
+          if (playerId) {
+            // Register with server
+            const token = localStorage.getItem("token");
+
+            return fetch("/api/subscribers/register", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: token ? `Bearer ${token}` : "",
+              },
+              body: JSON.stringify({ playerId }),
+            });
+          }
+        })
+        .then(function (response) {
+          if (response) {
+            return response.json();
+          }
+        })
+        .then(function (data) {
+          if (data) {
+            console.log("[OneSignal] Server registration result:", data);
+          }
+          return true;
+        })
+        .catch(function (error) {
+          console.error("[OneSignal] Registration error:", error);
+          return false;
+        });
+    });
+
+    return true;
+  } catch (error) {
+    console.error("[OneSignal] Fatal error in registerDirectly:", error);
+    return false;
+  }
+};
+
+// Expose to window
+if (typeof window !== "undefined") {
+  window.debugOneSignal = debugOneSignal;
+  window.showTestNotification = showTestNotification;
+  window.registerDirectly = registerDirectly;
+}
+
+if (typeof window !== "undefined") {
+  window.debugOneSignal = debugOneSignal;
+  window.showTestNotification = showTestNotification;
+}

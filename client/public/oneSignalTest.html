@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OneSignal Test</title>
+    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
+  </head>
+  <body>
+    <h1>OneSignal Test</h1>
+    <button id="testButton">Register for Notifications</button>
+
+    <script>
+      document
+        .getElementById("testButton")
+        .addEventListener("click", async () => {
+          try {
+            // Step 1: Request permission directly
+            const permission = await Notification.requestPermission();
+            console.log("Browser permission:", permission);
+
+            if (permission === "granted") {
+              // Step 2: Initialize OneSignal
+              window.OneSignal = window.OneSignal || [];
+              window.OneSignal.push(function () {
+                window.OneSignal.init({
+                  appId: "20775877-06ce-41b6-94a3-e9bf06409093",
+                  allowLocalhostAsSecureOrigin: true,
+                  notifyButton: { enable: false },
+                });
+
+                // Step 3: Register with OneSignal
+                window.OneSignal.registerForPushNotifications({
+                  modalPrompt: false,
+                })
+                  .then(() => {
+                    console.log("Registration successful");
+
+                    // Get player ID
+                    return window.OneSignal.getUserId();
+                  })
+                  .then((playerId) => {
+                    console.log("Player ID:", playerId);
+                    alert("Success! Player ID: " + playerId);
+                  })
+                  .catch((error) => {
+                    console.error("Registration error:", error);
+                    alert("Error: " + error.message);
+                  });
+              });
+            } else {
+              alert("Permission denied by user");
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            alert("Error: " + error.message);
+          }
+        });
+    </script>
+  </body>
+</html>
