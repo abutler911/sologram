@@ -14,9 +14,8 @@ import {
 } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-hot-toast";
-import { subscribeToPush } from "../../utils/oneSignal";
-import { COLORS, THEME } from "../../theme";
-import { registerOneSignalPlayerId } from "../../utils/registerOneSignalPlayerId";
+import { subscribeToNotifications } from "../../utils/notificationService";
+import { COLORS } from "../../theme";
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -35,7 +34,7 @@ const BottomNavigation = () => {
     const loadingToast = toast.loading("Preparing notifications...");
 
     try {
-      const result = await subscribeToPush();
+      const result = await subscribeToNotifications();
       toast.dismiss(loadingToast);
 
       if (result) {

@@ -14,15 +14,13 @@ import {
   FaSearch,
   FaChevronDown,
   FaEllipsisV,
-  FaLightbulb,
 } from "react-icons/fa";
 
 import { AuthContext } from "../../context/AuthContext";
 import HeaderSubscriptionBanner from "../subscription/HeaderSubscriptionBanner";
 import { toast } from "react-hot-toast";
-import { subscribeToPush } from "../../utils/oneSignal";
+import { subscribeToNotifications } from "../../utils/notificationService";
 import { COLORS, THEME } from "../../theme";
-import { registerOneSignalPlayerId } from "../../utils/registerOneSignalPlayerId";
 
 const Header = ({ onSearch, onClearSearch }) => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
@@ -41,7 +39,7 @@ const Header = ({ onSearch, onClearSearch }) => {
     const loadingToast = toast.loading("Preparing notifications...");
 
     try {
-      const result = await subscribeToPush();
+      const result = await subscribeToNotifications();
       toast.dismiss(loadingToast);
 
       if (result) {
