@@ -403,13 +403,13 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
                         src={getTransformedImageUrl(media.mediaUrl, {
                           width: 614,
                           height: 614,
-                          crop: "fill", // Changed from "thumb" for better subject framing
-                          gravity: "auto:subject", // Uses AI to detect and focus on the subject
-                          quality: "auto:good", // Ensures good quality while optimizing file size
-                          format: "auto", // Automatically chooses best format (WebP/AVIF)
-                          dpr: "auto", // Adjusts for device pixel ratio
-                          effect: "improve", // Simple enhancement algorithm
-                          sharpen: 60, // Adds crispness to details
+                          crop: "fill",
+                          gravity: "auto:subject",
+                          quality: "auto:good",
+                          format: "auto",
+                          dpr: "auto",
+                          effect: "improve",
+                          sharpen: 60,
                         })}
                         sizes="100vw"
                         alt={post.caption || "Post image"}
@@ -541,15 +541,15 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
                 src={getTransformedImageUrl(
                   post.media[fullscreenIndex].mediaUrl,
                   {
-                    width: 1200, // Higher resolution for fullscreen
+                    width: 1200,
                     height: 1200,
-                    crop: "fit", // "fit" preserves aspect ratio completely
+                    crop: "fit",
                     gravity: "auto:subject",
-                    quality: "auto:best", // Use best quality for fullscreen
+                    quality: "auto:best",
                     format: "auto",
                     dpr: "auto",
                     effect: "improve",
-                    sharpen: 70, // Slightly more sharpening for fullscreen
+                    sharpen: 70,
                   }
                 )}
                 alt={post.caption || "Fullscreen view"}
@@ -586,7 +586,7 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   );
 });
 
-// UPDATED STYLED COMPONENTS FOR DARK THEME
+// COMPLETELY REDESIGNED STYLE COMPONENTS FOR DARK THEME
 
 const CardWrapper = styled.div`
   ${fontFaceStyles}
@@ -594,16 +594,14 @@ const CardWrapper = styled.div`
   max-width: 600px;
   display: flex;
   justify-content: center;
-  border-radius: 16px;
   margin: 24px auto;
-  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  transition: opacity 0.5s ease, transform 0.5s ease;
   animation: ${fadeIn} 0.6s ease-out;
-  contain: layout;
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4));
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     width: 94%;
-    margin: 14px auto;
+    margin: 18px auto;
     padding: 0;
     max-width: 480px;
   }
@@ -612,63 +610,27 @@ const CardWrapper = styled.div`
 const Card = styled.article`
   position: relative;
   background-color: ${COLORS.cardBackground};
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   overflow: hidden;
   width: 100%;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 1px 5px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1),
-    box-shadow 0.3s ease-in-out;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   will-change: transform, box-shadow;
-
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 16px;
-    padding: 1px;
-    background: linear-gradient(
-      to bottom right,
-      rgba(255, 255, 255, 0.2),
-      ${COLORS.accentBlue}20,
-      ${COLORS.accentTeal}30
-    );
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    -webkit-mask-composite: source-out;
-    pointer-events: none;
-  }
+  border: 1px solid rgba(255, 255, 255, 0.08);
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
-
-    &::after {
-      background: linear-gradient(
-        to bottom right,
-        rgba(255, 255, 255, 0.3),
-        ${COLORS.accentBlue}40,
-        ${COLORS.accentTeal}50
-      );
-    }
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2);
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    border-radius: 12px;
-    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.2), 0 1px 5px rgba(0, 0, 0, 0.1);
-    background: linear-gradient(
-      160deg,
-      ${COLORS.cardBackground} 0%,
-      ${COLORS.elevatedBackground}10 100%
-    );
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 
     &:active {
       transform: scale(0.99);
-      box-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
     }
   }
 `;
@@ -677,15 +639,10 @@ const CardHeader = styled.header`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(
-    to bottom,
-    rgba(66, 191, 221, 0.1),
-    rgba(26, 95, 122, 0.05) 80%,
-    rgba(26, 95, 122, 0.02)
-  );
+  padding: 16px;
+  background-color: ${COLORS.elevatedBackground};
   position: relative;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 
   &:before {
     content: "";
@@ -693,27 +650,13 @@ const CardHeader = styled.header`
     top: 0;
     left: 0;
     right: 0;
-    height: 3px;
-    background: linear-gradient(
-      to right,
-      ${COLORS.accentBlue},
-      ${COLORS.accentTeal},
-      ${COLORS.accentGreen}
-    );
-    border-radius: 3px 3px 0 0;
+    height: 2px;
+    background-color: ${COLORS.accentTeal};
+    opacity: 0.8;
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     padding: 14px 16px;
-    background: linear-gradient(
-      to bottom,
-      rgba(66, 191, 221, 0.15),
-      rgba(26, 95, 122, 0.08) 80%,
-      rgba(26, 95, 122, 0.02)
-    );
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
-    border-bottom: 1px solid rgba(26, 95, 122, 0.2);
   }
 `;
 
@@ -733,53 +676,50 @@ const Username = styled.span`
   letter-spacing: 0.8px;
   line-height: 1;
   margin-top: 2px;
-  color: ${COLORS.accentBlue};
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  color: ${COLORS.textPrimary};
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
-  will-change: transform, filter;
 
   &:hover {
-    transform: scale(1.05) translateY(-1px);
-    filter: brightness(1.2);
-    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    color: ${COLORS.accentTeal};
+    transform: translateY(-1px);
   }
 `;
 
 const ActionsButton = styled.button`
-  background: none;
+  background-color: transparent;
   border: none;
   color: ${COLORS.textSecondary};
   font-size: 1rem;
   cursor: pointer;
-  padding: 6px;
+  padding: 8px;
   border-radius: 50%;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
 
   &:hover {
-    background-color: rgba(66, 191, 221, 0.15);
-    color: ${COLORS.accentBlue};
-    transform: scale(1.1);
+    background-color: rgba(255, 255, 255, 0.08);
+    color: ${COLORS.textPrimary};
   }
 `;
 
 const ActionsMenu = styled.div`
   position: absolute;
   right: 0;
-  top: 38px;
-  background-color: ${COLORS.cardBackground};
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  top: 40px;
+  background-color: ${COLORS.elevatedBackground};
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
   z-index: 10;
   overflow: hidden;
   width: 180px;
   transform-origin: top right;
   animation: ${fadeIn} 0.2s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 `;
 
 const ActionItem = styled.button`
@@ -796,7 +736,6 @@ const ActionItem = styled.button`
   align-items: center;
   text-decoration: none;
   transition: all 0.2s ease;
-  position: relative;
 
   svg {
     margin-right: 12px;
@@ -806,17 +745,16 @@ const ActionItem = styled.button`
   }
 
   &:hover {
-    background-color: ${COLORS.accentBlue}15;
-    color: ${COLORS.accentBlue};
+    background-color: rgba(255, 255, 255, 0.08);
+    color: ${COLORS.textPrimary};
 
     svg {
-      color: ${COLORS.accentBlue};
-      transform: scale(1.1);
+      color: ${COLORS.accentTeal};
     }
   }
 
   &:not(:last-child) {
-    border-bottom: 1px solid ${COLORS.divider};
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
 `;
 
@@ -826,27 +764,9 @@ const MediaContainer = styled(Link)`
   aspect-ratio: 4/3;
   display: block;
   overflow: hidden;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: #111;
   transition: opacity 0.2s ease;
-  opacity: ${(props) => (props.isPressing ? 0.85 : 1)};
-  will-change: transform, opacity;
-
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  @media (max-width: 768px), screen and (display-mode: standalone) {
-    border-radius: 0;
-
-    &:active {
-      transform: scale(0.99);
-    }
-  }
+  opacity: ${(props) => (props.isPressing ? 0.9 : 1)};
 `;
 
 const MediaCarousel = styled.div`
@@ -854,11 +774,6 @@ const MediaCarousel = styled.div`
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: linear-gradient(
-    180deg,
-    rgba(0, 0, 0, 0.02) 0%,
-    rgba(0, 0, 0, 0.08) 100%
-  );
 `;
 
 const MediaTrack = styled.div`
@@ -868,7 +783,6 @@ const MediaTrack = styled.div`
   transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   will-change: transform;
   transform: translateX(-${(props) => props.currentIndex * 100}%);
-  contain: layout;
 `;
 
 const MediaItem = styled.div`
@@ -876,29 +790,25 @@ const MediaItem = styled.div`
   width: 100%;
   height: 100%;
   position: relative;
-  contain: content;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(to bottom, #f8f9fa08, #e2e8f008);
+  background-color: #111;
 `;
 
 const PostImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: opacity 0.5s ease,
-    transform 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
-  opacity: 0.95;
-  transform: scale(1.01);
-  will-change: opacity, transform;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  opacity: 0.98;
 
   &.loaded {
     opacity: 1;
   }
 
   ${MediaContainer}:hover & {
-    transform: scale(1.03);
+    transform: scale(1.02);
   }
 
   &.filter-warm {
@@ -944,12 +854,12 @@ const NavigationArrow = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(20, 255, 236, 0.25);
+  background-color: rgba(0, 0, 0, 0.6);
   color: white;
   border: none;
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -957,13 +867,11 @@ const NavigationArrow = styled.button`
   opacity: 0;
   transition: all 0.2s ease;
   z-index: 2;
-  will-change: transform, opacity;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 
   &:hover {
     opacity: 1 !important;
-    background-color: ${COLORS.accentTeal}cc;
-    transform: translateY(-50%) scale(1.1);
+    background-color: rgba(20, 255, 236, 0.7);
   }
 
   ${MediaContainer}:hover & {
@@ -981,24 +889,16 @@ const NavigationArrow = styled.button`
   &:disabled {
     opacity: 0.15;
     cursor: not-allowed;
+    background-color: rgba(0, 0, 0, 0.4);
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    opacity: 0.8;
+    opacity: 0.7;
     width: 36px;
     height: 36px;
-    background: ${COLORS.accentTeal}80;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 
     &:active {
-      opacity: 1;
       transform: translateY(-50%) scale(0.95);
-      background-color: ${COLORS.accentTeal};
-    }
-
-    &:disabled {
-      opacity: 0.2;
-      background: rgba(60, 60, 70, 0.4);
     }
 
     &.prev {
@@ -1007,10 +907,6 @@ const NavigationArrow = styled.button`
 
     &.next {
       right: 8px;
-    }
-
-    svg {
-      font-size: 1rem;
     }
   }
 `;
@@ -1027,54 +923,26 @@ const ProgressIndicator = styled.div`
 `;
 
 const ProgressDot = styled.button`
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? "rgba(255, 255, 255, 0.95)" : "rgba(255, 255, 255, 0.45)"};
+    props.active ? COLORS.accentTeal : "rgba(255, 255, 255, 0.5)"};
   border: none;
   cursor: pointer;
   padding: 0;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  position: relative;
-  overflow: hidden;
-
-  &:after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: ${(props) =>
-      props.active
-        ? `linear-gradient(90deg, ${COLORS.accentTeal}80, ${COLORS.accentBlue}80)`
-        : "transparent"};
-    opacity: ${(props) => (props.active ? 1 : 0)};
-    transition: opacity 0.2s ease;
-  }
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
 
   &:hover {
-    transform: scale(1.4);
-    background-color: rgba(255, 255, 255, 1);
-
-    &:after {
-      opacity: 1;
-    }
+    transform: scale(1.2);
+    background-color: ${(props) =>
+      props.active ? COLORS.accentTeal : "rgba(255, 255, 255, 0.8)"};
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    width: 7px;
-    height: 7px;
-    margin: 0 1px;
-
-    ${(props) =>
-      props.active &&
-      `
-      transform: scale(1.2);
-      box-shadow: 0 0 6px ${COLORS.accentTeal}90;
-    `}
+    width: 8px;
+    height: 8px;
 
     &:active {
       transform: scale(0.9);
@@ -1088,27 +956,21 @@ const HeartAnimation = styled.div`
   left: 50%;
   transform: translate(-50%, -50%);
   color: ${COLORS.accentTeal};
-  font-size: 72px;
+  font-size: 80px;
   opacity: 0;
   animation: ${scaleIn} 1s ease forwards;
   z-index: 3;
-  will-change: transform, opacity;
-  filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.7));
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     font-size: 90px;
-    color: ${COLORS.accentTeal};
-
-    svg {
-      filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.5));
-    }
   }
 `;
 
 const CardActions = styled.div`
-  padding: 12px 16px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 14px 16px 10px;
   background-color: ${COLORS.cardBackground};
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 `;
 
 const ActionGroup = styled.div`
@@ -1121,15 +983,14 @@ const LikeButton = styled.button`
   background: none;
   border: none;
   color: ${(props) => (props.liked ? COLORS.accentTeal : COLORS.textSecondary)};
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   cursor: ${(props) =>
     props.disabled && !props.liked ? "default" : "pointer"};
   padding: 6px;
   margin-left: -6px;
   display: flex;
   align-items: center;
-  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  will-change: transform, color;
+  transition: all 0.2s ease;
 
   &:hover {
     transform: ${(props) =>
@@ -1146,25 +1007,17 @@ const LikeButton = styled.button`
   ${(props) =>
     props.liked &&
     `
-    filter: drop-shadow(0 0 4px ${COLORS.accentTeal}60);
+    filter: drop-shadow(0 0 6px ${COLORS.accentTeal}80);
   `}
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    font-size: 1.5rem;
-    padding: 6px;
-    position: relative;
+    font-size: 1.6rem;
 
     ${(props) =>
       props.liked &&
       `
       animation: ${pulse} 0.8s ease-in-out;
-      filter: drop-shadow(0 0 5px ${COLORS.accentTeal}90);
     `}
-
-    &:active {
-      transform: ${(props) =>
-        !props.disabled || props.liked ? "scale(0.85)" : "none"};
-    }
   }
 `;
 
@@ -1172,30 +1025,27 @@ const DateDisplay = styled.div`
   display: flex;
   align-items: center;
   color: ${COLORS.textTertiary};
-  font-size: 0.75rem;
-  background-color: ${COLORS.elevatedBackground}30;
-  padding: 4px 10px;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-size: 0.8rem;
+  background-color: ${COLORS.elevatedBackground};
+  padding: 6px 12px;
+  border-radius: 6px;
   transition: all 0.2s ease;
-  border: 1px solid rgba(255, 255, 255, 0.05);
 
   svg {
     margin-right: 6px;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: ${COLORS.textSecondary};
   }
 
   &:hover {
-    background-color: ${COLORS.elevatedBackground}50;
+    color: ${COLORS.textSecondary};
     transform: translateY(-1px);
   }
 `;
 
 const LikesCounter = styled.div`
-  padding: 6px 16px 0;
-  margin-top: 0;
-  font-size: 0.8rem;
+  padding: 8px 16px 0;
+  font-size: 0.85rem;
   font-weight: 500;
   color: ${COLORS.textSecondary};
 
@@ -1209,60 +1059,40 @@ const LikesCounter = styled.div`
       bottom: -2px;
       width: 100%;
       height: 1px;
-      background: linear-gradient(90deg, ${COLORS.accentTeal}30, transparent);
+      background-color: ${COLORS.accentTeal};
       transform-origin: left;
       transform: scaleX(0);
       transition: transform 0.3s ease;
-      opacity: 0;
+      opacity: 0.6;
     }
 
     &:hover:after {
       transform: scaleX(1);
-      opacity: 1;
     }
   }
 `;
 
 const CardContent = styled.div`
-  padding: 1.2rem 1.2rem 1.4rem;
+  padding: 18px 16px 20px;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(
-    180deg,
-    ${COLORS.cardBackground} 0%,
-    ${COLORS.elevatedBackground}10 100%
-  );
-  border-top: 1px solid rgba(255, 255, 255, 0.03);
-
-  @media (max-width: 768px), screen and (display-mode: standalone) {
-    padding: 1rem 1rem 1.2rem;
-    background: linear-gradient(
-      160deg,
-      ${COLORS.cardBackground} 0%,
-      ${COLORS.elevatedBackground}20 100%
-    );
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
-  }
+  background-color: ${COLORS.cardBackground};
 `;
 
 const PostTitle = styled.h2`
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: ${COLORS.textPrimary};
   margin: 0 0 12px 0;
   line-height: 1.4;
   word-break: break-word;
-  transition: transform 0.3s ease, color 0.2s ease;
-  will-change: transform;
-  position: relative;
+  transition: color 0.2s ease;
   letter-spacing: -0.01em;
 `;
 
 const Content = styled.p`
   color: ${COLORS.textSecondary};
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   line-height: 1.5;
   margin: 8px 0;
   word-break: break-word;
@@ -1271,7 +1101,7 @@ const Content = styled.p`
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  transition: transform 0.2s ease;
+  transition: color 0.2s ease;
   letter-spacing: 0.01em;
 `;
 
@@ -1279,95 +1109,60 @@ const TagsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 12px 0 8px;
+  margin: 14px 0 10px;
 `;
 
 const Tag = styled.span`
-  color: ${COLORS.accentBlue};
-  font-size: 0.75rem;
+  color: ${COLORS.textSecondary};
+  font-size: 0.8rem;
   transition: all 0.2s ease;
-  will-change: transform;
   font-weight: 500;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 4px;
-  background-color: ${COLORS.accentBlue}15;
+  background-color: ${COLORS.elevatedBackground};
 
   &:hover {
     color: ${COLORS.accentTeal};
-    transform: translateX(2px) translateY(-1px);
-    background-color: ${COLORS.accentBlue}25;
+    background-color: rgba(255, 255, 255, 0.08);
+    transform: translateY(-1px);
   }
 `;
 
 const ViewPostLink = styled(Link)`
-  color: ${COLORS.textSecondary};
-  font-size: 0.8rem;
+  color: ${COLORS.textPrimary};
+  font-size: 0.85rem;
   font-weight: 500;
-  margin-top: 14px;
+  margin-top: 16px;
   text-decoration: none;
   align-self: flex-end;
-  padding: 5px 14px;
-  border-radius: 30px;
-  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  background-color: ${COLORS.elevatedBackground}30;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.25s ease;
+  background-color: ${COLORS.elevatedBackground};
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-
-  &:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.2),
-      transparent
-    );
-    transition: left 0.5s ease;
-  }
 
   &:hover {
     text-decoration: none;
     color: white;
-    background: linear-gradient(
-      90deg,
-      ${COLORS.accentBlue},
-      ${COLORS.accentTeal}
-    );
+    background-color: ${COLORS.accentTeal};
     transform: translateY(-2px);
-    box-shadow: 0 3px 8px rgba(20, 255, 236, 0.25);
-
-    &:before {
-      left: 200%;
-      transition: left 0.8s ease-in-out;
-    }
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    font-size: 0.82rem;
-    padding: 6px 16px;
-    border-radius: 30px;
-    font-weight: 500;
-    background: linear-gradient(
-      90deg,
-      ${COLORS.accentBlue}90,
-      ${COLORS.accentTeal}90
-    );
-    color: white;
-    box-shadow: 0 2px 6px rgba(20, 255, 236, 0.2);
-    margin-top: 16px;
+    font-size: 0.85rem;
+    padding: 8px 18px;
+    border-radius: 6px;
     align-self: center;
+    background-color: ${COLORS.accentTeal};
+    color: white;
 
     &:active {
       transform: translateY(2px);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     }
   }
 `;
@@ -1375,9 +1170,8 @@ const ViewPostLink = styled(Link)`
 const ViewPostArrow = styled.span`
   display: inline-block;
   transition: transform 0.3s ease;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1;
-  margin-top: 1px;
 
   ${ViewPostLink}:hover & {
     transform: translateX(3px);
@@ -1398,68 +1192,39 @@ const DeleteModal = styled.div`
 
 const DeleteModalContent = styled.div`
   background-color: ${COLORS.cardBackground};
-  border-radius: 16px;
+  border-radius: 10px;
   padding: 28px;
   width: 90%;
   max-width: 380px;
   z-index: 1001;
   text-align: center;
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4), 0 3px 10px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  will-change: transform, opacity;
-  animation: ${fadeIn} 0.3s cubic-bezier(0.19, 1, 0.22, 1);
-  position: relative;
-
-  &:after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 16px;
-    padding: 1px;
-    background: linear-gradient(
-      to bottom right,
-      rgba(255, 255, 255, 0.8),
-      rgba(255, 255, 255, 0.1)
-    );
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    -webkit-mask-composite: source-out;
-    pointer-events: none;
-  }
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2);
+  animation: ${fadeIn} 0.3s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 
   h3 {
     color: ${COLORS.textPrimary};
     margin-top: 0;
     margin-bottom: 16px;
     font-weight: 600;
-    font-size: 1.25rem;
+    font-size: 1.3rem;
   }
 
   p {
     color: ${COLORS.textSecondary};
     margin-bottom: 24px;
-    font-size: 0.95rem;
+    font-size: 1rem;
     line-height: 1.5;
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    border-radius: 16px;
+    border-radius: 12px;
     padding: 24px 20px;
-    background: linear-gradient(
-      145deg,
-      ${COLORS.cardBackground} 0%,
-      ${COLORS.elevatedBackground}40 100%
-    );
-    border: 1px solid ${COLORS.accentBlue}20;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5),
-      inset 0 1px 1px rgba(255, 255, 255, 0.1);
 
     h3 {
-      font-size: 1.3rem;
+      font-size: 1.4rem;
       margin-bottom: 20px;
-      color: ${COLORS.accentBlue};
+      color: ${COLORS.textPrimary};
     }
 
     p {
@@ -1478,6 +1243,7 @@ const DeleteModalButtons = styled.div`
 
   @media (max-width: 480px) {
     flex-direction: column-reverse;
+    gap: 10px;
   }
 `;
 
@@ -1485,8 +1251,8 @@ const CancelButton = styled.button`
   background: none;
   color: ${COLORS.textSecondary};
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 10px 16px;
+  border-radius: 6px;
+  padding: 12px 16px;
   font-weight: 500;
   font-size: 0.9rem;
   cursor: pointer;
@@ -1494,21 +1260,17 @@ const CancelButton = styled.button`
   flex: 1;
 
   &:hover {
-    background-color: ${COLORS.elevatedBackground}60;
-    color: ${COLORS.accentBlue};
-  }
-
-  @media (max-width: 480px) {
-    margin-top: 8px;
+    background-color: rgba(255, 255, 255, 0.08);
+    color: ${COLORS.textPrimary};
   }
 `;
 
 const ConfirmDeleteButton = styled.button`
-  background-color: ${COLORS.error}15;
-  color: ${COLORS.error};
-  border: 1px solid ${COLORS.error}40;
-  border-radius: 8px;
-  padding: 10px 16px;
+  background-color: ${COLORS.error};
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 16px;
   font-weight: 500;
   font-size: 0.9rem;
   cursor: pointer;
@@ -1516,10 +1278,9 @@ const ConfirmDeleteButton = styled.button`
   flex: 1;
 
   &:hover {
-    background-color: ${COLORS.error};
-    color: white;
+    background-color: ${COLORS.error}ee;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(224, 36, 36, 0.3);
+    box-shadow: 0 4px 10px rgba(224, 36, 36, 0.3);
   }
 `;
 
@@ -1529,7 +1290,7 @@ const Backdrop = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(4px);
   z-index: 1000;
   animation: ${fadeIn} 0.2s ease-out;
@@ -1546,7 +1307,7 @@ const FullscreenModal = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(8px);
   animation: ${fadeIn} 0.3s ease-out;
 `;
 
@@ -1563,7 +1324,7 @@ const FullscreenImage = styled.img`
   max-width: 95%;
   max-height: 90%;
   object-fit: contain;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   border-radius: 2px;
 `;
 
@@ -1572,37 +1333,34 @@ const FullscreenIndicator = styled.div`
   bottom: 30px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.7);
   color: white;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
   font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 `;
 
 const CloseFullscreenButton = styled.button`
   position: absolute;
   top: 20px;
   right: 20px;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   border: none;
   color: white;
-  font-size: 26px;
+  font-size: 28px;
   cursor: pointer;
-  height: 42px;
-  width: 42px;
+  height: 48px;
+  width: 48px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  will-change: transform;
-  border: 1px solid rgba(255, 255, 255, 0.1);
 
   &:hover {
-    background: rgba(20, 255, 236, 0.3);
+    background-color: ${COLORS.accentTeal};
     transform: scale(1.05);
   }
 `;
@@ -1613,30 +1371,27 @@ const PostLink = styled(Link)`
   display: block;
 
   &:hover ${PostTitle} {
-    transform: translateX(3px);
-    color: ${COLORS.accentBlue};
+    color: ${COLORS.accentTeal};
   }
 
   &:hover ${Content} {
-    transform: translateX(3px);
+    color: ${COLORS.textPrimary};
   }
 `;
 
 const UserAvatarImage = styled.img`
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  margin-right: 10px;
-  border: 2px solid ${COLORS.accentTeal}40;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  margin-right: 12px;
+  border: 2px solid ${COLORS.accentTeal};
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
-  will-change: transform;
 
   &:hover {
     transform: scale(1.08);
-    border-color: ${COLORS.accentTeal};
-    box-shadow: 0 3px 10px rgba(20, 255, 236, 0.25);
+    box-shadow: 0 3px 12px rgba(20, 255, 236, 0.3);
   }
 `;
 
