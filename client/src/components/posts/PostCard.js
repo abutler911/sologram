@@ -671,8 +671,8 @@ const ActionsContainer = styled.div`
 
 const Username = styled.span`
   font-family: "Autography", cursive;
-  font-size: 1.8rem;
-  font-weight: 400;
+  font-size: 2.2rem;
+  font-weight: 700;
   letter-spacing: 0.8px;
   line-height: 1;
   margin-top: 2px;
