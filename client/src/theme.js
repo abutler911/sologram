@@ -1,30 +1,25 @@
-// theme.js - Masculine Blue/Green Theme
+// theme.js - Masculine Blue/Green Theme with Darker Background
 export const COLORS = {
   primaryBlue: "#1A5F7A",
   primaryTeal: "#0D7377",
   primaryGreen: "#2E8B57",
-
   accentBlue: "#42BFDD",
   accentTeal: "#14FFEC",
   accentGreen: "#57C84D",
-
-  background: "#E5E9ED",
-  cardBackground: "#FFFFFF",
-  elevatedBackground: "#DBE0E4",
-
-  textPrimary: "#212121",
-  textSecondary: "#2C3E50",
-  textTertiary: "#546E7A",
-
-  error: "#D32F2F",
-  success: "#388E3C",
-  warning: "#F57C00",
-  info: "#0277BD",
-
-  border: "#CFD8DC",
-  divider: "#ECEFF1",
-  buttonHover: "#E1E5E8",
-  shadow: "rgba(0, 0, 0, 0.1)",
+  background: "#263238", // Changed to dark slate blue/gray
+  cardBackground: "#FFFFFF", // Kept white for maximum contrast
+  elevatedBackground: "#37474F", // Slightly lighter than background
+  textPrimary: "#E1E6EB", // Lighter text for dark background
+  textSecondary: "#B0BEC5", // Medium light text
+  textTertiary: "#78909C", // Darker light text
+  error: "#FF5252", // Brighter for dark background
+  success: "#4CAF50", // Brighter for dark background
+  warning: "#FFB74D", // Brighter for dark background
+  info: "#29B6F6", // Brighter for dark background
+  border: "#546E7A", // Darker border color
+  divider: "#455A64", // Darker divider
+  buttonHover: "#455A64", // Darker hover state
+  shadow: "rgba(0, 0, 0, 0.2)", // Slightly more pronounced shadow
 };
 
 export const THEME = {
@@ -36,8 +31,8 @@ export const THEME = {
   banner: {
     background: COLORS.elevatedBackground,
     text: COLORS.textPrimary,
-    title: COLORS.primaryTeal,
-    icon: COLORS.primaryGreen,
+    title: COLORS.accentTeal, // Using accent color for better visibility
+    icon: COLORS.accentGreen, // Using accent color for better visibility
   },
   button: {
     primary: {
@@ -62,7 +57,7 @@ export const THEME = {
     footer: COLORS.elevatedBackground,
     border: COLORS.border,
     icon: {
-      active: COLORS.primaryTeal,
+      active: COLORS.accentTeal, // Using accent for better visibility
       inactive: COLORS.textTertiary,
     },
   },
