@@ -586,7 +586,7 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   );
 });
 
-// REFINED STYLED COMPONENTS FOR DARK THEME WITH BLACK TEXT AND TEAL ACCENTS
+// CORRECTED STYLED COMPONENTS WITH BLACK TEXT AND TEAL ACCENTS
 
 const CardWrapper = styled.div`
   ${fontFaceStyles}
@@ -618,7 +618,7 @@ const Card = styled.article`
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.25), 0 2px 10px rgba(0, 0, 0, 0.15);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   will-change: transform, box-shadow;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 
   &:hover {
     transform: translateY(-4px);
@@ -640,9 +640,9 @@ const CardHeader = styled.header`
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background-color: #1c1c1c;
+  background-color: ${COLORS.cardBackground};
   position: relative;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 
   &:before {
     content: "";
@@ -676,8 +676,8 @@ const Username = styled.span`
   letter-spacing: 0.8px;
   line-height: 1;
   margin-top: 2px;
-  color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: #000000;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 
   &:hover {
@@ -689,7 +689,7 @@ const Username = styled.span`
 const ActionsButton = styled.button`
   background-color: transparent;
   border: none;
-  color: #ffffff;
+  color: #000000;
   font-size: 1rem;
   cursor: pointer;
   padding: 8px;
@@ -702,7 +702,7 @@ const ActionsButton = styled.button`
   height: 36px;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.05);
     color: ${COLORS.accentTeal};
   }
 `;
@@ -711,15 +711,15 @@ const ActionsMenu = styled.div`
   position: absolute;
   right: 0;
   top: 40px;
-  background-color: #1c1c1c;
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
   z-index: 10;
   overflow: hidden;
   width: 180px;
   transform-origin: top right;
   animation: ${fadeIn} 0.2s ease-out;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 `;
 
 const ActionItem = styled.button`
@@ -727,7 +727,7 @@ const ActionItem = styled.button`
   padding: 12px 16px;
   border: none;
   background: none;
-  color: #ffffff;
+  color: #000000;
   text-align: left;
   font-size: 0.85rem;
   font-weight: 500;
@@ -740,12 +740,12 @@ const ActionItem = styled.button`
   svg {
     margin-right: 12px;
     font-size: 0.9rem;
-    color: #ffffff;
+    color: #000000;
     transition: all 0.2s ease;
   }
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.04);
     color: ${COLORS.accentTeal};
 
     svg {
@@ -754,7 +754,7 @@ const ActionItem = styled.button`
   }
 
   &:not(:last-child) {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   }
 `;
 
@@ -970,7 +970,7 @@ const HeartAnimation = styled.div`
 const CardActions = styled.div`
   padding: 14px 16px 10px;
   background-color: ${COLORS.cardBackground};
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 `;
 
 const ActionGroup = styled.div`
@@ -982,7 +982,7 @@ const ActionGroup = styled.div`
 const LikeButton = styled.button`
   background: none;
   border: none;
-  color: ${(props) => (props.liked ? COLORS.accentTeal : "#FFFFFF")};
+  color: ${(props) => (props.liked ? COLORS.accentTeal : "#000000")};
   font-size: 1.5rem;
   cursor: ${(props) =>
     props.disabled && !props.liked ? "default" : "pointer"};
@@ -1024,9 +1024,9 @@ const LikeButton = styled.button`
 const DateDisplay = styled.div`
   display: flex;
   align-items: center;
-  color: #ffffff;
+  color: #000000;
   font-size: 0.8rem;
-  background-color: #1c1c1c;
+  background-color: rgba(0, 0, 0, 0.04);
   padding: 6px 12px;
   border-radius: 6px;
   transition: all 0.2s ease;
@@ -1034,7 +1034,7 @@ const DateDisplay = styled.div`
   svg {
     margin-right: 6px;
     font-size: 0.8rem;
-    color: #ffffff;
+    color: #000000;
   }
 
   &:hover {
@@ -1046,7 +1046,7 @@ const LikesCounter = styled.div`
   padding: 10px 16px 0;
   font-size: 0.85rem;
   font-weight: 500;
-  color: #ffffff;
+  color: #000000;
 
   span {
     position: relative;
@@ -1081,7 +1081,7 @@ const CardContent = styled.div`
 const PostTitle = styled.h2`
   font-size: 1.2rem;
   font-weight: 600;
-  color: #ffffff;
+  color: #000000;
   margin: 0 0 12px 0;
   line-height: 1.4;
   word-break: break-word;
@@ -1090,7 +1090,7 @@ const PostTitle = styled.h2`
 `;
 
 const Content = styled.p`
-  color: #ffffff;
+  color: #000000;
   font-size: 0.9rem;
   line-height: 1.5;
   margin: 8px 0;
@@ -1197,10 +1197,10 @@ const DeleteModalContent = styled.div`
   text-align: center;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2);
   animation: ${fadeIn} 0.3s ease-out;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 
   h3 {
-    color: #ffffff;
+    color: #000000;
     margin-top: 0;
     margin-bottom: 16px;
     font-weight: 600;
@@ -1208,7 +1208,7 @@ const DeleteModalContent = styled.div`
   }
 
   p {
-    color: #ffffff;
+    color: #000000;
     margin-bottom: 24px;
     font-size: 1rem;
     line-height: 1.5;
@@ -1245,8 +1245,8 @@ const DeleteModalButtons = styled.div`
 
 const CancelButton = styled.button`
   background: none;
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #000000;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 6px;
   padding: 12px 16px;
   font-weight: 500;
@@ -1256,7 +1256,7 @@ const CancelButton = styled.button`
   flex: 1;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(0, 0, 0, 0.04);
   }
 `;
 
