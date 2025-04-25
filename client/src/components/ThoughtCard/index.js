@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import styled, { keyframes } from "styled-components";
+import styled, { keyframes, css } from "styled-components";
 import {
   FaHeart,
   FaTrash,
@@ -9,13 +9,17 @@ import {
   FaComment,
   FaRetweet,
   FaShare,
+  FaRegHeart,
+  FaRegComment,
+  FaStar,
+  FaBookmark,
 } from "react-icons/fa";
-import { moodColors, moodEmojis } from "../../utils/themeConstants"; // Import from shared utility file
-import { COLORS, THEME } from "../../theme"; // Import the theme
+import { moodColors, moodEmojis } from "../../utils/themeConstants";
+import { COLORS, THEME } from "../../theme";
 
-// Animations
+// Enhanced animations
 const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
 `;
 
@@ -30,18 +34,39 @@ const float = keyframes`
   100% { transform: translateY(0px); }
 `;
 
+const pulse = keyframes`
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+`;
+
+const glow = keyframes`
+  0% { box-shadow: 0 0 5px rgba(26, 95, 122, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(26, 95, 122, 0.7); }
+  100% { box-shadow: 0 0 5px rgba(26, 95, 122, 0.4); }
+`;
+
+const rotateGradient = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+`;
+
+// Card container with enhanced styling
 const Card = styled.div`
   position: relative;
   background: ${COLORS.cardBackground};
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
   border-radius: 24px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid ${COLORS.border};
-  box-shadow: 0 10px 30px ${COLORS.shadow};
-  animation: ${fadeIn} 0.4s ease-out;
+  padding: 1.75rem;
+  margin-bottom: 2rem;
+  border: 1px solid
+    ${(props) => (props.pinned ? COLORS.primaryBlue : COLORS.border)};
+  box-shadow: 0 10px 40px
+    ${(props) => (props.pinned ? `rgba(26, 95, 122, 0.25)` : COLORS.shadow)};
+  animation: ${fadeIn} 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
   width: 98%;
   max-width: 100%;
   margin-left: auto;
@@ -53,12 +78,14 @@ const Card = styled.div`
     top: 0;
     left: 0;
     width: 100%;
-    height: 5px;
+    height: 6px;
     background: ${(props) =>
       props.mood
-        ? `linear-gradient(to right, ${COLORS.primaryBlue}, ${COLORS.primaryTeal}, ${COLORS.primaryGreen})`
-        : `linear-gradient(to right, ${COLORS.primaryBlue}, ${COLORS.primaryTeal})`};
-    opacity: ${(props) => (props.pinned ? 1 : 0.7)};
+        ? `linear-gradient(90deg, ${COLORS.primaryBlue}, ${COLORS.primaryTeal}, ${COLORS.primaryGreen})`
+        : `linear-gradient(90deg, ${COLORS.primaryBlue}, ${COLORS.primaryTeal})`};
+    opacity: ${(props) => (props.pinned ? 1 : 0.8)};
+    background-size: 200% 200%;
+    animation: ${rotateGradient} 5s ease infinite;
   }
 
   &:after {
@@ -71,43 +98,57 @@ const Card = styled.div`
     border-radius: 24px;
     background: ${(props) =>
       props.mood
-        ? `linear-gradient(45deg, ${COLORS.primaryBlue}05, transparent 40%)`
-        : `linear-gradient(45deg, ${COLORS.primaryBlue}05, transparent 40%)`};
+        ? `linear-gradient(135deg, ${COLORS.primaryBlue}08, transparent 50%)`
+        : `linear-gradient(135deg, ${COLORS.primaryBlue}08, transparent 50%)`};
     pointer-events: none;
     z-index: 1;
   }
 
   &:hover {
-    transform: translateY(-5px) scale(1.02);
-    background-color: ${COLORS.elevatedBackground};
-    box-shadow: 0 15px 35px ${COLORS.shadow};
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 50px
+      ${(props) =>
+        props.pinned ? `rgba(26, 95, 122, 0.35)` : `rgba(0, 0, 0, 0.2)`};
     border-color: ${(props) =>
-      props.mood ? `${COLORS.primaryBlue}40` : `${COLORS.primaryBlue}40`};
+      props.mood ? `${COLORS.primaryBlue}70` : `${COLORS.primaryBlue}70`};
   }
 
   ${(props) =>
     props.pinned &&
-    `
-    border-color: ${COLORS.primaryBlue}80;
-    box-shadow: 0 10px 35px ${COLORS.primaryBlue}30;
-  `}
+    css`
+      border-color: ${COLORS.primaryBlue};
+      box-shadow: 0 15px 40px rgba(26, 95, 122, 0.3);
+
+      &:hover {
+        box-shadow: 0 20px 50px rgba(26, 95, 122, 0.4);
+      }
+    `}
 `;
 
+// Animated mood decoration
 const MoodDecoration = styled.div`
   position: absolute;
-  right: 1.5rem;
-  top: 1.5rem;
-  font-size: 3rem;
-  opacity: 0.15;
+  right: 1.75rem;
+  top: 1.75rem;
+  font-size: 3.5rem;
+  opacity: 0.12;
   transform: rotate(10deg);
   z-index: 0;
+  animation: ${float} 6s ease infinite;
+  filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+  transition: all 0.5s ease;
+
+  ${Card}:hover & {
+    transform: rotate(15deg) scale(1.1);
+    opacity: 0.18;
+  }
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
   position: relative;
   z-index: 2;
 `;
@@ -115,31 +156,30 @@ const Header = styled.div`
 const UserInfo = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 1rem;
   position: relative;
   z-index: 2;
 
-  /* Adjust for mobile */
   @media (max-width: 480px) {
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 `;
 
+// Enhanced avatar styling
 const Avatar = styled.div`
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   overflow: hidden;
-  box-shadow: 0 0 0 2px ${COLORS.primaryBlue};
   position: relative;
+  box-shadow: 0 0 0 3px ${COLORS.primaryBlue}, 0 5px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.4s ease;
 
-  /* Adjust for mobile */
   @media (max-width: 480px) {
-    width: 45px;
-    height: 45px;
+    width: 46px;
+    height: 46px;
   }
 
-  /* Inner glow effect */
   &:after {
     content: "";
     position: absolute;
@@ -148,22 +188,33 @@ const Avatar = styled.div`
     right: 0;
     bottom: 0;
     border-radius: 50%;
-    box-shadow: inset 0 0 15px ${COLORS.primaryBlue};
-    opacity: 0.3;
-    transition: opacity 0.3s;
+    box-shadow: inset 0 0 20px ${COLORS.primaryBlue};
+    opacity: 0.35;
+    transition: opacity 0.4s;
   }
 
-  &:hover:after {
-    opacity: 0.6;
+  ${Card}:hover & {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 3px ${COLORS.primaryTeal}, 0 8px 20px rgba(0, 0, 0, 0.3);
+
+    &:after {
+      opacity: 0.5;
+    }
   }
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  &:hover img {
+    transform: scale(1.1);
   }
 `;
 
+// Enhanced default avatar
 const DefaultAvatar = styled.div`
   width: 100%;
   height: 100%;
@@ -171,17 +222,19 @@ const DefaultAvatar = styled.div`
   align-items: center;
   justify-content: center;
   background: linear-gradient(
-    45deg,
+    135deg,
     ${COLORS.primaryBlue},
     ${COLORS.primaryTeal}
   );
+  background-size: 200% 200%;
+  animation: ${rotateGradient} 5s ease infinite;
   color: #ffffff;
   font-size: 1.8rem;
-  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
   font-family: "Pacifico", "Brush Script MT", cursive;
   position: relative;
+  transition: all 0.3s ease;
 
-  /* Add a subtle glow effect */
   &:after {
     content: "";
     position: absolute;
@@ -191,7 +244,7 @@ const DefaultAvatar = styled.div`
     bottom: 0;
     background: radial-gradient(
       circle at center,
-      rgba(255, 255, 255, 0.3) 0%,
+      rgba(255, 255, 255, 0.4) 0%,
       transparent 70%
     );
     z-index: 1;
@@ -208,9 +261,12 @@ const DefaultAvatar = styled.div`
     height: 100%;
   }
 
-  /* Adjust for mobile */
   @media (max-width: 480px) {
     font-size: 1.5rem;
+  }
+
+  ${Avatar}:hover & {
+    text-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
   }
 `;
 
@@ -219,118 +275,182 @@ const UserDetails = styled.div`
   flex-direction: column;
   align-items: flex-start;
   position: relative;
-  margin-top: 0.15rem;
+  margin-top: 0.2rem;
 `;
 
+// Enhanced username styling
 const Username = styled.div`
   font-family: "Autography", cursive;
   font-weight: normal;
-  font-size: 1.9rem;
+  font-size: 2rem;
   color: ${COLORS.accentBlue};
-  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   letter-spacing: 0.5px;
-  margin-bottom: 2px;
-  transition: all 0.3s;
+  margin-bottom: 4px;
+  transition: all 0.4s;
 
   &:hover {
     text-decoration: none;
     transform: scale(1.05);
-    text-shadow: 0 3px 5px rgba(0, 0, 0, 0.7);
+    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.7), 0 0 10px rgba(66, 191, 221, 0.3);
+    color: ${COLORS.accentTeal};
   }
 `;
 
 const UserHandle = styled.div`
   font-family: "Space Grotesk", sans-serif;
-  background-color: rgba(66, 191, 221, 0.1);
-  padding: 0.15rem 0.6rem;
+  background-color: rgba(66, 191, 221, 0.15);
+  padding: 0.2rem 0.7rem;
   border-radius: 999px;
   color: ${COLORS.accentBlue};
   font-size: 0.75rem;
   display: inline-block;
-  margin-top: 2px;
+  margin-top: 3px;
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(66, 191, 221, 0.1);
+  border: 1px solid rgba(66, 191, 221, 0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: rgba(66, 191, 221, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
 `;
 
+// Enhanced divider
 const UserDivider = styled.div`
-  width: 80px;
+  width: 85px;
   height: 2px;
   background: linear-gradient(
     to right,
     transparent,
     ${COLORS.primaryBlue},
-    ${COLORS.primaryTeal}
+    ${COLORS.primaryTeal},
+    ${COLORS.primaryGreen},
+    transparent
   );
-  opacity: 0.7;
-  margin: 2px 0 4px;
+  opacity: 0.8;
+  margin: 3px 0 5px;
   border-radius: 1px;
   transform: scaleX(1.2);
+  transition: all 0.4s ease;
+
+  ${UserDetails}:hover & {
+    width: 100px;
+    transform: scaleX(1.4);
+    opacity: 1;
+  }
 `;
 
+// Enhanced action buttons
 const ThoughtActions = styled.div`
   display: flex;
-  gap: 0.5rem;
+  gap: 0.6rem;
 `;
 
 const ActionButton = styled.button`
   background: none;
   border: none;
   color: ${COLORS.textTertiary};
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.3s ease;
+  }
 
   &:hover {
-    background-color: ${COLORS.elevatedBackground};
-    color: ${COLORS.textPrimary};
-    transform: scale(1.1);
+    color: ${COLORS.primaryTeal};
+    transform: translateY(-3px) scale(1.15);
+
+    &:before {
+      transform: scale(1);
+    }
   }
 
   &.delete:hover {
-    color: #ff6b6b;
+    color: ${COLORS.error};
   }
 
   &.pinned {
     color: ${COLORS.accentTeal};
+    animation: ${pulse} 2s infinite;
   }
+
+  ${(props) =>
+    props.pinned &&
+    css`
+      background-color: rgba(20, 255, 236, 0.1);
+    `}
 `;
 
+// Enhanced content area
 const Content = styled.p`
   font-family: "Lora", serif;
-  color: ${COLORS.textPrimary};
-  font-size: 0.7rem;
-  line-height: 1.3;
-  background: rgba(255, 255, 255, 0.03);
-  padding: 1.5rem;
-  border-radius: 16px;
-  border-left: 3px solid ${COLORS.primaryBlue};
+  color: #000000;
+  font-size: 1rem;
+  line-height: 1.6;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 1.75rem;
+  border-radius: 18px;
+  border-left: 4px solid ${COLORS.primaryBlue};
   font-style: normal;
   white-space: pre-wrap;
   letter-spacing: 0.3px;
   position: relative;
   z-index: 2;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin: 0.5rem 0;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05),
+    inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.4s ease;
 
   &:first-letter {
-    font-size: 1.2em;
+    font-size: 1.5em;
     font-weight: 500;
     color: ${COLORS.primaryBlue};
+    float: left;
+    line-height: 1;
+    margin-right: 8px;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
+  }
+
+  ${Card}:hover & {
+    border-left-color: ${COLORS.primaryTeal};
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08),
+      inset 0 1px 5px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
   }
 `;
 
+// Enhanced media container
 const Media = styled.div`
-  margin: 1rem 0;
-  border-radius: 16px;
+  margin: 1.5rem 0;
+  border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 5px 15px ${COLORS.shadow};
+  box-shadow: 0 8px 25px ${COLORS.shadow};
   position: relative;
   z-index: 2;
   width: 100%;
+  transform: translateY(0);
+  transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 
   &:before {
     content: "";
@@ -340,31 +460,38 @@ const Media = styled.div`
     right: 0;
     bottom: 0;
     z-index: 3;
-    border-radius: 16px;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
     pointer-events: none;
   }
 
   img {
     width: 100%;
-    max-height: 350px;
+    max-height: 380px;
     object-fit: cover;
     transform-origin: center;
-    transition: transform 0.6s cubic-bezier(0.33, 1, 0.68, 1), filter 0.6s ease;
+    transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+      filter 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
     vertical-align: middle;
   }
 
-  &:hover img {
-    transform: scale(1.05);
-    filter: brightness(1.1) saturate(1.1);
+  ${Card}:hover & {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+
+    img {
+      transform: scale(1.05);
+      filter: brightness(1.1) contrast(1.05) saturate(1.15);
+    }
   }
 `;
 
+// Enhanced tags
 const Tags = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
-  margin: 1.25rem 0;
+  gap: 0.7rem;
+  margin: 1.5rem 0;
   position: relative;
   z-index: 2;
 `;
@@ -373,20 +500,22 @@ const Tag = styled.span`
   font-family: "Space Grotesk", sans-serif;
   background: linear-gradient(
     120deg,
-    ${COLORS.primaryBlue}30,
+    ${COLORS.primaryBlue}20,
     ${COLORS.primaryBlue}10
   );
   color: ${COLORS.primaryBlue};
-  padding: 0.2rem 0.6rem;
+  padding: 0.3rem 0.8rem;
   border-radius: 999px;
-  font-size: 0.65rem;
-  transition: all 0.3s;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   backdrop-filter: blur(4px);
   border: 1px solid ${COLORS.primaryBlue}30;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 
   &:before {
     content: "";
@@ -405,8 +534,13 @@ const Tag = styled.span`
   }
 
   &:hover {
-    transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 3px 10px ${COLORS.primaryBlue}40;
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 5px 15px ${COLORS.primaryBlue}40;
+    background: linear-gradient(
+      120deg,
+      ${COLORS.primaryBlue}30,
+      ${COLORS.primaryBlue}20
+    );
 
     &:before {
       animation: ${shimmer} 1.5s infinite;
@@ -414,64 +548,89 @@ const Tag = styled.span`
   }
 `;
 
+// Enhanced meta section
 const Meta = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.75rem;
-  margin-bottom: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid ${COLORS.divider};
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(84, 110, 122, 0.15);
   position: relative;
   z-index: 2;
 `;
 
+// Enhanced mood indicator
 const MoodIndicator = styled.div`
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   color: ${COLORS.primaryTeal};
-  font-size: 0.7rem;
-  font-weight: 500;
+  font-size: 0.75rem;
+  font-weight: 600;
   text-transform: capitalize;
-  padding: 0.2rem 0.6rem;
+  padding: 0.3rem 0.8rem;
   border-radius: 999px;
   background: linear-gradient(
     120deg,
     ${COLORS.primaryTeal}20,
     ${COLORS.primaryTeal}05
   );
-  box-shadow: 0 0 10px ${COLORS.primaryTeal}30;
+  box-shadow: 0 2px 10px ${COLORS.primaryTeal}20;
   backdrop-filter: blur(4px);
-  border: 1px solid ${COLORS.primaryTeal}20;
+  border: 1px solid ${COLORS.primaryTeal}25;
   position: relative;
   overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(
+      120deg,
+      ${COLORS.primaryTeal}30,
+      ${COLORS.primaryTeal}15
+    );
+    box-shadow: 0 5px 15px ${COLORS.primaryTeal}30,
+      0 0 20px ${COLORS.primaryTeal}15;
+  }
 `;
 
+// Enhanced time display
 const TimeDisplay = styled.div`
   font-family: "Space Grotesk", sans-serif;
   color: ${COLORS.textSecondary};
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  opacity: 0.7;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(4px);
+  transition: all 0.3s ease;
 
   svg {
-    font-size: 0.6rem;
+    font-size: 0.7rem;
+    color: ${COLORS.primaryBlue};
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
   }
 `;
 
 const Footer = styled.div`
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
 `;
 
+// Enhanced action bar
 const ActionBar = styled.div`
   display: flex;
   justify-content: space-between;
-  padding-top: 0.75rem;
-  margin-top: 0.75rem;
-  border-top: 1px solid ${COLORS.divider};
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid rgba(84, 110, 122, 0.15);
   position: relative;
   z-index: 2;
 
@@ -480,41 +639,61 @@ const ActionBar = styled.div`
     justify-content: space-around;
     gap: 0.5rem;
   }
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 0;
+    width: 50px;
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      ${COLORS.primaryBlue},
+      ${COLORS.primaryTeal}
+    );
+    transition: width 0.4s ease;
+  }
+
+  ${Card}:hover &:before {
+    width: 100px;
+  }
 `;
 
+// Enhanced action icons
 const ActionIcon = styled.div`
   color: ${(props) => (props.liked ? COLORS.primaryTeal : COLORS.textTertiary)};
-  transition: color 0.3s, transform 0.3s;
-  font-size: 0.9rem;
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  font-size: 1rem;
 
   ${(props) =>
     props.liked &&
-    `
-    transform: scale(1.2);
-  `}
+    css`
+      transform: scale(1.2);
+    `}
 `;
 
 const ActionCount = styled.span`
   color: ${COLORS.textTertiary};
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   transition: color 0.3s;
 `;
 
+// Enhanced action items
 const ActionItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   cursor: pointer;
-  padding: 0.4rem 0.6rem;
+  padding: 0.5rem 0.8rem;
   border-radius: 999px;
-  transition: all 0.3s;
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   position: relative;
   overflow: hidden;
 
-  /* Adjust for mobile */
   @media (max-width: 480px) {
-    padding: 0.3rem 0.5rem;
+    padding: 0.4rem 0.6rem;
   }
 
   &:before {
@@ -527,19 +706,22 @@ const ActionItem = styled.div`
     background: transparent;
     border-radius: 999px;
     transform: scale(0);
-    transition: transform 0.3s, background 0.3s;
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+      background 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
     z-index: -1;
   }
 
   &:nth-child(1):hover {
+    transform: translateY(-3px);
+
     &:before {
-      background-color: ${COLORS.primaryTeal}10;
+      background-color: ${COLORS.primaryTeal}15;
       transform: scale(1);
     }
 
     ${ActionIcon} {
       color: ${COLORS.primaryTeal};
-      transform: scale(1.2);
+      transform: scale(1.3);
     }
 
     ${ActionCount} {
@@ -548,14 +730,16 @@ const ActionItem = styled.div`
   }
 
   &:nth-child(2):hover {
+    transform: translateY(-3px);
+
     &:before {
-      background-color: ${COLORS.primaryBlue}10;
+      background-color: ${COLORS.primaryBlue}15;
       transform: scale(1);
     }
 
     ${ActionIcon} {
       color: ${COLORS.primaryBlue};
-      transform: scale(1.2);
+      transform: scale(1.3);
     }
 
     ${ActionCount} {
@@ -564,14 +748,16 @@ const ActionItem = styled.div`
   }
 
   &:nth-child(3):hover {
+    transform: translateY(-3px);
+
     &:before {
-      background-color: ${COLORS.primaryGreen}10;
+      background-color: ${COLORS.primaryGreen}15;
       transform: scale(1);
     }
 
     ${ActionIcon} {
       color: ${COLORS.primaryGreen};
-      transform: scale(1.2);
+      transform: scale(1.3);
     }
 
     ${ActionCount} {
@@ -580,18 +766,21 @@ const ActionItem = styled.div`
   }
 
   &:nth-child(4):hover {
+    transform: translateY(-3px);
+
     &:before {
-      background-color: ${COLORS.accentBlue}10;
+      background-color: ${COLORS.accentBlue}15;
       transform: scale(1);
     }
 
     ${ActionIcon} {
       color: ${COLORS.accentBlue};
-      transform: scale(1.2);
+      transform: scale(1.3);
     }
   }
 `;
 
+// Enhanced pinned badge
 const PinnedBadge = styled.div`
   position: absolute;
   top: 0px;
@@ -604,11 +793,12 @@ const PinnedBadge = styled.div`
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 600;
-  padding: 0.35rem 0.85rem;
-  border-radius: 0 0 10px 10px;
-  box-shadow: 0 3px 8px ${COLORS.shadow};
+  padding: 0.4rem 1rem;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 12px ${COLORS.shadow};
   z-index: 10;
   letter-spacing: 0.5px;
+  animation: ${pulse} 3s infinite;
 
   &:before {
     content: "📌";
@@ -616,7 +806,7 @@ const PinnedBadge = styled.div`
   }
 `;
 
-// ThoughtCard component
+// ThoughtCard component with like animation
 const ThoughtCard = ({
   thought,
   defaultUser,
@@ -627,6 +817,16 @@ const ThoughtCard = ({
   canCreateThought,
   onDelete,
 }) => {
+  // State for like animation
+  const [isLikeAnimating, setIsLikeAnimating] = useState(false);
+
+  // Enhanced like handler with animation
+  const onLikeClick = (id) => {
+    setIsLikeAnimating(true);
+    setTimeout(() => setIsLikeAnimating(false), 800);
+    handleLike(id);
+  };
+
   return (
     <Card mood={thought.mood} pinned={thought.pinned}>
       {thought.pinned && <PinnedBadge mood={thought.mood}>Pinned</PinnedBadge>}
@@ -646,6 +846,9 @@ const ThoughtCard = ({
           <UserDetails>
             <Username>{defaultUser.username}</Username>
             <UserDivider mood={thought.mood} />
+            <UserHandle>
+              @{defaultUser.username.toLowerCase().replace(/\s+/g, "")}
+            </UserHandle>
           </UserDetails>
         </UserInfo>
 
@@ -656,8 +859,9 @@ const ThoughtCard = ({
               onClick={() => handlePin(thought._id)}
               title={thought.pinned ? "Unpin" : "Pin"}
               className={thought.pinned ? "pinned" : ""}
+              pinned={thought.pinned}
             >
-              📌
+              {thought.pinned ? <FaStar /> : "📌"}
             </ActionButton>
             <ActionButton
               as={Link}
@@ -707,21 +911,29 @@ const ThoughtCard = ({
 
       <Footer>
         <ActionBar>
-          <ActionItem onClick={() => handleLike(thought._id)}>
-            <ActionIcon liked={thought.userHasLiked}>
-              <FaHeart />
+          <ActionItem onClick={() => onLikeClick(thought._id)}>
+            <ActionIcon
+              liked={thought.userHasLiked}
+              className={isLikeAnimating ? "animate" : ""}
+              style={{
+                animation: isLikeAnimating
+                  ? `${pulse} 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)`
+                  : "none",
+              }}
+            >
+              {thought.userHasLiked ? <FaHeart /> : <FaRegHeart />}
             </ActionIcon>
             <ActionCount>{thought.likes}</ActionCount>
           </ActionItem>
 
           <ActionItem>
             <ActionIcon>
-              <FaComment />
+              <FaRegComment />
             </ActionIcon>
             <ActionCount>{thought.comments?.length || 0}</ActionCount>
           </ActionItem>
 
-          <ActionItem onClick={handleRetweet}>
+          <ActionItem onClick={() => handleRetweet(thought._id)}>
             <ActionIcon>
               <FaRetweet />
             </ActionIcon>
