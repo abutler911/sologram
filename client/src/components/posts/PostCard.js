@@ -403,10 +403,13 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
                         src={getTransformedImageUrl(media.mediaUrl, {
                           width: 614,
                           height: 614,
-                          crop: "thumb",
-                          quality: "auto",
-                          format: "webp",
-                          gravity: "auto",
+                          crop: "fill", // Changed from "thumb" for better subject framing
+                          gravity: "auto:subject", // Uses AI to detect and focus on the subject
+                          quality: "auto:good", // Ensures good quality while optimizing file size
+                          format: "auto", // Automatically chooses best format (WebP/AVIF)
+                          dpr: "auto", // Adjusts for device pixel ratio
+                          effect: "improve", // Simple enhancement algorithm
+                          sharpen: 60, // Adds crispness to details
                         })}
                         sizes="100vw"
                         alt={post.caption || "Post image"}
@@ -538,8 +541,15 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
                 src={getTransformedImageUrl(
                   post.media[fullscreenIndex].mediaUrl,
                   {
-                    quality: "auto",
-                    format: "webp",
+                    width: 1200, // Higher resolution for fullscreen
+                    height: 1200,
+                    crop: "fit", // "fit" preserves aspect ratio completely
+                    gravity: "auto:subject",
+                    quality: "auto:best", // Use best quality for fullscreen
+                    format: "auto",
+                    dpr: "auto",
+                    effect: "improve",
+                    sharpen: 70, // Slightly more sharpening for fullscreen
                   }
                 )}
                 alt={post.caption || "Fullscreen view"}
