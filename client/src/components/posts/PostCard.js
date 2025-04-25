@@ -586,6 +586,8 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   );
 });
 
+// UPDATED STYLED COMPONENTS FOR DARK THEME
+
 const CardWrapper = styled.div`
   ${fontFaceStyles}
   width: 100%;
@@ -597,6 +599,7 @@ const CardWrapper = styled.div`
   transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
   animation: ${fadeIn} 0.6s ease-out;
   contain: layout;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.3));
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     width: 94%;
@@ -610,12 +613,12 @@ const Card = styled.article`
   position: relative;
   background-color: ${COLORS.cardBackground};
   border-radius: 16px;
-  border: 1px solid rgba(203, 213, 224, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
   width: 100%;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 1px 5px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1),
     box-shadow 0.3s ease-in-out;
   will-change: transform, box-shadow;
@@ -628,9 +631,9 @@ const Card = styled.article`
     padding: 1px;
     background: linear-gradient(
       to bottom right,
-      rgba(255, 255, 255, 0.1),
-      ${COLORS.primaryBlue}10,
-      ${COLORS.primaryTeal}15
+      rgba(255, 255, 255, 0.2),
+      ${COLORS.accentBlue}20,
+      ${COLORS.accentTeal}30
     );
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask: linear-gradient(#fff 0 0) content-box,
@@ -642,30 +645,30 @@ const Card = styled.article`
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
 
     &::after {
       background: linear-gradient(
         to bottom right,
-        rgba(255, 255, 255, 0.2),
-        ${COLORS.primaryBlue}20,
-        ${COLORS.primaryTeal}30
+        rgba(255, 255, 255, 0.3),
+        ${COLORS.accentBlue}40,
+        ${COLORS.accentTeal}50
       );
     }
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     border-radius: 12px;
-    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.2), 0 1px 5px rgba(0, 0, 0, 0.1);
     background: linear-gradient(
       160deg,
       ${COLORS.cardBackground} 0%,
-      ${COLORS.elevatedBackground}80 100%
+      ${COLORS.elevatedBackground}10 100%
     );
 
     &:active {
       transform: scale(0.99);
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
     }
   }
 `;
@@ -675,12 +678,12 @@ const CardHeader = styled.header`
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(
     to bottom,
-    rgba(26, 95, 122, 0.08),
-    rgba(26, 95, 122, 0.03) 80%,
-    rgba(26, 95, 122, 0.01)
+    rgba(66, 191, 221, 0.1),
+    rgba(26, 95, 122, 0.05) 80%,
+    rgba(26, 95, 122, 0.02)
   );
   position: relative;
 
@@ -693,9 +696,9 @@ const CardHeader = styled.header`
     height: 3px;
     background: linear-gradient(
       to right,
-      ${COLORS.primaryBlue},
-      ${COLORS.primaryTeal},
-      ${COLORS.primaryGreen}
+      ${COLORS.accentBlue},
+      ${COLORS.accentTeal},
+      ${COLORS.accentGreen}
     );
     border-radius: 3px 3px 0 0;
   }
@@ -704,13 +707,13 @@ const CardHeader = styled.header`
     padding: 14px 16px;
     background: linear-gradient(
       to bottom,
-      rgba(26, 95, 122, 0.12),
-      rgba(26, 95, 122, 0.05) 80%,
-      rgba(26, 95, 122, 0.01)
+      rgba(66, 191, 221, 0.15),
+      rgba(26, 95, 122, 0.08) 80%,
+      rgba(26, 95, 122, 0.02)
     );
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
-    border-bottom: 1px solid rgba(26, 95, 122, 0.15);
+    border-bottom: 1px solid rgba(26, 95, 122, 0.2);
   }
 `;
 
@@ -730,15 +733,15 @@ const Username = styled.span`
   letter-spacing: 0.8px;
   line-height: 1;
   margin-top: 2px;
-  color: ${COLORS.primaryBlue};
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  color: ${COLORS.accentBlue};
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
   will-change: transform, filter;
 
   &:hover {
     transform: scale(1.05) translateY(-1px);
-    filter: brightness(1.15);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    filter: brightness(1.2);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   }
 `;
 
@@ -758,8 +761,8 @@ const ActionsButton = styled.button`
   height: 32px;
 
   &:hover {
-    background-color: rgba(226, 232, 240, 0.5);
-    color: ${COLORS.primaryBlue};
+    background-color: rgba(66, 191, 221, 0.15);
+    color: ${COLORS.accentBlue};
     transform: scale(1.1);
   }
 `;
@@ -770,7 +773,8 @@ const ActionsMenu = styled.div`
   top: 38px;
   background-color: ${COLORS.cardBackground};
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   z-index: 10;
   overflow: hidden;
   width: 180px;
@@ -802,11 +806,11 @@ const ActionItem = styled.button`
   }
 
   &:hover {
-    background-color: ${COLORS.primaryBlue}08;
-    color: ${COLORS.primaryBlue};
+    background-color: ${COLORS.accentBlue}15;
+    color: ${COLORS.accentBlue};
 
     svg {
-      color: ${COLORS.primaryBlue};
+      color: ${COLORS.accentBlue};
       transform: scale(1.1);
     }
   }
@@ -822,7 +826,7 @@ const MediaContainer = styled(Link)`
   aspect-ratio: 4/3;
   display: block;
   overflow: hidden;
-  background-color: rgba(0, 0, 0, 0.03);
+  background-color: rgba(0, 0, 0, 0.1);
   transition: opacity 0.2s ease;
   opacity: ${(props) => (props.isPressing ? 0.85 : 1)};
   will-change: transform, opacity;
@@ -831,7 +835,7 @@ const MediaContainer = styled(Link)`
     content: "";
     position: absolute;
     inset: 0;
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
     pointer-events: none;
     z-index: 1;
   }
@@ -852,8 +856,8 @@ const MediaCarousel = styled.div`
   overflow: hidden;
   background: linear-gradient(
     180deg,
-    rgba(0, 0, 0, 0.01) 0%,
-    rgba(0, 0, 0, 0.05) 100%
+    rgba(0, 0, 0, 0.02) 0%,
+    rgba(0, 0, 0, 0.08) 100%
   );
 `;
 
@@ -876,7 +880,7 @@ const MediaItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(to bottom, #f8f9fa05, #e2e8f005);
+  background: linear-gradient(to bottom, #f8f9fa08, #e2e8f008);
 `;
 
 const PostImage = styled.img`
@@ -885,7 +889,7 @@ const PostImage = styled.img`
   object-fit: cover;
   transition: opacity 0.5s ease,
     transform 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
-  opacity: 0.92;
+  opacity: 0.95;
   transform: scale(1.01);
   will-change: opacity, transform;
 
@@ -940,7 +944,7 @@ const NavigationArrow = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(24, 92, 120, 0.6);
+  background-color: rgba(20, 255, 236, 0.25);
   color: white;
   border: none;
   border-radius: 50%;
@@ -954,16 +958,16 @@ const NavigationArrow = styled.button`
   transition: all 0.2s ease;
   z-index: 2;
   will-change: transform, opacity;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 
   &:hover {
     opacity: 1 !important;
-    background-color: ${COLORS.primaryBlue}cc;
+    background-color: ${COLORS.accentTeal}cc;
     transform: translateY(-50%) scale(1.1);
   }
 
   ${MediaContainer}:hover & {
-    opacity: 0.85;
+    opacity: 0.9;
   }
 
   &.prev {
@@ -980,16 +984,16 @@ const NavigationArrow = styled.button`
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    opacity: 0.7;
+    opacity: 0.8;
     width: 36px;
     height: 36px;
-    background: ${COLORS.primaryBlue}bb;
+    background: ${COLORS.accentTeal}80;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 
     &:active {
       opacity: 1;
       transform: translateY(-50%) scale(0.95);
-      background-color: ${COLORS.primaryBlue};
+      background-color: ${COLORS.accentTeal};
     }
 
     &:disabled {
@@ -1027,12 +1031,12 @@ const ProgressDot = styled.button`
   height: 6px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? "rgba(255, 255, 255, 0.9)" : "rgba(255, 255, 255, 0.35)"};
+    props.active ? "rgba(255, 255, 255, 0.95)" : "rgba(255, 255, 255, 0.45)"};
   border: none;
   cursor: pointer;
   padding: 0;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
 
@@ -1045,14 +1049,14 @@ const ProgressDot = styled.button`
     bottom: 0;
     background: ${(props) =>
       props.active
-        ? `linear-gradient(90deg, ${COLORS.primaryTeal}80, ${COLORS.primaryBlue}80)`
+        ? `linear-gradient(90deg, ${COLORS.accentTeal}80, ${COLORS.accentBlue}80)`
         : "transparent"};
     opacity: ${(props) => (props.active ? 1 : 0)};
     transition: opacity 0.2s ease;
   }
 
   &:hover {
-    transform: scale(1.3);
+    transform: scale(1.4);
     background-color: rgba(255, 255, 255, 1);
 
     &:after {
@@ -1069,7 +1073,7 @@ const ProgressDot = styled.button`
       props.active &&
       `
       transform: scale(1.2);
-      box-shadow: 0 0 6px ${COLORS.primaryTeal}90;
+      box-shadow: 0 0 6px ${COLORS.accentTeal}90;
     `}
 
     &:active {
@@ -1083,13 +1087,13 @@ const HeartAnimation = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: ${COLORS.primaryTeal};
+  color: ${COLORS.accentTeal};
   font-size: 72px;
   opacity: 0;
   animation: ${scaleIn} 1s ease forwards;
   z-index: 3;
   will-change: transform, opacity;
-  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.6));
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     font-size: 90px;
@@ -1103,7 +1107,7 @@ const HeartAnimation = styled.div`
 
 const CardActions = styled.div`
   padding: 12px 16px 8px;
-  border-bottom: 1px solid ${COLORS.divider}80;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   background-color: ${COLORS.cardBackground};
 `;
 
@@ -1116,8 +1120,7 @@ const ActionGroup = styled.div`
 const LikeButton = styled.button`
   background: none;
   border: none;
-  color: ${(props) =>
-    props.liked ? COLORS.primaryTeal : COLORS.textSecondary};
+  color: ${(props) => (props.liked ? COLORS.accentTeal : COLORS.textSecondary)};
   font-size: 1.4rem;
   cursor: ${(props) =>
     props.disabled && !props.liked ? "default" : "pointer"};
@@ -1132,7 +1135,7 @@ const LikeButton = styled.button`
     transform: ${(props) =>
       !props.disabled || props.liked ? "scale(1.15)" : "none"};
     color: ${(props) =>
-      !props.disabled && !props.liked ? COLORS.primaryTeal : ""};
+      !props.disabled && !props.liked ? COLORS.accentTeal : ""};
   }
 
   &:active {
@@ -1143,7 +1146,7 @@ const LikeButton = styled.button`
   ${(props) =>
     props.liked &&
     `
-    filter: drop-shadow(0 0 2px ${COLORS.primaryTeal}50);
+    filter: drop-shadow(0 0 4px ${COLORS.accentTeal}60);
   `}
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -1155,7 +1158,7 @@ const LikeButton = styled.button`
       props.liked &&
       `
       animation: ${pulse} 0.8s ease-in-out;
-      filter: drop-shadow(0 0 4px ${COLORS.primaryTeal}70);
+      filter: drop-shadow(0 0 5px ${COLORS.accentTeal}90);
     `}
 
     &:active {
@@ -1170,11 +1173,12 @@ const DateDisplay = styled.div`
   align-items: center;
   color: ${COLORS.textTertiary};
   font-size: 0.75rem;
-  background-color: ${COLORS.elevatedBackground}50;
+  background-color: ${COLORS.elevatedBackground}30;
   padding: 4px 10px;
   border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 
   svg {
     margin-right: 6px;
@@ -1183,7 +1187,7 @@ const DateDisplay = styled.div`
   }
 
   &:hover {
-    background-color: ${COLORS.elevatedBackground}80;
+    background-color: ${COLORS.elevatedBackground}50;
     transform: translateY(-1px);
   }
 `;
@@ -1205,7 +1209,7 @@ const LikesCounter = styled.div`
       bottom: -2px;
       width: 100%;
       height: 1px;
-      background: linear-gradient(90deg, ${COLORS.primaryTeal}30, transparent);
+      background: linear-gradient(90deg, ${COLORS.accentTeal}30, transparent);
       transform-origin: left;
       transform: scaleX(0);
       transition: transform 0.3s ease;
@@ -1226,18 +1230,18 @@ const CardContent = styled.div`
   background: linear-gradient(
     180deg,
     ${COLORS.cardBackground} 0%,
-    ${COLORS.elevatedBackground}40 100%
+    ${COLORS.elevatedBackground}10 100%
   );
-  border-top: 1px solid ${COLORS.divider}20;
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     padding: 1rem 1rem 1.2rem;
     background: linear-gradient(
       160deg,
       ${COLORS.cardBackground} 0%,
-      ${COLORS.elevatedBackground}80 100%
+      ${COLORS.elevatedBackground}20 100%
     );
-    border-top: 1px solid ${COLORS.primaryBlue}10;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
   }
@@ -1279,19 +1283,19 @@ const TagsContainer = styled.div`
 `;
 
 const Tag = styled.span`
-  color: ${COLORS.primaryBlue};
+  color: ${COLORS.accentBlue};
   font-size: 0.75rem;
   transition: all 0.2s ease;
   will-change: transform;
   font-weight: 500;
   padding: 2px 6px;
   border-radius: 4px;
-  background-color: ${COLORS.primaryBlue}08;
+  background-color: ${COLORS.accentBlue}15;
 
   &:hover {
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.accentTeal};
     transform: translateX(2px) translateY(-1px);
-    background-color: ${COLORS.primaryBlue}12;
+    background-color: ${COLORS.accentBlue}25;
   }
 `;
 
@@ -1305,12 +1309,13 @@ const ViewPostLink = styled(Link)`
   padding: 5px 14px;
   border-radius: 30px;
   transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  background-color: ${COLORS.elevatedBackground}70;
+  background-color: ${COLORS.elevatedBackground}30;
   display: flex;
   align-items: center;
   gap: 4px;
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 
   &:before {
     content: "";
@@ -1333,11 +1338,11 @@ const ViewPostLink = styled(Link)`
     color: white;
     background: linear-gradient(
       90deg,
-      ${COLORS.primaryBlue},
-      ${COLORS.primaryTeal}
+      ${COLORS.accentBlue},
+      ${COLORS.accentTeal}
     );
     transform: translateY(-2px);
-    box-shadow: 0 3px 8px rgba(13, 115, 119, 0.2);
+    box-shadow: 0 3px 8px rgba(20, 255, 236, 0.25);
 
     &:before {
       left: 200%;
@@ -1352,11 +1357,11 @@ const ViewPostLink = styled(Link)`
     font-weight: 500;
     background: linear-gradient(
       90deg,
-      ${COLORS.primaryBlue}90,
-      ${COLORS.primaryTeal}90
+      ${COLORS.accentBlue}90,
+      ${COLORS.accentTeal}90
     );
     color: white;
-    box-shadow: 0 2px 6px rgba(26, 95, 122, 0.2);
+    box-shadow: 0 2px 6px rgba(20, 255, 236, 0.2);
     margin-top: 16px;
     align-self: center;
 
@@ -1399,8 +1404,8 @@ const DeleteModalContent = styled.div`
   max-width: 380px;
   z-index: 1001;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-  border: 1px solid ${COLORS.divider};
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4), 0 3px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   will-change: transform, opacity;
   animation: ${fadeIn} 0.3s cubic-bezier(0.19, 1, 0.22, 1);
   position: relative;
@@ -1447,14 +1452,14 @@ const DeleteModalContent = styled.div`
       ${COLORS.cardBackground} 0%,
       ${COLORS.elevatedBackground}40 100%
     );
-    border: 1px solid ${COLORS.primaryBlue}20;
+    border: 1px solid ${COLORS.accentBlue}20;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5),
       inset 0 1px 1px rgba(255, 255, 255, 0.1);
 
     h3 {
       font-size: 1.3rem;
       margin-bottom: 20px;
-      color: ${COLORS.primaryBlue};
+      color: ${COLORS.accentBlue};
     }
 
     p {
@@ -1479,7 +1484,7 @@ const DeleteModalButtons = styled.div`
 const CancelButton = styled.button`
   background: none;
   color: ${COLORS.textSecondary};
-  border: 1px solid ${COLORS.divider};
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 10px 16px;
   font-weight: 500;
@@ -1489,8 +1494,8 @@ const CancelButton = styled.button`
   flex: 1;
 
   &:hover {
-    background-color: ${COLORS.elevatedBackground};
-    color: ${COLORS.primaryBlue};
+    background-color: ${COLORS.elevatedBackground}60;
+    color: ${COLORS.accentBlue};
   }
 
   @media (max-width: 480px) {
@@ -1499,7 +1504,7 @@ const CancelButton = styled.button`
 `;
 
 const ConfirmDeleteButton = styled.button`
-  background-color: ${COLORS.error}10;
+  background-color: ${COLORS.error}15;
   color: ${COLORS.error};
   border: 1px solid ${COLORS.error}40;
   border-radius: 8px;
@@ -1514,7 +1519,7 @@ const ConfirmDeleteButton = styled.button`
     background-color: ${COLORS.error};
     color: white;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(224, 36, 36, 0.2);
+    box-shadow: 0 2px 8px rgba(224, 36, 36, 0.3);
   }
 `;
 
@@ -1524,7 +1529,7 @@ const Backdrop = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.65);
+  background-color: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(4px);
   z-index: 1000;
   animation: ${fadeIn} 0.2s ease-out;
@@ -1597,7 +1602,7 @@ const CloseFullscreenButton = styled.button`
   border: 1px solid rgba(255, 255, 255, 0.1);
 
   &:hover {
-    background: rgba(26, 95, 122, 0.7);
+    background: rgba(20, 255, 236, 0.3);
     transform: scale(1.05);
   }
 `;
@@ -1609,7 +1614,7 @@ const PostLink = styled(Link)`
 
   &:hover ${PostTitle} {
     transform: translateX(3px);
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.accentBlue};
   }
 
   &:hover ${Content} {
@@ -1623,15 +1628,15 @@ const UserAvatarImage = styled.img`
   border-radius: 50%;
   object-fit: cover;
   margin-right: 10px;
-  border: 2px solid ${COLORS.primaryTeal}40;
+  border: 2px solid ${COLORS.accentTeal}40;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
   will-change: transform;
 
   &:hover {
     transform: scale(1.08);
-    border-color: ${COLORS.primaryTeal};
-    box-shadow: 0 3px 10px rgba(13, 115, 119, 0.25);
+    border-color: ${COLORS.accentTeal};
+    box-shadow: 0 3px 10px rgba(20, 255, 236, 0.25);
   }
 `;
 
