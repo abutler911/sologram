@@ -41,9 +41,9 @@ const pulse = keyframes`
 `;
 
 const glow = keyframes`
-  0% { box-shadow: 0 0 5px rgba(26, 95, 122, 0.4); }
-  50% { box-shadow: 0 0 20px rgba(26, 95, 122, 0.7); }
-  100% { box-shadow: 0 0 5px rgba(26, 95, 122, 0.4); }
+  0% { box-shadow: 0 0 5px rgba(176, 75, 223, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(176, 75, 223, 0.7); }
+  100% { box-shadow: 0 0 5px rgba(176, 75, 223, 0.4); }
 `;
 
 const rotateGradient = keyframes`
@@ -61,9 +61,9 @@ const Card = styled.div`
   padding: 1.75rem;
   margin-bottom: 2rem;
   border: 1px solid
-    ${(props) => (props.pinned ? COLORS.primaryBlue : COLORS.border)};
+    ${(props) => (props.pinned ? COLORS.primaryPurple : COLORS.border)};
   box-shadow: 0 10px 40px
-    ${(props) => (props.pinned ? `rgba(26, 95, 122, 0.25)` : COLORS.shadow)};
+    ${(props) => (props.pinned ? `rgba(176, 75, 223, 0.25)` : COLORS.shadow)};
   animation: ${fadeIn} 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
   overflow: hidden;
   transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -81,8 +81,8 @@ const Card = styled.div`
     height: 6px;
     background: ${(props) =>
       props.mood
-        ? `linear-gradient(90deg, ${COLORS.primaryBlue}, ${COLORS.primaryTeal}, ${COLORS.primaryGreen})`
-        : `linear-gradient(90deg, ${COLORS.primaryBlue}, ${COLORS.primaryTeal})`};
+        ? `linear-gradient(90deg, ${COLORS.primaryPink}, ${COLORS.primaryPurple}, ${COLORS.primaryBlue})`
+        : `linear-gradient(90deg, ${COLORS.primaryPink}, ${COLORS.primaryPurple})`};
     opacity: ${(props) => (props.pinned ? 1 : 0.8)};
     background-size: 200% 200%;
     animation: ${rotateGradient} 5s ease infinite;
@@ -98,8 +98,8 @@ const Card = styled.div`
     border-radius: 24px;
     background: ${(props) =>
       props.mood
-        ? `linear-gradient(135deg, ${COLORS.primaryBlue}08, transparent 50%)`
-        : `linear-gradient(135deg, ${COLORS.primaryBlue}08, transparent 50%)`};
+        ? `linear-gradient(135deg, ${COLORS.primaryPurple}08, transparent 50%)`
+        : `linear-gradient(135deg, ${COLORS.primaryPurple}08, transparent 50%)`};
     pointer-events: none;
     z-index: 1;
   }
@@ -108,19 +108,19 @@ const Card = styled.div`
     transform: translateY(-8px) scale(1.02);
     box-shadow: 0 20px 50px
       ${(props) =>
-        props.pinned ? `rgba(26, 95, 122, 0.35)` : `rgba(0, 0, 0, 0.2)`};
+        props.pinned ? `rgba(176, 75, 223, 0.35)` : `rgba(0, 0, 0, 0.2)`};
     border-color: ${(props) =>
-      props.mood ? `${COLORS.primaryBlue}70` : `${COLORS.primaryBlue}70`};
+      props.mood ? `${COLORS.primaryPurple}70` : `${COLORS.primaryPurple}70`};
   }
 
   ${(props) =>
     props.pinned &&
     css`
-      border-color: ${COLORS.primaryBlue};
-      box-shadow: 0 15px 40px rgba(26, 95, 122, 0.3);
+      border-color: ${COLORS.primaryPurple};
+      box-shadow: 0 15px 40px rgba(176, 75, 223, 0.3);
 
       &:hover {
-        box-shadow: 0 20px 50px rgba(26, 95, 122, 0.4);
+        box-shadow: 0 20px 50px rgba(176, 75, 223, 0.4);
       }
     `}
 `;
@@ -172,7 +172,7 @@ const Avatar = styled.div`
   border-radius: 50%;
   overflow: hidden;
   position: relative;
-  box-shadow: 0 0 0 3px ${COLORS.primaryBlue}, 0 5px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 3px ${COLORS.primaryPurple}, 0 5px 15px rgba(0, 0, 0, 0.2);
   transition: all 0.4s ease;
 
   @media (max-width: 480px) {
@@ -188,14 +188,14 @@ const Avatar = styled.div`
     right: 0;
     bottom: 0;
     border-radius: 50%;
-    box-shadow: inset 0 0 20px ${COLORS.primaryBlue};
+    box-shadow: inset 0 0 20px ${COLORS.primaryPurple};
     opacity: 0.35;
     transition: opacity 0.4s;
   }
 
   ${Card}:hover & {
     transform: scale(1.05);
-    box-shadow: 0 0 0 3px ${COLORS.primaryTeal}, 0 8px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0 3px ${COLORS.primaryPink}, 0 8px 20px rgba(0, 0, 0, 0.3);
 
     &:after {
       opacity: 0.5;
@@ -223,8 +223,8 @@ const DefaultAvatar = styled.div`
   justify-content: center;
   background: linear-gradient(
     135deg,
-    ${COLORS.primaryBlue},
-    ${COLORS.primaryTeal}
+    ${COLORS.primaryPink},
+    ${COLORS.primaryPurple}
   );
   background-size: 200% 200%;
   animation: ${rotateGradient} 5s ease infinite;
@@ -283,7 +283,7 @@ const Username = styled.div`
   font-family: "Autography", cursive;
   font-weight: normal;
   font-size: 2rem;
-  color: ${COLORS.accentBlue};
+  color: ${COLORS.accentPurple};
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   letter-spacing: 0.5px;
   margin-bottom: 4px;
@@ -292,27 +292,27 @@ const Username = styled.div`
   &:hover {
     text-decoration: none;
     transform: scale(1.05);
-    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.7), 0 0 10px rgba(66, 191, 221, 0.3);
-    color: ${COLORS.accentTeal};
+    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.7), 0 0 10px rgba(199, 118, 255, 0.3);
+    color: ${COLORS.accentPink};
   }
 `;
 
 const UserHandle = styled.div`
   font-family: "Space Grotesk", sans-serif;
-  background-color: rgba(66, 191, 221, 0.15);
+  background-color: rgba(199, 118, 255, 0.15);
   padding: 0.2rem 0.7rem;
   border-radius: 999px;
-  color: ${COLORS.accentBlue};
+  color: ${COLORS.accentPurple};
   font-size: 0.75rem;
   display: inline-block;
   margin-top: 3px;
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(66, 191, 221, 0.2);
+  border: 1px solid rgba(199, 118, 255, 0.2);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 
   &:hover {
-    background-color: rgba(66, 191, 221, 0.25);
+    background-color: rgba(199, 118, 255, 0.25);
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
@@ -325,9 +325,9 @@ const UserDivider = styled.div`
   background: linear-gradient(
     to right,
     transparent,
+    ${COLORS.primaryPink},
+    ${COLORS.primaryPurple},
     ${COLORS.primaryBlue},
-    ${COLORS.primaryTeal},
-    ${COLORS.primaryGreen},
     transparent
   );
   opacity: 0.8;
@@ -378,7 +378,7 @@ const ActionButton = styled.button`
   }
 
   &:hover {
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primaryPink};
     transform: translateY(-3px) scale(1.15);
 
     &:before {
@@ -391,14 +391,14 @@ const ActionButton = styled.button`
   }
 
   &.pinned {
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.accentPink};
     animation: ${pulse} 2s infinite;
   }
 
   ${(props) =>
     props.pinned &&
     css`
-      background-color: rgba(20, 255, 236, 0.1);
+      background-color: rgba(255, 77, 148, 0.1);
     `}
 `;
 
@@ -411,7 +411,7 @@ const Content = styled.p`
   background: rgba(255, 255, 255, 0.5);
   padding: 1.75rem;
   border-radius: 18px;
-  border-left: 4px solid ${COLORS.primaryBlue};
+  border-left: 4px solid ${COLORS.primaryPurple};
   font-style: normal;
   white-space: pre-wrap;
   letter-spacing: 0.3px;
@@ -425,7 +425,7 @@ const Content = styled.p`
   &:first-letter {
     font-size: 1.5em;
     font-weight: 500;
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryPurple};
     float: left;
     line-height: 1;
     margin-right: 8px;
@@ -433,7 +433,7 @@ const Content = styled.p`
   }
 
   ${Card}:hover & {
-    border-left-color: ${COLORS.primaryTeal};
+    border-left-color: ${COLORS.primaryPink};
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08),
       inset 0 1px 5px rgba(0, 0, 0, 0.05);
     transform: translateY(-2px);
@@ -500,10 +500,10 @@ const Tag = styled.span`
   font-family: "Space Grotesk", sans-serif;
   background: linear-gradient(
     120deg,
-    ${COLORS.primaryBlue}20,
-    ${COLORS.primaryBlue}10
+    ${COLORS.primaryPurple}20,
+    ${COLORS.primaryPurple}10
   );
-  color: ${COLORS.primaryBlue};
+  color: ${COLORS.primaryPurple};
   padding: 0.3rem 0.8rem;
   border-radius: 999px;
   font-size: 0.75rem;
@@ -514,7 +514,7 @@ const Tag = styled.span`
   overflow: hidden;
   letter-spacing: 0.5px;
   backdrop-filter: blur(4px);
-  border: 1px solid ${COLORS.primaryBlue}30;
+  border: 1px solid ${COLORS.primaryPurple}30;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 
   &:before {
@@ -535,11 +535,11 @@ const Tag = styled.span`
 
   &:hover {
     transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 5px 15px ${COLORS.primaryBlue}40;
+    box-shadow: 0 5px 15px ${COLORS.primaryPurple}40;
     background: linear-gradient(
       120deg,
-      ${COLORS.primaryBlue}30,
-      ${COLORS.primaryBlue}20
+      ${COLORS.primaryPurple}30,
+      ${COLORS.primaryPurple}20
     );
 
     &:before {
@@ -565,7 +565,7 @@ const MoodIndicator = styled.div`
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: ${COLORS.primaryTeal};
+  color: ${COLORS.primaryPink};
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: capitalize;
@@ -573,12 +573,12 @@ const MoodIndicator = styled.div`
   border-radius: 999px;
   background: linear-gradient(
     120deg,
-    ${COLORS.primaryTeal}20,
-    ${COLORS.primaryTeal}05
+    ${COLORS.primaryPink}20,
+    ${COLORS.primaryPink}05
   );
-  box-shadow: 0 2px 10px ${COLORS.primaryTeal}20;
+  box-shadow: 0 2px 10px ${COLORS.primaryPink}20;
   backdrop-filter: blur(4px);
-  border: 1px solid ${COLORS.primaryTeal}25;
+  border: 1px solid ${COLORS.primaryPink}25;
   position: relative;
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -587,11 +587,11 @@ const MoodIndicator = styled.div`
     transform: translateY(-2px);
     background: linear-gradient(
       120deg,
-      ${COLORS.primaryTeal}30,
-      ${COLORS.primaryTeal}15
+      ${COLORS.primaryPink}30,
+      ${COLORS.primaryPink}15
     );
-    box-shadow: 0 5px 15px ${COLORS.primaryTeal}30,
-      0 0 20px ${COLORS.primaryTeal}15;
+    box-shadow: 0 5px 15px ${COLORS.primaryPink}30,
+      0 0 20px ${COLORS.primaryPink}15;
   }
 `;
 
@@ -611,7 +611,7 @@ const TimeDisplay = styled.div`
 
   svg {
     font-size: 0.7rem;
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryPurple};
   }
 
   &:hover {
@@ -649,8 +649,8 @@ const ActionBar = styled.div`
     height: 1px;
     background: linear-gradient(
       to right,
-      ${COLORS.primaryBlue},
-      ${COLORS.primaryTeal}
+      ${COLORS.primaryPink},
+      ${COLORS.primaryPurple}
     );
     transition: width 0.4s ease;
   }
@@ -662,7 +662,7 @@ const ActionBar = styled.div`
 
 // Enhanced action icons
 const ActionIcon = styled.div`
-  color: ${(props) => (props.liked ? COLORS.primaryTeal : COLORS.textTertiary)};
+  color: ${(props) => (props.liked ? COLORS.primaryPink : COLORS.textTertiary)};
   transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   font-size: 1rem;
 
@@ -715,21 +715,39 @@ const ActionItem = styled.div`
     transform: translateY(-3px);
 
     &:before {
-      background-color: ${COLORS.primaryTeal}15;
+      background-color: ${COLORS.primaryPink}15;
       transform: scale(1);
     }
 
     ${ActionIcon} {
-      color: ${COLORS.primaryTeal};
+      color: ${COLORS.primaryPink};
       transform: scale(1.3);
     }
 
     ${ActionCount} {
-      color: ${COLORS.primaryTeal};
+      color: ${COLORS.primaryPink};
     }
   }
 
   &:nth-child(2):hover {
+    transform: translateY(-3px);
+
+    &:before {
+      background-color: ${COLORS.primaryPurple}15;
+      transform: scale(1);
+    }
+
+    ${ActionIcon} {
+      color: ${COLORS.primaryPurple};
+      transform: scale(1.3);
+    }
+
+    ${ActionCount} {
+      color: ${COLORS.primaryPurple};
+    }
+  }
+
+  &:nth-child(3):hover {
     transform: translateY(-3px);
 
     &:before {
@@ -747,34 +765,16 @@ const ActionItem = styled.div`
     }
   }
 
-  &:nth-child(3):hover {
-    transform: translateY(-3px);
-
-    &:before {
-      background-color: ${COLORS.primaryGreen}15;
-      transform: scale(1);
-    }
-
-    ${ActionIcon} {
-      color: ${COLORS.primaryGreen};
-      transform: scale(1.3);
-    }
-
-    ${ActionCount} {
-      color: ${COLORS.primaryGreen};
-    }
-  }
-
   &:nth-child(4):hover {
     transform: translateY(-3px);
 
     &:before {
-      background-color: ${COLORS.accentBlue}15;
+      background-color: ${COLORS.accentPurple}15;
       transform: scale(1);
     }
 
     ${ActionIcon} {
-      color: ${COLORS.accentBlue};
+      color: ${COLORS.accentPurple};
       transform: scale(1.3);
     }
   }
@@ -787,8 +787,8 @@ const PinnedBadge = styled.div`
   right: 1.5rem;
   background: linear-gradient(
     45deg,
-    ${COLORS.primaryBlue},
-    ${COLORS.primaryTeal}
+    ${COLORS.primaryPink},
+    ${COLORS.primaryPurple}
   );
   color: #ffffff;
   font-size: 0.75rem;

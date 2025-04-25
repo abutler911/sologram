@@ -81,7 +81,7 @@ const TopSection = styled.div`
 const LogoSection = styled.div`
   display: flex;
   flex-direction: column;
-  color: ${COLORS.primaryBlue};
+  color: ${COLORS.primaryPurple};
 
   .logo {
     display: flex;
@@ -99,7 +99,7 @@ const LogoSection = styled.div`
   .tagline {
     font-size: 0.9rem;
     font-style: italic;
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primaryPink};
   }
 `;
 
@@ -121,7 +121,7 @@ const SocialLink = styled.a`
   transition: color 0.3s;
 
   &:hover {
-    color: ${COLORS.primaryGreen};
+    color: ${COLORS.primaryPink};
   }
 `;
 
@@ -159,7 +159,7 @@ const CreatedWithLove = styled.p`
 `;
 
 const HeartIcon = styled(FaHeart)`
-  color: ${COLORS.primaryTeal};
+  color: ${COLORS.primaryPink};
   margin: 0 0.25rem;
 `;
 
@@ -180,7 +180,7 @@ const FooterLink = styled.a`
   transition: color 0.3s;
 
   &:hover {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryPurple};
     text-decoration: underline;
   }
 `;

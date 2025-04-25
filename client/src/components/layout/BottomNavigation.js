@@ -168,7 +168,7 @@ const NavAction = styled.button`
   }
 
   &:hover {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryPurple};
   }
 `;
 
@@ -199,7 +199,7 @@ const NavItem = styled(Link)`
   padding: 0.5rem 0;
   flex: 1;
   color: ${(props) =>
-    props.active ? COLORS.primaryPurple : COLORS.textTertiary};
+    props.active ? COLORS.accentPurple : COLORS.textTertiary};
   text-decoration: none;
 
   svg {
@@ -208,7 +208,7 @@ const NavItem = styled(Link)`
   }
 
   &:hover {
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.accentPurple};
   }
 `;
 
@@ -235,7 +235,7 @@ const CreateButton = styled.button`
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background-color: ${COLORS.primaryGreen};
+  background-color: ${COLORS.primaryPink};
   border: none;
   color: white;
   font-size: 1.25rem;
@@ -244,7 +244,7 @@ const CreateButton = styled.button`
   margin-bottom: 0.125rem;
 
   &:hover {
-    background-color: ${COLORS.accentGreen};
+    background-color: ${COLORS.accentPink};
   }
 
   &:active {
@@ -289,7 +289,7 @@ const CreateOptionItem = styled(Link)`
   svg {
     margin-right: 12px;
     font-size: 1.2rem;
-    color: ${COLORS.primaryGreen};
+    color: ${COLORS.primaryPink};
   }
 
   &:hover {

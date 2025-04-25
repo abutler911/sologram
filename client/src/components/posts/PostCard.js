@@ -586,7 +586,7 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   );
 });
 
-// UPDATED STYLED COMPONENTS WITH BLACK TEXT AND PRIMARY BLUE ACCENTS
+// UPDATED STYLED COMPONENTS WITH NEW PINK/PURPLE THEME
 
 const CardWrapper = styled.div`
   ${fontFaceStyles}
@@ -651,7 +651,7 @@ const CardHeader = styled.header`
     left: 0;
     right: 0;
     height: 2px;
-    background-color: ${COLORS.primaryBlue};
+    background-color: ${COLORS.primaryPurple};
     opacity: 0.9;
   }
 
@@ -681,7 +681,7 @@ const Username = styled.span`
   transition: all 0.3s ease;
 
   &:hover {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryPurple};
     transform: translateY(-1px);
   }
 `;
@@ -703,7 +703,7 @@ const ActionsButton = styled.button`
 
   &:hover {
     background-color: rgba(0, 0, 0, 0.05);
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryPurple};
   }
 `;
 
@@ -746,10 +746,10 @@ const ActionItem = styled.button`
 
   &:hover {
     background-color: rgba(0, 0, 0, 0.04);
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryPurple};
 
     svg {
-      color: ${COLORS.primaryBlue};
+      color: ${COLORS.primaryPurple};
     }
   }
 
@@ -871,7 +871,7 @@ const NavigationArrow = styled.button`
 
   &:hover {
     opacity: 1 !important;
-    background-color: ${COLORS.primaryBlue};
+    background-color: ${COLORS.primaryPurple};
   }
 
   ${MediaContainer}:hover & {
@@ -927,7 +927,7 @@ const ProgressDot = styled.button`
   height: 8px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? COLORS.primaryBlue : "rgba(255, 255, 255, 0.5)"};
+    props.active ? COLORS.primaryPink : "rgba(255, 255, 255, 0.5)"};
   border: none;
   cursor: pointer;
   padding: 0;
@@ -937,7 +937,7 @@ const ProgressDot = styled.button`
   &:hover {
     transform: scale(1.2);
     background-color: ${(props) =>
-      props.active ? COLORS.primaryBlue : "rgba(255, 255, 255, 0.8)"};
+      props.active ? COLORS.primaryPink : "rgba(255, 255, 255, 0.8)"};
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -955,7 +955,7 @@ const HeartAnimation = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: ${COLORS.accentTeal};
+  color: ${COLORS.accentPink};
   font-size: 80px;
   opacity: 0;
   animation: ${scaleIn} 1s ease forwards;
@@ -982,7 +982,7 @@ const ActionGroup = styled.div`
 const LikeButton = styled.button`
   background: none;
   border: none;
-  color: ${(props) => (props.liked ? COLORS.accentTeal : "#000000")};
+  color: ${(props) => (props.liked ? COLORS.accentPink : "#000000")};
   font-size: 1.5rem;
   cursor: ${(props) =>
     props.disabled && !props.liked ? "default" : "pointer"};
@@ -996,7 +996,7 @@ const LikeButton = styled.button`
     transform: ${(props) =>
       !props.disabled || props.liked ? "scale(1.15)" : "none"};
     color: ${(props) =>
-      !props.disabled && !props.liked ? COLORS.accentTeal : ""};
+      !props.disabled && !props.liked ? COLORS.accentPink : ""};
   }
 
   &:active {
@@ -1007,7 +1007,7 @@ const LikeButton = styled.button`
   ${(props) =>
     props.liked &&
     `
-    filter: drop-shadow(0 0 8px ${COLORS.accentTeal}80);
+    filter: drop-shadow(0 0 8px ${COLORS.accentPink}80);
   `}
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -1058,7 +1058,7 @@ const LikesCounter = styled.div`
       bottom: -2px;
       width: 100%;
       height: 1px;
-      background-color: ${COLORS.primaryBlue};
+      background-color: ${COLORS.primaryPurple};
       transform-origin: left;
       transform: scaleX(0);
       transition: transform 0.3s ease;
@@ -1112,16 +1112,16 @@ const TagsContainer = styled.div`
 `;
 
 const Tag = styled.span`
-  color: ${COLORS.primaryBlue};
+  color: ${COLORS.primaryPurple};
   font-size: 0.8rem;
   transition: all 0.2s ease;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 4px;
-  background-color: rgba(26, 95, 122, 0.08);
+  background-color: rgba(176, 75, 223, 0.08);
 
   &:hover {
-    background-color: rgba(26, 95, 122, 0.15);
+    background-color: rgba(176, 75, 223, 0.15);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
@@ -1137,18 +1137,18 @@ const ViewPostLink = styled(Link)`
   padding: 8px 16px;
   border-radius: 6px;
   transition: all 0.25s ease;
-  background-color: ${COLORS.primaryBlue};
+  background-color: ${COLORS.primaryPink};
   display: flex;
   align-items: center;
   gap: 6px;
   position: relative;
-  box-shadow: 0 4px 12px rgba(26, 95, 122, 0.2);
+  box-shadow: 0 4px 12px rgba(255, 91, 141, 0.2);
 
   &:hover {
     text-decoration: none;
     transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(26, 95, 122, 0.3);
-    background-color: #14445e;
+    box-shadow: 0 6px 14px rgba(255, 91, 141, 0.3);
+    background-color: ${COLORS.accentPink};
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -1159,7 +1159,7 @@ const ViewPostLink = styled(Link)`
 
     &:active {
       transform: translateY(2px);
-      box-shadow: 0 2px 6px rgba(26, 95, 122, 0.2);
+      box-shadow: 0 2px 6px rgba(255, 91, 141, 0.2);
     }
   }
 `;
@@ -1355,7 +1355,7 @@ const CloseFullscreenButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: ${COLORS.primaryBlue};
+    background-color: ${COLORS.primaryPurple};
     transform: scale(1.05);
   }
 `;
@@ -1366,7 +1366,7 @@ const PostLink = styled(Link)`
   display: block;
 
   &:hover ${PostTitle} {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryPurple};
   }
 `;
 
@@ -1376,13 +1376,13 @@ const UserAvatarImage = styled.img`
   border-radius: 50%;
   object-fit: cover;
   margin-right: 12px;
-  border: 2px solid ${COLORS.primaryBlue};
+  border: 2px solid ${COLORS.primaryPurple};
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
 
   &:hover {
     transform: scale(1.08);
-    box-shadow: 0 0 15px rgba(26, 95, 122, 0.4);
+    box-shadow: 0 0 15px rgba(176, 75, 223, 0.4);
   }
 `;
 
