@@ -586,7 +586,7 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   );
 });
 
-// COMPLETELY REDESIGNED STYLE COMPONENTS FOR DARK THEME
+// REFINED STYLED COMPONENTS FOR DARK THEME WITH BLACK TEXT AND TEAL ACCENTS
 
 const CardWrapper = styled.div`
   ${fontFaceStyles}
@@ -597,7 +597,7 @@ const CardWrapper = styled.div`
   margin: 24px auto;
   transition: opacity 0.5s ease, transform 0.5s ease;
   animation: ${fadeIn} 0.6s ease-out;
-  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5));
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     width: 94%;
@@ -615,19 +615,19 @@ const Card = styled.article`
   width: 100%;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.25), 0 2px 10px rgba(0, 0, 0, 0.15);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   will-change: transform, box-shadow;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     border-radius: 10px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
 
     &:active {
       transform: scale(0.99);
@@ -640,9 +640,9 @@ const CardHeader = styled.header`
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background-color: ${COLORS.elevatedBackground};
+  background-color: #1c1c1c;
   position: relative;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 
   &:before {
     content: "";
@@ -652,7 +652,7 @@ const CardHeader = styled.header`
     right: 0;
     height: 2px;
     background-color: ${COLORS.accentTeal};
-    opacity: 0.8;
+    opacity: 0.9;
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -676,8 +676,8 @@ const Username = styled.span`
   letter-spacing: 0.8px;
   line-height: 1;
   margin-top: 2px;
-  color: ${COLORS.textPrimary};
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
 
   &:hover {
@@ -689,7 +689,7 @@ const Username = styled.span`
 const ActionsButton = styled.button`
   background-color: transparent;
   border: none;
-  color: ${COLORS.textSecondary};
+  color: #ffffff;
   font-size: 1rem;
   cursor: pointer;
   padding: 8px;
@@ -702,8 +702,8 @@ const ActionsButton = styled.button`
   height: 36px;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-    color: ${COLORS.textPrimary};
+    background-color: rgba(255, 255, 255, 0.1);
+    color: ${COLORS.accentTeal};
   }
 `;
 
@@ -711,7 +711,7 @@ const ActionsMenu = styled.div`
   position: absolute;
   right: 0;
   top: 40px;
-  background-color: ${COLORS.elevatedBackground};
+  background-color: #1c1c1c;
   border-radius: 8px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
   z-index: 10;
@@ -719,7 +719,7 @@ const ActionsMenu = styled.div`
   width: 180px;
   transform-origin: top right;
   animation: ${fadeIn} 0.2s ease-out;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 `;
 
 const ActionItem = styled.button`
@@ -727,7 +727,7 @@ const ActionItem = styled.button`
   padding: 12px 16px;
   border: none;
   background: none;
-  color: ${COLORS.textSecondary};
+  color: #ffffff;
   text-align: left;
   font-size: 0.85rem;
   font-weight: 500;
@@ -740,13 +740,13 @@ const ActionItem = styled.button`
   svg {
     margin-right: 12px;
     font-size: 0.9rem;
-    color: ${COLORS.textSecondary};
+    color: #ffffff;
     transition: all 0.2s ease;
   }
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-    color: ${COLORS.textPrimary};
+    background-color: rgba(255, 255, 255, 0.1);
+    color: ${COLORS.accentTeal};
 
     svg {
       color: ${COLORS.accentTeal};
@@ -754,7 +754,7 @@ const ActionItem = styled.button`
   }
 
   &:not(:last-child) {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   }
 `;
 
@@ -764,7 +764,7 @@ const MediaContainer = styled(Link)`
   aspect-ratio: 4/3;
   display: block;
   overflow: hidden;
-  background-color: #111;
+  background-color: #000;
   transition: opacity 0.2s ease;
   opacity: ${(props) => (props.isPressing ? 0.9 : 1)};
 `;
@@ -793,7 +793,7 @@ const MediaItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #111;
+  background-color: #000;
 `;
 
 const PostImage = styled.img`
@@ -854,8 +854,8 @@ const NavigationArrow = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(0, 0, 0, 0.6);
-  color: white;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
   border: none;
   border-radius: 50%;
   width: 40px;
@@ -867,11 +867,11 @@ const NavigationArrow = styled.button`
   opacity: 0;
   transition: all 0.2s ease;
   z-index: 2;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
 
   &:hover {
     opacity: 1 !important;
-    background-color: rgba(20, 255, 236, 0.7);
+    background-color: ${COLORS.accentTeal};
   }
 
   ${MediaContainer}:hover & {
@@ -970,7 +970,7 @@ const HeartAnimation = styled.div`
 const CardActions = styled.div`
   padding: 14px 16px 10px;
   background-color: ${COLORS.cardBackground};
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 `;
 
 const ActionGroup = styled.div`
@@ -982,7 +982,7 @@ const ActionGroup = styled.div`
 const LikeButton = styled.button`
   background: none;
   border: none;
-  color: ${(props) => (props.liked ? COLORS.accentTeal : COLORS.textSecondary)};
+  color: ${(props) => (props.liked ? COLORS.accentTeal : "#FFFFFF")};
   font-size: 1.5rem;
   cursor: ${(props) =>
     props.disabled && !props.liked ? "default" : "pointer"};
@@ -1007,7 +1007,7 @@ const LikeButton = styled.button`
   ${(props) =>
     props.liked &&
     `
-    filter: drop-shadow(0 0 6px ${COLORS.accentTeal}80);
+    filter: drop-shadow(0 0 8px ${COLORS.accentTeal}80);
   `}
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -1024,9 +1024,9 @@ const LikeButton = styled.button`
 const DateDisplay = styled.div`
   display: flex;
   align-items: center;
-  color: ${COLORS.textTertiary};
+  color: #ffffff;
   font-size: 0.8rem;
-  background-color: ${COLORS.elevatedBackground};
+  background-color: #1c1c1c;
   padding: 6px 12px;
   border-radius: 6px;
   transition: all 0.2s ease;
@@ -1034,20 +1034,19 @@ const DateDisplay = styled.div`
   svg {
     margin-right: 6px;
     font-size: 0.8rem;
-    color: ${COLORS.textSecondary};
+    color: #ffffff;
   }
 
   &:hover {
-    color: ${COLORS.textSecondary};
     transform: translateY(-1px);
   }
 `;
 
 const LikesCounter = styled.div`
-  padding: 8px 16px 0;
+  padding: 10px 16px 0;
   font-size: 0.85rem;
   font-weight: 500;
-  color: ${COLORS.textSecondary};
+  color: #ffffff;
 
   span {
     position: relative;
@@ -1063,7 +1062,7 @@ const LikesCounter = styled.div`
       transform-origin: left;
       transform: scaleX(0);
       transition: transform 0.3s ease;
-      opacity: 0.6;
+      opacity: 0.8;
     }
 
     &:hover:after {
@@ -1082,7 +1081,7 @@ const CardContent = styled.div`
 const PostTitle = styled.h2`
   font-size: 1.2rem;
   font-weight: 600;
-  color: ${COLORS.textPrimary};
+  color: #ffffff;
   margin: 0 0 12px 0;
   line-height: 1.4;
   word-break: break-word;
@@ -1091,7 +1090,7 @@ const PostTitle = styled.h2`
 `;
 
 const Content = styled.p`
-  color: ${COLORS.textSecondary};
+  color: #ffffff;
   font-size: 0.9rem;
   line-height: 1.5;
   margin: 8px 0;
@@ -1109,47 +1108,47 @@ const TagsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 14px 0 10px;
+  margin: 14px 0 12px;
 `;
 
 const Tag = styled.span`
-  color: ${COLORS.textSecondary};
+  color: ${COLORS.accentTeal};
   font-size: 0.8rem;
   transition: all 0.2s ease;
-  font-weight: 500;
-  padding: 4px 8px;
+  font-weight: 600;
+  padding: 4px 10px;
   border-radius: 4px;
-  background-color: ${COLORS.elevatedBackground};
+  background-color: rgba(20, 255, 236, 0.08);
 
   &:hover {
-    color: ${COLORS.accentTeal};
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(20, 255, 236, 0.15);
     transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
 `;
 
 const ViewPostLink = styled(Link)`
-  color: ${COLORS.textPrimary};
+  color: #ffffff;
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 600;
   margin-top: 16px;
   text-decoration: none;
   align-self: flex-end;
   padding: 8px 16px;
   border-radius: 6px;
   transition: all 0.25s ease;
-  background-color: ${COLORS.elevatedBackground};
+  background-color: ${COLORS.accentTeal};
   display: flex;
   align-items: center;
   gap: 6px;
   position: relative;
+  box-shadow: 0 4px 12px rgba(20, 255, 236, 0.2);
 
   &:hover {
     text-decoration: none;
-    color: white;
-    background-color: ${COLORS.accentTeal};
     transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 6px 14px rgba(20, 255, 236, 0.3);
+    background-color: ${COLORS.accentTeal}ee;
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -1157,12 +1156,10 @@ const ViewPostLink = styled(Link)`
     padding: 8px 18px;
     border-radius: 6px;
     align-self: center;
-    background-color: ${COLORS.accentTeal};
-    color: white;
 
     &:active {
       transform: translateY(2px);
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 6px rgba(20, 255, 236, 0.2);
     }
   }
 `;
@@ -1203,7 +1200,7 @@ const DeleteModalContent = styled.div`
   border: 1px solid rgba(255, 255, 255, 0.08);
 
   h3 {
-    color: ${COLORS.textPrimary};
+    color: #ffffff;
     margin-top: 0;
     margin-bottom: 16px;
     font-weight: 600;
@@ -1211,7 +1208,7 @@ const DeleteModalContent = styled.div`
   }
 
   p {
-    color: ${COLORS.textSecondary};
+    color: #ffffff;
     margin-bottom: 24px;
     font-size: 1rem;
     line-height: 1.5;
@@ -1224,7 +1221,6 @@ const DeleteModalContent = styled.div`
     h3 {
       font-size: 1.4rem;
       margin-bottom: 20px;
-      color: ${COLORS.textPrimary};
     }
 
     p {
@@ -1249,7 +1245,7 @@ const DeleteModalButtons = styled.div`
 
 const CancelButton = styled.button`
   background: none;
-  color: ${COLORS.textSecondary};
+  color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   padding: 12px 16px;
@@ -1261,7 +1257,6 @@ const CancelButton = styled.button`
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.08);
-    color: ${COLORS.textPrimary};
   }
 `;
 
@@ -1373,10 +1368,6 @@ const PostLink = styled(Link)`
   &:hover ${PostTitle} {
     color: ${COLORS.accentTeal};
   }
-
-  &:hover ${Content} {
-    color: ${COLORS.textPrimary};
-  }
 `;
 
 const UserAvatarImage = styled.img`
@@ -1391,7 +1382,7 @@ const UserAvatarImage = styled.img`
 
   &:hover {
     transform: scale(1.08);
-    box-shadow: 0 3px 12px rgba(20, 255, 236, 0.3);
+    box-shadow: 0 0 15px ${COLORS.accentTeal}80;
   }
 `;
 
