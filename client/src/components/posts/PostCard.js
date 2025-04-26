@@ -63,6 +63,14 @@ const fontFaceStyles = css`
     font-style: normal;
     font-display: swap;
   }
+
+  @font-face {
+    font-family: "Autography";
+    src: url("/src/assets/fonts/Autography.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
 `;
 
 const FullscreenModalComponent = ({ onClick, children }) => (
@@ -359,7 +367,13 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
               height="44"
               loading="eager"
             />
-            <Username className="paradise-font">{AUTHOR_NAME}</Username>
+            <UsernameContainer>
+              <Username className="autography-font">{AUTHOR_NAME}</Username>
+              <DateBadge>
+                <FaCalendarAlt />
+                <span>{formattedDate}</span>
+              </DateBadge>
+            </UsernameContainer>
           </UserInfo>
           {isAuthenticated && (
             <ActionsContainer ref={actionsRef}>
@@ -496,18 +510,13 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
             >
               {hasLiked ? <FaHeart /> : <FaRegHeart />}
             </LikeButton>
-            <DateDisplay>
-              <FaCalendarAlt />
-              <span>{formattedDate}</span>
-            </DateDisplay>
+            <LikesCounter>
+              <span>
+                {post.likes} {post.likes === 1 ? "like" : "likes"}
+              </span>
+            </LikesCounter>
           </ActionGroup>
         </CardActions>
-
-        <LikesCounter>
-          <span>
-            {post.likes} {post.likes === 1 ? "like" : "likes"}
-          </span>
-        </LikesCounter>
 
         <CardContent>
           <PostLink to={`/post/${post._id}`}>
@@ -586,7 +595,7 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   );
 });
 
-// UPDATED STYLED COMPONENTS WITH NEW MASCULINE THEME
+// UPDATED STYLED COMPONENTS WITH ENHANCED DESIGN
 
 const CardWrapper = styled.div`
   ${fontFaceStyles}
@@ -597,7 +606,7 @@ const CardWrapper = styled.div`
   margin: 24px auto;
   transition: opacity 0.5s ease, transform 0.5s ease;
   animation: ${fadeIn} 0.6s ease-out;
-  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.6));
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     width: 94%;
@@ -615,19 +624,33 @@ const Card = styled.article`
   width: 100%;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 20px ${COLORS.shadow};
+  box-shadow: 0 8px 24px ${COLORS.shadow}, 0 2px 6px rgba(0, 0, 0, 0.15);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   will-change: transform, box-shadow;
-  border: 1px solid ${COLORS.border};
+  border: 3px solid ${COLORS.primaryTeal}; // More pronounced border
+  position: relative;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    pointer-events: none;
+  }
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 5px 15px rgba(0, 0, 0, 0.2);
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    border-radius: 6px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+    border-radius: 8px;
+    border-width: 2px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
 
     &:active {
       transform: scale(0.99);
@@ -650,7 +673,7 @@ const CardHeader = styled.header`
     top: 0;
     left: 0;
     right: 0;
-    height: 2px;
+    height: 3px;
     background-color: ${COLORS.primaryTeal};
     opacity: 0.9;
   }
@@ -665,20 +688,42 @@ const UserInfo = styled.div`
   align-items: center;
 `;
 
+const UsernameContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
 const ActionsContainer = styled.div`
   position: relative;
 `;
 
 const Username = styled.span`
-  font-family: "Sora", sans-serif;
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  margin-top: 0;
+  font-family: "Autography", cursive;
+  font-size: 1.8rem;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  margin: 0;
+  line-height: 1.1;
   color: ${COLORS.textPrimary};
   transition: all 0.3s ease;
 
   &:hover {
+    color: ${COLORS.accentTeal};
+    text-shadow: 0 2px 8px ${COLORS.accentTeal}40;
+  }
+`;
+
+const DateBadge = styled.div`
+  display: flex;
+  align-items: center;
+  color: ${COLORS.textTertiary};
+  font-size: 0.7rem;
+  margin-top: 1px;
+  font-weight: 500;
+
+  svg {
+    margin-right: 4px;
+    font-size: 0.7rem;
     color: ${COLORS.accentTeal};
   }
 `;
@@ -709,8 +754,8 @@ const ActionsMenu = styled.div`
   right: 0;
   top: 40px;
   background-color: ${COLORS.cardBackground};
-  border-radius: 4px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 10;
   overflow: hidden;
   width: 180px;
@@ -965,7 +1010,7 @@ const HeartAnimation = styled.div`
 `;
 
 const CardActions = styled.div`
-  padding: 14px 16px 10px;
+  padding: 14px 16px 6px;
   background-color: ${COLORS.cardBackground};
   border-bottom: 1px solid ${COLORS.divider};
 `;
@@ -1004,7 +1049,7 @@ const LikeButton = styled.button`
   ${(props) =>
     props.liked &&
     `
-    filter: drop-shadow(0 0 8px ${COLORS.accentTeal}80);
+    filter: drop-shadow(0 0 10px ${COLORS.accentTeal}90);
   `}
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -1018,32 +1063,18 @@ const LikeButton = styled.button`
   }
 `;
 
-const DateDisplay = styled.div`
+const LikesCounter = styled.div`
   display: flex;
   align-items: center;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: ${COLORS.textSecondary};
-  font-size: 0.8rem;
   background-color: ${COLORS.elevatedBackground};
-  padding: 6px 12px;
-  border-radius: 4px;
+  padding: 8px 14px;
+  border-radius: 20px;
   transition: all 0.2s ease;
-
-  svg {
-    margin-right: 6px;
-    font-size: 0.8rem;
-    color: ${COLORS.textTertiary};
-  }
-
-  &:hover {
-    transform: translateY(-1px);
-  }
-`;
-
-const LikesCounter = styled.div`
-  padding: 10px 16px 0;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: ${COLORS.textSecondary};
+  border: 1px solid ${COLORS.border};
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 
   span {
     position: relative;
@@ -1066,10 +1097,15 @@ const LikesCounter = styled.div`
       transform: scaleX(1);
     }
   }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  }
 `;
 
 const CardContent = styled.div`
-  padding: 18px 16px 20px;
+  padding: 22px 16px 24px;
   display: flex;
   flex-direction: column;
   background-color: ${COLORS.cardBackground};
@@ -1105,7 +1141,7 @@ const TagsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 14px 0 12px;
+  margin: 14px 0 16px;
 `;
 
 const Tag = styled.span`
@@ -1119,8 +1155,8 @@ const Tag = styled.span`
 
   &:hover {
     background-color: ${COLORS.primaryTeal}30;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
   }
 `;
 
@@ -1130,8 +1166,8 @@ const ViewPostLink = styled(Link)`
   font-weight: 600;
   margin-top: 16px;
   text-decoration: none;
-  align-self: flex-end;
-  padding: 8px 16px;
+  align-self: center;
+  padding: 10px 18px;
   border-radius: 4px;
   transition: all 0.25s ease;
   background-color: ${COLORS.primaryTeal};
@@ -1148,9 +1184,26 @@ const ViewPostLink = styled(Link)`
     background-color: ${COLORS.accentTeal};
   }
 
+  &:before {
+    content: "";
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border: 1px solid ${COLORS.accentTeal}40;
+    border-radius: 6px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover:before {
+    opacity: 1;
+  }
+
   @media (max-width: 768px), screen and (display-mode: standalone) {
     font-size: 0.85rem;
-    padding: 8px 18px;
+    padding: 10px 18px;
     border-radius: 4px;
     align-self: center;
 
@@ -1168,7 +1221,7 @@ const ViewPostArrow = styled.span`
   line-height: 1;
 
   ${ViewPostLink}:hover & {
-    transform: translateX(3px);
+    transform: translateX(4px);
   }
 `;
 
@@ -1186,15 +1239,15 @@ const DeleteModal = styled.div`
 
 const DeleteModalContent = styled.div`
   background-color: ${COLORS.elevatedBackground};
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 28px;
   width: 90%;
   max-width: 380px;
   z-index: 1001;
   text-align: center;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.2);
   animation: ${fadeIn} 0.3s ease-out;
-  border: 1px solid ${COLORS.border};
+  border: 2px solid ${COLORS.border};
 
   h3 {
     color: ${COLORS.textPrimary};
@@ -1212,7 +1265,7 @@ const DeleteModalContent = styled.div`
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 24px 20px;
 
     h3 {
@@ -1369,18 +1422,18 @@ const PostLink = styled(Link)`
 `;
 
 const UserAvatarImage = styled.img`
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   object-fit: cover;
-  margin-right: 12px;
-  border: 2px solid ${COLORS.primaryTeal};
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  margin-right: 14px;
+  border: 3px solid ${COLORS.primaryTeal};
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
   transition: all 0.3s ease;
 
   &:hover {
     transform: scale(1.08);
-    box-shadow: 0 0 15px ${COLORS.primaryTeal}60;
+    box-shadow: 0 0 15px ${COLORS.primaryTeal}80;
   }
 `;
 
