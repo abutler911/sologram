@@ -40,34 +40,21 @@ const pulse = keyframes`
   100% { transform: scale(1); }
 `;
 
-const glow = keyframes`
-  0% { box-shadow: 0 0 5px rgba(176, 75, 223, 0.4); }
-  50% { box-shadow: 0 0 20px rgba(176, 75, 223, 0.7); }
-  100% { box-shadow: 0 0 5px rgba(176, 75, 223, 0.4); }
-`;
-
-const rotateGradient = keyframes`
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-`;
-
 // Card container with enhanced styling
 const Card = styled.div`
   position: relative;
   background: ${COLORS.cardBackground};
-  backdrop-filter: blur(12px);
-  border-radius: 24px;
-  padding: 1.75rem;
-  margin-bottom: 2rem;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
   border: 1px solid
-    ${(props) => (props.pinned ? COLORS.primaryPurple : COLORS.border)};
-  box-shadow: 0 10px 40px
-    ${(props) => (props.pinned ? `rgba(176, 75, 223, 0.25)` : COLORS.shadow)};
+    ${(props) => (props.pinned ? COLORS.primaryTeal : COLORS.border)};
+  box-shadow: 0 8px 24px
+    ${(props) => (props.pinned ? `rgba(0, 131, 143, 0.25)` : COLORS.shadow)};
   animation: ${fadeIn} 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
   overflow: hidden;
-  transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-  width: 98%;
+  transition: all 0.4s ease;
+  width: calc(100% - 16px);
   max-width: 100%;
   margin-left: auto;
   margin-right: auto;
@@ -78,69 +65,55 @@ const Card = styled.div`
     top: 0;
     left: 0;
     width: 100%;
-    height: 6px;
+    height: 4px;
     background: ${(props) =>
-      props.mood
-        ? `linear-gradient(90deg, ${COLORS.primaryPink}, ${COLORS.primaryPurple}, ${COLORS.primaryBlue})`
-        : `linear-gradient(90deg, ${COLORS.primaryPink}, ${COLORS.primaryPurple})`};
+      props.mood ? COLORS.primaryTeal : COLORS.primaryBlue};
     opacity: ${(props) => (props.pinned ? 1 : 0.8)};
-    background-size: 200% 200%;
-    animation: ${rotateGradient} 5s ease infinite;
-  }
-
-  &:after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 24px;
-    background: ${(props) =>
-      props.mood
-        ? `linear-gradient(135deg, ${COLORS.primaryPurple}08, transparent 50%)`
-        : `linear-gradient(135deg, ${COLORS.primaryPurple}08, transparent 50%)`};
-    pointer-events: none;
-    z-index: 1;
   }
 
   &:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 20px 50px
-      ${(props) =>
-        props.pinned ? `rgba(176, 75, 223, 0.35)` : `rgba(0, 0, 0, 0.2)`};
-    border-color: ${(props) =>
-      props.mood ? `${COLORS.primaryPurple}70` : `${COLORS.primaryPurple}70`};
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px
+      ${(props) => (props.pinned ? `rgba(0, 131, 143, 0.3)` : COLORS.shadow)};
   }
 
   ${(props) =>
     props.pinned &&
     css`
-      border-color: ${COLORS.primaryPurple};
-      box-shadow: 0 15px 40px rgba(176, 75, 223, 0.3);
+      border-color: ${COLORS.primaryTeal};
 
       &:hover {
-        box-shadow: 0 20px 50px rgba(176, 75, 223, 0.4);
+        box-shadow: 0 12px 30px rgba(0, 131, 143, 0.3);
       }
     `}
+
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
 `;
 
-// Animated mood decoration
+// Mood decoration
 const MoodDecoration = styled.div`
   position: absolute;
-  right: 1.75rem;
-  top: 1.75rem;
-  font-size: 3.5rem;
+  right: 1.5rem;
+  top: 1.5rem;
+  font-size: 3rem;
   opacity: 0.12;
   transform: rotate(10deg);
   z-index: 0;
   animation: ${float} 6s ease infinite;
-  filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
   transition: all 0.5s ease;
 
   ${Card}:hover & {
     transform: rotate(15deg) scale(1.1);
     opacity: 0.18;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 2.5rem;
+    right: 1rem;
+    top: 1rem;
   }
 `;
 
@@ -151,6 +124,10 @@ const Header = styled.div`
   margin-bottom: 1.5rem;
   position: relative;
   z-index: 2;
+
+  @media (max-width: 768px) {
+    margin-bottom: 1rem;
+  }
 `;
 
 const UserInfo = styled.div`
@@ -165,41 +142,24 @@ const UserInfo = styled.div`
   }
 `;
 
-// Enhanced avatar styling
+// Avatar styling
 const Avatar = styled.div`
-  width: 54px;
-  height: 54px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   overflow: hidden;
   position: relative;
-  box-shadow: 0 0 0 3px ${COLORS.primaryPurple}, 0 5px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 2px ${COLORS.primaryTeal}, 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: all 0.4s ease;
 
   @media (max-width: 480px) {
-    width: 46px;
-    height: 46px;
-  }
-
-  &:after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 50%;
-    box-shadow: inset 0 0 20px ${COLORS.primaryPurple};
-    opacity: 0.35;
-    transition: opacity 0.4s;
+    width: 40px;
+    height: 40px;
   }
 
   ${Card}:hover & {
     transform: scale(1.05);
-    box-shadow: 0 0 0 3px ${COLORS.primaryPink}, 0 8px 20px rgba(0, 0, 0, 0.3);
-
-    &:after {
-      opacity: 0.5;
-    }
+    box-shadow: 0 0 0 2px ${COLORS.accentTeal}, 0 6px 12px rgba(0, 0, 0, 0.3);
   }
 
   img {
@@ -214,41 +174,21 @@ const Avatar = styled.div`
   }
 `;
 
-// Enhanced default avatar
+// Default avatar
 const DefaultAvatar = styled.div`
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryPink},
-    ${COLORS.primaryPurple}
-  );
-  background-size: 200% 200%;
-  animation: ${rotateGradient} 5s ease infinite;
+  background-color: ${COLORS.primaryTeal};
   color: #ffffff;
-  font-size: 1.8rem;
-  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
-  font-family: "Pacifico", "Brush Script MT", cursive;
+  font-size: 1.6rem;
+  font-weight: bold;
   position: relative;
-  transition: all 0.3s ease;
 
-  &:after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(
-      circle at center,
-      rgba(255, 255, 255, 0.4) 0%,
-      transparent 70%
-    );
-    z-index: 1;
-    pointer-events: none;
+  @media (max-width: 480px) {
+    font-size: 1.3rem;
   }
 
   span {
@@ -260,14 +200,6 @@ const DefaultAvatar = styled.div`
     width: 100%;
     height: 100%;
   }
-
-  @media (max-width: 480px) {
-    font-size: 1.5rem;
-  }
-
-  ${Avatar}:hover & {
-    text-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
-  }
 `;
 
 const UserDetails = styled.div`
@@ -278,75 +210,52 @@ const UserDetails = styled.div`
   margin-top: 0.2rem;
 `;
 
-// Enhanced username styling
+// Username styling
 const Username = styled.div`
-  font-family: "Autography", cursive;
-  font-weight: normal;
-  font-size: 2rem;
-  color: ${COLORS.accentPurple};
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  letter-spacing: 0.5px;
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: ${COLORS.textPrimary};
   margin-bottom: 4px;
-  transition: all 0.4s;
+  transition: all 0.3s;
 
   &:hover {
-    text-decoration: none;
-    transform: scale(1.05);
-    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.7), 0 0 10px rgba(199, 118, 255, 0.3);
-    color: ${COLORS.accentPink};
+    color: ${COLORS.primaryTeal};
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1.1rem;
   }
 `;
 
 const UserHandle = styled.div`
-  font-family: "Space Grotesk", sans-serif;
-  background-color: rgba(199, 118, 255, 0.15);
-  padding: 0.2rem 0.7rem;
-  border-radius: 999px;
-  color: ${COLORS.accentPurple};
+  background-color: ${COLORS.elevatedBackground};
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  color: ${COLORS.textSecondary};
   font-size: 0.75rem;
   display: inline-block;
   margin-top: 3px;
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(199, 118, 255, 0.2);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border: 1px solid ${COLORS.border};
   transition: all 0.3s ease;
 
   &:hover {
-    background-color: rgba(199, 118, 255, 0.25);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    background-color: ${COLORS.buttonHover};
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.5rem;
   }
 `;
 
-// Enhanced divider
-const UserDivider = styled.div`
-  width: 85px;
-  height: 2px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    ${COLORS.primaryPink},
-    ${COLORS.primaryPurple},
-    ${COLORS.primaryBlue},
-    transparent
-  );
-  opacity: 0.8;
-  margin: 3px 0 5px;
-  border-radius: 1px;
-  transform: scaleX(1.2);
-  transition: all 0.4s ease;
-
-  ${UserDetails}:hover & {
-    width: 100px;
-    transform: scaleX(1.4);
-    opacity: 1;
-  }
-`;
-
-// Enhanced action buttons
+// Action buttons
 const ThoughtActions = styled.div`
   display: flex;
   gap: 0.6rem;
+
+  @media (max-width: 480px) {
+    gap: 0.4rem;
+  }
 `;
 
 const ActionButton = styled.button`
@@ -358,32 +267,15 @@ const ActionButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 
-  &:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    transform: scale(0);
-    transition: transform 0.3s ease;
-  }
-
   &:hover {
-    color: ${COLORS.primaryPink};
-    transform: translateY(-3px) scale(1.15);
-
-    &:before {
-      transform: scale(1);
-    }
+    color: ${COLORS.primaryTeal};
+    background-color: ${COLORS.elevatedBackground};
   }
 
   &.delete:hover {
@@ -391,232 +283,168 @@ const ActionButton = styled.button`
   }
 
   &.pinned {
-    color: ${COLORS.accentPink};
-    animation: ${pulse} 2s infinite;
+    color: ${COLORS.accentTeal};
   }
 
   ${(props) =>
     props.pinned &&
     css`
-      background-color: rgba(255, 77, 148, 0.1);
+      background-color: ${COLORS.elevatedBackground};
     `}
+
+  @media (max-width: 480px) {
+    width: 30px;
+    height: 30px;
+  }
 `;
 
-// Enhanced content area
+// Content area
 const Content = styled.p`
-  font-family: "Lora", serif;
-  color: #000000;
+  color: ${COLORS.textPrimary};
   font-size: 1rem;
   line-height: 1.6;
-  background: rgba(255, 255, 255, 0.5);
-  padding: 1.75rem;
-  border-radius: 18px;
-  border-left: 4px solid ${COLORS.primaryPurple};
-  font-style: normal;
+  background: ${COLORS.elevatedBackground};
+  padding: 1.5rem;
+  border-radius: 8px;
+  border-left: 3px solid ${COLORS.primaryTeal};
   white-space: pre-wrap;
-  letter-spacing: 0.3px;
   position: relative;
   z-index: 2;
   margin: 0.5rem 0;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05),
-    inset 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: all 0.4s ease;
 
-  &:first-letter {
-    font-size: 1.5em;
-    font-weight: 500;
-    color: ${COLORS.primaryPurple};
-    float: left;
-    line-height: 1;
-    margin-right: 8px;
-    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
+  ${Card}:hover & {
+    border-left-color: ${COLORS.accentTeal};
   }
 
-  ${Card}:hover & {
-    border-left-color: ${COLORS.primaryPink};
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08),
-      inset 0 1px 5px rgba(0, 0, 0, 0.05);
-    transform: translateY(-2px);
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+    font-size: 0.95rem;
   }
 `;
 
-// Enhanced media container
+// Media container
 const Media = styled.div`
   margin: 1.5rem 0;
-  border-radius: 18px;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 8px 25px ${COLORS.shadow};
+  box-shadow: 0 6px 20px ${COLORS.shadow};
   position: relative;
   z-index: 2;
   width: 100%;
-  transform: translateY(0);
-  transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-
-  &:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 3;
-    border-radius: 18px;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-    pointer-events: none;
-  }
+  transition: all 0.4s ease;
 
   img {
     width: 100%;
-    max-height: 380px;
+    max-height: 350px;
     object-fit: cover;
-    transform-origin: center;
-    transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
-      filter 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform 0.6s ease;
     vertical-align: middle;
   }
 
   ${Card}:hover & {
-    transform: translateY(-4px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-
     img {
-      transform: scale(1.05);
-      filter: brightness(1.1) contrast(1.05) saturate(1.15);
+      transform: scale(1.03);
     }
   }
 `;
 
-// Enhanced tags
+// Tags
 const Tags = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 0.7rem;
+  gap: 0.6rem;
   margin: 1.5rem 0;
   position: relative;
   z-index: 2;
+
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+    margin: 1.25rem 0;
+  }
 `;
 
 const Tag = styled.span`
-  font-family: "Space Grotesk", sans-serif;
-  background: linear-gradient(
-    120deg,
-    ${COLORS.primaryPurple}20,
-    ${COLORS.primaryPurple}10
-  );
-  color: ${COLORS.primaryPurple};
+  background-color: ${COLORS.elevatedBackground};
+  color: ${COLORS.primaryTeal};
   padding: 0.3rem 0.8rem;
-  border-radius: 999px;
+  border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 500;
-  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: all 0.3s ease;
   cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  letter-spacing: 0.5px;
-  backdrop-filter: blur(4px);
-  border: 1px solid ${COLORS.primaryPurple}30;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-
-  &:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 200%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.2),
-      transparent
-    );
-    z-index: 1;
-  }
+  border: 1px solid ${COLORS.border};
 
   &:hover {
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 5px 15px ${COLORS.primaryPurple}40;
-    background: linear-gradient(
-      120deg,
-      ${COLORS.primaryPurple}30,
-      ${COLORS.primaryPurple}20
-    );
+    background-color: ${COLORS.buttonHover};
+    color: ${COLORS.accentTeal};
+  }
 
-    &:before {
-      animation: ${shimmer} 1.5s infinite;
-    }
+  @media (max-width: 768px) {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
   }
 `;
 
-// Enhanced meta section
+// Meta section
 const Meta = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(84, 110, 122, 0.15);
+  border-top: 1px solid ${COLORS.divider};
   position: relative;
   z-index: 2;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
 `;
 
-// Enhanced mood indicator
+// Mood indicator
 const MoodIndicator = styled.div`
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: ${COLORS.primaryPink};
+  color: ${COLORS.primaryTeal};
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: capitalize;
   padding: 0.3rem 0.8rem;
-  border-radius: 999px;
-  background: linear-gradient(
-    120deg,
-    ${COLORS.primaryPink}20,
-    ${COLORS.primaryPink}05
-  );
-  box-shadow: 0 2px 10px ${COLORS.primaryPink}20;
-  backdrop-filter: blur(4px);
-  border: 1px solid ${COLORS.primaryPink}25;
+  border-radius: 4px;
+  background-color: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
   position: relative;
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: all 0.3s ease;
 
   &:hover {
-    transform: translateY(-2px);
-    background: linear-gradient(
-      120deg,
-      ${COLORS.primaryPink}30,
-      ${COLORS.primaryPink}15
-    );
-    box-shadow: 0 5px 15px ${COLORS.primaryPink}30,
-      0 0 20px ${COLORS.primaryPink}15;
+    background-color: ${COLORS.buttonHover};
   }
 `;
 
-// Enhanced time display
+// Time display
 const TimeDisplay = styled.div`
-  font-family: "Space Grotesk", sans-serif;
   color: ${COLORS.textSecondary};
   font-size: 0.75rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.3rem 0.8rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(4px);
+  border-radius: 4px;
+  background-color: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
   transition: all 0.3s ease;
 
   svg {
     font-size: 0.7rem;
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.primaryTeal};
   }
 
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
+    background-color: ${COLORS.buttonHover};
   }
 `;
 
@@ -624,52 +452,32 @@ const Footer = styled.div`
   margin-top: 0.75rem;
 `;
 
-// Enhanced action bar
+// Action bar
 const ActionBar = styled.div`
   display: flex;
   justify-content: space-between;
   padding-top: 1rem;
   margin-top: 1rem;
-  border-top: 1px solid rgba(84, 110, 122, 0.15);
+  border-top: 1px solid ${COLORS.divider};
   position: relative;
   z-index: 2;
 
   @media (max-width: 480px) {
     flex-wrap: wrap;
-    justify-content: space-around;
     gap: 0.5rem;
-  }
-
-  &:before {
-    content: "";
-    position: absolute;
-    top: -1px;
-    left: 0;
-    width: 50px;
-    height: 1px;
-    background: linear-gradient(
-      to right,
-      ${COLORS.primaryPink},
-      ${COLORS.primaryPurple}
-    );
-    transition: width 0.4s ease;
-  }
-
-  ${Card}:hover &:before {
-    width: 100px;
   }
 `;
 
-// Enhanced action icons
+// Action icons
 const ActionIcon = styled.div`
-  color: ${(props) => (props.liked ? COLORS.primaryPink : COLORS.textTertiary)};
-  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  color: ${(props) => (props.liked ? COLORS.primaryTeal : COLORS.textTertiary)};
+  transition: all 0.3s ease;
   font-size: 1rem;
 
   ${(props) =>
     props.liked &&
     css`
-      transform: scale(1.2);
+      transform: scale(1.1);
     `}
 `;
 
@@ -680,129 +488,91 @@ const ActionCount = styled.span`
   transition: color 0.3s;
 `;
 
-// Enhanced action items
+// Action items
 const ActionItem = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
-  padding: 0.5rem 0.8rem;
-  border-radius: 999px;
-  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
   position: relative;
-  overflow: hidden;
 
   @media (max-width: 480px) {
-    padding: 0.4rem 0.6rem;
+    padding: 0.3rem 0.5rem;
+    flex: 1;
+    justify-content: center;
   }
 
-  &:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: transparent;
-    border-radius: 999px;
-    transform: scale(0);
-    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
-      background 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-    z-index: -1;
+  &:hover {
+    background-color: ${COLORS.elevatedBackground};
+
+    ${ActionIcon} {
+      transform: scale(1.1);
+    }
   }
 
   &:nth-child(1):hover {
-    transform: translateY(-3px);
-
-    &:before {
-      background-color: ${COLORS.primaryPink}15;
-      transform: scale(1);
-    }
-
     ${ActionIcon} {
-      color: ${COLORS.primaryPink};
-      transform: scale(1.3);
+      color: ${COLORS.primaryTeal};
     }
 
     ${ActionCount} {
-      color: ${COLORS.primaryPink};
+      color: ${COLORS.primaryTeal};
     }
   }
 
   &:nth-child(2):hover {
-    transform: translateY(-3px);
-
-    &:before {
-      background-color: ${COLORS.primaryPurple}15;
-      transform: scale(1);
-    }
-
     ${ActionIcon} {
-      color: ${COLORS.primaryPurple};
-      transform: scale(1.3);
+      color: ${COLORS.primaryBlue};
     }
 
     ${ActionCount} {
-      color: ${COLORS.primaryPurple};
+      color: ${COLORS.primaryBlue};
     }
   }
 
   &:nth-child(3):hover {
-    transform: translateY(-3px);
-
-    &:before {
-      background-color: ${COLORS.primaryBlue}15;
-      transform: scale(1);
-    }
-
     ${ActionIcon} {
-      color: ${COLORS.primaryBlue};
-      transform: scale(1.3);
+      color: ${COLORS.primaryGreen};
     }
 
     ${ActionCount} {
-      color: ${COLORS.primaryBlue};
+      color: ${COLORS.primaryGreen};
     }
   }
 
   &:nth-child(4):hover {
-    transform: translateY(-3px);
-
-    &:before {
-      background-color: ${COLORS.accentPurple}15;
-      transform: scale(1);
-    }
-
     ${ActionIcon} {
-      color: ${COLORS.accentPurple};
-      transform: scale(1.3);
+      color: ${COLORS.accentTeal};
     }
   }
 `;
 
-// Enhanced pinned badge
+// Pinned badge
 const PinnedBadge = styled.div`
   position: absolute;
-  top: 0px;
+  top: 0;
   right: 1.5rem;
-  background: linear-gradient(
-    45deg,
-    ${COLORS.primaryPink},
-    ${COLORS.primaryPurple}
-  );
+  background-color: ${COLORS.primaryTeal};
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.4rem 1rem;
-  border-radius: 0 0 12px 12px;
+  border-radius: 0 0 6px 6px;
   box-shadow: 0 4px 12px ${COLORS.shadow};
   z-index: 10;
-  letter-spacing: 0.5px;
-  animation: ${pulse} 3s infinite;
 
   &:before {
     content: "📌";
     margin-right: 5px;
+  }
+
+  @media (max-width: 768px) {
+    right: 1rem;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.7rem;
   }
 `;
 
@@ -845,7 +615,6 @@ const ThoughtCard = ({
           </Avatar>
           <UserDetails>
             <Username>{defaultUser.username}</Username>
-            <UserDivider mood={thought.mood} />
             <UserHandle>
               @{defaultUser.username.toLowerCase().replace(/\s+/g, "")}
             </UserHandle>
@@ -916,9 +685,7 @@ const ThoughtCard = ({
               liked={thought.userHasLiked}
               className={isLikeAnimating ? "animate" : ""}
               style={{
-                animation: isLikeAnimating
-                  ? `${pulse} 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)`
-                  : "none",
+                animation: isLikeAnimating ? `${pulse} 0.8s ease` : "none",
               }}
             >
               {thought.userHasLiked ? <FaHeart /> : <FaRegHeart />}
