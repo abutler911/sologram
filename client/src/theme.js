@@ -1,8 +1,8 @@
-// theme.js - Masculine SoloGram Theme
+// theme.js - Masculine SoloGram Theme with Flat Colors
 export const COLORS = {
-  primaryTeal: "#00838F", // Left side of the gradient - deep teal
-  primaryBlue: "#0D47A1", // Middle of the gradient - navy blue
-  primaryGreen: "#006064", // Right side of the gradient - forest green
+  primaryTeal: "#00838F", // Primary brand color - deep teal
+  primaryBlue: "#0D47A1", // Secondary brand color - navy blue
+  primaryGreen: "#006064", // Tertiary brand color - forest green
   accentTeal: "#00ACC1", // Brighter version of primary
   accentBlue: "#1976D2", // Brighter version of primary
   accentGreen: "#00897B", // Brighter version of primary
@@ -25,7 +25,7 @@ export const COLORS = {
 
 export const THEME = {
   header: {
-    background: `linear-gradient(to right, ${COLORS.primaryGreen}, ${COLORS.primaryTeal}, ${COLORS.primaryBlue})`,
+    background: COLORS.primaryBlue, // Solid color instead of gradient
     text: "#FFFFFF",
     icon: "#FFFFFF",
   },
@@ -64,7 +64,7 @@ export const THEME = {
   },
   story: {
     border: {
-      active: `linear-gradient(45deg, ${COLORS.primaryGreen}, ${COLORS.primaryTeal}, ${COLORS.primaryBlue})`,
+      active: COLORS.primaryTeal, // Solid color instead of gradient
       inactive: COLORS.border,
     },
     background: COLORS.cardBackground,

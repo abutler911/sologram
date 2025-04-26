@@ -69,12 +69,12 @@ const HeaderRight = styled.div`
 
 const PageTitle = styled.h1`
   font-size: 2.3rem;
-  color: ${COLORS.primaryBlue};
+  color: ${COLORS.primaryTeal};
   margin: 0;
   font-family: "Autography", cursive;
   transform: rotate(-2deg);
   letter-spacing: 0.5px;
-  text-shadow: 1px 1px 2px rgba(26, 95, 122, 0.3);
+  text-shadow: 1px 1px 2px rgba(0, 131, 143, 0.3);
 `;
 
 const MoodFilter = styled.div`
@@ -90,14 +90,14 @@ const MoodButton = styled.button`
     props.active
       ? props.mood
         ? props.mood === "all"
-          ? COLORS.primaryBlue
+          ? COLORS.primaryTeal
           : moodColors[props.mood].primary
-        : COLORS.primaryBlue
+        : COLORS.primaryTeal
       : COLORS.elevatedBackground};
   color: ${(props) =>
     props.active ? COLORS.textPrimary : COLORS.textSecondary};
   border: none;
-  border-radius: 999px;
+  border-radius: 8px;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   cursor: pointer;
@@ -110,9 +110,9 @@ const MoodButton = styled.button`
     background-color: ${(props) =>
       props.mood && props.mood !== "all"
         ? moodColors[props.mood].primary
-        : COLORS.primaryBlue};
+        : COLORS.primaryTeal};
     color: ${COLORS.textPrimary};
-    transform: scale(1.1);
+    transform: scale(1.05);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
   }
   transition: all 0.2s ease-in-out;
@@ -122,22 +122,19 @@ const CreateButton = styled(Link)`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryBlue},
-    ${COLORS.primaryTeal}
-  );
+  background-color: ${COLORS.primaryTeal};
   color: white;
   text-decoration: none;
   padding: 0.5rem 1rem;
-  border-radius: 999px;
+  border-radius: 8px;
   font-weight: 500;
   transition: all 0.3s;
-  box-shadow: 0 3px 8px rgba(26, 95, 122, 0.3);
+  box-shadow: 0 3px 8px rgba(0, 131, 143, 0.3);
 
   &:hover {
+    background-color: ${COLORS.accentTeal};
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(26, 95, 122, 0.4);
+    box-shadow: 0 5px 15px rgba(0, 131, 143, 0.4);
   }
 
   svg {
@@ -178,7 +175,7 @@ const SearchToggle = styled.button`
   transition: all 0.3s;
 
   &:hover {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryTeal};
     transform: scale(1.1);
   }
 `;
@@ -187,15 +184,15 @@ const SearchForm = styled.form`
   display: flex;
   align-items: center;
   background-color: ${COLORS.cardBackground};
-  border-radius: 999px;
+  border-radius: 8px;
   overflow: hidden;
   border: 1px solid ${COLORS.border};
   transition: all 0.3s;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
 
   &:focus-within {
-    border-color: ${COLORS.primaryBlue};
-    box-shadow: 0 3px 15px rgba(26, 95, 122, 0.15);
+    border-color: ${COLORS.primaryTeal};
+    box-shadow: 0 3px 15px rgba(0, 131, 143, 0.15);
   }
 `;
 
@@ -226,7 +223,7 @@ const SearchButton = styled.button`
   transition: all 0.3s;
 
   &:hover {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryTeal};
     transform: scale(1.1);
   }
 `;
@@ -243,7 +240,7 @@ const ClearButton = styled.button`
   transition: all 0.3s;
 
   &:hover {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryTeal};
     transform: scale(1.1);
   }
 `;
@@ -264,27 +261,27 @@ const CloseSearchButton = styled.button`
   }
 
   &:hover {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryTeal};
     transform: scale(1.1);
   }
 `;
 
 const ThoughtsContainer = styled.div`
-  max-width: 600px;
+  max-width: ${(props) => (props.isAdmin ? "800px" : "600px")};
   margin: 0 auto;
   padding: 0 1rem;
 `;
 
 const ErrorMessage = styled.div`
-  background-color: rgba(244, 67, 54, 0.2);
+  background-color: rgba(207, 102, 121, 0.2);
   color: ${COLORS.error};
   padding: 1.25rem;
-  border-radius: 16px;
+  border-radius: 8px;
   text-align: center;
   margin-bottom: 1.5rem;
   backdrop-filter: blur(5px);
-  border: 1px solid rgba(244, 67, 54, 0.3);
-  box-shadow: 0 5px 15px rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(207, 102, 121, 0.3);
+  box-shadow: 0 5px 15px rgba(207, 102, 121, 0.1);
   animation: ${fadeIn} 0.4s ease-out;
 `;
 
@@ -332,7 +329,7 @@ const ModalOverlay = styled.div`
 
 const DeleteModal = styled.div`
   background-color: ${COLORS.cardBackground};
-  border-radius: 16px;
+  border-radius: 8px;
   max-width: 400px;
   width: 100%;
   z-index: 1001;
@@ -347,7 +344,7 @@ const DeleteModalContent = styled.div`
   line-height: 1.6;
 
   h3 {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryTeal};
     margin-bottom: 1rem;
     font-size: 1.5rem;
   }
@@ -365,7 +362,7 @@ const DeleteModalButtons = styled.div`
 `;
 
 const ConfirmDeleteButton = styled.button`
-  background: linear-gradient(135deg, ${COLORS.error}, #c0392b);
+  background-color: ${COLORS.error};
   color: white;
   border: none;
   border-radius: 8px;
@@ -373,11 +370,11 @@ const ConfirmDeleteButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 3px 8px rgba(244, 67, 54, 0.3);
+  box-shadow: 0 3px 8px rgba(207, 102, 121, 0.3);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
+    box-shadow: 0 5px 15px rgba(207, 102, 121, 0.4);
   }
 
   &:disabled {
@@ -436,20 +433,16 @@ const shine = keyframes`
 `;
 
 const pulseGlow = keyframes`
-  0% { box-shadow: 0 0 15px rgba(26, 95, 122, 0.4); }
-  50% { box-shadow: 0 0 25px rgba(26, 95, 122, 0.7); }
-  100% { box-shadow: 0 0 15px rgba(26, 95, 122, 0.4); }
+  0% { box-shadow: 0 0 15px rgba(0, 131, 143, 0.4); }
+  50% { box-shadow: 0 0 25px rgba(0, 131, 143, 0.7); }
+  100% { box-shadow: 0 0 15px rgba(0, 131, 143, 0.4); }
 `;
 
 // Retweet modal components
 const RetweetModal = styled.div`
   position: relative;
-  background: linear-gradient(
-    145deg,
-    ${COLORS.cardBackground},
-    ${COLORS.background}
-  );
-  border-radius: 24px;
+  background-color: ${COLORS.cardBackground};
+  border-radius: 8px;
   max-width: 380px;
   width: 100%;
   z-index: 1001;
@@ -457,7 +450,7 @@ const RetweetModal = styled.div`
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
   text-align: center;
   animation: ${fadeIn} 0.4s ease-out;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid ${COLORS.border};
   overflow: hidden;
 
   &:before {
@@ -481,34 +474,10 @@ const RetweetModal = styled.div`
 const ModalIcon = styled.div`
   font-size: 2.5rem;
   margin-bottom: 1.5rem;
-  color: ${COLORS.primaryBlue};
+  color: ${COLORS.primaryTeal};
   position: relative;
   display: inline-block;
   animation: ${pulseGlow} 2s infinite ease-in-out;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryBlue},
-    ${COLORS.primaryTeal}
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-
-  &:after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 60px;
-    height: 60px;
-    background: radial-gradient(
-      circle,
-      rgba(26, 95, 122, 0.2) 0%,
-      rgba(26, 95, 122, 0) 70%
-    );
-    border-radius: 50%;
-    z-index: -1;
-  }
 `;
 
 const RetweetModalContent = styled.div`
@@ -519,13 +488,7 @@ const RetweetModalContent = styled.div`
     margin-bottom: 1.2rem;
     font-size: 1.6rem;
     font-weight: 700;
-    background: linear-gradient(
-      135deg,
-      ${COLORS.primaryBlue},
-      ${COLORS.primaryTeal}
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: ${COLORS.primaryTeal};
     letter-spacing: 0.5px;
   }
 
@@ -544,14 +507,10 @@ const RetweetModalContent = styled.div`
 
 const RetweetCloseButton = styled.button`
   margin-top: 1.5rem;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryBlue},
-    ${COLORS.primaryTeal}
-  );
+  background-color: ${COLORS.primaryTeal};
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 0.7rem 2rem;
   font-weight: 600;
   font-size: 0.95rem;
@@ -559,7 +518,7 @@ const RetweetCloseButton = styled.button`
   transition: all 0.3s;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(26, 95, 122, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 131, 143, 0.3);
 
   &:before {
     content: "";
@@ -578,8 +537,9 @@ const RetweetCloseButton = styled.button`
   }
 
   &:hover {
+    background-color: ${COLORS.accentTeal};
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(26, 95, 122, 0.4);
+    box-shadow: 0 6px 15px rgba(0, 131, 143, 0.4);
 
     &:before {
       left: 100%;
@@ -598,6 +558,7 @@ const Thoughts = () => {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const { isAuthenticated, user } = useContext(AuthContext);
   // Updated to check for both admin and creator roles
+  const isAdmin = isAuthenticated && user?.role === "admin";
   const canCreateThought =
     isAuthenticated && (user?.role === "admin" || user?.role === "creator");
   const [selectedMood, setSelectedMood] = useState("all");
@@ -838,7 +799,7 @@ const Thoughts = () => {
           </HeaderRight>
         </Header>
 
-        <ThoughtsContainer>
+        <ThoughtsContainer isAdmin={isAdmin}>
           {error ? (
             <ErrorMessage>{error}</ErrorMessage>
           ) : filteredThoughts.length > 0 ? (

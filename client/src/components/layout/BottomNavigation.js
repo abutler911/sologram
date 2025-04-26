@@ -168,7 +168,7 @@ const NavAction = styled.button`
   }
 
   &:hover {
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.primaryTeal};
   }
 `;
 
@@ -184,7 +184,7 @@ const NavContainer = styled.div`
     left: 0;
     right: 0;
     height: 60px; /* Slightly increased for better touchability */
-    background-color: ${COLORS.cardBackground};
+    background-color: ${COLORS.elevatedBackground};
     box-shadow: 0 -2px 8px ${COLORS.shadow};
     z-index: 1000;
     padding-bottom: env(safe-area-inset-bottom, 0);
@@ -198,8 +198,7 @@ const NavItem = styled(Link)`
   justify-content: center;
   padding: 0.5rem 0;
   flex: 1;
-  color: ${(props) =>
-    props.active ? COLORS.accentPurple : COLORS.textTertiary};
+  color: ${(props) => (props.active ? COLORS.accentTeal : COLORS.textTertiary)};
   text-decoration: none;
 
   svg {
@@ -208,7 +207,7 @@ const NavItem = styled(Link)`
   }
 
   &:hover {
-    color: ${COLORS.accentPurple};
+    color: ${COLORS.accentTeal};
   }
 `;
 
@@ -235,7 +234,7 @@ const CreateButton = styled.button`
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background-color: ${COLORS.primaryPink};
+  background-color: ${COLORS.primaryTeal};
   border: none;
   color: white;
   font-size: 1.25rem;
@@ -244,7 +243,7 @@ const CreateButton = styled.button`
   margin-bottom: 0.125rem;
 
   &:hover {
-    background-color: ${COLORS.accentPink};
+    background-color: ${COLORS.accentTeal};
   }
 
   &:active {
@@ -267,11 +266,12 @@ const CreateOptionsOverlay = styled.div`
 
 const CreateOptions = styled.div`
   background-color: ${COLORS.cardBackground};
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   width: 80%;
   max-width: 300px;
   box-shadow: 0 4px 12px ${COLORS.shadow};
+  border: 1px solid ${COLORS.border};
 `;
 
 const CreateOptionItem = styled(Link)`
@@ -289,11 +289,11 @@ const CreateOptionItem = styled(Link)`
   svg {
     margin-right: 12px;
     font-size: 1.2rem;
-    color: ${COLORS.primaryPink};
+    color: ${COLORS.primaryTeal};
   }
 
   &:hover {
-    background-color: ${COLORS.elevatedBackground};
+    background-color: ${COLORS.buttonHover};
   }
 `;
 
@@ -308,7 +308,7 @@ const BrandCenter = styled.div`
 const BrandText = styled.span`
   font-size: 0.75rem;
   font-weight: 600;
-  color: ${COLORS.primaryPurple};
+  color: ${COLORS.primaryTeal};
   letter-spacing: 0.5px;
   user-select: none;
   animation: pulse 2.8s ease-in-out infinite;

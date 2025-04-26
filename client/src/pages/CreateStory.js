@@ -45,7 +45,7 @@ const AppHeader = styled.header`
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: ${THEME.header.background};
+  background: ${COLORS.primaryBlue}; // Changed to solid color
   position: sticky;
   top: 0;
   z-index: 10;
@@ -430,11 +430,7 @@ const ProgressBarOuter = styled.div`
 const ProgressBarInner = styled.div`
   height: 100%;
   width: ${(props) => props.width}%;
-  background: linear-gradient(
-    90deg,
-    ${COLORS.primaryGreen},
-    ${COLORS.primaryTeal}
-  );
+  background: ${COLORS.primaryTeal}; // Solid color instead of gradient
   transition: width 0.3s ease;
 `;
 

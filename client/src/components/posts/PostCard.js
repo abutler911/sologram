@@ -586,7 +586,7 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   );
 });
 
-// UPDATED STYLED COMPONENTS WITH NEW PINK/PURPLE THEME
+// UPDATED STYLED COMPONENTS WITH NEW MASCULINE THEME
 
 const CardWrapper = styled.div`
   ${fontFaceStyles}
@@ -610,15 +610,15 @@ const CardWrapper = styled.div`
 const Card = styled.article`
   position: relative;
   background-color: ${COLORS.cardBackground};
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   width: 100%;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.25), 0 2px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px ${COLORS.shadow};
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   will-change: transform, box-shadow;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid ${COLORS.border};
 
   &:hover {
     transform: translateY(-4px);
@@ -626,7 +626,7 @@ const Card = styled.article`
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    border-radius: 10px;
+    border-radius: 6px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
 
     &:active {
@@ -640,9 +640,9 @@ const CardHeader = styled.header`
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background-color: ${COLORS.cardBackground};
+  background-color: ${COLORS.elevatedBackground};
   position: relative;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid ${COLORS.border};
 
   &:before {
     content: "";
@@ -651,7 +651,7 @@ const CardHeader = styled.header`
     left: 0;
     right: 0;
     height: 2px;
-    background-color: ${COLORS.primaryPurple};
+    background-color: ${COLORS.primaryTeal};
     opacity: 0.9;
   }
 
@@ -670,26 +670,23 @@ const ActionsContainer = styled.div`
 `;
 
 const Username = styled.span`
-  font-family: "Autography", cursive;
-  font-size: 2.2rem;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  line-height: 1;
-  margin-top: 2px;
-  color: #000000;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  font-family: "Sora", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin-top: 0;
+  color: ${COLORS.textPrimary};
   transition: all 0.3s ease;
 
   &:hover {
-    color: ${COLORS.primaryPurple};
-    transform: translateY(-1px);
+    color: ${COLORS.accentTeal};
   }
 `;
 
 const ActionsButton = styled.button`
   background-color: transparent;
   border: none;
-  color: #000000;
+  color: ${COLORS.textSecondary};
   font-size: 1rem;
   cursor: pointer;
   padding: 8px;
@@ -702,8 +699,8 @@ const ActionsButton = styled.button`
   height: 36px;
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: ${COLORS.primaryPurple};
+    background-color: rgba(0, 0, 0, 0.2);
+    color: ${COLORS.accentTeal};
   }
 `;
 
@@ -712,14 +709,14 @@ const ActionsMenu = styled.div`
   right: 0;
   top: 40px;
   background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
+  border-radius: 4px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
   z-index: 10;
   overflow: hidden;
   width: 180px;
   transform-origin: top right;
   animation: ${fadeIn} 0.2s ease-out;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid ${COLORS.border};
 `;
 
 const ActionItem = styled.button`
@@ -727,7 +724,7 @@ const ActionItem = styled.button`
   padding: 12px 16px;
   border: none;
   background: none;
-  color: #000000;
+  color: ${COLORS.textPrimary};
   text-align: left;
   font-size: 0.85rem;
   font-weight: 500;
@@ -740,21 +737,21 @@ const ActionItem = styled.button`
   svg {
     margin-right: 12px;
     font-size: 0.9rem;
-    color: #000000;
+    color: ${COLORS.textSecondary};
     transition: all 0.2s ease;
   }
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.04);
-    color: ${COLORS.primaryPurple};
+    background-color: ${COLORS.buttonHover};
+    color: ${COLORS.accentTeal};
 
     svg {
-      color: ${COLORS.primaryPurple};
+      color: ${COLORS.accentTeal};
     }
   }
 
   &:not(:last-child) {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid ${COLORS.divider};
   }
 `;
 
@@ -871,7 +868,7 @@ const NavigationArrow = styled.button`
 
   &:hover {
     opacity: 1 !important;
-    background-color: ${COLORS.primaryPurple};
+    background-color: ${COLORS.primaryTeal};
   }
 
   ${MediaContainer}:hover & {
@@ -927,7 +924,7 @@ const ProgressDot = styled.button`
   height: 8px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? COLORS.primaryPink : "rgba(255, 255, 255, 0.5)"};
+    props.active ? COLORS.accentTeal : "rgba(255, 255, 255, 0.5)"};
   border: none;
   cursor: pointer;
   padding: 0;
@@ -937,7 +934,7 @@ const ProgressDot = styled.button`
   &:hover {
     transform: scale(1.2);
     background-color: ${(props) =>
-      props.active ? COLORS.primaryPink : "rgba(255, 255, 255, 0.8)"};
+      props.active ? COLORS.accentTeal : "rgba(255, 255, 255, 0.8)"};
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -955,7 +952,7 @@ const HeartAnimation = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: ${COLORS.accentPink};
+  color: ${COLORS.accentTeal};
   font-size: 80px;
   opacity: 0;
   animation: ${scaleIn} 1s ease forwards;
@@ -970,7 +967,7 @@ const HeartAnimation = styled.div`
 const CardActions = styled.div`
   padding: 14px 16px 10px;
   background-color: ${COLORS.cardBackground};
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid ${COLORS.divider};
 `;
 
 const ActionGroup = styled.div`
@@ -982,7 +979,7 @@ const ActionGroup = styled.div`
 const LikeButton = styled.button`
   background: none;
   border: none;
-  color: ${(props) => (props.liked ? COLORS.accentPink : "#000000")};
+  color: ${(props) => (props.liked ? COLORS.primaryTeal : COLORS.textTertiary)};
   font-size: 1.5rem;
   cursor: ${(props) =>
     props.disabled && !props.liked ? "default" : "pointer"};
@@ -996,7 +993,7 @@ const LikeButton = styled.button`
     transform: ${(props) =>
       !props.disabled || props.liked ? "scale(1.15)" : "none"};
     color: ${(props) =>
-      !props.disabled && !props.liked ? COLORS.accentPink : ""};
+      !props.disabled && !props.liked ? COLORS.accentTeal : ""};
   }
 
   &:active {
@@ -1007,7 +1004,7 @@ const LikeButton = styled.button`
   ${(props) =>
     props.liked &&
     `
-    filter: drop-shadow(0 0 8px ${COLORS.accentPink}80);
+    filter: drop-shadow(0 0 8px ${COLORS.accentTeal}80);
   `}
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -1024,17 +1021,17 @@ const LikeButton = styled.button`
 const DateDisplay = styled.div`
   display: flex;
   align-items: center;
-  color: #000000;
+  color: ${COLORS.textSecondary};
   font-size: 0.8rem;
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: ${COLORS.elevatedBackground};
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all 0.2s ease;
 
   svg {
     margin-right: 6px;
     font-size: 0.8rem;
-    color: #000000;
+    color: ${COLORS.textTertiary};
   }
 
   &:hover {
@@ -1046,7 +1043,7 @@ const LikesCounter = styled.div`
   padding: 10px 16px 0;
   font-size: 0.85rem;
   font-weight: 500;
-  color: #000000;
+  color: ${COLORS.textSecondary};
 
   span {
     position: relative;
@@ -1058,7 +1055,7 @@ const LikesCounter = styled.div`
       bottom: -2px;
       width: 100%;
       height: 1px;
-      background-color: ${COLORS.primaryPurple};
+      background-color: ${COLORS.accentTeal};
       transform-origin: left;
       transform: scaleX(0);
       transition: transform 0.3s ease;
@@ -1081,7 +1078,7 @@ const CardContent = styled.div`
 const PostTitle = styled.h2`
   font-size: 1.2rem;
   font-weight: 600;
-  color: #000000;
+  color: ${COLORS.textPrimary};
   margin: 0 0 12px 0;
   line-height: 1.4;
   word-break: break-word;
@@ -1090,7 +1087,7 @@ const PostTitle = styled.h2`
 `;
 
 const Content = styled.p`
-  color: #000000;
+  color: ${COLORS.textSecondary};
   font-size: 0.9rem;
   line-height: 1.5;
   margin: 8px 0;
@@ -1112,16 +1109,16 @@ const TagsContainer = styled.div`
 `;
 
 const Tag = styled.span`
-  color: ${COLORS.primaryPurple};
+  color: ${COLORS.textPrimary};
   font-size: 0.8rem;
   transition: all 0.2s ease;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 4px;
-  background-color: rgba(176, 75, 223, 0.08);
+  background-color: ${COLORS.buttonHover};
 
   &:hover {
-    background-color: rgba(176, 75, 223, 0.15);
+    background-color: ${COLORS.primaryTeal}30;
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
@@ -1135,31 +1132,31 @@ const ViewPostLink = styled(Link)`
   text-decoration: none;
   align-self: flex-end;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all 0.25s ease;
-  background-color: ${COLORS.primaryPink};
+  background-color: ${COLORS.primaryTeal};
   display: flex;
   align-items: center;
   gap: 6px;
   position: relative;
-  box-shadow: 0 4px 12px rgba(255, 91, 141, 0.2);
+  box-shadow: 0 4px 12px ${COLORS.primaryTeal}40;
 
   &:hover {
     text-decoration: none;
     transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(255, 91, 141, 0.3);
-    background-color: ${COLORS.accentPink};
+    box-shadow: 0 6px 14px ${COLORS.primaryTeal}60;
+    background-color: ${COLORS.accentTeal};
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     font-size: 0.85rem;
     padding: 8px 18px;
-    border-radius: 6px;
+    border-radius: 4px;
     align-self: center;
 
     &:active {
       transform: translateY(2px);
-      box-shadow: 0 2px 6px rgba(255, 91, 141, 0.2);
+      box-shadow: 0 2px 6px ${COLORS.primaryTeal}40;
     }
   }
 `;
@@ -1188,8 +1185,8 @@ const DeleteModal = styled.div`
 `;
 
 const DeleteModalContent = styled.div`
-  background-color: ${COLORS.cardBackground};
-  border-radius: 10px;
+  background-color: ${COLORS.elevatedBackground};
+  border-radius: 6px;
   padding: 28px;
   width: 90%;
   max-width: 380px;
@@ -1197,10 +1194,10 @@ const DeleteModalContent = styled.div`
   text-align: center;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2);
   animation: ${fadeIn} 0.3s ease-out;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid ${COLORS.border};
 
   h3 {
-    color: #000000;
+    color: ${COLORS.textPrimary};
     margin-top: 0;
     margin-bottom: 16px;
     font-weight: 600;
@@ -1208,14 +1205,14 @@ const DeleteModalContent = styled.div`
   }
 
   p {
-    color: #000000;
+    color: ${COLORS.textSecondary};
     margin-bottom: 24px;
     font-size: 1rem;
     line-height: 1.5;
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    border-radius: 12px;
+    border-radius: 6px;
     padding: 24px 20px;
 
     h3 {
@@ -1245,9 +1242,9 @@ const DeleteModalButtons = styled.div`
 
 const CancelButton = styled.button`
   background: none;
-  color: #000000;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
+  color: ${COLORS.textSecondary};
+  border: 1px solid ${COLORS.border};
+  border-radius: 4px;
   padding: 12px 16px;
   font-weight: 500;
   font-size: 0.9rem;
@@ -1256,7 +1253,8 @@ const CancelButton = styled.button`
   flex: 1;
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.04);
+    background-color: ${COLORS.buttonHover};
+    color: ${COLORS.textPrimary};
   }
 `;
 
@@ -1264,7 +1262,7 @@ const ConfirmDeleteButton = styled.button`
   background-color: ${COLORS.error};
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 12px 16px;
   font-weight: 500;
   font-size: 0.9rem;
@@ -1275,7 +1273,7 @@ const ConfirmDeleteButton = styled.button`
   &:hover {
     background-color: ${COLORS.error}ee;
     transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(224, 36, 36, 0.3);
+    box-shadow: 0 4px 10px rgba(207, 102, 121, 0.3);
   }
 `;
 
@@ -1331,7 +1329,7 @@ const FullscreenIndicator = styled.div`
   background-color: rgba(0, 0, 0, 0.7);
   color: white;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 14px;
   font-weight: 500;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
@@ -1355,7 +1353,7 @@ const CloseFullscreenButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: ${COLORS.primaryPurple};
+    background-color: ${COLORS.primaryTeal};
     transform: scale(1.05);
   }
 `;
@@ -1366,7 +1364,7 @@ const PostLink = styled(Link)`
   display: block;
 
   &:hover ${PostTitle} {
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.accentTeal};
   }
 `;
 
@@ -1376,13 +1374,13 @@ const UserAvatarImage = styled.img`
   border-radius: 50%;
   object-fit: cover;
   margin-right: 12px;
-  border: 2px solid ${COLORS.primaryPurple};
+  border: 2px solid ${COLORS.primaryTeal};
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
 
   &:hover {
     transform: scale(1.08);
-    box-shadow: 0 0 15px rgba(176, 75, 223, 0.4);
+    box-shadow: 0 0 15px ${COLORS.primaryTeal}60;
   }
 `;
 

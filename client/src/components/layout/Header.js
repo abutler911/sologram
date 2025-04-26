@@ -267,7 +267,7 @@ const Header = ({ onSearch, onClearSearch }) => {
             {isAuthenticated && (
               <Greeting>
                 <span className="greeting-text">Hi,</span>{" "}
-                <span className="autography">{user?.firstName}</span>
+                <span className="username">{user?.firstName}</span>
               </Greeting>
             )}
 
@@ -358,7 +358,7 @@ const Header = ({ onSearch, onClearSearch }) => {
         {isAuthenticated && (
           <MobileGreeting>
             <span className="greeting-text">Welcome back,</span>
-            <span className="autography">{user?.firstName}</span>
+            <span className="username">{user?.firstName}</span>
           </MobileGreeting>
         )}
 
@@ -467,7 +467,7 @@ const Header = ({ onSearch, onClearSearch }) => {
   );
 };
 
-// Styled Components (updated with new Pink/Purple/Blue theme)
+// Styled Components (updated with new Masculine Theme)
 const HeaderWrapper = styled.div`
   position: sticky;
   top: 0;
@@ -526,10 +526,10 @@ const Logo = styled(Link)`
     align-items: center;
     font-family: "Sora", sans-serif;
     font-size: 2.2rem;
-    font-weight: 600;
-    color: white;
+    font-weight: 700;
+    color: ${COLORS.textPrimary};
     letter-spacing: 1px;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
     transition: transform 0.3s ease;
 
     svg {
@@ -545,14 +545,13 @@ const Logo = styled(Link)`
   .tagline {
     font-family: "Inter", sans-serif;
     font-size: 0.95rem;
-    font-style: italic;
     font-weight: 400;
-    color: ${COLORS.accentPink};
-    margin-top: 0.4rem;
-    margin-left: 0; /* override previous indent */
+    color: ${COLORS.accentTeal};
+    margin-top: 0.2rem;
+    margin-left: 0;
     text-align: left;
     line-height: 1.2;
-    opacity: 0.85;
+    opacity: 0.9;
     animation: fadeInUp 0.6s ease-out;
   }
 
@@ -562,7 +561,7 @@ const Logo = styled(Link)`
       transform: translateY(8px);
     }
     to {
-      opacity: 0.85;
+      opacity: 0.9;
       transform: translateY(0);
     }
   }
@@ -595,10 +594,9 @@ const DesktopNavigation = styled.nav`
 `;
 
 const NavLink = styled(Link)`
-  color: ${(props) => (props.active ? COLORS.accentPink : "white")};
+  color: ${(props) => (props.active ? COLORS.accentTeal : COLORS.textPrimary)};
   text-decoration: none;
-  font-weight: ${(props) =>
-    props.active ? "600" : "500"}; // Bolder for active state
+  font-weight: ${(props) => (props.active ? "600" : "500")};
   position: relative;
   padding: 0.5rem 0;
   transition: color 0.3s ease;
@@ -607,15 +605,15 @@ const NavLink = styled(Link)`
     content: "";
     position: absolute;
     left: 0;
-    bottom: -2px; // Moved down slightly
+    bottom: -2px;
     width: ${(props) => (props.active ? "100%" : "0")};
     height: 2px;
-    background-color: ${COLORS.accentPink};
+    background-color: ${COLORS.accentTeal};
     transition: width 0.3s ease;
   }
 
   &:hover {
-    color: ${COLORS.accentPink};
+    color: ${COLORS.accentTeal};
 
     &:after {
       width: 100%;
@@ -656,24 +654,24 @@ const ActionButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: ${COLORS.textPrimary};
   font-size: 1.125rem;
   padding: 0.5rem;
   cursor: pointer;
   transition: color 0.3s;
 
   &:hover {
-    color: ${COLORS.accentPink};
+    color: ${COLORS.accentTeal};
   }
 `;
 
 const SearchForm = styled.form`
   display: flex;
   align-items: center;
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   transition: all 0.3s ease;
   box-shadow: 0 2px 5px ${COLORS.shadow};
   width: 100%;
@@ -686,7 +684,7 @@ const SearchForm = styled.form`
 const SearchInput = styled.input`
   background: transparent;
   border: none;
-  color: white;
+  color: ${COLORS.textPrimary};
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   width: 100%;
@@ -710,12 +708,12 @@ const ClearButton = styled.button`
   font-size: 0.75rem;
 
   &:hover {
-    color: ${COLORS.accentPink};
+    color: ${COLORS.accentTeal};
   }
 `;
 
 const SearchSubmit = styled.button`
-  background-color: ${COLORS.primaryPurple};
+  background-color: ${COLORS.primaryTeal};
   border: none;
   color: white;
   display: flex;
@@ -726,7 +724,7 @@ const SearchSubmit = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: ${COLORS.accentPurple};
+    background-color: ${COLORS.accentTeal};
   }
 `;
 
@@ -757,7 +755,7 @@ const CreateNewButtonDesktop = styled(Link)`
   align-items: center;
   gap: 0.5rem;
   background-color: ${(props) =>
-    props.thoughts ? COLORS.primaryPurple : COLORS.primaryPink};
+    props.thoughts ? COLORS.primaryBlue : COLORS.primaryTeal};
   color: white;
   text-decoration: none;
   padding: 0.5rem 1rem;
@@ -768,7 +766,7 @@ const CreateNewButtonDesktop = styled(Link)`
 
   &:hover {
     background-color: ${(props) =>
-      props.thoughts ? COLORS.accentPurple : COLORS.accentPink};
+      props.thoughts ? COLORS.accentBlue : COLORS.accentTeal};
   }
 
   @media (max-width: 768px) {
@@ -791,12 +789,12 @@ const UserButton = styled.button`
 
   .arrow-icon {
     font-size: 0.75rem;
-    color: white;
+    color: ${COLORS.textPrimary};
     transition: transform 0.2s;
   }
 
   &:hover .arrow-icon {
-    color: ${COLORS.accentPink};
+    color: ${COLORS.accentTeal};
   }
 
   @media (max-width: 768px) {
@@ -808,15 +806,15 @@ const UserAvatar = styled.div`
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: ${COLORS.textPrimary};
 
   &:hover {
-    color: ${COLORS.accentPink};
-    background-color: rgba(255, 255, 255, 0.3);
+    color: ${COLORS.accentTeal};
+    background-color: rgba(255, 255, 255, 0.2);
   }
 `;
 
@@ -824,13 +822,14 @@ const UserMenuDropdown = styled.div`
   position: absolute;
   top: 100%;
   right: 0;
-  background-color: ${COLORS.cardBackground};
+  background-color: ${COLORS.elevatedBackground};
   border-radius: 4px;
   box-shadow: 0 4px 12px ${COLORS.shadow};
   width: 200px;
   padding: 0.5rem 0;
   margin-top: 0.5rem;
   z-index: 100;
+  border: 1px solid ${COLORS.border};
 `;
 
 const UserInfo = styled.div`
@@ -864,8 +863,8 @@ const UserMenuItem = styled(Link)`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: ${COLORS.elevatedBackground};
-    color: ${COLORS.primaryPurple};
+    background-color: ${COLORS.buttonHover};
+    color: ${COLORS.accentTeal};
   }
 
   svg {
@@ -874,7 +873,7 @@ const UserMenuItem = styled(Link)`
   }
 
   &:hover svg {
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.accentTeal};
   }
 `;
 
@@ -892,8 +891,8 @@ const UserMenuButton = styled.button`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: ${COLORS.elevatedBackground};
-    color: ${COLORS.primaryPurple};
+    background-color: ${COLORS.buttonHover};
+    color: ${COLORS.accentTeal};
   }
 
   svg {
@@ -902,7 +901,7 @@ const UserMenuButton = styled.button`
   }
 
   &:hover svg {
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.accentTeal};
   }
 `;
 
@@ -910,8 +909,8 @@ const LoginButton = styled(Link)`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: rgba(255, 255, 255, 0.15);
-  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: ${COLORS.textPrimary};
   text-decoration: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -919,8 +918,8 @@ const LoginButton = styled(Link)`
   transition: all 0.3s;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.25);
-    color: white;
+    background-color: rgba(255, 255, 255, 0.15);
+    color: ${COLORS.textPrimary};
   }
 
   @media (max-width: 768px) {
@@ -928,18 +927,17 @@ const LoginButton = styled(Link)`
   }
 `;
 
-// Changed name to avoid duplicate identifier
 const MobileMenuToggle = styled.button`
   display: none;
   background: none;
   border: none;
   font-size: 1.25rem;
-  color: white;
+  color: ${COLORS.textPrimary};
   cursor: pointer;
   padding: 0.5rem;
 
   &:hover {
-    color: ${COLORS.accentPink};
+    color: ${COLORS.accentTeal};
   }
 
   @media (max-width: 768px) {
@@ -976,7 +974,7 @@ const MobileMenuHeader = styled.div`
 const MobileMenuLogo = styled.div`
   display: flex;
   align-items: center;
-  color: white;
+  color: ${COLORS.textPrimary};
   font-weight: 700;
 
   svg {
@@ -988,11 +986,11 @@ const MobileMenuCloseBtn = styled.button`
   background: none;
   border: none;
   font-size: 1.25rem;
-  color: white;
+  color: ${COLORS.textPrimary};
   cursor: pointer;
 
   &:hover {
-    color: ${COLORS.accentPink};
+    color: ${COLORS.accentTeal};
   }
 `;
 
@@ -1010,16 +1008,16 @@ const MobileMenuItem = styled(Link)`
   align-items: center;
   padding: 0.75rem 1rem;
   color: ${(props) =>
-    props.active ? COLORS.accentPink : COLORS.textSecondary};
+    props.active ? COLORS.accentTeal : COLORS.textSecondary};
   text-decoration: none;
   font-weight: 500;
   border-radius: 4px;
   background-color: ${(props) =>
-    props.active ? `rgba(255, 91, 141, 0.1)` : "transparent"};
+    props.active ? `${COLORS.buttonHover}` : "transparent"};
 
   &:hover {
-    background-color: ${COLORS.elevatedBackground};
-    color: ${COLORS.accentPink};
+    background-color: ${COLORS.buttonHover};
+    color: ${COLORS.accentTeal};
   }
 
   svg {
@@ -1027,7 +1025,6 @@ const MobileMenuItem = styled(Link)`
   }
 `;
 
-// Changed name to avoid duplicate identifier
 const MobileMenuLogoutButton = styled.button`
   display: flex;
   align-items: center;
@@ -1042,8 +1039,8 @@ const MobileMenuLogoutButton = styled.button`
   cursor: pointer;
 
   &:hover {
-    background-color: ${COLORS.elevatedBackground};
-    color: ${COLORS.accentPink};
+    background-color: ${COLORS.buttonHover};
+    color: ${COLORS.accentTeal};
   }
 
   svg {
@@ -1055,18 +1052,18 @@ const ExternalMenuItem = styled.a`
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem;
-  color: ${COLORS.accentPurple};
+  color: ${COLORS.accentBlue};
   font-weight: 600;
   border-radius: 4px;
   text-decoration: none;
 
   &:hover {
-    background-color: ${COLORS.elevatedBackground};
+    background-color: ${COLORS.buttonHover};
   }
 
   svg {
     margin-right: 0.75rem;
-    color: ${COLORS.accentPurple};
+    color: ${COLORS.accentBlue};
   }
 `;
 
@@ -1074,7 +1071,7 @@ const RegisterButton = styled(Link)`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: ${COLORS.primaryPink};
+  background-color: ${COLORS.primaryTeal};
   color: white;
   text-decoration: none;
   padding: 0.5rem 1rem;
@@ -1083,7 +1080,7 @@ const RegisterButton = styled(Link)`
   transition: all 0.3s;
 
   &:hover {
-    background-color: ${COLORS.accentPink};
+    background-color: ${COLORS.accentTeal};
   }
 
   @media (max-width: 768px) {
@@ -1097,17 +1094,17 @@ const Greeting = styled.div`
   font-size: 0.85rem;
   font-weight: 500;
   margin-right: 1.25rem;
-  color: white;
+  color: ${COLORS.textPrimary};
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.12) 0%,
-    rgba(255, 255, 255, 0.05) 100%
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.03) 100%
   );
   padding: 0.5rem 1rem 0.5rem 1.1rem;
-  border-radius: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 
@@ -1130,13 +1127,13 @@ const Greeting = styled.div`
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 91, 141, 0.15);
+    box-shadow: 0 4px 12px ${COLORS.primaryTeal}30;
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.18) 0%,
-      rgba(255, 255, 255, 0.09) 100%
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(255, 255, 255, 0.05) 100%
     );
-    border-color: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.15);
 
     &:before {
       left: 100%;
@@ -1157,7 +1154,7 @@ const Greeting = styled.div`
       background: linear-gradient(
         90deg,
         transparent,
-        rgba(255, 91, 141, 0.3),
+        ${COLORS.accentTeal}50,
         transparent
       );
       transform: scaleX(0);
@@ -1170,25 +1167,25 @@ const Greeting = styled.div`
     transform: scaleX(1);
   }
 
-  .autography {
-    font-family: "Autography", cursive;
-    color: ${COLORS.accentPink};
-    font-size: 1.5rem;
-    font-weight: 500;
+  .username {
+    font-family: "Sora", sans-serif;
+    color: ${COLORS.accentTeal};
+    font-size: 1rem;
+    font-weight: 600;
     letter-spacing: 0.5px;
     margin-left: 0.5rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
     display: inline-block;
     transform-origin: bottom left;
     position: relative;
-    top: 1px;
+    top: 0;
   }
 
-  &:hover .autography {
-    transform: scale(1.08);
-    color: ${COLORS.accentPink};
-    text-shadow: 0 2px 8px rgba(255, 91, 141, 0.35);
+  &:hover .username {
+    transform: scale(1.05);
+    color: ${COLORS.accentTeal};
+    text-shadow: 0 1px 4px ${COLORS.accentTeal}40;
   }
 
   @media (max-width: 768px) {
@@ -1202,18 +1199,14 @@ const MobileGreeting = styled.div`
   margin: 1.25rem 1rem;
   padding: 1rem 1.25rem;
   color: ${COLORS.textPrimary};
-  border-radius: 16px;
+  border-radius: 8px;
   text-align: center;
-  background: linear-gradient(
-    145deg,
-    ${COLORS.background} 0%,
-    ${COLORS.elevatedBackground}80 100%
-  );
+  background: ${COLORS.elevatedBackground};
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid ${COLORS.border};
   overflow: hidden;
 
-  /* Glowing highlight on top */
+  /* Highlight on top */
   &:before {
     content: "";
     position: absolute;
@@ -1221,27 +1214,8 @@ const MobileGreeting = styled.div`
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(
-      to right,
-      ${COLORS.primaryPink},
-      ${COLORS.primaryPurple},
-      ${COLORS.primaryBlue}
-    );
+    background: ${COLORS.primaryTeal};
     border-radius: 2px;
-  }
-
-  /* Subtle inner light effect */
-  &:after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
-      circle at center top,
-      ${COLORS.primaryPurple}10 0%,
-      transparent 70%
-    );
-    pointer-events: none;
-    opacity: 0.6;
   }
 
   .greeting-text {
@@ -1250,29 +1224,16 @@ const MobileGreeting = styled.div`
     margin-right: 0.25rem;
   }
 
-  .autography {
-    font-family: "Autography", cursive;
-    color: ${COLORS.primaryPink};
-    font-size: 1.8rem;
-    font-weight: 500;
+  .username {
+    font-family: "Sora", sans-serif;
+    color: ${COLORS.accentTeal};
+    font-size: 1.25rem;
+    font-weight: 600;
     letter-spacing: 0.5px;
     display: block;
     margin-top: 0.25rem;
     margin-bottom: 0.125rem;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-    animation: floatEffect 3s infinite ease-in-out;
-  }
-
-  @keyframes floatEffect {
-    0% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-3px);
-    }
-    100% {
-      transform: translateY(0);
-    }
   }
 `;
 
