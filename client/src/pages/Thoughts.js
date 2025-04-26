@@ -32,7 +32,7 @@ const float = keyframes`
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
   min-height: 100vh;
-  padding: 1rem;
+  padding: 1rem 0.5rem;
 
   @media (min-width: 769px) {
     padding: 1rem 0;
@@ -291,6 +291,7 @@ const ThoughtsContainer = styled.div`
   @media (max-width: 768px) {
     width: 100%;
     max-width: 100%;
+    padding: 0 2px;
   }
 `;
 
