@@ -32,7 +32,11 @@ const float = keyframes`
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
   min-height: 100vh;
-  padding: 1rem 0;
+  padding: 1rem;
+
+  @media (min-width: 769px) {
+    padding: 1rem 0;
+  }
 `;
 
 const Header = styled.div`
@@ -46,7 +50,7 @@ const Header = styled.div`
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
-    padding: 0 1rem;
+    padding: 0;
   }
 `;
 
@@ -75,6 +79,10 @@ const PageTitle = styled.h1`
   transform: rotate(-2deg);
   letter-spacing: 0.5px;
   text-shadow: 1px 1px 2px rgba(0, 131, 143, 0.3);
+
+  @media (max-width: 768px) {
+    margin-left: 8px;
+  }
 `;
 
 const MoodFilter = styled.div`
@@ -83,6 +91,11 @@ const MoodFilter = styled.div`
   gap: 0.5rem;
   padding-bottom: 0.5rem;
   max-width: 100%;
+
+  @media (max-width: 768px) {
+    width: calc(100% - 16px);
+    margin: 0 8px;
+  }
 `;
 
 const MoodButton = styled.button`
@@ -160,6 +173,10 @@ const SearchContainer = styled.div`
       width: 300px;
     }
   `}
+
+  @media (max-width: 768px) {
+    margin-right: 8px;
+  }
 `;
 
 const SearchToggle = styled.button`
@@ -269,7 +286,12 @@ const CloseSearchButton = styled.button`
 const ThoughtsContainer = styled.div`
   max-width: ${(props) => (props.isAdmin ? "800px" : "600px")};
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 100%;
+  }
 `;
 
 const ErrorMessage = styled.div`
