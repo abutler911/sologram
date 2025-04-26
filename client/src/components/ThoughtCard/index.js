@@ -303,7 +303,7 @@ const ActionButton = styled.button`
 const Content = styled.p`
   color: ${COLORS.textPrimary};
   font-size: 1rem;
-  line-height: 1.6;
+  line-height: 1.5;
   background: ${COLORS.elevatedBackground};
   padding: 1.5rem;
   border-radius: 8px;
@@ -320,7 +320,8 @@ const Content = styled.p`
 
   @media (max-width: 768px) {
     padding: 1.25rem;
-    font-size: 0.95rem;
+    font-size: 0.7rem;
+    line-height: 1.2;
   }
 `;
 
