@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useContext,
   useMemo,
+  Fragment,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
@@ -25,9 +26,7 @@ import { toast } from "react-hot-toast";
 import { AuthContext } from "../context/AuthContext";
 import { COLORS, THEME } from "../theme";
 
-// Styled Components - No changes needed here as they're well-defined
-// ... (keeping all your existing styled components)
-
+// Styled Components - Updated to match the SoloGram theme
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
   min-height: 100vh;
@@ -46,17 +45,17 @@ const AppHeader = styled.header`
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid ${COLORS.border};
-  background-color: ${COLORS.cardBackground};
+  background: ${THEME.header.background};
   position: sticky;
   top: 0;
   z-index: 10;
+  color: ${THEME.header.text};
 `;
 
 const BackButton = styled.button`
   background: none;
   border: none;
-  color: ${COLORS.textPrimary};
+  color: ${THEME.header.icon};
   font-size: 1.25rem;
   padding: 8px;
   cursor: pointer;
@@ -66,24 +65,24 @@ const BackButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.textPrimary};
     transform: translateX(-2px);
   }
 `;
 
 const HeaderTitle = styled.h1`
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
   flex-grow: 1;
   text-align: center;
-  color: ${COLORS.textPrimary};
+  color: ${THEME.header.text};
 `;
 
 const NextButton = styled.button`
   background: none;
   border: none;
-  color: ${COLORS.primaryGreen};
+  color: ${COLORS.textPrimary};
   font-weight: 600;
   padding: 8px;
   cursor: pointer;
@@ -91,7 +90,7 @@ const NextButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    color: ${COLORS.accentGreen};
+    color: ${COLORS.accentPink};
     transform: translateY(-1px);
   }
 
@@ -114,7 +113,7 @@ const MediaPreviewContainer = styled.div`
   width: 100%;
   aspect-ratio: 9 / 16;
   position: relative;
-  background-color: ${COLORS.cardBackground};
+  background-color: ${COLORS.elevatedBackground};
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -176,7 +175,7 @@ const RemoveButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: rgba(255, 0, 0, 0.3);
+    background-color: rgba(255, 59, 48, 0.7);
     transform: scale(1.1);
   }
 `;
@@ -189,14 +188,14 @@ const DropzoneArea = styled.div`
   align-items: center;
   justify-content: center;
   border: 2px dashed
-    ${(props) => (props.isDragActive ? COLORS.primaryBlue : COLORS.border)};
-  background-color: ${COLORS.cardBackground};
+    ${(props) => (props.isDragActive ? COLORS.primaryPurple : COLORS.border)};
+  background-color: ${COLORS.elevatedBackground};
   cursor: pointer;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: ${COLORS.primaryBlue}80;
-    background-color: ${COLORS.elevatedBackground};
+    border-color: ${COLORS.primaryPurple};
+    background-color: ${COLORS.buttonHover};
   }
 `;
 
@@ -216,7 +215,7 @@ const DragActiveContent = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: ${COLORS.primaryBlue};
+  color: ${COLORS.primaryPurple};
   text-align: center;
   padding: 16px;
   width: 100%;
@@ -225,7 +224,7 @@ const DragActiveContent = styled.div`
 const UploadIcon = styled.div`
   font-size: 3rem;
   margin-bottom: 16px;
-  color: ${COLORS.primaryBlue};
+  color: ${COLORS.primaryPurple};
 `;
 
 const ActionButtonsContainer = styled.div`
@@ -245,7 +244,7 @@ const ActionButton = styled.button`
   padding: 16px 12px;
   border-radius: 8px;
   border: none;
-  background-color: ${COLORS.elevatedBackground};
+  background-color: ${COLORS.buttonHover};
   color: ${COLORS.textPrimary};
   font-weight: 500;
   gap: 8px;
@@ -270,18 +269,18 @@ const ActionButton = styled.button`
   }
 
   &:nth-child(2):hover {
-    background-color: ${COLORS.primaryBlue}20;
+    background-color: ${COLORS.primaryPink}20;
 
     svg {
-      color: ${COLORS.primaryBlue};
+      color: ${COLORS.primaryPink};
     }
   }
 
   &:nth-child(3):hover {
-    background-color: ${COLORS.primaryGreen}20;
+    background-color: ${COLORS.primaryBlue}20;
 
     svg {
-      color: ${COLORS.primaryGreen};
+      color: ${COLORS.primaryBlue};
     }
   }
 `;
@@ -310,7 +309,7 @@ const ThumbnailItem = styled.div`
   flex-shrink: 0;
   cursor: pointer;
   border: 2px solid
-    ${(props) => (props.isSelected ? COLORS.primaryPurple : "transparent")};
+    ${(props) => (props.isSelected ? COLORS.primaryPink : "transparent")};
   position: relative;
   display: flex;
   align-items: center;
@@ -333,6 +332,7 @@ const ThumbnailVideo = styled.div`
   width: 100%;
   height: 100%;
   position: relative;
+  background-color: ${COLORS.elevatedBackground};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -370,14 +370,14 @@ const AddMediaThumbnail = styled.div`
   justify-content: center;
   flex-shrink: 0;
   cursor: pointer;
-  color: ${COLORS.primaryGreen};
+  color: ${COLORS.primaryPink};
   font-size: 1.5rem;
   border: 1px dashed ${COLORS.border};
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: ${COLORS.primaryGreen}20;
-    color: ${COLORS.accentGreen};
+    background-color: ${COLORS.primaryPink}20;
+    color: ${COLORS.accentPink};
     transform: scale(1.05);
   }
 `;
@@ -387,7 +387,7 @@ const CaptionContainer = styled.div`
   padding: 16px;
   border-top: 1px solid ${COLORS.border};
   margin-top: 8px;
-  background-color: ${COLORS.cardBackground};
+  background-color: ${COLORS.elevatedBackground};
 `;
 
 const CaptionTextarea = styled.textarea`
@@ -412,7 +412,7 @@ const CaptionTextarea = styled.textarea`
 // Upload Progress
 const UploadProgressContainer = styled.div`
   margin: 16px;
-  background-color: ${COLORS.cardBackground};
+  background-color: ${COLORS.elevatedBackground};
   padding: 16px;
   border-radius: 8px;
   border: 1px solid ${COLORS.border};
@@ -421,7 +421,7 @@ const UploadProgressContainer = styled.div`
 const ProgressBarOuter = styled.div`
   width: 100%;
   height: 8px;
-  background-color: ${COLORS.elevatedBackground};
+  background-color: ${COLORS.background};
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 8px;
@@ -432,8 +432,8 @@ const ProgressBarInner = styled.div`
   width: ${(props) => props.width}%;
   background: linear-gradient(
     90deg,
-    ${COLORS.primaryPurple},
-    ${COLORS.primaryBlue}
+    ${COLORS.primaryPink},
+    ${COLORS.primaryPurple}
   );
   transition: width 0.3s ease;
 `;
@@ -449,15 +449,15 @@ const CompressOptionContainer = styled.div`
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background-color: ${COLORS.primaryBlue}10;
+  background-color: ${COLORS.primaryPurple}15;
   border-radius: 4px;
   margin: 8px 16px;
-  border: 1px solid ${COLORS.primaryBlue}30;
+  border: 1px solid ${COLORS.primaryPurple}30;
 `;
 
 const CompressCheckbox = styled.input`
   margin-right: 12px;
-  accent-color: ${COLORS.primaryBlue};
+  accent-color: ${COLORS.primaryPurple};
 `;
 
 const CompressLabel = styled.label`
@@ -486,7 +486,7 @@ const MediaStats = styled.div`
 const MediaClearButton = styled.button`
   background: none;
   border: none;
-  color: ${COLORS.primaryRed || "#ff3b30"};
+  color: ${COLORS.error};
   font-size: 0.75rem;
   padding: 4px 8px;
   cursor: pointer;
@@ -500,9 +500,9 @@ const MediaClearButton = styled.button`
 `;
 
 const ErrorMessage = styled.div`
-  background-color: ${COLORS.primaryRed}10 || 'rgba(255, 59, 48, 0.1)'};
-  border: 1px solid ${COLORS.primaryRed}30 || 'rgba(255, 59, 48, 0.3)'};
-  color: ${COLORS.primaryRed || "#ff3b30"};
+  background-color: ${COLORS.error}15;
+  border: 1px solid ${COLORS.error}30;
+  color: ${COLORS.error};
   padding: 8px 16px;
   margin: 8px 16px;
   border-radius: 4px;
@@ -515,7 +515,7 @@ const LoaderOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -532,7 +532,7 @@ const LoaderOverlay = styled.div`
 const Spinner = styled.div`
   border: 4px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  border-top: 4px solid white;
+  border-top: 4px solid ${COLORS.primaryPink};
   width: 40px;
   height: 40px;
   animation: spin 1s linear infinite;
@@ -562,7 +562,7 @@ const PreviewDot = styled.div`
   height: 8px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? "white" : "rgba(255, 255, 255, 0.5)"};
+    props.active ? COLORS.primaryPink : "rgba(255, 255, 255, 0.5)"};
   cursor: pointer;
   transition: all 0.2s ease;
 
@@ -581,7 +581,7 @@ const formatFileSize = (bytes) => {
 };
 
 /**
- * CreateStory Component - Optimized for better file handling and UX
+ * CreateStory Component - Optimized for SoloGram theme and fixed preview functionality
  */
 const CreateStory = () => {
   const navigate = useNavigate();
@@ -600,7 +600,7 @@ const CreateStory = () => {
   const [isPWA, setIsPWA] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showCompressOption, setShowCompressOption] = useState(false);
-  const [compressVideo, setCompressVideo] = useState(false);
+  const [compressVideo, setCompressVideo] = useState(true); // Default to true for better UX
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [error, setError] = useState("");
   const [uploadStatus, setUploadStatus] = useState("");
@@ -695,7 +695,10 @@ const CreateStory = () => {
         const video = document.createElement("video");
         video.preload = "metadata";
 
-        const objectUrl = URL.createObjectURL(file);
+        // Create a secure blob URL from the file
+        const objectUrl = URL.createObjectURL(
+          new Blob([file], { type: file.type })
+        );
         video.src = objectUrl;
 
         // Set timeout for processing to prevent hanging
@@ -769,7 +772,13 @@ const CreateStory = () => {
     });
   }, []);
 
-  // Enhanced file drop handler with improved validation
+  // Fix for video preview by creating object URLs that work with content security policy
+  const createSecureVideoPreview = useCallback((file) => {
+    // For video previews, create a blob URL with the correct MIME type
+    return URL.createObjectURL(new Blob([file], { type: file.type }));
+  }, []);
+
+  // Enhanced file drop handler with improved validation and fixed preview generation
   const onDrop = useCallback(
     async (acceptedFiles, rejectedFiles) => {
       setError(""); // Clear any previous errors
@@ -826,7 +835,7 @@ const CreateStory = () => {
           // Video processing with enhanced checks
           else if (file.type.startsWith("video/")) {
             // Show compress option for large videos
-            if (file.size > 150 * 1024 * 1024) {
+            if (file.size > 50 * 1024 * 1024) {
               setShowCompressOption(true);
             }
 
@@ -856,52 +865,51 @@ const CreateStory = () => {
       if (validFiles.length === 0) return;
 
       try {
-        // Create previews with optimized handling - using base64 data URLs instead of blob URLs
-        // This is to work around Content-Security-Policy restrictions on blob URLs
-        const newPreviews = [];
+        // Create previews with improved handling
+        const newPreviews = await Promise.all(
+          validFiles.map(async (file) => {
+            const isVideo = file.type.startsWith("video/");
 
-        for (const file of validFiles) {
-          const isVideo = file.type.startsWith("video/");
+            if (isVideo) {
+              // For videos, create a secure preview URL
+              const videoPreview = createSecureVideoPreview(file);
 
-          if (isVideo) {
-            // For videos, we'll just use a placeholder instead of trying to generate a preview
-            // This avoids CSP issues and is more efficient
-            newPreviews.push({
-              file,
-              preview:
-                "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiMzMzMiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIzMCIgZmlsbD0iIzY2NiIvPjxwb2x5Z29uIHBvaW50cz0iNDAsNDAgNzAsNTAgNDAsNjAiIGZpbGw9IiNmZmYiLz48L3N2Zz4=", // Video placeholder SVG
-              type: "video",
-              name: file.name,
-              size: formatFileSize(file.size),
-              timestamp: Date.now(),
-            });
-          } else {
-            // For images, create a data URL preview that complies with CSP
-            try {
-              const dataUrl = await readFileAsDataURL(file);
-              newPreviews.push({
+              return {
                 file,
-                preview: dataUrl,
-                type: "image",
+                preview: videoPreview,
+                type: "video",
                 name: file.name,
                 size: formatFileSize(file.size),
                 timestamp: Date.now(),
-              });
-            } catch (e) {
-              console.error("Failed to create preview for", file.name, e);
-              // Add a placeholder if we can't create a preview
-              newPreviews.push({
-                file,
-                preview:
-                  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz48cGF0aCBkPSJNMzAsNTAgTDcwLDUwIE01MCwzMCBMNTAsNzAiIHN0cm9rZT0iIzk5OSIgc3Ryb2tlLXdpZHRoPSI4Ii8+PC9zdmc+", // Error placeholder SVG
-                type: "image",
-                name: file.name,
-                size: formatFileSize(file.size),
-                timestamp: Date.now(),
-              });
+              };
+            } else {
+              // For images, create a data URL preview
+              try {
+                const dataUrl = await readFileAsDataURL(file);
+                return {
+                  file,
+                  preview: dataUrl,
+                  type: "image",
+                  name: file.name,
+                  size: formatFileSize(file.size),
+                  timestamp: Date.now(),
+                };
+              } catch (e) {
+                console.error("Failed to create preview for", file.name, e);
+                // Create a placeholder instead
+                return {
+                  file,
+                  preview: null, // We'll render a placeholder for this
+                  type: "image",
+                  name: file.name,
+                  size: formatFileSize(file.size),
+                  timestamp: Date.now(),
+                  error: true,
+                };
+              }
             }
-          }
-        }
+          })
+        );
 
         // Update state in a single batch with proper selected index handling
         setPreviews((prevPreviews) => {
@@ -926,10 +934,10 @@ const CreateStory = () => {
         toast.error("Error preparing media previews. Please try again.");
       }
     },
-    [processVideoFile]
+    [processVideoFile, createSecureVideoPreview]
   );
 
-  // Helper function to read a file as data URL (works with CSP)
+  // Helper function to read a file as data URL
   const readFileAsDataURL = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -960,14 +968,20 @@ const CreateStory = () => {
     useFsAccessApi: false, // Disable File System Access API which can cause issues
   });
 
-  // Remove a preview and its file with improved cleanup
+  // Remove a preview and its file with proper cleanup
   const removePreview = useCallback(
     (index) => {
       const newPreviews = [...previews];
       const newMediaFiles = [...mediaFiles];
 
-      // We're not using URL.revokeObjectURL anymore since we're using data URLs
-      // No need to revoke anything here
+      // Properly clean up URLs to prevent memory leaks
+      if (newPreviews[index]?.type === "video" && newPreviews[index]?.preview) {
+        try {
+          URL.revokeObjectURL(newPreviews[index].preview);
+        } catch (e) {
+          console.error("Error revoking URL:", e);
+        }
+      }
 
       newPreviews.splice(index, 1);
       newMediaFiles.splice(index, 1);
@@ -991,16 +1005,25 @@ const CreateStory = () => {
     [previews, mediaFiles, selectedIndex]
   );
 
-  // Remove all media at once
+  // Remove all media at once with proper cleanup
   const removeAllMedia = useCallback(() => {
-    // We're not using URL.revokeObjectURL anymore, so no need to revoke
+    // Clean up video preview URLs
+    previews.forEach((preview) => {
+      if (preview.type === "video" && preview.preview) {
+        try {
+          URL.revokeObjectURL(preview.preview);
+        } catch (e) {
+          console.error("Error revoking URL:", e);
+        }
+      }
+    });
 
     setPreviews([]);
     setMediaFiles([]);
     setSelectedIndex(0);
     setShowCompressOption(false);
     setCompressVideo(false);
-  }, []);
+  }, [previews]);
 
   // Optimized camera capture with permissions handling
   const handleCameraCapture = useCallback(() => {
@@ -1081,6 +1104,12 @@ const CreateStory = () => {
           toast("Maximum video length: 60 seconds", {
             duration: 3000,
             position: "top-center",
+            icon: "🎥",
+            style: {
+              background: COLORS.elevatedBackground,
+              color: COLORS.textPrimary,
+              border: `1px solid ${COLORS.border}`,
+            },
           });
         }
 
@@ -1172,8 +1201,20 @@ const CreateStory = () => {
       file.type.startsWith("video/")
     );
     const uploadToastId = hasVideoFiles
-      ? toast.loading("Preparing to upload video...")
-      : toast.loading("Uploading story...");
+      ? toast.loading("Preparing to upload video...", {
+          style: {
+            background: COLORS.elevatedBackground,
+            color: COLORS.textPrimary,
+            border: `1px solid ${COLORS.border}`,
+          },
+        })
+      : toast.loading("Uploading story...", {
+          style: {
+            background: COLORS.elevatedBackground,
+            color: COLORS.textPrimary,
+            border: `1px solid ${COLORS.border}`,
+          },
+        });
 
     try {
       setUploadStatus("Uploading story...");
@@ -1185,12 +1226,26 @@ const CreateStory = () => {
           await new Promise((resolve) => setTimeout(resolve, 300));
           setUploadProgress(i);
           setUploadStatus(`Uploading: ${i}%`);
-          toast.loading(`Uploading: ${i}%`, { id: uploadToastId });
+          toast.loading(`Uploading: ${i}%`, {
+            id: uploadToastId,
+            style: {
+              background: COLORS.elevatedBackground,
+              color: COLORS.textPrimary,
+              border: `1px solid ${COLORS.border}`,
+            },
+          });
         }
 
         // Simulate successful upload
         toast.dismiss(uploadToastId);
-        toast.success("Story created successfully!");
+        toast.success("Story created successfully!", {
+          style: {
+            background: COLORS.elevatedBackground,
+            color: COLORS.textPrimary,
+            border: `1px solid ${COLORS.border}`,
+          },
+          icon: "🎉",
+        });
         navigate("/");
         return;
       }
@@ -1211,6 +1266,11 @@ const CreateStory = () => {
             // Update toast message
             toast.loading(`Uploading: ${percentCompleted}%`, {
               id: uploadToastId,
+              style: {
+                background: COLORS.elevatedBackground,
+                color: COLORS.textPrimary,
+                border: `1px solid ${COLORS.border}`,
+              },
             });
           }
         },
@@ -1220,7 +1280,14 @@ const CreateStory = () => {
 
       console.log("Upload response:", response);
       toast.dismiss(uploadToastId);
-      toast.success("Story created successfully!");
+      toast.success("Story created successfully!", {
+        style: {
+          background: COLORS.elevatedBackground,
+          color: COLORS.textPrimary,
+          border: `1px solid ${COLORS.border}`,
+        },
+        icon: "🎉",
+      });
       navigate("/");
     } catch (err) {
       console.error("Error creating story:", err);
@@ -1234,20 +1301,45 @@ const CreateStory = () => {
               "Files are too large. Please use smaller files or enable compression."
             );
             toast.error(
-              "Files are too large. Please use smaller files or enable compression."
+              "Files are too large. Please use smaller files or enable compression.",
+              {
+                style: {
+                  background: COLORS.elevatedBackground,
+                  color: COLORS.error,
+                  border: `1px solid ${COLORS.error}30`,
+                },
+              }
             );
             break;
           case 401:
             setError("You need to be logged in to create stories.");
-            toast.error("You need to be logged in to create stories.");
+            toast.error("You need to be logged in to create stories.", {
+              style: {
+                background: COLORS.elevatedBackground,
+                color: COLORS.error,
+                border: `1px solid ${COLORS.error}30`,
+              },
+            });
             break;
           case 429:
             setError("Too many requests. Please try again later.");
-            toast.error("Too many requests. Please try again later.");
+            toast.error("Too many requests. Please try again later.", {
+              style: {
+                background: COLORS.elevatedBackground,
+                color: COLORS.error,
+                border: `1px solid ${COLORS.error}30`,
+              },
+            });
             break;
           case 500:
             setError("Server error. The team has been notified.");
-            toast.error("Server error. The team has been notified.");
+            toast.error("Server error. The team has been notified.", {
+              style: {
+                background: COLORS.elevatedBackground,
+                color: COLORS.error,
+                border: `1px solid ${COLORS.error}30`,
+              },
+            });
             break;
           default:
             setError(
@@ -1256,7 +1348,14 @@ const CreateStory = () => {
             );
             toast.error(
               err.response.data?.message ||
-                `Upload failed (${err.response.status}). Please try again.`
+                `Upload failed (${err.response.status}). Please try again.`,
+              {
+                style: {
+                  background: COLORS.elevatedBackground,
+                  color: COLORS.error,
+                  border: `1px solid ${COLORS.error}30`,
+                },
+              }
             );
         }
       } else if (err.request) {
@@ -1265,23 +1364,49 @@ const CreateStory = () => {
           console.log(
             "DEV MODE: Simulating successful upload despite server error"
           );
-          toast.success("Story created successfully! (DEV MODE)");
+          toast.success("Story created successfully! (DEV MODE)", {
+            style: {
+              background: COLORS.elevatedBackground,
+              color: COLORS.textPrimary,
+              border: `1px solid ${COLORS.border}`,
+            },
+            icon: "🎉",
+          });
           navigate("/");
           return;
         }
 
         setError("Server not responding. Please try again later.");
-        toast.error("Server not responding. Please try again later.");
+        toast.error("Server not responding. Please try again later.", {
+          style: {
+            background: COLORS.elevatedBackground,
+            color: COLORS.error,
+            border: `1px solid ${COLORS.error}30`,
+          },
+        });
       } else if (err.message.includes("timeout")) {
         setError(
           "Upload timed out. Please try again with smaller files or better connection."
         );
         toast.error(
-          "Upload timed out. Please try again with smaller files or better connection."
+          "Upload timed out. Please try again with smaller files or better connection.",
+          {
+            style: {
+              background: COLORS.elevatedBackground,
+              color: COLORS.error,
+              border: `1px solid ${COLORS.error}30`,
+            },
+          }
         );
       } else {
         setError("Failed to create story. Please try again.");
-        toast.error("Failed to create story. Please try again.");
+        toast.error("Failed to create story. Please try again.", {
+          style: {
+            background: COLORS.elevatedBackground,
+            color: COLORS.error,
+            border: `1px solid ${COLORS.error}30`,
+          },
+        });
       }
     } finally {
       setLoading(false);
@@ -1319,7 +1444,13 @@ const CreateStory = () => {
         }
       } catch (error) {
         console.error(`Error handling ${mediaType} selection:`, error);
-        toast.error(`Failed to access ${mediaType}. Please try again.`);
+        toast.error(`Failed to access ${mediaType}. Please try again.`, {
+          style: {
+            background: COLORS.elevatedBackground,
+            color: COLORS.error,
+            border: `1px solid ${COLORS.error}30`,
+          },
+        });
       }
     },
     [handleGallerySelect, handleCameraCapture, handleVideoCapture]
@@ -1333,9 +1464,18 @@ const CreateStory = () => {
         clearTimeout(videoProcessingTimeoutRef.current);
       }
 
-      // No need to revoke object URLs since we're using data URLs
+      // Clean up video preview URLs
+      previews.forEach((preview) => {
+        if (preview.type === "video" && preview.preview) {
+          try {
+            URL.revokeObjectURL(preview.preview);
+          } catch (e) {
+            console.error("Error revoking URL:", e);
+          }
+        }
+      });
     };
-  }, []);
+  }, [previews]);
 
   // Memoized media count stats for better performance
   const mediaStats = useMemo(() => {
@@ -1357,6 +1497,50 @@ const CreateStory = () => {
   if (authLoading) {
     return null;
   }
+
+  // Plain fallback element for video previews
+  const renderVideoFallback = () => {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: COLORS.elevatedBackground,
+          color: COLORS.textSecondary,
+        }}
+      >
+        <FaVideo style={{ fontSize: "3rem", marginBottom: "1rem" }} />
+        <p>Video preview unavailable</p>
+        <p style={{ fontSize: "0.8rem", marginTop: "0.5rem" }}>Tap to select</p>
+      </div>
+    );
+  };
+
+  // Plain fallback element for image previews
+  const renderImageFallback = () => {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: COLORS.elevatedBackground,
+          color: COLORS.textSecondary,
+        }}
+      >
+        <FaImage style={{ fontSize: "3rem", marginBottom: "1rem" }} />
+        <p>Image preview unavailable</p>
+        <p style={{ fontSize: "0.8rem", marginTop: "0.5rem" }}>Tap to select</p>
+      </div>
+    );
+  };
 
   return (
     <PageWrapper>
@@ -1407,44 +1591,81 @@ const CreateStory = () => {
         {/* Main Media Preview Area */}
         {previews.length > 0 ? (
           <MediaPreviewContainer>
-            {previews[selectedIndex] &&
-            previews[selectedIndex].type === "image" ? (
-              <MainPreviewImage
-                src={previews[selectedIndex].preview}
-                alt={`Preview ${selectedIndex + 1}`}
-                onError={(e) => {
-                  console.error("Image preview error:", e);
-                  e.target.src =
-                    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f0f0f0'/%3E%3Cpath d='M30,50 L70,50 M50,30 L50,70' stroke='%23999' stroke-width='8'/%3E%3C/svg%3E";
-                  toast.error(`Error loading image preview`);
-                }}
-              />
-            ) : previews[selectedIndex] ? (
-              <MainPreviewVideo>
-                <video
-                  src={previews[selectedIndex].preview}
-                  controls
-                  muted
-                  preload="metadata"
-                  onError={(e) => {
-                    console.error("Video preview error:", e);
-                    // Replace with placeholder
-                    const placeholder = document.createElement("div");
-                    placeholder.style.width = "100%";
-                    placeholder.style.height = "100%";
-                    placeholder.style.display = "flex";
-                    placeholder.style.alignItems = "center";
-                    placeholder.style.justifyContent = "center";
-                    placeholder.style.background = "#f0f0f0";
-                    placeholder.innerText = "Video preview unavailable";
-                    e.target.parentNode.replaceChild(placeholder, e.target);
-                    toast.error(`Error loading video preview`);
-                  }}
-                />
-                <VideoIcon>
-                  <FaVideo />
-                </VideoIcon>
-              </MainPreviewVideo>
+            {previews[selectedIndex] ? (
+              previews[selectedIndex].type === "image" ? (
+                previews[selectedIndex].preview ? (
+                  <MainPreviewImage
+                    src={previews[selectedIndex].preview}
+                    alt={`Preview ${selectedIndex + 1}`}
+                    onError={(e) => {
+                      console.error("Image preview error:", e);
+                      // Use a simpler approach instead of ReactDOM.render
+                      e.target.style.display = "none";
+                      e.target.parentNode.appendChild(
+                        document.createTextNode("Image preview unavailable")
+                      );
+                      e.target.parentNode.style.display = "flex";
+                      e.target.parentNode.style.alignItems = "center";
+                      e.target.parentNode.style.justifyContent = "center";
+                      e.target.parentNode.style.backgroundColor =
+                        COLORS.elevatedBackground;
+                      e.target.parentNode.style.color = COLORS.textSecondary;
+                    }}
+                  />
+                ) : (
+                  renderImageFallback()
+                )
+              ) : previews[selectedIndex].preview ? (
+                <MainPreviewVideo>
+                  <video
+                    src={previews[selectedIndex].preview}
+                    controls
+                    muted
+                    playsInline
+                    preload="metadata"
+                    onError={(e) => {
+                      console.error("Video preview error:", e);
+                      // Use DOM manipulation instead of ReactDOM
+                      e.target.style.display = "none";
+
+                      // Create fallback content
+                      const fallbackContainer = document.createElement("div");
+                      fallbackContainer.style.width = "100%";
+                      fallbackContainer.style.height = "100%";
+                      fallbackContainer.style.display = "flex";
+                      fallbackContainer.style.flexDirection = "column";
+                      fallbackContainer.style.alignItems = "center";
+                      fallbackContainer.style.justifyContent = "center";
+                      fallbackContainer.style.backgroundColor =
+                        COLORS.elevatedBackground;
+                      fallbackContainer.style.color = COLORS.textSecondary;
+
+                      // Create icon
+                      const iconDiv = document.createElement("div");
+                      iconDiv.style.fontSize = "3rem";
+                      iconDiv.style.marginBottom = "1rem";
+                      iconDiv.innerHTML =
+                        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path fill="currentColor" d="M336.2 64H47.8C21.4 64 0 85.4 0 111.8v288.4C0 426.6 21.4 448 47.8 448h288.4c26.4 0 47.8-21.4 47.8-47.8V111.8c0-26.4-21.4-47.8-47.8-47.8zm189.4 37.7L416 177.3v157.4l109.6 75.5c21.2 14.6 50.4-.3 50.4-25.8V127.5c0-25.4-29.1-40.4-50.4-25.8z"/></svg>';
+
+                      // Create text
+                      const textDiv = document.createElement("div");
+                      textDiv.textContent = "Video preview unavailable";
+
+                      // Append elements
+                      fallbackContainer.appendChild(iconDiv);
+                      fallbackContainer.appendChild(textDiv);
+
+                      // Add to parent
+                      e.target.parentNode.appendChild(fallbackContainer);
+                    }}
+                  />
+                  <VideoIcon>
+                    <FaVideo />
+                  </VideoIcon>
+                </MainPreviewVideo>
+              ) : (
+                renderVideoFallback()
+              )
             ) : (
               <div
                 style={{
@@ -1453,11 +1674,14 @@ const CreateStory = () => {
                   justifyContent: "center",
                   width: "100%",
                   height: "100%",
+                  backgroundColor: COLORS.elevatedBackground,
+                  color: COLORS.textSecondary,
                 }}
               >
-                Preview unavailable
+                Media preview unavailable
               </div>
             )}
+
             <RemoveButton
               onClick={() => removePreview(selectedIndex)}
               aria-label={`Remove ${previews[selectedIndex]?.type || "media"}`}
@@ -1536,14 +1760,49 @@ const CreateStory = () => {
                 onClick={() => handleThumbnailClick(index)}
               >
                 {item.type === "image" ? (
-                  <ThumbnailImage
-                    src={item.preview}
-                    alt={`Thumbnail ${index + 1}`}
-                    loading="lazy"
-                  />
+                  item.preview ? (
+                    <ThumbnailImage
+                      src={item.preview}
+                      alt={`Thumbnail ${index + 1}`}
+                      loading="lazy"
+                      onError={(e) => {
+                        console.error("Thumbnail image error:", e);
+                        e.target.src =
+                          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%232D2D2D'/%3E%3Cpath d='M35,50 L65,50 M50,35 L50,65' stroke='%23B0B0B0' stroke-width='3'/%3E%3C/svg%3E";
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: COLORS.elevatedBackground,
+                      }}
+                    >
+                      <FaImage color={COLORS.textTertiary} />
+                    </div>
+                  )
                 ) : (
                   <ThumbnailVideo>
-                    <video src={item.preview} />
+                    {item.preview ? (
+                      <video src={item.preview} />
+                    ) : (
+                      <div
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: COLORS.elevatedBackground,
+                        }}
+                      >
+                        <FaVideo color={COLORS.textTertiary} />
+                      </div>
+                    )}
                     <ThumbnailVideoIcon>
                       <FaVideo />
                     </ThumbnailVideoIcon>
