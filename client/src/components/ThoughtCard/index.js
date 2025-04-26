@@ -54,7 +54,7 @@ const Card = styled.div`
   animation: ${fadeIn} 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
   overflow: hidden;
   transition: all 0.4s ease;
-  width: calc(100% - 16px);
+  width: calc(100% - 8px);
   max-width: 100%;
   margin-left: auto;
   margin-right: auto;
