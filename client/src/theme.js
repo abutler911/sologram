@@ -1,44 +1,45 @@
-// theme.js - SoloGram-Inspired Theme
+// theme.js - Masculine SoloGram Theme
 export const COLORS = {
-  primaryPink: "#FF5B8D", // Left side of the gradient
-  primaryPurple: "#B04BDF", // Middle of the gradient
-  primaryBlue: "#6A5ACD", // Right side of the gradient
-  accentPink: "#FF4D94", // Brighter version of primary
-  accentPurple: "#C776FF", // Brighter version of primary
-  accentBlue: "#7B68EE", // Brighter version of primary
-  background: "#1A1A1A", // Dark background for contrast
-  cardBackground: "#FFFFFF", // Kept white for maximum contrast
-  elevatedBackground: "#2D2D2D", // Slightly lighter than background
+  primaryTeal: "#00838F", // Left side of the gradient - deep teal
+  primaryBlue: "#0D47A1", // Middle of the gradient - navy blue
+  primaryGreen: "#006064", // Right side of the gradient - forest green
+  accentTeal: "#00ACC1", // Brighter version of primary
+  accentBlue: "#1976D2", // Brighter version of primary
+  accentGreen: "#00897B", // Brighter version of primary
+  background: "#121212", // Dark background for contrast
+  cardBackground: "#1E1E1E", // Dark cards for a sleek look
+  elevatedBackground: "#252525", // Slightly lighter than background
   textPrimary: "#FFFFFF", // White text for dark background
   textSecondary: "#E0E0E0", // Light text
   textTertiary: "#B0B0B0", // Medium light text
-  error: "#FF5252", // Keeping your error color
-  success: "#4CAF50", // Keeping your success color
-  warning: "#FFB74D", // Keeping your warning color
-  info: "#29B6F6", // Keeping your info color
-  border: "#444444", // Darker border color
-  divider: "#333333", // Darker divider
-  buttonHover: "#444444", // Darker hover state
-  shadow: "rgba(0, 0, 0, 0.2)", // Same shadow
+  error: "#CF6679", // Modern error color
+  success: "#009688", // Teal success color
+  warning: "#FFA000", // Bold amber warning color
+  info: "#0277BD", // Deep blue info color
+  border: "#333333", // Darker border color
+  divider: "#2C2C2C", // Subtle divider
+  buttonHover: "#303030", // Darker hover state
+  shadow: "rgba(0, 0, 0, 0.3)", // Slightly stronger shadow
+  darkAccent: "#0A1929", // Very dark blue for accents
 };
 
 export const THEME = {
   header: {
-    background: `linear-gradient(to right, ${COLORS.primaryPink}, ${COLORS.primaryPurple}, ${COLORS.primaryBlue})`,
+    background: `linear-gradient(to right, ${COLORS.primaryGreen}, ${COLORS.primaryTeal}, ${COLORS.primaryBlue})`,
     text: "#FFFFFF",
     icon: "#FFFFFF",
   },
   banner: {
-    background: COLORS.elevatedBackground,
+    background: COLORS.darkAccent,
     text: COLORS.textPrimary,
-    title: COLORS.accentPink,
-    icon: COLORS.accentPurple,
+    title: COLORS.accentTeal,
+    icon: COLORS.accentBlue,
   },
   button: {
     primary: {
-      background: COLORS.primaryPurple,
+      background: COLORS.primaryTeal,
       text: "#FFFFFF",
-      hoverBackground: "#9039C8",
+      hoverBackground: "#006064",
     },
     secondary: {
       background: COLORS.elevatedBackground,
@@ -46,9 +47,9 @@ export const THEME = {
       hoverBackground: COLORS.buttonHover,
     },
     action: {
-      background: COLORS.primaryPink,
+      background: COLORS.accentBlue,
       text: "#FFFFFF",
-      hoverBackground: "#E54A7B",
+      hoverBackground: "#0D47A1",
     },
   },
   post: {
@@ -57,13 +58,13 @@ export const THEME = {
     footer: COLORS.elevatedBackground,
     border: COLORS.border,
     icon: {
-      active: COLORS.accentPurple,
+      active: COLORS.accentTeal,
       inactive: COLORS.textTertiary,
     },
   },
   story: {
     border: {
-      active: `linear-gradient(45deg, ${COLORS.primaryPink}, ${COLORS.primaryPurple}, ${COLORS.primaryBlue})`,
+      active: `linear-gradient(45deg, ${COLORS.primaryGreen}, ${COLORS.primaryTeal}, ${COLORS.primaryBlue})`,
       inactive: COLORS.border,
     },
     background: COLORS.cardBackground,

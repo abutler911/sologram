@@ -82,7 +82,7 @@ const HeaderTitle = styled.h1`
 const NextButton = styled.button`
   background: none;
   border: none;
-  color: ${COLORS.textPrimary};
+  color: ${COLORS.accentTeal};
   font-weight: 600;
   padding: 8px;
   cursor: pointer;
@@ -90,7 +90,7 @@ const NextButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    color: ${COLORS.accentPink};
+    color: ${COLORS.accentBlue};
     transform: translateY(-1px);
   }
 
@@ -188,13 +188,13 @@ const DropzoneArea = styled.div`
   align-items: center;
   justify-content: center;
   border: 2px dashed
-    ${(props) => (props.isDragActive ? COLORS.primaryPurple : COLORS.border)};
+    ${(props) => (props.isDragActive ? COLORS.primaryTeal : COLORS.border)};
   background-color: ${COLORS.elevatedBackground};
   cursor: pointer;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: ${COLORS.primaryPurple};
+    border-color: ${COLORS.primaryTeal};
     background-color: ${COLORS.buttonHover};
   }
 `;
@@ -215,7 +215,7 @@ const DragActiveContent = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: ${COLORS.primaryPurple};
+  color: ${COLORS.accentTeal};
   text-align: center;
   padding: 16px;
   width: 100%;
@@ -224,7 +224,7 @@ const DragActiveContent = styled.div`
 const UploadIcon = styled.div`
   font-size: 3rem;
   margin-bottom: 16px;
-  color: ${COLORS.primaryPurple};
+  color: ${COLORS.primaryTeal};
 `;
 
 const ActionButtonsContainer = styled.div`
@@ -259,28 +259,28 @@ const ActionButton = styled.button`
   }
 
   &:hover {
-    background-color: ${COLORS.primaryPurple}20;
+    background-color: ${COLORS.primaryTeal}20;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px ${COLORS.shadow};
 
     svg {
-      color: ${COLORS.primaryPurple};
+      color: ${COLORS.primaryTeal};
     }
   }
 
   &:nth-child(2):hover {
-    background-color: ${COLORS.primaryPink}20;
-
-    svg {
-      color: ${COLORS.primaryPink};
-    }
-  }
-
-  &:nth-child(3):hover {
     background-color: ${COLORS.primaryBlue}20;
 
     svg {
       color: ${COLORS.primaryBlue};
+    }
+  }
+
+  &:nth-child(3):hover {
+    background-color: ${COLORS.primaryGreen}20;
+
+    svg {
+      color: ${COLORS.primaryGreen};
     }
   }
 `;
@@ -309,7 +309,7 @@ const ThumbnailItem = styled.div`
   flex-shrink: 0;
   cursor: pointer;
   border: 2px solid
-    ${(props) => (props.isSelected ? COLORS.primaryPink : "transparent")};
+    ${(props) => (props.isSelected ? COLORS.primaryTeal : "transparent")};
   position: relative;
   display: flex;
   align-items: center;
@@ -370,14 +370,14 @@ const AddMediaThumbnail = styled.div`
   justify-content: center;
   flex-shrink: 0;
   cursor: pointer;
-  color: ${COLORS.primaryPink};
+  color: ${COLORS.accentBlue};
   font-size: 1.5rem;
   border: 1px dashed ${COLORS.border};
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: ${COLORS.primaryPink}20;
-    color: ${COLORS.accentPink};
+    background-color: ${COLORS.primaryBlue}20;
+    color: ${COLORS.accentBlue};
     transform: scale(1.05);
   }
 `;
@@ -432,8 +432,8 @@ const ProgressBarInner = styled.div`
   width: ${(props) => props.width}%;
   background: linear-gradient(
     90deg,
-    ${COLORS.primaryPink},
-    ${COLORS.primaryPurple}
+    ${COLORS.primaryGreen},
+    ${COLORS.primaryTeal}
   );
   transition: width 0.3s ease;
 `;
@@ -449,15 +449,15 @@ const CompressOptionContainer = styled.div`
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background-color: ${COLORS.primaryPurple}15;
+  background-color: ${COLORS.primaryTeal}15;
   border-radius: 4px;
   margin: 8px 16px;
-  border: 1px solid ${COLORS.primaryPurple}30;
+  border: 1px solid ${COLORS.primaryTeal}30;
 `;
 
 const CompressCheckbox = styled.input`
   margin-right: 12px;
-  accent-color: ${COLORS.primaryPurple};
+  accent-color: ${COLORS.primaryTeal};
 `;
 
 const CompressLabel = styled.label`
@@ -532,7 +532,7 @@ const LoaderOverlay = styled.div`
 const Spinner = styled.div`
   border: 4px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  border-top: 4px solid ${COLORS.primaryPink};
+  border-top: 4px solid ${COLORS.primaryTeal};
   width: 40px;
   height: 40px;
   animation: spin 1s linear infinite;
@@ -562,7 +562,7 @@ const PreviewDot = styled.div`
   height: 8px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? COLORS.primaryPink : "rgba(255, 255, 255, 0.5)"};
+    props.active ? COLORS.primaryTeal : "rgba(255, 255, 255, 0.5)"};
   cursor: pointer;
   transition: all 0.2s ease;
 
