@@ -320,7 +320,7 @@ const Content = styled.p`
 
   @media (max-width: 768px) {
     padding: 1.25rem;
-    font-size: 0.7rem;
+    font-size: 0.9rem;
     line-height: 1.2;
   }
 `;
