@@ -249,15 +249,21 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
     setIsLiking(true);
     setIsDoubleTapLiking(true);
 
+    const API_BASE_URL =
+      process.env.REACT_APP_API_URL || "https://sologram-api.onrender.com";
+
     try {
-      // Changed from PUT to POST since the backend might be expecting POST
-      const response = await fetch(`/api/posts/${post._id}/like`, {
-        method: "POST", // Changed from PUT to POST
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      console.log(`Liking post: ${post._id}`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/posts/${post._id}/like`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
       if (response.ok) {
         // Update like count and status

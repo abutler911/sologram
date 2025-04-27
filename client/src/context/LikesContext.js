@@ -9,6 +9,10 @@ export const LikesProvider = ({ children }) => {
   const [likedPosts, setLikedPosts] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Define API base URL - use environment variable if available, or hardcode for now
+  const API_BASE_URL =
+    process.env.REACT_APP_API_URL || "https://sologram-api.onrender.com";
+
   // Check if a post is liked by the current user
   const checkLikeStatus = useCallback(
     async (postId) => {
@@ -19,13 +23,16 @@ export const LikesProvider = ({ children }) => {
           return likedPosts[postId];
         }
         // If not in local state, check with the server
-        const response = await fetch(`/api/posts/${postId}/likes/check`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/posts/${postId}/likes/check`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
         if (response.ok) {
           const { hasLiked } = await response.json();
           // Update local state
@@ -41,7 +48,7 @@ export const LikesProvider = ({ children }) => {
         return false;
       }
     },
-    [isAuthenticated, user, likedPosts]
+    [isAuthenticated, user, likedPosts, API_BASE_URL]
   );
 
   // Like a post
@@ -54,13 +61,20 @@ export const LikesProvider = ({ children }) => {
       if (isProcessing || likedPosts[postId]) return false;
       setIsProcessing(true);
       try {
-        const response = await fetch(`/api/posts/${postId}/like`, {
-          method: "POST", // Changed from PUT to POST to match the controller
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        console.log(
+          `Attempting to like post: ${postId} at ${API_BASE_URL}/api/posts/${postId}/like`
+        );
+        const response = await fetch(
+          `${API_BASE_URL}/api/posts/${postId}/like`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
         if (response.ok) {
           // Update local state
           setLikedPosts((prev) => ({
@@ -72,8 +86,19 @@ export const LikesProvider = ({ children }) => {
           }
           return true;
         } else {
-          const data = await response.json();
-          toast.error(data.message || "Failed to like post");
+          // For debugging
+          const responseText = await response.text();
+          console.log("Error response text:", responseText);
+
+          let errorMessage = "Failed to like post";
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.message || errorMessage;
+          } catch (e) {
+            // Not JSON, use text as is
+          }
+
+          toast.error(errorMessage);
           return false;
         }
       } catch (error) {
@@ -84,7 +109,7 @@ export const LikesProvider = ({ children }) => {
         setIsProcessing(false);
       }
     },
-    [isAuthenticated, isProcessing, likedPosts]
+    [isAuthenticated, isProcessing, likedPosts, API_BASE_URL]
   );
 
   // Clear likes data (useful for logout)
