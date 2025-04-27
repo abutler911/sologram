@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useRef,
   useCallback,
+  useContext,
   forwardRef,
   useImperativeHandle,
 } from "react";
@@ -14,7 +15,9 @@ import { toast } from "react-hot-toast";
 import { FaCamera } from "react-icons/fa";
 import Stories from "../components/stories/Stories";
 import PreloadImage from "../components/PreLoadImage";
-import { COLORS, THEME } from "../theme"; // Import the theme
+import { COLORS, THEME } from "../theme";
+import { LikesContext } from "../context/LikesContext";
+import { AuthContext } from "../context/AuthContext";
 
 const PostCard = lazy(() => import("../components/posts/PostCard"));
 
@@ -31,7 +34,17 @@ const Home = forwardRef((props, ref) => {
     window.matchMedia("(display-mode: standalone)").matches
   );
 
+  const { isAuthenticated } = useContext(AuthContext);
+  const { batchCheckLikeStatus } = useContext(LikesContext);
+
   const observer = useRef();
+
+  useEffect(() => {
+    if (isAuthenticated && posts.length > 0) {
+      const postIds = posts.map((post) => post._id);
+      batchCheckLikeStatus(postIds);
+    }
+  }, [isAuthenticated, posts, batchCheckLikeStatus]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(display-mode: standalone)");

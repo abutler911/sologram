@@ -430,3 +430,49 @@ exports.checkUserLike = async (req, res) => {
     });
   }
 };
+
+exports.checkUserLikesBatch = async (req, res) => {
+  try {
+    const { postIds } = req.body;
+    const userId = req.user._id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    if (!Array.isArray(postIds) || postIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or empty post IDs array",
+      });
+    }
+
+    // Find all likes for this user and these posts
+    const likes = await Like.find({
+      post: { $in: postIds },
+      user: userId,
+    });
+
+    // Create a map of postId to hasLiked boolean
+    const results = postIds.map((postId) => ({
+      postId,
+      hasLiked: likes.some(
+        (like) => like.post.toString() === postId.toString()
+      ),
+    }));
+
+    res.status(200).json({
+      success: true,
+      results,
+    });
+  } catch (err) {
+    console.error("Batch check likes error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};

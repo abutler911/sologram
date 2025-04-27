@@ -8,6 +8,7 @@ import {
   Suspense,
   lazy,
 } from "react";
+import { LikesContext } from "../../context/LikesContext";
 import { Link } from "react-router-dom";
 import styled, { keyframes, css } from "styled-components";
 import { FaHeart, FaRegHeart } from "react-icons/fa/index.js";
@@ -109,7 +110,6 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
-  const [hasLiked, setHasLiked] = useState(false);
   const [isDoubleTapLiking, setIsDoubleTapLiking] = useState(false);
   const actionsRef = useRef(null);
   const [isLongPressing, setIsLongPressing] = useState(false);
@@ -118,25 +118,19 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   const [fullscreenIndex, setFullscreenIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const [isPressing, setIsPressing] = useState(false);
+  const { checkLikeStatus, likePost, likedPosts, isProcessing } =
+    useContext(LikesContext);
+  const hasLiked = likedPosts[post?._id] || false;
 
   const hasMultipleMedia = post.media && post.media.length > 1;
   const formattedDate = format(new Date(post.createdAt), "MMM d, yyyy");
 
-  // Check if the user has already liked this post - simplified without context
+  // Check if the user has already liked this post using the LikesContext
   useEffect(() => {
     if (isAuthenticated && post._id) {
-      const checkUserLike = async () => {
-        try {
-          // Simplified - use direct fetch instead of context
-          setHasLiked(false); // Default to false
-        } catch (err) {
-          console.error("Error checking if user liked post:", err);
-        }
-      };
-
-      checkUserLike();
+      checkLikeStatus(post._id);
     }
-  }, [isAuthenticated, post._id]);
+  }, [isAuthenticated, post._id, checkLikeStatus]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.IntersectionObserver) return;
@@ -239,79 +233,16 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
 
   // Updated handleLike with POST method instead of PUT
   const handleLike = useCallback(async () => {
-    if (!isAuthenticated) {
-      toast.error("Please log in to like posts");
-      return;
-    }
+    if (!isAuthenticated || isProcessing || hasLiked) return;
 
-    if (isLiking || hasLiked) return;
-
-    setIsLiking(true);
-    setIsDoubleTapLiking(true);
-
-    const API_BASE_URL =
-      process.env.REACT_APP_API_URL || "https://sologram-api.onrender.com";
-
-    try {
-      console.log(`Liking post: ${post._id}`);
-      const response = await fetch(
-        `${API_BASE_URL}/api/posts/${post._id}/like`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      // Get response text first
-      const responseText = await response.text();
-      console.log("Response text:", responseText);
-
-      // Try to parse as JSON
-      let responseData;
-      try {
-        responseData = JSON.parse(responseText);
-      } catch (e) {
-        console.log("Response was not valid JSON");
-      }
-
-      if (response.ok) {
-        // Success - update UI
-        setPost((prevPost) => ({
-          ...prevPost,
-          likes: (prevPost.likes || 0) + 1,
-        }));
-        setHasLiked(true);
-      } else if (
-        responseText.includes("already liked") ||
-        (responseData &&
-          responseData.message &&
-          responseData.message.includes("already liked"))
-      ) {
-        // Already liked - just update UI state without error message
-        console.log("Post was already liked");
-        setHasLiked(true);
-      } else {
-        // Other error
-        toast.error(responseData?.message || "Failed to like post");
-      }
-    } catch (err) {
-      console.error("Error liking post:", err);
-      toast.error("Failed to like post");
-    } finally {
-      setIsLiking(false);
-
-      // Delay the animation ending
-      const timerRef = { current: null };
-      timerRef.current = setTimeout(() => {
-        setIsDoubleTapLiking(false);
-      }, 1000);
-
-      // No need to return cleanup here - this is a callback function, not a useEffect
-    }
-  }, [post?._id, isLiking, hasLiked, isAuthenticated]);
+    likePost(post._id, () => {
+      // On success callback, update the local post state
+      setPost((prevPost) => ({
+        ...prevPost,
+        likes: (prevPost.likes || 0) + 1,
+      }));
+    });
+  }, [post._id, isProcessing, hasLiked, isAuthenticated, likePost]);
 
   const handleDoubleTapLike = useCallback(() => {
     if (!isAuthenticated) {
@@ -560,11 +491,18 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
             <ActionGroup>
               <LikeButton
                 onClick={handleLike}
-                disabled={isLiking || hasLiked}
+                disabled={isProcessing || hasLiked}
                 liked={hasLiked}
+                processing={isProcessing}
                 aria-label={hasLiked ? "Post liked" : "Like post"}
               >
-                {hasLiked ? <FaHeart /> : <FaRegHeart />}
+                {hasLiked ? (
+                  <FaHeart />
+                ) : isProcessing ? (
+                  <LoadingIcon />
+                ) : (
+                  <FaRegHeart />
+                )}
               </LikeButton>
               <LikesCounter>
                 <span>
@@ -1059,6 +997,11 @@ const NavigationArrow = styled.button`
       right: 8px;
     }
   }
+`;
+
+const LoadingIcon = styled(FaRegHeart)`
+  animation: ${pulse} 0.8s ease-in-out infinite;
+  opacity: 0.7;
 `;
 
 const ProgressIndicator = styled.div`

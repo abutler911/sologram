@@ -1,4 +1,10 @@
-import React, { createContext, useState, useContext, useCallback } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useCallback,
+  useEffect,
+} from "react";
 import { AuthContext } from "./AuthContext";
 import { toast } from "react-hot-toast";
 
@@ -9,19 +15,67 @@ export const LikesProvider = ({ children }) => {
   const [likedPosts, setLikedPosts] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Define API base URL - use environment variable if available, or hardcode for now
+  // Define API base URL - use environment variable if available
   const API_BASE_URL =
     process.env.REACT_APP_API_URL || "https://sologram-api.onrender.com";
 
-  // Check if a post is liked by the current user
+  // Clear likes data when user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLikedPosts({});
+    }
+  }, [isAuthenticated]);
+
+  // Batch check multiple posts at once
+  const batchCheckLikeStatus = useCallback(
+    async (postIds) => {
+      if (!isAuthenticated || !user?._id || !postIds.length) return;
+
+      // Filter out posts we already know about
+      const postsToCheck = postIds.filter((id) => likedPosts[id] === undefined);
+      if (!postsToCheck.length) return;
+
+      try {
+        // This would require a new backend endpoint to check multiple posts at once
+        const response = await fetch(
+          `${API_BASE_URL}/api/posts/likes/check-batch`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify({ postIds: postsToCheck }),
+          }
+        );
+
+        if (response.ok) {
+          const { results } = await response.json();
+          // Update local state with batch results
+          const newLikedPosts = { ...likedPosts };
+          results.forEach((result) => {
+            newLikedPosts[result.postId] = result.hasLiked;
+          });
+          setLikedPosts(newLikedPosts);
+        }
+      } catch (error) {
+        console.error("Error batch checking like status:", error);
+      }
+    },
+    [isAuthenticated, user, likedPosts, API_BASE_URL]
+  );
+
+  // Individual post like status check (keep for backward compatibility)
   const checkLikeStatus = useCallback(
     async (postId) => {
       if (!isAuthenticated || !user?._id) return false;
+
       try {
         // First check our local state
         if (likedPosts[postId] !== undefined) {
           return likedPosts[postId];
         }
+
         // If not in local state, check with the server
         const response = await fetch(
           `${API_BASE_URL}/api/posts/${postId}/likes/check`,
@@ -33,6 +87,7 @@ export const LikesProvider = ({ children }) => {
             },
           }
         );
+
         if (response.ok) {
           const { hasLiked } = await response.json();
           // Update local state
@@ -58,12 +113,12 @@ export const LikesProvider = ({ children }) => {
         toast.error("Please log in to like posts");
         return false;
       }
+
       if (isProcessing || likedPosts[postId]) return false;
+
       setIsProcessing(true);
+
       try {
-        console.log(
-          `Attempting to like post: ${postId} at ${API_BASE_URL}/api/posts/${postId}/like`
-        );
         const response = await fetch(
           `${API_BASE_URL}/api/posts/${postId}/like`,
           {
@@ -75,29 +130,48 @@ export const LikesProvider = ({ children }) => {
           }
         );
 
+        // Get response text first for better error handling
+        const responseText = await response.text();
+        let responseData;
+
+        try {
+          responseData = JSON.parse(responseText);
+        } catch (e) {
+          console.log("Response was not valid JSON");
+        }
+
         if (response.ok) {
           // Update local state
           setLikedPosts((prev) => ({
             ...prev,
             [postId]: true,
           }));
+
           if (typeof onSuccess === "function") {
             onSuccess();
           }
-          return true;
-        } else {
-          // For debugging
-          const responseText = await response.text();
-          console.log("Error response text:", responseText);
 
-          let errorMessage = "Failed to like post";
-          try {
-            const errorData = JSON.parse(responseText);
-            errorMessage = errorData.message || errorMessage;
-          } catch (e) {
-            // Not JSON, use text as is
+          return true;
+        } else if (
+          responseText.includes("already liked") ||
+          (responseData &&
+            responseData.message &&
+            responseData.message.includes("already liked"))
+        ) {
+          // Already liked - update UI state without error message
+          setLikedPosts((prev) => ({
+            ...prev,
+            [postId]: true,
+          }));
+
+          if (typeof onSuccess === "function") {
+            onSuccess();
           }
 
+          return true;
+        } else {
+          // Other error
+          const errorMessage = responseData?.message || "Failed to like post";
           toast.error(errorMessage);
           return false;
         }
@@ -123,6 +197,7 @@ export const LikesProvider = ({ children }) => {
         likedPosts,
         isProcessing,
         checkLikeStatus,
+        batchCheckLikeStatus,
         likePost,
         clearLikesData,
       }}
