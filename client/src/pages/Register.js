@@ -8,6 +8,7 @@ import {
   FaEnvelope,
   FaUpload,
   FaChevronRight,
+  FaChevronLeft,
 } from "react-icons/fa";
 import { useDropzone } from "react-dropzone";
 import { AuthContext } from "../context/AuthContext";
@@ -128,35 +129,12 @@ const Register = () => {
   return (
     <PageWrapper>
       <RegisterContainer>
-        <BrandSidebar>
-          <SidebarContent>
-            <LogoContainer>
-              <FaCamera />
-              <LogoText>SoloGram</LogoText>
-            </LogoContainer>
-            <Tagline>One Story. One Creator. Infinite Inspiration.</Tagline>
-            <FeatureList>
-              <FeatureItem>
-                <FeatureIcon>✓</FeatureIcon>
-                <FeatureText>
-                  Experience authentic moments from one unique voice
-                </FeatureText>
-              </FeatureItem>
-              <FeatureItem>
-                <FeatureIcon>✓</FeatureIcon>
-                <FeatureText>
-                  Follow a personal journey through curated stories and posts
-                </FeatureText>
-              </FeatureItem>
-              <FeatureItem>
-                <FeatureIcon>✓</FeatureIcon>
-                <FeatureText>
-                  Get inspired — no noise, no distractions, just connection
-                </FeatureText>
-              </FeatureItem>
-            </FeatureList>
-          </SidebarContent>
-        </BrandSidebar>
+        <LogoHeader>
+          <LogoContainer>
+            <FaCamera />
+            <LogoText>SoloGram</LogoText>
+          </LogoContainer>
+        </LogoHeader>
 
         <FormContainer>
           <FormProgressBar>
@@ -303,7 +281,7 @@ const Register = () => {
 
                 <ButtonGroup>
                   <BackButton type="button" onClick={prevStep}>
-                    Back
+                    <FaChevronLeft /> Back
                   </BackButton>
                   <SubmitButton type="submit" disabled={loading}>
                     {loading ? "Creating account..." : "Complete Registration"}
@@ -329,147 +307,67 @@ const PageWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 2rem 1rem;
 `;
 
 const RegisterContainer = styled.div`
-  display: flex;
   width: 90%;
-  max-width: 1000px;
-  min-height: 600px;
+  max-width: 500px;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    width: 95%;
-    min-height: auto;
-  }
+  box-shadow: 0 8px 24px ${COLORS.shadow};
+  background-color: ${COLORS.cardBackground};
 `;
 
-const BrandSidebar = styled.div`
-  flex: 0 0 40%;
+const LogoHeader = styled.div`
   background: linear-gradient(
     135deg,
-    ${COLORS.primaryTeal},
-    ${COLORS.primaryBlue}
+    ${COLORS.primarySalmon},
+    ${COLORS.primaryBlueGray}
   );
+  padding: 1.5rem;
+  text-align: center;
   color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="none" width="100" height="100"/><path d="M0,0L100,100" stroke="rgba(255,255,255,0.1)" stroke-width="1"/><path d="M100,0L0,100" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></svg>');
-    background-size: 20px 20px;
-    opacity: 0.2;
-  }
-
-  @media (max-width: 768px) {
-    flex: 0 0 auto;
-    padding: 2rem 1.5rem;
-  }
-`;
-
-const SidebarContent = styled.div`
-  padding: 3rem;
-  position: relative;
-  z-index: 1;
-
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
-`;
-
-const FeatureList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 3rem 0 0;
-`;
-
-const FeatureItem = styled.li`
-  display: flex;
-  align-items: center;
-  margin-bottom: 1.25rem;
-`;
-
-const FeatureIcon = styled.span`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.2);
-  margin-right: 1rem;
-  color: white;
-  font-weight: bold;
-`;
-
-const FeatureText = styled.span`
-  font-size: 1rem;
-`;
-
-const FormContainer = styled.div`
-  flex: 1;
-  background-color: ${COLORS.cardBackground};
-  padding: 3rem;
-  display: flex;
-  flex-direction: column;
-
-  @media (max-width: 768px) {
-    padding: 2rem 1.5rem;
-  }
 `;
 
 const LogoContainer = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 1.5rem;
+  justify-content: center;
 
   svg {
-    font-size: 2.5rem;
+    font-size: 2rem;
     margin-right: 0.75rem;
   }
 `;
 
 const LogoText = styled.h1`
-  font-size: 2.25rem;
+  font-size: 2rem;
   font-weight: 700;
   margin: 0;
 `;
 
-const Tagline = styled.p`
-  font-size: 1.125rem;
-  font-style: italic;
-  margin-bottom: 2rem;
-  opacity: 0.9;
+const FormContainer = styled.div`
+  padding: 2rem;
+  background-color: ${COLORS.cardBackground};
 `;
 
 const FormTitle = styled.h2`
   color: ${COLORS.textPrimary};
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   margin-bottom: 2rem;
   font-weight: 600;
+  text-align: center;
 `;
 
 const Form = styled.form`
   margin-bottom: 1.5rem;
-  flex: 1;
 `;
 
 const FormProgressBar = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
 `;
 
 const ProgressStep = styled.div`
@@ -477,9 +375,9 @@ const ProgressStep = styled.div`
   height: 36px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? COLORS.primaryTeal : COLORS.elevatedBackground};
+    props.active ? COLORS.primarySalmon : COLORS.elevatedBackground};
   color: ${(props) =>
-    props.active ? COLORS.textPrimary : COLORS.textTertiary};
+    props.active ? COLORS.cardBackground : COLORS.textTertiary};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -491,7 +389,7 @@ const ProgressLine = styled.div`
   flex: 1;
   height: 4px;
   background-color: ${(props) =>
-    props.active ? COLORS.primaryTeal : COLORS.elevatedBackground};
+    props.active ? COLORS.primarySalmon : COLORS.elevatedBackground};
   margin: 0 10px;
   transition: all 0.3s ease;
 `;
@@ -527,8 +425,8 @@ const Input = styled.input`
 
   &:focus {
     outline: none;
-    border-color: ${COLORS.primaryTeal};
-    box-shadow: 0 0 0 2px ${COLORS.primaryTeal}30;
+    border-color: ${COLORS.primaryMint};
+    box-shadow: 0 0 0 2px ${COLORS.primaryMint}30;
   }
 `;
 
@@ -549,8 +447,8 @@ const Textarea = styled.textarea`
 
   &:focus {
     outline: none;
-    border-color: ${COLORS.primaryTeal};
-    box-shadow: 0 0 0 2px ${COLORS.primaryTeal}30;
+    border-color: ${COLORS.primaryMint};
+    box-shadow: 0 0 0 2px ${COLORS.primaryMint}30;
   }
 `;
 
@@ -571,7 +469,7 @@ const Label = styled.label`
 `;
 
 const DropzoneContainer = styled.div`
-  border: 2px dashed ${COLORS.border};
+  border: 2px dashed ${COLORS.primaryKhaki};
   border-radius: 4px;
   padding: 2rem;
   text-align: center;
@@ -580,18 +478,18 @@ const DropzoneContainer = styled.div`
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: ${COLORS.primaryTeal};
+    border-color: ${COLORS.primarySalmon};
   }
 
   svg {
-    color: ${COLORS.textTertiary};
+    color: ${COLORS.primaryBlueGray};
     font-size: 2rem;
     margin-bottom: 0.75rem;
     transition: color 0.3s;
   }
 
   &:hover svg {
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primarySalmon};
   }
 
   p {
@@ -611,8 +509,8 @@ const ProfileImagePreview = styled.div`
   height: 150px;
   border-radius: 50%;
   overflow: hidden;
-  border: 3px solid ${COLORS.primaryTeal};
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  border: 3px solid ${COLORS.primarySalmon};
+  box-shadow: 0 0 20px ${COLORS.shadow};
 
   img {
     width: 100%;
@@ -627,15 +525,14 @@ const RemoveButton = styled.button`
   left: 0;
   right: 0;
   background-color: rgba(0, 0, 0, 0.7);
-  color: ${COLORS.textPrimary};
+  color: ${COLORS.cardBackground};
   border: none;
   padding: 0.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.9);
-    color: ${COLORS.accentTeal};
+    background-color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -671,12 +568,12 @@ const BaseButton = styled.button`
 `;
 
 const SubmitButton = styled(BaseButton)`
-  background-color: ${COLORS.primaryTeal};
-  color: ${COLORS.textPrimary};
+  background-color: ${COLORS.primarySalmon};
+  color: white;
   flex: 1;
 
   &:hover:not(:disabled) {
-    background-color: ${COLORS.accentTeal};
+    background-color: ${COLORS.accentSalmon};
     transform: translateY(-2px);
     box-shadow: 0 4px 8px ${COLORS.shadow};
   }
@@ -687,8 +584,8 @@ const SubmitButton = styled(BaseButton)`
 `;
 
 const NextButton = styled(BaseButton)`
-  background-color: ${COLORS.primaryTeal};
-  color: ${COLORS.textPrimary};
+  background-color: ${COLORS.primarySalmon};
+  color: white;
   width: 100%;
 
   svg {
@@ -696,7 +593,7 @@ const NextButton = styled(BaseButton)`
   }
 
   &:hover {
-    background-color: ${COLORS.accentTeal};
+    background-color: ${COLORS.accentSalmon};
     transform: translateY(-2px);
     box-shadow: 0 4px 8px ${COLORS.shadow};
   }
@@ -707,12 +604,16 @@ const NextButton = styled(BaseButton)`
 `;
 
 const BackButton = styled(BaseButton)`
-  background-color: ${COLORS.elevatedBackground};
+  background-color: ${COLORS.primaryMint};
   color: ${COLORS.textPrimary};
   border: 1px solid ${COLORS.border};
 
+  svg {
+    margin-right: 0.5rem;
+  }
+
   &:hover {
-    background-color: ${COLORS.buttonHover};
+    background-color: ${COLORS.accentMint};
   }
 `;
 
@@ -720,16 +621,17 @@ const LoginLink = styled.p`
   text-align: center;
   font-size: 0.875rem;
   color: ${COLORS.textSecondary};
-  margin-top: 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 0;
 
   a {
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primaryBlueGray};
     font-weight: 600;
     text-decoration: none;
     transition: color 0.2s;
 
     &:hover {
-      color: ${COLORS.primaryTeal};
+      color: ${COLORS.primarySalmon};
       text-decoration: underline;
     }
   }
