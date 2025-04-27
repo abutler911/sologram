@@ -14,19 +14,36 @@ exports.getPosts = async (req, res) => {
     const posts = await Post.find()
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean(); // <-- important for performance
 
-    const totalPosts = await Post.countDocuments();
+    // Fetch real-time likes count for each post
+    const postIds = posts.map((post) => post._id);
 
-    console.log(`[POSTS] Found ${posts.length} posts out of ${totalPosts}`);
+    // Group Like counts
+    const likes = await Like.aggregate([
+      { $match: { post: { $in: postIds } } },
+      { $group: { _id: "$post", count: { $sum: 1 } } },
+    ]);
+
+    const likesMap = {};
+    likes.forEach((like) => {
+      likesMap[like._id.toString()] = like.count;
+    });
+
+    // Attach the real like counts
+    const postsWithLikes = posts.map((post) => ({
+      ...post,
+      likes: likesMap[post._id.toString()] || 0, // fallback to 0
+    }));
 
     res.status(200).json({
       success: true,
-      count: posts.length,
+      count: postsWithLikes.length,
       total: totalPosts,
       totalPages: Math.ceil(totalPosts / limit),
       currentPage: page,
-      data: posts,
+      data: postsWithLikes,
     });
   } catch (err) {
     console.error("[POSTS ERROR]", err);
