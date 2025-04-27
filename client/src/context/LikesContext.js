@@ -1,5 +1,3 @@
-// src/context/LikesContext.js
-
 import React, { createContext, useState, useContext, useCallback } from "react";
 import { AuthContext } from "./AuthContext";
 import { toast } from "react-hot-toast";
@@ -15,13 +13,11 @@ export const LikesProvider = ({ children }) => {
   const checkLikeStatus = useCallback(
     async (postId) => {
       if (!isAuthenticated || !user?._id) return false;
-
       try {
         // First check our local state
         if (likedPosts[postId] !== undefined) {
           return likedPosts[postId];
         }
-
         // If not in local state, check with the server
         const response = await fetch(`/api/posts/${postId}/likes/check`, {
           method: "GET",
@@ -30,19 +26,15 @@ export const LikesProvider = ({ children }) => {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
-
         if (response.ok) {
           const { hasLiked } = await response.json();
-
           // Update local state
           setLikedPosts((prev) => ({
             ...prev,
             [postId]: hasLiked,
           }));
-
           return hasLiked;
         }
-
         return false;
       } catch (error) {
         console.error("Error checking like status:", error);
@@ -59,31 +51,25 @@ export const LikesProvider = ({ children }) => {
         toast.error("Please log in to like posts");
         return false;
       }
-
       if (isProcessing || likedPosts[postId]) return false;
-
       setIsProcessing(true);
-
       try {
         const response = await fetch(`/api/posts/${postId}/like`, {
-          method: "POST",
+          method: "POST", // Changed from PUT to POST to match the controller
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
-
         if (response.ok) {
           // Update local state
           setLikedPosts((prev) => ({
             ...prev,
             [postId]: true,
           }));
-
           if (typeof onSuccess === "function") {
             onSuccess();
           }
-
           return true;
         } else {
           const data = await response.json();
@@ -123,5 +109,4 @@ export const LikesProvider = ({ children }) => {
 
 // Custom hook for easier context usage
 export const useLikes = () => useContext(LikesContext);
-
 export default LikesContext;

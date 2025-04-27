@@ -21,7 +21,7 @@ router.get("/search", searchPosts);
 router.post("/", protect, createPost);
 router.put("/:id", protect, updatePost);
 router.delete("/:id", protect, deletePost);
-router.post("/:id/like", protect, likePost);
+router.post("/:id/like", protect, likePost); // Changed from PUT to POST
 router.get("/:id/likes/check", protect, checkUserLike);
 
 module.exports = router;
