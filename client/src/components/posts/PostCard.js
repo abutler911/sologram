@@ -1156,18 +1156,18 @@ const LikeButton = styled.button`
 
   ${(props) =>
     props.liked &&
-    `
-    filter: drop-shadow(0 0 10px ${COLORS.accentTeal}90);
-  `}
+    css`
+      filter: drop-shadow(0 0 10px rgba(33, 212, 199, 0.5));
+    `}
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     font-size: 1.6rem;
 
     ${(props) =>
       props.liked &&
-      `
-      animation: ${pulse} 0.8s ease-in-out;
-    `}
+      css`
+        animation: ${pulse} 0.8s ease-in-out;
+      `}
   }
 `;
 
