@@ -4,7 +4,7 @@ import styled, { keyframes } from "styled-components";
 import { FaCamera, FaLock, FaEnvelope, FaChevronRight } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
 import MainLayout from "../components/layout/MainLayout";
-import { COLORS, THEME } from "../theme";
+import { COLORS } from "../theme";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -88,10 +88,6 @@ const Login = () => {
                 <ButtonGlow />
               </SubmitButton>
             </Form>
-
-            <AdminNoteText>
-              This login is for site administration only
-            </AdminNoteText>
           </FormContainer>
         </LoginContainer>
       </PageWrapper>
@@ -100,20 +96,11 @@ const Login = () => {
 };
 
 // Animations
-const shimmer = keyframes`
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-`;
 
 const pulse = keyframes`
   0% { transform: scale(1); opacity: 0.8; }
   50% { transform: scale(1.05); opacity: 1; }
   100% { transform: scale(1); opacity: 0.8; }
-`;
-
-const float = keyframes`
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
 `;
 
 const glow = keyframes`
@@ -434,22 +421,6 @@ const SubmitButton = styled.button`
     padding: 1.2rem;
     font-size: 1.1rem;
     border-radius: 6px;
-  }
-`;
-
-const AdminNoteText = styled.p`
-  text-align: center;
-  font-size: 0.875rem;
-  color: ${COLORS.textTertiary};
-  font-style: italic;
-  margin-top: 1.5rem;
-  position: relative;
-
-  &:before,
-  &:after {
-    content: "•";
-    margin: 0 8px;
-    color: ${COLORS.textTertiary}80;
   }
 `;
 

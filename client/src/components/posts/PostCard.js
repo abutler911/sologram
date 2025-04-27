@@ -6,7 +6,6 @@ import {
   useEffect,
   useRef,
   Suspense,
-  lazy,
 } from "react";
 import { LikesContext } from "../../context/LikesContext";
 import { Link } from "react-router-dom";
@@ -22,7 +21,7 @@ import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../../context/AuthContext";
 import pandaImg from "../../assets/andy.jpg";
 import { getTransformedImageUrl } from "../../utils/cloudinary";
-import { COLORS, THEME } from "../../theme";
+import { COLORS } from "../../theme";
 
 const AUTHOR_IMAGE = pandaImg;
 const AUTHOR_NAME = "Andrew";
@@ -44,11 +43,6 @@ const pulse = keyframes`
   0% { transform: scale(1); }
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
-`;
-
-const shimmer = keyframes`
-  0% { background-position: -100% 0 }
-  100% { background-position: 200% 0 }
 `;
 
 const slideIn = keyframes`
@@ -251,13 +245,14 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   }, [post._id, isProcessing, hasLiked, isAuthenticated, likePost, onLike]);
 
   const handleDoubleTapLike = useCallback(() => {
-    if (!isAuthenticated) {
-      return;
-    }
+    if (!isAuthenticated) return;
 
     if (!hasLiked && !isLiking) {
       handleLike();
     }
+
+    setIsDoubleTapLiking(true);
+    setTimeout(() => setIsDoubleTapLiking(false), 700);
   }, [hasLiked, isLiking, handleLike, isAuthenticated]);
 
   const confirmDelete = useCallback(() => {
@@ -525,13 +520,11 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
             </ActionGroup>
           )}
 
-          {/* If not authenticated, only show the likes count */}
           {!isAuthenticated && (
-            <LikesCounterStandalone>
-              <span>
-                {post.likes} {post.likes === 1 ? "like" : "likes"}
-              </span>
-            </LikesCounterStandalone>
+            <LikesDisplayStandalone>
+              <FaHeart className="heart-icon" />
+              <span>{post.likes}</span>
+            </LikesDisplayStandalone>
           )}
         </CardActions>
 
@@ -1538,6 +1531,39 @@ const burst = (index) => keyframes`
       Math.cos((index / 8) * 2 * Math.PI) * 50
     }px, ${Math.sin((index / 8) * 2 * Math.PI) * 50}px);
     opacity: 0;
+  }
+`;
+
+const LikesDisplayStandalone = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: ${COLORS.heartRed};
+  background-color: ${COLORS.elevatedBackground};
+  padding: 10px 18px;
+  border-radius: 30px;
+  transition: all 0.2s ease;
+  border: 1px solid ${COLORS.border};
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  margin: 0 auto;
+  gap: 8px;
+
+  .heart-icon {
+    color: ${COLORS.heartRed};
+    font-size: 1.4rem;
+    animation: ${pulse} 1.2s infinite ease-in-out;
+  }
+
+  span {
+    color: ${COLORS.textPrimary};
+    font-size: 1rem;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
   }
 `;
 

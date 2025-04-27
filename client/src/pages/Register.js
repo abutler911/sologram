@@ -11,7 +11,7 @@ import {
 } from "react-icons/fa";
 import { useDropzone } from "react-dropzone";
 import { AuthContext } from "../context/AuthContext";
-import { COLORS, THEME } from "../theme"; // Import the theme
+import { COLORS } from "../theme";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -134,19 +134,25 @@ const Register = () => {
               <FaCamera />
               <LogoText>SoloGram</LogoText>
             </LogoContainer>
-            <Tagline>One Voice. Infinite Moments.</Tagline>
+            <Tagline>One Story. One Creator. Infinite Inspiration.</Tagline>
             <FeatureList>
               <FeatureItem>
                 <FeatureIcon>✓</FeatureIcon>
-                <FeatureText>Connect with like-minded individuals</FeatureText>
+                <FeatureText>
+                  Experience authentic moments from one unique voice
+                </FeatureText>
               </FeatureItem>
               <FeatureItem>
                 <FeatureIcon>✓</FeatureIcon>
-                <FeatureText>Share your adventures</FeatureText>
+                <FeatureText>
+                  Follow a personal journey through curated stories and posts
+                </FeatureText>
               </FeatureItem>
               <FeatureItem>
                 <FeatureIcon>✓</FeatureIcon>
-                <FeatureText>Build your personal brand</FeatureText>
+                <FeatureText>
+                  Get inspired — no noise, no distractions, just connection
+                </FeatureText>
               </FeatureItem>
             </FeatureList>
           </SidebarContent>
