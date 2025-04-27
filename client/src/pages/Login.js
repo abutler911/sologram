@@ -79,11 +79,15 @@ const Login = () => {
               </FormGroup>
 
               <SubmitButton type="submit" disabled={loading}>
-                {loading ? "Logging in..." : "Login"}
-                {!loading && (
-                  <ButtonIcon>
-                    <FaChevronRight />
-                  </ButtonIcon>
+                {loading ? (
+                  "Logging in..."
+                ) : (
+                  <>
+                    Login
+                    <ButtonIcon>
+                      <FaChevronRight />
+                    </ButtonIcon>
+                  </>
                 )}
                 <ButtonGlow />
               </SubmitButton>
@@ -96,24 +100,23 @@ const Login = () => {
 };
 
 // Animations
-
 const pulse = keyframes`
-  0% { transform: scale(1); opacity: 0.8; }
+  0%, 100% { transform: scale(1); opacity: 0.8; }
   50% { transform: scale(1.05); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.8; }
 `;
 
 const glow = keyframes`
-  0%, 100% { opacity: 0.5; }
+  0%, 100% { opacity: 0.4; }
   50% { opacity: 0.8; }
 `;
 
 // Styled Components
 const PageWrapper = styled.div`
+  position: relative;
   background: linear-gradient(
     135deg,
     ${COLORS.background},
-    ${COLORS.cardBackground}
+    ${COLORS.cardBackground} 60%
   );
   min-height: 100vh;
   display: flex;
@@ -123,19 +126,16 @@ const PageWrapper = styled.div`
   &:before {
     content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background: radial-gradient(
         circle at top right,
-        ${COLORS.primaryTeal}30,
-        transparent 70%
+        ${COLORS.primaryMint}30,
+        transparent 60%
       ),
       radial-gradient(
         circle at bottom left,
         ${COLORS.primaryBlue}20,
-        transparent 70%
+        transparent 60%
       );
     pointer-events: none;
   }
@@ -147,15 +147,11 @@ const LoginContainer = styled.div`
   align-items: center;
   width: 100%;
   padding: 1.5rem;
-
-  @media (max-width: 768px), screen and (display-mode: standalone) {
-    padding: 1rem;
-  }
 `;
 
 const FormContainer = styled.div`
   background: ${COLORS.cardBackground};
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 10px 20px ${COLORS.shadow}, 0 0 0 1px ${COLORS.border};
   padding: 2.5rem;
   width: 100%;
@@ -168,15 +164,11 @@ const FormContainer = styled.div`
     position: absolute;
     top: 0;
     left: 0;
+    height: 6px;
     width: 100%;
-    height: 4px;
-    background: ${COLORS.primaryTeal};
-  }
-
-  @media (max-width: 768px), screen and (display-mode: standalone) {
-    padding: 2rem 1.5rem;
-    max-width: 95%;
-    border-radius: 8px;
+    background: ${COLORS.primaryMint};
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
   }
 `;
 
@@ -190,28 +182,25 @@ const LogoContainer = styled.div`
 const LogoIconWrapper = styled.div`
   width: 50px;
   height: 50px;
-  background: ${COLORS.primaryTeal};
+  background: ${COLORS.primaryMint};
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 0.75rem;
-  box-shadow: 0 5px 15px ${COLORS.primaryTeal}50;
+  box-shadow: 0 5px 15px ${COLORS.primaryMint}50;
   animation: ${pulse} 3s infinite ease-in-out;
   position: relative;
 
   &::after {
     content: "";
     position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
+    inset: -3px;
     border-radius: 12px;
-    background: ${COLORS.primaryTeal};
-    z-index: -1;
+    background: ${COLORS.primaryMint};
     opacity: 0.5;
     filter: blur(5px);
+    z-index: -1;
   }
 
   svg {
@@ -223,8 +212,8 @@ const LogoIconWrapper = styled.div`
 const LogoText = styled.h1`
   font-size: 2.2rem;
   font-weight: 700;
-  color: ${COLORS.accentTeal};
-  text-shadow: 0 2px 8px ${COLORS.primaryTeal}40;
+  color: ${COLORS.accentMint};
+  text-shadow: 0 2px 8px ${COLORS.primaryMint}40;
 `;
 
 const Tagline = styled.p`
@@ -232,7 +221,7 @@ const Tagline = styled.p`
   font-size: 1.1rem;
   font-style: italic;
   text-align: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
   position: relative;
 
   &::after {
@@ -268,9 +257,8 @@ const InputIcon = styled.div`
   left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: ${COLORS.accentTeal};
+  color: ${COLORS.accentMint};
   z-index: 1;
-  transition: all 0.3s ease;
 `;
 
 const InputHighlight = styled.div`
@@ -279,7 +267,7 @@ const InputHighlight = styled.div`
   left: 0;
   height: 2px;
   width: 0;
-  background: ${COLORS.primaryTeal};
+  background: ${COLORS.primaryMint};
   transition: width 0.3s ease;
 `;
 
@@ -300,8 +288,8 @@ const Input = styled.input`
 
   &:focus {
     outline: none;
-    border-color: ${COLORS.accentTeal};
-    box-shadow: 0 0 0 3px ${COLORS.primaryTeal}30;
+    border-color: ${COLORS.accentMint};
+    box-shadow: 0 0 0 3px ${COLORS.primaryMint}30;
 
     & + ${InputHighlight} {
       width: 100%;
@@ -312,46 +300,11 @@ const Input = styled.input`
       opacity: 0.7;
     }
   }
-
-  &:focus + ${InputHighlight} {
-    width: 100%;
-  }
-
-  @media (max-width: 768px), screen and (display-mode: standalone) {
-    padding: 1.2rem 1rem 1.2rem 2.75rem;
-    font-size: 1.05rem;
-    border-radius: 6px;
-  }
-`;
-
-const ButtonGlow = styled.div`
-  position: absolute;
-  top: -20px;
-  left: -20px;
-  right: -20px;
-  bottom: -20px;
-  background: radial-gradient(
-    circle at center,
-    ${COLORS.primaryTeal}30,
-    transparent 70%
-  );
-  opacity: 0;
-  transition: opacity 0.3s;
-  z-index: -1;
-  animation: ${glow} 2s infinite ease-in-out;
-  pointer-events: none;
-`;
-
-const ButtonIcon = styled.span`
-  margin-left: 8px;
-  display: inline-flex;
-  align-items: center;
-  transition: transform 0.3s ease;
 `;
 
 const SubmitButton = styled.button`
   width: 100%;
-  background: ${COLORS.primaryTeal};
+  background: ${COLORS.primaryMint};
   color: white;
   border: none;
   border-radius: 6px;
@@ -366,62 +319,43 @@ const SubmitButton = styled.button`
   align-items: center;
   justify-content: center;
 
-  &:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.2),
-      transparent
-    );
-    transition: all 0.6s;
-  }
-
   &:hover {
     transform: translateY(-3px);
-    background: ${COLORS.accentTeal};
-    box-shadow: 0 7px 14px ${COLORS.primaryTeal}50;
-
-    &:before {
-      left: 100%;
-    }
-
-    ${ButtonIcon} {
-      transform: translateX(3px);
-    }
-
-    ${ButtonGlow} {
-      opacity: 1;
-    }
-  }
-
-  &:active {
-    transform: translateY(0);
-    box-shadow: 0 3px 8px ${COLORS.primaryTeal}30;
+    background: ${COLORS.accentMint};
+    box-shadow: 0 7px 14px ${COLORS.primaryMint}50;
   }
 
   &:disabled {
     background: ${COLORS.elevatedBackground};
     color: ${COLORS.textTertiary};
     cursor: not-allowed;
-    transform: none;
     box-shadow: none;
-
-    &:before {
-      display: none;
-    }
   }
+`;
 
-  @media (max-width: 768px), screen and (display-mode: standalone) {
-    padding: 1.2rem;
-    font-size: 1.1rem;
-    border-radius: 6px;
-  }
+const ButtonIcon = styled.span`
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.3s ease;
+`;
+
+const ButtonGlow = styled.div`
+  position: absolute;
+  top: -20px;
+  left: -20px;
+  right: -20px;
+  bottom: -20px;
+  background: radial-gradient(
+    circle at center,
+    ${COLORS.primaryMint}30,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: -1;
+  animation: ${glow} 2s infinite ease-in-out;
+  pointer-events: none;
 `;
 
 export default Login;
