@@ -11,11 +11,13 @@ exports.getPosts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    const totalPosts = await Post.countDocuments();
+
     const posts = await Post.find()
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .lean(); // <-- important for performance
+      .lean();
 
     // Fetch real-time likes count for each post
     const postIds = posts.map((post) => post._id);
