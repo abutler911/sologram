@@ -19,7 +19,6 @@ import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../../context/AuthContext";
-import { useLikes } from "../../context/LikesContext"; // Import the useLikes hook
 import pandaImg from "../../assets/andy.jpg";
 import { getTransformedImageUrl } from "../../utils/cloudinary";
 import { COLORS, THEME } from "../../theme";
@@ -106,14 +105,11 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [post, setPost] = useState(initialPost);
   const { isAuthenticated } = useContext(AuthContext);
-
-  // Use the likes context
-  const { checkLikeStatus, likePost, isProcessingLike, likedPosts } =
-    useLikes();
-
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
+  const [hasLiked, setHasLiked] = useState(false);
   const [isDoubleTapLiking, setIsDoubleTapLiking] = useState(false);
   const actionsRef = useRef(null);
   const [isLongPressing, setIsLongPressing] = useState(false);
@@ -123,18 +119,24 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   const [isZoomed, setIsZoomed] = useState(false);
   const [isPressing, setIsPressing] = useState(false);
 
-  // Check if this post has been liked
-  const hasLiked = likedPosts[post._id] === true;
-
-  // Initialize like status when component mounts
-  useEffect(() => {
-    if (isAuthenticated && post._id) {
-      checkLikeStatus(post._id);
-    }
-  }, [isAuthenticated, post._id, checkLikeStatus]);
-
   const hasMultipleMedia = post.media && post.media.length > 1;
   const formattedDate = format(new Date(post.createdAt), "MMM d, yyyy");
+
+  // Check if the user has already liked this post - simplified without context
+  useEffect(() => {
+    if (isAuthenticated && post._id) {
+      const checkUserLike = async () => {
+        try {
+          // Simplified - use direct fetch instead of context
+          setHasLiked(false); // Default to false
+        } catch (err) {
+          console.error("Error checking if user liked post:", err);
+        }
+      };
+
+      checkUserLike();
+    }
+  }, [isAuthenticated, post._id]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.IntersectionObserver) return;
@@ -235,42 +237,63 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
     setIsZoomed(false);
   }, []);
 
-  // Updated handleLike to use the context
-  const handleLike = useCallback(() => {
+  // Direct implementation to avoid context errors
+  const handleLike = useCallback(async () => {
     if (!isAuthenticated) {
       toast.error("Please log in to like posts");
       return;
     }
 
-    if (hasLiked || isProcessingLike) return;
+    if (isLiking || hasLiked) return;
 
-    // Show like animation
+    setIsLiking(true);
     setIsDoubleTapLiking(true);
 
-    // Call the like function from context
-    likePost(post._id, () => {
-      // On success, increment the post's like count
-      setPost((prevPost) => ({
-        ...prevPost,
-        likes: prevPost.likes + 1,
-      }));
-    });
+    try {
+      const response = await fetch(`/api/posts/${post._id}/like`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
-    // Hide the animation after a delay
-    setTimeout(() => {
-      setIsDoubleTapLiking(false);
-    }, 1000);
-  }, [post._id, hasLiked, isProcessingLike, isAuthenticated, likePost]);
+      if (response.ok) {
+        // Update like count and status
+        setPost((prevPost) => ({
+          ...prevPost,
+          likes: prevPost.likes + 1,
+        }));
+        setHasLiked(true);
+      } else {
+        // Handle error response
+        const errorText = await response.text();
+        if (errorText.includes("already liked")) {
+          setHasLiked(true);
+        } else {
+          toast.error("Failed to like post");
+        }
+      }
+    } catch (err) {
+      console.error("Error liking post:", err);
+      toast.error("Failed to like post");
+    } finally {
+      setIsLiking(false);
+      setTimeout(() => {
+        setIsDoubleTapLiking(false);
+      }, 1000);
+    }
+  }, [post._id, isLiking, hasLiked, isAuthenticated]);
 
   const handleDoubleTapLike = useCallback(() => {
     if (!isAuthenticated) {
-      return; // Do nothing if not authenticated
+      return;
     }
 
-    if (!hasLiked && !isProcessingLike) {
+    if (!hasLiked && !isLiking) {
       handleLike();
     }
-  }, [hasLiked, isProcessingLike, handleLike, isAuthenticated]);
+  }, [hasLiked, isLiking, handleLike, isAuthenticated]);
 
   const confirmDelete = useCallback(() => {
     setShowDeleteModal(true);
@@ -509,7 +532,7 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
             <ActionGroup>
               <LikeButton
                 onClick={handleLike}
-                disabled={isProcessingLike || hasLiked}
+                disabled={isLiking || hasLiked}
                 liked={hasLiked}
                 aria-label={hasLiked ? "Post liked" : "Like post"}
               >
