@@ -316,17 +316,18 @@ exports.searchPosts = async (req, res) => {
 exports.likePost = async (req, res) => {
   try {
     const postId = req.params.id;
+    const userId = req.user._id;
 
-    // More robust IP detection
-    const userIp =
-      req.headers["x-forwarded-for"] ||
-      req.connection.remoteAddress ||
-      req.socket.remoteAddress ||
-      req.ip;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required to like posts",
+      });
+    }
 
-    console.log(`Like attempt - Post: ${postId}, IP: ${userIp}`);
+    console.log(`Like attempt - Post: ${postId}, User: ${userId}`);
 
-    const mongoose = require("mongoose"); // Add this if not already at the top
+    const mongoose = require("mongoose");
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -343,10 +344,10 @@ exports.likePost = async (req, res) => {
         });
       }
 
-      // Explicit query with session
+      // Check if user already liked this post
       const existingLike = await Like.findOne({
         post: postId,
-        ip: userIp,
+        user: userId,
       }).session(session);
 
       console.log(`Existing like found: ${!!existingLike}`);
@@ -360,10 +361,10 @@ exports.likePost = async (req, res) => {
         });
       }
 
-      // Create like with session
-      await Like.create([{ post: postId, ip: userIp }], { session });
+      // Create like with user ID
+      await Like.create([{ post: postId, user: userId }], { session });
 
-      // Update post with session
+      // Update post like count
       post.likes += 1;
       await post.save({ session });
 
@@ -390,6 +391,39 @@ exports.likePost = async (req, res) => {
       });
     }
 
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+// Add this function to your posts controller file (posts.js)
+
+exports.checkUserLike = async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const userId = req.user._id; // This assumes you have auth middleware that adds user to req
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    // Find if the user has liked this post
+    const like = await Like.findOne({
+      post: postId,
+      user: userId,
+    });
+
+    res.status(200).json({
+      success: true,
+      hasLiked: !!like, // Convert to boolean
+    });
+  } catch (err) {
+    console.error("Check like error:", err);
     res.status(500).json({
       success: false,
       message: "Server Error",

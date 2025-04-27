@@ -5,6 +5,7 @@ import styled from "styled-components";
 import ReactGA from "react-ga4";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthContext } from "./context/AuthContext";
+import { LikesProvider } from "./context/LikesContext"; // Import the LikesProvider
 import { initializeOneSignal } from "./utils/notificationService";
 import ScrollToTop from "./components/ScrollToTop";
 import InstallPrompt from "./components/pwa/InstallPrompt";
@@ -44,14 +45,12 @@ function App() {
     const handleOffline = () => setNetworkStatus(false);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-
     if (networkStatus && localStorage.getItem("wasOffline") === "true") {
       toast.success("You are back online");
       localStorage.removeItem("wasOffline");
     } else if (!networkStatus) {
       localStorage.setItem("wasOffline", "true");
     }
-
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
@@ -61,7 +60,6 @@ function App() {
   // Initialize OneSignal once when user loads
   useEffect(() => {
     if (!user?._id) return;
-
     console.log("[App] Initializing OneSignal for user:", user._id);
     initializeOneSignal(user._id).catch((error) => {
       console.error("[App] OneSignal initialization error:", error);
@@ -83,20 +81,23 @@ function App() {
         <ScrollToTop />
         <PageTracker />
         <div className="app">
-          <Toaster position="top-right" />
-          {!networkStatus && (
-            <OfflineIndicator>
-              You are currently offline. Some features may be limited.
-            </OfflineIndicator>
-          )}
-          <AppRoutes
-            user={user}
-            homeRef={homeRef}
-            handleSearch={handleSearch}
-            handleClearSearch={handleClearSearch}
-          />
-          <InstallPrompt />
-          <FloatingActionButtonAdjuster />
+          {/* Wrap the app content with LikesProvider */}
+          <LikesProvider>
+            <Toaster position="top-right" />
+            {!networkStatus && (
+              <OfflineIndicator>
+                You are currently offline. Some features may be limited.
+              </OfflineIndicator>
+            )}
+            <AppRoutes
+              user={user}
+              homeRef={homeRef}
+              handleSearch={handleSearch}
+              handleClearSearch={handleClearSearch}
+            />
+            <InstallPrompt />
+            <FloatingActionButtonAdjuster />
+          </LikesProvider>
         </div>
       </Router>
     </HelmetProvider>

@@ -7,8 +7,9 @@ const LikeSchema = new mongoose.Schema({
     ref: "Post",
     required: true,
   },
-  ip: {
-    type: String,
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
     required: true,
   },
   createdAt: {
@@ -17,7 +18,7 @@ const LikeSchema = new mongoose.Schema({
   },
 });
 
-// Compound index to ensure an IP can only like a post once
-LikeSchema.index({ post: 1, ip: 1 }, { unique: true });
+// Compound index to ensure a user can only like a post once
+LikeSchema.index({ post: 1, user: 1 }, { unique: true });
 
 module.exports = mongoose.model("Like", LikeSchema);

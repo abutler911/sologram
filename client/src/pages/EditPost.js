@@ -6,7 +6,7 @@ import { FaEdit } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import PostCreator from "../components/posts/PostCreator";
-import { COLORS, THEME } from "../theme"; // Import your theme
+import { COLORS, THEME } from "../theme";
 
 const EditPost = () => {
   const { id } = useParams();

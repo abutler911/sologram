@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../../context/AuthContext";
+import { useLikes } from "../../context/LikesContext"; // Import the useLikes hook
 import pandaImg from "../../assets/andy.jpg";
 import { getTransformedImageUrl } from "../../utils/cloudinary";
 import { COLORS, THEME } from "../../theme";
@@ -105,11 +106,14 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [post, setPost] = useState(initialPost);
   const { isAuthenticated } = useContext(AuthContext);
+
+  // Use the likes context
+  const { checkLikeStatus, likePost, isProcessingLike, likedPosts } =
+    useLikes();
+
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showActions, setShowActions] = useState(false);
-  const [isLiking, setIsLiking] = useState(false);
-  const [hasLiked, setHasLiked] = useState(false);
   const [isDoubleTapLiking, setIsDoubleTapLiking] = useState(false);
   const actionsRef = useRef(null);
   const [isLongPressing, setIsLongPressing] = useState(false);
@@ -118,6 +122,16 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   const [fullscreenIndex, setFullscreenIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const [isPressing, setIsPressing] = useState(false);
+
+  // Check if this post has been liked
+  const hasLiked = likedPosts[post._id] === true;
+
+  // Initialize like status when component mounts
+  useEffect(() => {
+    if (isAuthenticated && post._id) {
+      checkLikeStatus(post._id);
+    }
+  }, [isAuthenticated, post._id, checkLikeStatus]);
 
   const hasMultipleMedia = post.media && post.media.length > 1;
   const formattedDate = format(new Date(post.createdAt), "MMM d, yyyy");
@@ -221,53 +235,42 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
     setIsZoomed(false);
   }, []);
 
-  const handleLike = useCallback(async () => {
-    if (isLiking || hasLiked) return;
-
-    setIsLiking(true);
-
-    try {
-      const response = await fetch(`/api/posts/${post._id}/like`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        setPost((prevPost) => ({ ...prevPost, likes: prevPost.likes + 1 }));
-        setHasLiked(true);
-      }
-    } catch (err) {
-      console.error("Error liking post:", err);
-
-      if (err.message?.includes("already liked")) {
-        setHasLiked(true);
-        toast.error(err.message);
-      } else {
-        toast.error("Failed to like post");
-        setTimeout(() => setIsLiking(false), 2000);
-      }
+  // Updated handleLike to use the context
+  const handleLike = useCallback(() => {
+    if (!isAuthenticated) {
+      toast.error("Please log in to like posts");
+      return;
     }
-  }, [post._id, isLiking, hasLiked]);
+
+    if (hasLiked || isProcessingLike) return;
+
+    // Show like animation
+    setIsDoubleTapLiking(true);
+
+    // Call the like function from context
+    likePost(post._id, () => {
+      // On success, increment the post's like count
+      setPost((prevPost) => ({
+        ...prevPost,
+        likes: prevPost.likes + 1,
+      }));
+    });
+
+    // Hide the animation after a delay
+    setTimeout(() => {
+      setIsDoubleTapLiking(false);
+    }, 1000);
+  }, [post._id, hasLiked, isProcessingLike, isAuthenticated, likePost]);
 
   const handleDoubleTapLike = useCallback(() => {
-    if (!hasLiked && !isLiking) {
-      setIsDoubleTapLiking(true);
-      handleLike();
-
-      setTimeout(() => {
-        setIsDoubleTapLiking(false);
-      }, 1000);
+    if (!isAuthenticated) {
+      return; // Do nothing if not authenticated
     }
-  }, [hasLiked, isLiking, handleLike]);
+
+    if (!hasLiked && !isProcessingLike) {
+      handleLike();
+    }
+  }, [hasLiked, isProcessingLike, handleLike, isAuthenticated]);
 
   const confirmDelete = useCallback(() => {
     setShowDeleteModal(true);
@@ -501,21 +504,33 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
         )}
 
         <CardActions>
-          <ActionGroup>
-            <LikeButton
-              onClick={handleLike}
-              disabled={isLiking || hasLiked}
-              liked={hasLiked}
-              aria-label={hasLiked ? "Post liked" : "Like post"}
-            >
-              {hasLiked ? <FaHeart /> : <FaRegHeart />}
-            </LikeButton>
-            <LikesCounter>
+          {/* Only show like button if user is authenticated */}
+          {isAuthenticated && (
+            <ActionGroup>
+              <LikeButton
+                onClick={handleLike}
+                disabled={isProcessingLike || hasLiked}
+                liked={hasLiked}
+                aria-label={hasLiked ? "Post liked" : "Like post"}
+              >
+                {hasLiked ? <FaHeart /> : <FaRegHeart />}
+              </LikeButton>
+              <LikesCounter>
+                <span>
+                  {post.likes} {post.likes === 1 ? "like" : "likes"}
+                </span>
+              </LikesCounter>
+            </ActionGroup>
+          )}
+
+          {/* If not authenticated, only show the likes count */}
+          {!isAuthenticated && (
+            <LikesCounterStandalone>
               <span>
                 {post.likes} {post.likes === 1 ? "like" : "likes"}
               </span>
-            </LikesCounter>
-          </ActionGroup>
+            </LikesCounterStandalone>
+          )}
         </CardActions>
 
         <CardContent>
@@ -595,8 +610,50 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   );
 });
 
-// UPDATED STYLED COMPONENTS WITH ENHANCED DESIGN
+// Add a standalone likes counter for non-authenticated users
+const LikesCounterStandalone = styled.div`
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: ${COLORS.textSecondary};
+  background-color: ${COLORS.elevatedBackground};
+  padding: 8px 14px;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+  border: 1px solid ${COLORS.border};
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  margin: 0 auto;
 
+  span {
+    position: relative;
+
+    &:after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -2px;
+      width: 100%;
+      height: 1px;
+      background-color: ${COLORS.accentTeal};
+      transform-origin: left;
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+      opacity: 0.8;
+    }
+
+    &:hover:after {
+      transform: scaleX(1);
+    }
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  }
+`;
+
+// Include all other styled components from the original file
 const CardWrapper = styled.div`
   ${fontFaceStyles}
   width: 100%;

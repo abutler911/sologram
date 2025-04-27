@@ -1,26 +1,27 @@
 const express = require("express");
 const router = express.Router();
-const { likeLimiter } = require("../middleware/rateLimiter");
 const {
   getPosts,
   getPost,
   createPost,
   updatePost,
   deletePost,
-  searchPosts,
   likePost,
+  checkUserLike,
+  searchPosts,
 } = require("../controllers/posts");
-const { protect, authorize } = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
 
+// Public routes
 router.get("/", getPosts);
-router.get("/search", searchPosts);
 router.get("/:id", getPost);
+router.get("/search", searchPosts);
 
-router.post("/", protect, authorize(["admin", "creator"]), createPost);
-
-router.put("/:id", protect, authorize(["admin", "creator"]), updatePost);
-
-router.delete("/:id", protect, authorize(["admin", "creator"]), deletePost);
-router.put("/:id/like", protect, likeLimiter, likePost);
+// Protected routes (require authentication)
+router.post("/", protect, createPost);
+router.put("/:id", protect, updatePost);
+router.delete("/:id", protect, deletePost);
+router.put("/:id/like", protect, likePost);
+router.get("/:id/likes/check", protect, checkUserLike);
 
 module.exports = router;
