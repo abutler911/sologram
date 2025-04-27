@@ -531,7 +531,18 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         <CardContent>
           <PostLink to={`/post/${post._id}`}>
             <PostTitle>{post.caption}</PostTitle>
-            {post.content && <Content>{post.content}</Content>}
+            {post.content && (
+              <Content>
+                {post.content.length > 220
+                  ? `${post.content.slice(0, 220)}... `
+                  : post.content}
+                {post.content.length > 220 && (
+                  <ReadMoreLink to={`/post/${post._id}`}>
+                    read more
+                  </ReadMoreLink>
+                )}
+              </Content>
+            )}
           </PostLink>
 
           {post.tags && post.tags.length > 0 && (
@@ -1183,14 +1194,14 @@ const PostTitle = styled.h2`
 
 const Content = styled.p`
   color: ${COLORS.textSecondary};
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-size: 0.8rem;
+  line-height: 1.3;
   margin: 8px 0;
   word-break: break-word;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   transition: color 0.2s ease;
   letter-spacing: 0.01em;
@@ -1564,6 +1575,18 @@ const LikesDisplayStandalone = styled.div`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+  }
+`;
+
+const ReadMoreLink = styled(Link)`
+  color: ${COLORS.accentTeal};
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-decoration: none;
+  margin-left: 4px;
+
+  &:hover {
+    text-decoration: underline;
   }
 `;
 
