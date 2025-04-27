@@ -266,20 +266,32 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
       );
 
       if (response.ok) {
-        // Update like count and status
-        setPost((prevPost) => ({
-          ...prevPost,
-          likes: prevPost.likes + 1,
-        }));
-        setHasLiked(true);
+        try {
+          // Safely update like count and status
+          setPost((prevPost) => ({
+            ...prevPost,
+            likes: (prevPost.likes || 0) + 1,
+          }));
+          setHasLiked(true);
+        } catch (stateError) {
+          console.error(
+            "Error updating state after successful like:",
+            stateError
+          );
+        }
       } else {
         // Handle error response
-        const errorText = await response.text();
-        console.log("Error response text:", errorText);
+        try {
+          const errorText = await response.text();
+          console.log("Error response text:", errorText);
 
-        if (errorText.includes("already liked")) {
-          setHasLiked(true);
-        } else {
+          if (errorText.includes("already liked")) {
+            setHasLiked(true);
+          } else {
+            toast.error("Failed to like post");
+          }
+        } catch (responseError) {
+          console.error("Error processing error response:", responseError);
           toast.error("Failed to like post");
         }
       }
@@ -287,12 +299,25 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
       console.error("Error liking post:", err);
       toast.error("Failed to like post");
     } finally {
-      setIsLiking(false);
-      setTimeout(() => {
-        setIsDoubleTapLiking(false);
-      }, 1000);
+      // Ensure these state updates happen safely
+      try {
+        setIsLiking(false);
+        // Use a safer way to handle the timeout
+        const timer = setTimeout(() => {
+          try {
+            setIsDoubleTapLiking(false);
+          } catch (timerError) {
+            console.error("Error in timeout callback:", timerError);
+          }
+        }, 1000);
+
+        // Clean up timeout on component unmount
+        return () => clearTimeout(timer);
+      } catch (finallyError) {
+        console.error("Error in finally block:", finallyError);
+      }
     }
-  }, [post._id, isLiking, hasLiked, isAuthenticated]);
+  }, [post?._id, isLiking, hasLiked, isAuthenticated]);
 
   const handleDoubleTapLike = useCallback(() => {
     if (!isAuthenticated) {
