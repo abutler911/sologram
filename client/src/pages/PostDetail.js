@@ -541,8 +541,8 @@ const ProgressBar = styled.div`
   height: 100%;
   background: linear-gradient(
     90deg,
-    ${COLORS.primaryBlue},
-    ${COLORS.primaryTeal}
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
   );
   width: ${(props) => props.width || "0%"};
   transition: width 0.1s;
@@ -562,14 +562,14 @@ const Container = styled.div`
 const BackButton = styled(Link)`
   display: inline-flex;
   align-items: center;
-  color: white;
+  color: ${COLORS.textPrimary};
   text-decoration: none;
   margin-bottom: 2rem;
   transition: color 0.3s;
   font-weight: 500;
 
   &:hover {
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primarySalmon};
   }
 
   svg {
@@ -581,7 +581,7 @@ const LoadingMessage = styled.div`
   text-align: center;
   padding: 4rem 0;
   font-size: 1.125rem;
-  color: white;
+  color: ${COLORS.textPrimary};
 `;
 
 const ErrorContainer = styled.div`
@@ -590,21 +590,21 @@ const ErrorContainer = styled.div`
 `;
 
 const ErrorMessage = styled.div`
-  background-color: rgba(211, 47, 47, 0.1);
+  background-color: rgba(233, 137, 115, 0.1);
   color: ${COLORS.error};
   padding: 1.5rem;
   border-radius: 8px;
   margin-bottom: 2rem;
-  border: 1px solid rgba(211, 47, 47, 0.3);
+  border: 1px solid rgba(233, 137, 115, 0.3);
 `;
 
 // Updated post container with white background and black text
 const PostContainer = styled.div`
-  background-color: white;
+  background-color: ${COLORS.cardBackground};
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px ${COLORS.shadow};
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid ${COLORS.border};
 
   @media (max-width: 768px) {
     margin: 0 -1rem;
@@ -719,7 +719,7 @@ const MediaControls = styled.div`
 `;
 
 const ZoomButton = styled.button`
-  background-color: ${COLORS.primaryBlue};
+  background-color: ${COLORS.primaryBlueGray};
   color: white;
   border: none;
   border-radius: 50%;
@@ -732,7 +732,7 @@ const ZoomButton = styled.button`
   transition: background-color 0.3s, transform 0.2s;
 
   &:hover {
-    background-color: ${COLORS.accentBlue};
+    background-color: ${COLORS.accentBlueGray};
     transform: scale(1.1);
   }
 `;
@@ -742,7 +742,7 @@ const NavButton = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: ${COLORS.primaryBlue};
+  background-color: ${COLORS.primaryBlueGray};
   color: white;
   border: none;
   border-radius: 50%;
@@ -757,7 +757,7 @@ const NavButton = styled.button`
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 
   &:hover {
-    background-color: ${COLORS.accentBlue};
+    background-color: ${COLORS.accentBlueGray};
     transform: translateY(-50%) scale(1.1);
   }
 
@@ -780,7 +780,7 @@ const MediaCounter = styled.div`
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background-color: ${COLORS.primaryBlue};
+  background-color: ${COLORS.primaryBlueGray};
   color: white;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
@@ -806,12 +806,12 @@ const Thumbnail = styled.div`
   height: 0.75rem;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? COLORS.primaryTeal : "rgba(255, 255, 255, 0.5)"};
+    props.active ? COLORS.primarySalmon : "rgba(255, 255, 255, 0.5)"};
   cursor: pointer;
   transition: background-color 0.3s, transform 0.2s;
 
   &:hover {
-    background-color: ${COLORS.primaryTeal};
+    background-color: ${COLORS.primarySalmon};
     transform: scale(1.2);
   }
 `;
@@ -839,7 +839,7 @@ const AuthorCircle = styled.div`
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background-color: ${COLORS.primaryBlue};
+  background-color: ${COLORS.primarySalmon};
   color: white;
   display: flex;
   align-items: center;
@@ -847,7 +847,7 @@ const AuthorCircle = styled.div`
   font-size: 1.5rem;
   font-weight: bold;
   margin-right: 1rem;
-  border: 2px solid ${COLORS.primaryTeal};
+  border: 2px solid ${COLORS.accentSalmon};
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 `;
 
@@ -872,7 +872,7 @@ const ReadingTime = styled.span`
 
   svg {
     margin-right: 0.25rem;
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryBlueGray};
   }
 `;
 
@@ -913,7 +913,7 @@ const ActionsContainer = styled.div`
 const EditLink = styled(Link)`
   display: flex;
   align-items: center;
-  background-color: ${COLORS.primaryBlue};
+  background-color: ${COLORS.primaryBlueGray};
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -922,7 +922,7 @@ const EditLink = styled(Link)`
   font-weight: 500;
 
   &:hover {
-    background-color: ${COLORS.accentBlue};
+    background-color: ${COLORS.accentBlueGray};
     transform: translateY(-2px);
   }
 
@@ -969,14 +969,14 @@ const TimeStamp = styled.div`
 
   svg {
     margin-right: 0.5rem;
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryBlueGray};
   }
 `;
 
 const LikesCount = styled.div`
   display: flex;
   align-items: center;
-  color: ${COLORS.primaryBlue};
+  color: ${COLORS.primarySalmon};
   font-size: 0.875rem;
   font-weight: 500;
 
@@ -1022,12 +1022,12 @@ const ActionButton = styled.button`
   gap: 0.25rem;
 
   &:hover {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primarySalmon};
     transform: translateY(-2px);
   }
 
   &.active {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primarySalmon};
   }
 
   svg {
@@ -1046,7 +1046,7 @@ const LikeAnimation = styled.div`
 
   &.animate svg {
     animation: likeEffect 0.5s ease-in-out;
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primarySalmon};
   }
 
   @keyframes likeEffect {
@@ -1084,13 +1084,13 @@ const Tag = styled.span`
 
   &:hover {
     background-color: #e0e0e0;
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primarySalmon};
     transform: translateY(-2px);
   }
 
   svg {
     font-size: 0.75rem;
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -1102,19 +1102,19 @@ const FloatingShareButton = styled.button`
   width: 3.5rem;
   height: 3.5rem;
   border-radius: 50%;
-  background-color: ${COLORS.primaryBlue};
+  background-color: ${COLORS.primarySalmon};
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(233, 137, 115, 0.3);
   cursor: pointer;
   transition: background-color 0.3s, transform 0.2s;
   z-index: 90;
   border: none;
 
   &:hover {
-    background-color: ${COLORS.accentBlue};
+    background-color: ${COLORS.accentSalmon};
     transform: translateY(-5px);
   }
 
@@ -1153,7 +1153,7 @@ const DeleteModalContent = styled.div`
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 
   h3 {
-    color: #000000;
+    color: ${COLORS.primarySalmon};
     margin-top: 0;
     margin-bottom: 1rem;
     font-size: 1.5rem;
@@ -1176,7 +1176,7 @@ const DeleteModalButtons = styled.div`
 `;
 
 const CancelButton = styled.button`
-  background-color: #f0f0f0;
+  background-color: ${COLORS.elevatedBackground};
   color: #333333;
   border: none;
   border-radius: 4px;
@@ -1186,7 +1186,7 @@ const CancelButton = styled.button`
   font-weight: 500;
 
   &:hover {
-    background-color: #e0e0e0;
+    background-color: ${COLORS.buttonHover};
     transform: translateY(-2px);
   }
 
@@ -1269,7 +1269,7 @@ const FullscreenNavButton = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: ${COLORS.primaryBlue};
+  background-color: ${COLORS.primarySalmon};
   color: white;
   border: none;
   border-radius: 50%;
@@ -1284,7 +1284,7 @@ const FullscreenNavButton = styled.button`
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 
   &:hover {
-    background-color: ${COLORS.accentBlue};
+    background-color: ${COLORS.accentSalmon};
     transform: translateY(-50%) scale(1.1);
   }
 

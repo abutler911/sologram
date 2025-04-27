@@ -6,26 +6,19 @@ import {
   FaTrash,
   FaEdit,
   FaClock,
-  FaComment,
   FaRetweet,
   FaShare,
   FaRegHeart,
   FaRegComment,
   FaStar,
-  FaBookmark,
 } from "react-icons/fa";
-import { moodColors, moodEmojis } from "../../utils/themeConstants";
-import { COLORS, THEME } from "../../theme";
+import { moodEmojis } from "../../utils/themeConstants";
+import { COLORS } from "../../theme";
 
 // Enhanced animations
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
-`;
-
-const shimmer = keyframes`
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
 `;
 
 const float = keyframes`
@@ -48,9 +41,9 @@ const Card = styled.div`
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   border: 1px solid
-    ${(props) => (props.pinned ? COLORS.primaryTeal : COLORS.border)};
+    ${(props) => (props.pinned ? COLORS.primarySalmon : COLORS.border)};
   box-shadow: 0 8px 24px
-    ${(props) => (props.pinned ? `rgba(0, 131, 143, 0.25)` : COLORS.shadow)};
+    ${(props) => (props.pinned ? `rgba(233, 137, 115, 0.25)` : COLORS.shadow)};
   animation: ${fadeIn} 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
   overflow: hidden;
   transition: all 0.4s ease;
@@ -67,23 +60,23 @@ const Card = styled.div`
     width: 100%;
     height: 4px;
     background: ${(props) =>
-      props.mood ? COLORS.primaryTeal : COLORS.primaryBlue};
+      props.mood ? COLORS.primarySalmon : COLORS.primaryBlueGray};
     opacity: ${(props) => (props.pinned ? 1 : 0.8)};
   }
 
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 12px 30px
-      ${(props) => (props.pinned ? `rgba(0, 131, 143, 0.3)` : COLORS.shadow)};
+      ${(props) => (props.pinned ? `rgba(233, 137, 115, 0.3)` : COLORS.shadow)};
   }
 
   ${(props) =>
     props.pinned &&
     css`
-      border-color: ${COLORS.primaryTeal};
+      border-color: ${COLORS.primarySalmon};
 
       &:hover {
-        box-shadow: 0 12px 30px rgba(0, 131, 143, 0.3);
+        box-shadow: 0 12px 30px rgba(233, 137, 115, 0.3);
       }
     `}
 
@@ -150,7 +143,7 @@ const Avatar = styled.div`
   border-radius: 50%;
   overflow: hidden;
   position: relative;
-  box-shadow: 0 0 0 2px ${COLORS.primaryTeal}, 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 2px ${COLORS.primarySalmon}, 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: all 0.4s ease;
 
   @media (max-width: 480px) {
@@ -160,7 +153,7 @@ const Avatar = styled.div`
 
   ${Card}:hover & {
     transform: scale(1.05);
-    box-shadow: 0 0 0 2px ${COLORS.accentTeal}, 0 6px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0 2px ${COLORS.accentSalmon}, 0 6px 12px rgba(0, 0, 0, 0.3);
   }
 
   img {
@@ -182,7 +175,7 @@ const DefaultAvatar = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: ${COLORS.primaryTeal};
+  background-color: ${COLORS.primarySalmon};
   color: #ffffff;
   font-size: 1.6rem;
   font-weight: bold;
@@ -220,7 +213,7 @@ const Username = styled.div`
   transition: all 0.3s;
 
   &:hover {
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primarySalmon};
   }
 
   @media (max-width: 480px) {
@@ -275,7 +268,7 @@ const ActionButton = styled.button`
   overflow: hidden;
 
   &:hover {
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primarySalmon};
     background-color: ${COLORS.elevatedBackground};
   }
 
@@ -284,7 +277,7 @@ const ActionButton = styled.button`
   }
 
   &.pinned {
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.accentSalmon};
   }
 
   ${(props) =>
@@ -307,7 +300,7 @@ const Content = styled.p`
   background: ${COLORS.elevatedBackground};
   padding: 1.5rem;
   border-radius: 8px;
-  border-left: 3px solid ${COLORS.primaryTeal};
+  border-left: 3px solid ${COLORS.primarySalmon};
   white-space: pre-wrap;
   position: relative;
   z-index: 2;
@@ -315,13 +308,13 @@ const Content = styled.p`
   transition: all 0.4s ease;
 
   ${Card}:hover & {
-    border-left-color: ${COLORS.accentTeal};
+    border-left-color: ${COLORS.accentSalmon};
   }
 
   @media (max-width: 768px) {
     padding: 1.25rem;
-    font-size: 0.7rem;
-    line-height: 1.2;
+    font-size: 0.95rem;
+    line-height: 1.4;
   }
 `;
 
@@ -368,7 +361,7 @@ const Tags = styled.div`
 
 const Tag = styled.span`
   background-color: ${COLORS.elevatedBackground};
-  color: ${COLORS.primaryTeal};
+  color: ${COLORS.primarySalmon};
   padding: 0.3rem 0.8rem;
   border-radius: 4px;
   font-size: 0.75rem;
@@ -379,7 +372,7 @@ const Tag = styled.span`
 
   &:hover {
     background-color: ${COLORS.buttonHover};
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.accentSalmon};
   }
 
   @media (max-width: 768px) {
@@ -411,7 +404,7 @@ const MoodIndicator = styled.div`
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: ${COLORS.primaryTeal};
+  color: ${COLORS.primarySalmon};
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: capitalize;
@@ -442,7 +435,7 @@ const TimeDisplay = styled.div`
 
   svg {
     font-size: 0.7rem;
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primaryBlueGray};
   }
 
   &:hover {
@@ -472,7 +465,8 @@ const ActionBar = styled.div`
 
 // Action icons
 const ActionIcon = styled.div`
-  color: ${(props) => (props.liked ? COLORS.primaryTeal : COLORS.textTertiary)};
+  color: ${(props) =>
+    props.liked ? COLORS.primarySalmon : COLORS.textTertiary};
   transition: all 0.3s ease;
   font-size: 1rem;
 
@@ -517,37 +511,37 @@ const ActionItem = styled.div`
 
   &:nth-child(1):hover {
     ${ActionIcon} {
-      color: ${COLORS.primaryTeal};
+      color: ${COLORS.primarySalmon};
     }
 
     ${ActionCount} {
-      color: ${COLORS.primaryTeal};
+      color: ${COLORS.primarySalmon};
     }
   }
 
   &:nth-child(2):hover {
     ${ActionIcon} {
-      color: ${COLORS.primaryBlue};
+      color: ${COLORS.primaryBlueGray};
     }
 
     ${ActionCount} {
-      color: ${COLORS.primaryBlue};
+      color: ${COLORS.primaryBlueGray};
     }
   }
 
   &:nth-child(3):hover {
     ${ActionIcon} {
-      color: ${COLORS.primaryGreen};
+      color: ${COLORS.primaryMint};
     }
 
     ${ActionCount} {
-      color: ${COLORS.primaryGreen};
+      color: ${COLORS.primaryMint};
     }
   }
 
   &:nth-child(4):hover {
     ${ActionIcon} {
-      color: ${COLORS.accentTeal};
+      color: ${COLORS.accentSalmon};
     }
   }
 `;
@@ -557,7 +551,7 @@ const PinnedBadge = styled.div`
   position: absolute;
   top: 0;
   right: 1.5rem;
-  background-color: ${COLORS.primaryTeal};
+  background-color: ${COLORS.primarySalmon};
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 600;
