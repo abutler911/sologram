@@ -673,6 +673,7 @@ const CardWrapper = styled.div`
   transition: opacity 0.5s ease, transform 0.5s ease;
   animation: ${fadeIn} 0.6s ease-out;
   filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.6));
+  border-radius: 8px;
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     width: 94%;
@@ -739,9 +740,11 @@ const CardHeader = styled.header`
     top: 0;
     left: 0;
     right: 0;
-    height: 3px;
+    height: 5px;
     background-color: ${COLORS.primaryMint};
     opacity: 0.9;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
