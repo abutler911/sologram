@@ -9,6 +9,7 @@ const {
   likePost,
   checkUserLike,
   searchPosts,
+  checkUserLikesBatch,
 } = require("../controllers/posts");
 const { protect } = require("../middleware/auth");
 

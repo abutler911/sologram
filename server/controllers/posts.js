@@ -431,6 +431,7 @@ exports.checkUserLike = async (req, res) => {
   }
 };
 
+// Add to controllers/posts.js
 exports.checkUserLikesBatch = async (req, res) => {
   try {
     const { postIds } = req.body;
