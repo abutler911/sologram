@@ -66,7 +66,7 @@ export const LikesProvider = ({ children }) => {
 
       try {
         const response = await fetch(`/api/posts/${postId}/like`, {
-          method: "PUT",
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
