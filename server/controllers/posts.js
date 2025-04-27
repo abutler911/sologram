@@ -337,7 +337,6 @@ exports.likePost = async (req, res) => {
   try {
     const postId = req.params.id;
     const userId = req.user._id;
-    const ip = req.ip || null;
 
     if (!userId) {
       return res.status(401).json({
@@ -348,44 +347,29 @@ exports.likePost = async (req, res) => {
 
     console.log(`Like attempt - Post: ${postId}, User: ${userId}`);
 
-    const mongoose = require("mongoose");
-    const session = await mongoose.startSession();
+    const session = await Like.startSession();
     session.startTransaction();
 
     try {
-      // Use the session for all database operations
       const post = await Post.findById(postId).session(session);
-
       if (!post) {
-        await session.abortTransaction();
-        session.endSession();
-        return res.status(404).json({
-          success: false,
-          message: "Post not found",
-        });
+        throw new Error("Post not found");
       }
 
-      // Check if user already liked this post
+      // Check if the user already liked this post
       const existingLike = await Like.findOne({
         post: postId,
         user: userId,
       }).session(session);
 
-      console.log(`Existing like found: ${!!existingLike}`);
-
       if (existingLike) {
-        await session.abortTransaction();
-        session.endSession();
-        return res.status(400).json({
-          success: false,
-          message: "You have already liked this post",
-        });
+        throw new Error("You have already liked this post");
       }
 
-      // Create like with user ID
+      // Create a new like
       await Like.create([{ post: postId, user: userId }], { session });
 
-      // Update post like count
+      // Increment the like count on the Post
       post.likes += 1;
       await post.save({ session });
 
@@ -397,34 +381,23 @@ exports.likePost = async (req, res) => {
         data: post,
       });
     } catch (err) {
-      // If any error occurs, abort the transaction
       await session.abortTransaction();
       session.endSession();
-      throw err; // rethrow to outer catch
-    }
-  } catch (err) {
-    console.error("Like error:", err);
 
-    if (err.code === 11000) {
-      // Handle duplicate key error more gracefully
-      // Update the post's like count anyway since the user tried to like it
-      try {
-        const post = await Post.findById(req.params.id);
-        // Return the post without an error so the UI shows the like
+      if (err.message === "You have already liked this post") {
+        // Return success for duplicate like attempts
+        const post = await Post.findById(postId);
         return res.status(200).json({
           success: true,
           message: "Post already liked",
           data: post,
         });
-      } catch (findErr) {
-        console.error("Error finding post after like error:", findErr);
       }
-    }
-    res.status(400).json({
-      success: false,
-      message: "Failed to like post",
-    });
 
+      throw err;
+    }
+  } catch (err) {
+    console.error("Like error:", err.message || err);
     res.status(500).json({
       success: false,
       message: "Server Error",
@@ -432,12 +405,10 @@ exports.likePost = async (req, res) => {
   }
 };
 
-// Add this function to your posts controller file (posts.js)
-
 exports.checkUserLike = async (req, res) => {
   try {
-    const postId = req.params.id;
-    const userId = req.user._id; // This assumes you have auth middleware that adds user to req
+    const { id: postId } = req.params;
+    const userId = req.user._id;
 
     if (!userId) {
       return res.status(401).json({
@@ -446,18 +417,14 @@ exports.checkUserLike = async (req, res) => {
       });
     }
 
-    // Find if the user has liked this post
-    const like = await Like.findOne({
-      post: postId,
-      user: userId,
-    });
+    const like = await Like.findOne({ post: postId, user: userId });
 
     res.status(200).json({
       success: true,
-      hasLiked: !!like, // Convert to boolean
+      hasLiked: !!like,
     });
   } catch (err) {
-    console.error("Check like error:", err);
+    console.error("Check like error:", err.message || err);
     res.status(500).json({
       success: false,
       message: "Server Error",
@@ -465,7 +432,6 @@ exports.checkUserLike = async (req, res) => {
   }
 };
 
-// Add to controllers/posts.js
 exports.checkUserLikesBatch = async (req, res) => {
   try {
     const { postIds } = req.body;
@@ -485,13 +451,11 @@ exports.checkUserLikesBatch = async (req, res) => {
       });
     }
 
-    // Find all likes for this user and these posts
     const likes = await Like.find({
       post: { $in: postIds },
       user: userId,
     });
 
-    // Create a map of postId to hasLiked boolean
     const results = postIds.map((postId) => ({
       postId,
       hasLiked: likes.some(
@@ -504,7 +468,7 @@ exports.checkUserLikesBatch = async (req, res) => {
       results,
     });
   } catch (err) {
-    console.error("Batch check likes error:", err);
+    console.error("Batch check likes error:", err.message || err);
     res.status(500).json({
       success: false,
       message: "Server Error",
