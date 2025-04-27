@@ -168,7 +168,7 @@ const NavAction = styled.button`
   }
 
   &:hover {
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -198,7 +198,8 @@ const NavItem = styled(Link)`
   justify-content: center;
   padding: 0.5rem 0;
   flex: 1;
-  color: ${(props) => (props.active ? COLORS.accentTeal : COLORS.textTertiary)};
+  color: ${(props) =>
+    props.active ? COLORS.primarySalmon : COLORS.textTertiary};
   text-decoration: none;
 
   svg {
@@ -207,7 +208,7 @@ const NavItem = styled(Link)`
   }
 
   &:hover {
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -234,7 +235,7 @@ const CreateButton = styled.button`
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background-color: ${COLORS.primaryTeal};
+  background-color: ${COLORS.primarySalmon};
   border: none;
   color: white;
   font-size: 1.25rem;
@@ -243,7 +244,7 @@ const CreateButton = styled.button`
   margin-bottom: 0.125rem;
 
   &:hover {
-    background-color: ${COLORS.accentTeal};
+    background-color: ${COLORS.accentSalmon};
   }
 
   &:active {
@@ -289,11 +290,15 @@ const CreateOptionItem = styled(Link)`
   svg {
     margin-right: 12px;
     font-size: 1.2rem;
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primaryBlueGray};
   }
 
   &:hover {
     background-color: ${COLORS.buttonHover};
+  }
+
+  &:hover svg {
+    color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -308,7 +313,7 @@ const BrandCenter = styled.div`
 const BrandText = styled.span`
   font-size: 0.75rem;
   font-weight: 600;
-  color: ${COLORS.primaryTeal};
+  color: ${COLORS.primarySalmon};
   letter-spacing: 0.5px;
   user-select: none;
   animation: pulse 2.8s ease-in-out infinite;
