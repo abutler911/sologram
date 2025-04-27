@@ -73,12 +73,12 @@ const HeaderRight = styled.div`
 
 const PageTitle = styled.h1`
   font-size: 2.3rem;
-  color: ${COLORS.primaryTeal};
+  color: ${COLORS.primarySalmon};
   margin: 0;
   font-family: "Autography", cursive;
   transform: rotate(-2deg);
   letter-spacing: 0.5px;
-  text-shadow: 1px 1px 2px rgba(0, 131, 143, 0.3);
+  text-shadow: 1px 1px 2px rgba(233, 137, 115, 0.3);
 
   @media (max-width: 768px) {
     margin-left: 8px;
@@ -103,9 +103,9 @@ const MoodButton = styled.button`
     props.active
       ? props.mood
         ? props.mood === "all"
-          ? COLORS.primaryTeal
+          ? COLORS.primarySalmon
           : moodColors[props.mood].primary
-        : COLORS.primaryTeal
+        : COLORS.primarySalmon
       : COLORS.elevatedBackground};
   color: ${(props) =>
     props.active ? COLORS.textPrimary : COLORS.textSecondary};
@@ -123,7 +123,7 @@ const MoodButton = styled.button`
     background-color: ${(props) =>
       props.mood && props.mood !== "all"
         ? moodColors[props.mood].primary
-        : COLORS.primaryTeal};
+        : COLORS.accentSalmon};
     color: ${COLORS.textPrimary};
     transform: scale(1.05);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
@@ -135,19 +135,19 @@ const CreateButton = styled(Link)`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: ${COLORS.primaryTeal};
+  background-color: ${COLORS.primarySalmon};
   color: white;
   text-decoration: none;
   padding: 0.5rem 1rem;
   border-radius: 8px;
   font-weight: 500;
   transition: all 0.3s;
-  box-shadow: 0 3px 8px rgba(0, 131, 143, 0.3);
+  box-shadow: 0 3px 8px rgba(233, 137, 115, 0.3);
 
   &:hover {
-    background-color: ${COLORS.accentTeal};
+    background-color: ${COLORS.accentSalmon};
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 131, 143, 0.4);
+    box-shadow: 0 5px 15px rgba(233, 137, 115, 0.4);
   }
 
   svg {
@@ -192,7 +192,7 @@ const SearchToggle = styled.button`
   transition: all 0.3s;
 
   &:hover {
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primaryBlueGray};
     transform: scale(1.1);
   }
 `;
@@ -208,8 +208,8 @@ const SearchForm = styled.form`
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
 
   &:focus-within {
-    border-color: ${COLORS.primaryTeal};
-    box-shadow: 0 3px 15px rgba(0, 131, 143, 0.15);
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 3px 15px rgba(233, 137, 115, 0.15);
   }
 `;
 
@@ -240,7 +240,7 @@ const SearchButton = styled.button`
   transition: all 0.3s;
 
   &:hover {
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primarySalmon};
     transform: scale(1.1);
   }
 `;
@@ -257,7 +257,7 @@ const ClearButton = styled.button`
   transition: all 0.3s;
 
   &:hover {
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primarySalmon};
     transform: scale(1.1);
   }
 `;
@@ -278,7 +278,7 @@ const CloseSearchButton = styled.button`
   }
 
   &:hover {
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primarySalmon};
     transform: scale(1.1);
   }
 `;
@@ -296,15 +296,15 @@ const ThoughtsContainer = styled.div`
 `;
 
 const ErrorMessage = styled.div`
-  background-color: rgba(207, 102, 121, 0.2);
+  background-color: rgba(233, 137, 115, 0.2);
   color: ${COLORS.error};
   padding: 1.25rem;
   border-radius: 8px;
   text-align: center;
   margin-bottom: 1.5rem;
   backdrop-filter: blur(5px);
-  border: 1px solid rgba(207, 102, 121, 0.3);
-  box-shadow: 0 5px 15px rgba(207, 102, 121, 0.1);
+  border: 1px solid rgba(233, 137, 115, 0.3);
+  box-shadow: 0 5px 15px rgba(233, 137, 115, 0.1);
   animation: ${fadeIn} 0.4s ease-out;
 `;
 
@@ -367,7 +367,7 @@ const DeleteModalContent = styled.div`
   line-height: 1.6;
 
   h3 {
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primarySalmon};
     margin-bottom: 1rem;
     font-size: 1.5rem;
   }
@@ -456,9 +456,9 @@ const shine = keyframes`
 `;
 
 const pulseGlow = keyframes`
-  0% { box-shadow: 0 0 15px rgba(0, 131, 143, 0.4); }
-  50% { box-shadow: 0 0 25px rgba(0, 131, 143, 0.7); }
-  100% { box-shadow: 0 0 15px rgba(0, 131, 143, 0.4); }
+  0% { box-shadow: 0 0 15px rgba(233, 137, 115, 0.4); }
+  50% { box-shadow: 0 0 25px rgba(233, 137, 115, 0.7); }
+  100% { box-shadow: 0 0 15px rgba(233, 137, 115, 0.4); }
 `;
 
 // Retweet modal components
@@ -497,7 +497,7 @@ const RetweetModal = styled.div`
 const ModalIcon = styled.div`
   font-size: 2.5rem;
   margin-bottom: 1.5rem;
-  color: ${COLORS.primaryTeal};
+  color: ${COLORS.primarySalmon};
   position: relative;
   display: inline-block;
   animation: ${pulseGlow} 2s infinite ease-in-out;
@@ -511,7 +511,7 @@ const RetweetModalContent = styled.div`
     margin-bottom: 1.2rem;
     font-size: 1.6rem;
     font-weight: 700;
-    color: ${COLORS.primaryTeal};
+    color: ${COLORS.primarySalmon};
     letter-spacing: 0.5px;
   }
 
@@ -530,7 +530,7 @@ const RetweetModalContent = styled.div`
 
 const RetweetCloseButton = styled.button`
   margin-top: 1.5rem;
-  background-color: ${COLORS.primaryTeal};
+  background-color: ${COLORS.primarySalmon};
   color: white;
   border: none;
   border-radius: 8px;
@@ -541,7 +541,7 @@ const RetweetCloseButton = styled.button`
   transition: all 0.3s;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 131, 143, 0.3);
+  box-shadow: 0 4px 12px rgba(233, 137, 115, 0.3);
 
   &:before {
     content: "";
@@ -560,9 +560,9 @@ const RetweetCloseButton = styled.button`
   }
 
   &:hover {
-    background-color: ${COLORS.accentTeal};
+    background-color: ${COLORS.accentSalmon};
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 131, 143, 0.4);
+    box-shadow: 0 6px 15px rgba(233, 137, 115, 0.4);
 
     &:before {
       left: 100%;
@@ -759,6 +759,7 @@ const Thoughts = () => {
               <MoodButton
                 active={selectedMood === "all"}
                 onClick={() => setSelectedMood("all")}
+                mood="all"
               >
                 All
               </MoodButton>
@@ -867,19 +868,16 @@ const Thoughts = () => {
                 <DeleteModalContent>
                   <h3>Delete Thought</h3>
                   <p>This cannot be undone. Are you sure?</p>
-                  <DeleteModalButtons>
-                    <CancelButton onClick={cancelDelete}>Cancel</CancelButton>
-                    <ConfirmDeleteButton onClick={confirmDelete}>
-                      Delete
-                    </ConfirmDeleteButton>
-                  </DeleteModalButtons>
                 </DeleteModalContent>
+                <DeleteModalButtons>
+                  <CancelButton onClick={cancelDelete}>Cancel</CancelButton>
+                  <ConfirmDeleteButton onClick={confirmDelete}>
+                    Delete
+                  </ConfirmDeleteButton>
+                </DeleteModalButtons>
               </DeleteModal>
-              <Backdrop onClick={cancelDelete} />
             </ModalOverlay>
           )}
-
-          {/* Floating button removed as requested */}
         </>
       )}
 
@@ -899,7 +897,6 @@ const Thoughts = () => {
               Amazing
             </RetweetCloseButton>
           </RetweetModal>
-          <Backdrop onClick={() => setShowRetweetModal(false)} />
         </ModalOverlay>
       )}
     </MainLayout>
