@@ -34,7 +34,7 @@ exports.getPosts = async (req, res) => {
     // Attach the real like counts
     const postsWithLikes = posts.map((post) => ({
       ...post,
-      likes: likesMap[post._id.toString()] || 0, // fallback to 0
+      likes: likesMap[post._id.toString()] || 0,
     }));
 
     res.status(200).json({
