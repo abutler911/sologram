@@ -1081,7 +1081,7 @@ const ActionGroup = styled.div`
 const LikeButton = styled.button`
   background: none;
   border: none;
-  color: ${(props) => (props.liked ? COLORS.primaryTeal : COLORS.textTertiary)};
+  color: ${(props) => (props.liked ? COLORS.error : COLORS.textTertiary)};
   font-size: 1.5rem;
   cursor: ${(props) =>
     props.disabled && !props.liked ? "default" : "pointer"};
