@@ -265,57 +265,51 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
         }
       );
 
-      if (response.ok) {
-        try {
-          // Safely update like count and status
-          setPost((prevPost) => ({
-            ...prevPost,
-            likes: (prevPost.likes || 0) + 1,
-          }));
-          setHasLiked(true);
-        } catch (stateError) {
-          console.error(
-            "Error updating state after successful like:",
-            stateError
-          );
-        }
-      } else {
-        // Handle error response
-        try {
-          const errorText = await response.text();
-          console.log("Error response text:", errorText);
+      // Get response text first
+      const responseText = await response.text();
+      console.log("Response text:", responseText);
 
-          if (errorText.includes("already liked")) {
-            setHasLiked(true);
-          } else {
-            toast.error("Failed to like post");
-          }
-        } catch (responseError) {
-          console.error("Error processing error response:", responseError);
-          toast.error("Failed to like post");
-        }
+      // Try to parse as JSON
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (e) {
+        console.log("Response was not valid JSON");
+      }
+
+      if (response.ok) {
+        // Success - update UI
+        setPost((prevPost) => ({
+          ...prevPost,
+          likes: (prevPost.likes || 0) + 1,
+        }));
+        setHasLiked(true);
+      } else if (
+        responseText.includes("already liked") ||
+        (responseData &&
+          responseData.message &&
+          responseData.message.includes("already liked"))
+      ) {
+        // Already liked - just update UI state without error message
+        console.log("Post was already liked");
+        setHasLiked(true);
+      } else {
+        // Other error
+        toast.error(responseData?.message || "Failed to like post");
       }
     } catch (err) {
       console.error("Error liking post:", err);
       toast.error("Failed to like post");
     } finally {
-      // Ensure these state updates happen safely
-      try {
-        setIsLiking(false);
-        // Use a safer way to handle the timeout
-        const timer = setTimeout(() => {
-          try {
-            setIsDoubleTapLiking(false);
-          } catch (timerError) {
-            console.error("Error in timeout callback:", timerError);
-          }
-        }, 1000);
+      setIsLiking(false);
 
-        // Clean up timeout on component unmount
-        return () => clearTimeout(timer);
-      } catch (finallyError) {
-        console.error("Error in finally block:", finallyError);
-      }
+      // Delay the animation ending
+      const timerRef = { current: null };
+      timerRef.current = setTimeout(() => {
+        setIsDoubleTapLiking(false);
+      }, 1000);
+
+      // No need to return cleanup here - this is a callback function, not a useEffect
     }
   }, [post?._id, isLiking, hasLiked, isAuthenticated]);
 
