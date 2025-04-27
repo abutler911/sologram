@@ -276,6 +276,15 @@ const Home = forwardRef((props, ref) => {
                           prevPosts.filter((p) => p._id !== deletedId)
                         );
                       }}
+                      onLike={(likedPostId) => {
+                        setPosts((prevPosts) =>
+                          prevPosts.map((p) =>
+                            p._id === likedPostId
+                              ? { ...p, likes: (p.likes || 0) + 1 }
+                              : p
+                          )
+                        );
+                      }}
                     />
                   </GridItem>
                 ))}

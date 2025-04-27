@@ -101,7 +101,7 @@ const isMobile =
   (window.innerWidth <= 768 ||
     window.matchMedia("(display-mode: standalone)").matches);
 
-const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
+const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const cardRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
   const [post, setPost] = useState(initialPost);
@@ -235,11 +235,20 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
     if (!isAuthenticated || isProcessing || hasLiked) return;
 
     likePost(post._id, () => {
-      console.log(
-        "[LIKE] Like registered. Server aggregation will reflect new count."
-      );
+      // Update local post state
+      setPost((prevPost) => ({
+        ...prevPost,
+        likes: (prevPost.likes || 0) + 1,
+      }));
+
+      // Also inform the parent if provided
+      if (typeof onLike === "function") {
+        onLike(post._id);
+      }
+
+      console.log("[LIKE] Like registered and like count updated.");
     });
-  }, [post._id, isProcessing, hasLiked, isAuthenticated, likePost]);
+  }, [post._id, isProcessing, hasLiked, isAuthenticated, likePost, onLike]);
 
   const handleDoubleTapLike = useCallback(() => {
     if (!isAuthenticated) {

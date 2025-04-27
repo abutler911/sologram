@@ -155,15 +155,27 @@ const PostDetail = () => {
     }
   };
 
-  // Handle like/unlike
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setIsLikeAnimating(true);
-    setTimeout(() => setIsLikeAnimating(false), 500);
+  const handleLike = async () => {
+    if (!isAuthenticated || !post) {
+      toast.error("You must be logged in to like posts.");
+      return;
+    }
 
-    // API call would go here
-    // Example:
-    // axios.post(`/api/posts/${id}/like`);
+    try {
+      await axios.post(`/api/posts/${id}/like`);
+
+      setIsLiked(true);
+      setPost((prevPost) => ({
+        ...prevPost,
+        likes: (prevPost.likes || 0) + 1,
+      }));
+
+      setIsLikeAnimating(true);
+      setTimeout(() => setIsLikeAnimating(false), 500);
+    } catch (error) {
+      console.error("Failed to like post:", error);
+      toast.error("Failed to like post.");
+    }
   };
 
   // Handle bookmark
