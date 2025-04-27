@@ -231,16 +231,13 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
     setIsZoomed(false);
   }, []);
 
-  // Updated handleLike with POST method instead of PUT
   const handleLike = useCallback(async () => {
     if (!isAuthenticated || isProcessing || hasLiked) return;
 
     likePost(post._id, () => {
-      // On success callback, update the local post state
-      setPost((prevPost) => ({
-        ...prevPost,
-        likes: (prevPost.likes || 0) + 1,
-      }));
+      console.log(
+        "[LIKE] Like registered. Server aggregation will reflect new count."
+      );
     });
   }, [post._id, isProcessing, hasLiked, isAuthenticated, likePost]);
 

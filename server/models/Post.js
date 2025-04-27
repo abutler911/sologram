@@ -28,10 +28,7 @@ const PostSchema = new mongoose.Schema(
         filter: { type: String, default: "" },
       },
     ],
-    likes: {
-      type: Number,
-      default: 0,
-    },
+
     tags: [
       {
         type: String,
