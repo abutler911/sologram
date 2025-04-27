@@ -643,7 +643,7 @@ const LikesCounterStandalone = styled.div`
       bottom: -2px;
       width: 100%;
       height: 1px;
-      background-color: ${COLORS.accentTeal};
+      background-color: ${COLORS.accentMint};
       transform-origin: left;
       transform: scaleX(0);
       transition: transform 0.3s ease;
@@ -664,6 +664,7 @@ const LikesCounterStandalone = styled.div`
 // Include all other styled components from the original file
 const CardWrapper = styled.div`
   ${fontFaceStyles}
+  background-color: ${COLORS.background};
   width: 100%;
   max-width: 600px;
   display: flex;
@@ -692,7 +693,7 @@ const Card = styled.article`
   box-shadow: 0 8px 24px ${COLORS.shadow}, 0 2px 6px rgba(0, 0, 0, 0.15);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   will-change: transform, box-shadow;
-  border: 3px solid ${COLORS.primaryTeal}; // More pronounced border
+  border: 3px solid ${COLORS.primaryMint};
   position: relative;
 
   &:before {
@@ -739,7 +740,7 @@ const CardHeader = styled.header`
     left: 0;
     right: 0;
     height: 3px;
-    background-color: ${COLORS.primaryTeal};
+    background-color: ${COLORS.primaryMint};
     opacity: 0.9;
   }
 
@@ -773,8 +774,8 @@ const Username = styled.span`
   transition: all 0.3s ease;
 
   &:hover {
-    color: ${COLORS.accentTeal};
-    text-shadow: 0 2px 8px ${COLORS.accentTeal}40;
+    color: ${COLORS.accentMint};
+    text-shadow: 0 2px 8px ${COLORS.accentMint}40;
   }
 `;
 
@@ -789,7 +790,7 @@ const DateBadge = styled.div`
   svg {
     margin-right: 4px;
     font-size: 0.7rem;
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.accentMint};
   }
 `;
 
@@ -810,7 +811,7 @@ const ActionsButton = styled.button`
 
   &:hover {
     background-color: rgba(0, 0, 0, 0.2);
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.accentMint};
   }
 `;
 
@@ -853,10 +854,10 @@ const ActionItem = styled.button`
 
   &:hover {
     background-color: ${COLORS.buttonHover};
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.accentMint};
 
     svg {
-      color: ${COLORS.accentTeal};
+      color: ${COLORS.accentMint};
     }
   }
 
@@ -978,7 +979,7 @@ const NavigationArrow = styled.button`
 
   &:hover {
     opacity: 1 !important;
-    background-color: ${COLORS.primaryTeal};
+    background-color: ${COLORS.primaryMint};
   }
 
   ${MediaContainer}:hover & {
@@ -1039,7 +1040,7 @@ const ProgressDot = styled.button`
   height: 8px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? COLORS.accentTeal : "rgba(255, 255, 255, 0.5)"};
+    props.active ? COLORS.accentMint : "rgba(255, 255, 255, 0.5)"};
   border: none;
   cursor: pointer;
   padding: 0;
@@ -1049,7 +1050,7 @@ const ProgressDot = styled.button`
   &:hover {
     transform: scale(1.2);
     background-color: ${(props) =>
-      props.active ? COLORS.accentTeal : "rgba(255, 255, 255, 0.8)"};
+      props.active ? COLORS.accentMint : "rgba(255, 255, 255, 0.8)"};
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -1067,7 +1068,7 @@ const HeartAnimation = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: ${COLORS.accentTeal};
+  color: ${COLORS.accentMint};
   font-size: 80px;
   opacity: 0;
   animation: ${scaleIn} 1s ease forwards;
@@ -1158,7 +1159,7 @@ const LikesCounter = styled.div`
       bottom: -2px;
       width: 100%;
       height: 1px;
-      background-color: ${COLORS.accentTeal};
+      background-color: ${COLORS.accentMint};
       transform-origin: left;
       transform: scaleX(0);
       transition: transform 0.3s ease;
@@ -1240,7 +1241,7 @@ const Tag = styled.span`
   background-color: ${COLORS.buttonHover};
 
   &:hover {
-    background-color: ${COLORS.primaryTeal}30;
+    background-color: ${COLORS.primaryMint}30;
     transform: translateY(-2px);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
   }
@@ -1256,18 +1257,18 @@ const ViewPostLink = styled(Link)`
   padding: 10px 18px;
   border-radius: 4px;
   transition: all 0.25s ease;
-  background-color: ${COLORS.primaryTeal};
+  background-color: ${COLORS.primaryMint};
   display: flex;
   align-items: center;
   gap: 6px;
   position: relative;
-  box-shadow: 0 4px 12px ${COLORS.primaryTeal}40;
+  box-shadow: 0 4px 12px ${COLORS.primaryMint}40;
 
   &:hover {
     text-decoration: none;
     transform: translateY(-2px);
-    box-shadow: 0 6px 14px ${COLORS.primaryTeal}60;
-    background-color: ${COLORS.accentTeal};
+    box-shadow: 0 6px 14px ${COLORS.primaryMint}60;
+    background-color: ${COLORS.accentMint};
   }
 
   &:before {
@@ -1277,7 +1278,7 @@ const ViewPostLink = styled(Link)`
     left: -3px;
     right: -3px;
     bottom: -3px;
-    border: 1px solid ${COLORS.accentTeal}40;
+    border: 1px solid ${COLORS.accentMint}40;
     border-radius: 6px;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -1295,7 +1296,7 @@ const ViewPostLink = styled(Link)`
 
     &:active {
       transform: translateY(2px);
-      box-shadow: 0 2px 6px ${COLORS.primaryTeal}40;
+      box-shadow: 0 2px 6px ${COLORS.primaryMint}40;
     }
   }
 `;
@@ -1492,7 +1493,7 @@ const CloseFullscreenButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: ${COLORS.primaryTeal};
+    background-color: ${COLORS.primaryMint};
     transform: scale(1.05);
   }
 `;
@@ -1503,7 +1504,7 @@ const PostLink = styled(Link)`
   display: block;
 
   &:hover ${PostTitle} {
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.accentMint};
   }
 `;
 
@@ -1513,13 +1514,13 @@ const UserAvatarImage = styled.img`
   border-radius: 50%;
   object-fit: cover;
   margin-right: 14px;
-  border: 3px solid ${COLORS.primaryTeal};
+  border: 3px solid ${COLORS.primaryMint};
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
   transition: all 0.3s ease;
 
   &:hover {
     transform: scale(1.08);
-    box-shadow: 0 0 15px ${COLORS.primaryTeal}80;
+    box-shadow: 0 0 15px ${COLORS.primaryMint}80;
   }
 `;
 
@@ -1595,13 +1596,14 @@ const LikesDisplayStandalone = styled.div`
 `;
 
 const ReadMoreLink = styled(Link)`
-  color: ${COLORS.accentTeal};
+  color: ${COLORS.accentSalmon};
   font-weight: 600;
   font-size: 0.8rem;
   text-decoration: none;
   margin-left: 4px;
 
   &:hover {
+    color: ${COLORS.primarySalmon};
     text-decoration: underline;
   }
 `;

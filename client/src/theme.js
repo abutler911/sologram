@@ -1,35 +1,29 @@
 // theme.js - SoloGram New Color Theme: Salmon, Khaki, Mint Blue, Blue Gray
 
 export const COLORS = {
-  primaryBlueGray: "#658ea9", // Main blue-gray
-  primaryMint: "#88b2cc", // Mint blue
-  primarySalmon: "#e98973", // Salmon
-  primaryKhaki: "#e7d4c0", // Khaki
-
-  accentSalmon: "#e98973", // Use for likes, hearts, emphasis
-  accentMint: "#88b2cc", // For hover states, secondary buttons
-  accentBlueGray: "#658ea9", // For headers, icons, accents
-
-  background: "#e7d4c0", // Light khaki background
-  cardBackground: "#f4ede5", // Even lighter khaki for cards
-  elevatedBackground: "#e0d6cc", // Slightly darker elevated background
-
-  textPrimary: "#333333", // Dark text on light background
-  textSecondary: "#555555", // Medium dark
-  textTertiary: "#777777", // Light text
-
-  error: "#e74c3c", // Strong red error
-  success: "#2ecc71", // Fresh green success
-  warning: "#f39c12", // Strong orange warning
-  info: "#3498db", // Blue info
-
-  border: "#d0c7bd", // Soft border
-  divider: "#c0b8ae", // Divider
-  buttonHover: "#d9cfc5", // Button hover color
-
-  shadow: "rgba(0, 0, 0, 0.15)", // Softer shadow for light theme
-
-  heartRed: "#e63946", // Keep heart vibrant
+  primarySalmon: "#e98973",
+  primaryKhaki: "#e7d4c0",
+  primaryMint: "#88b2cc",
+  primaryBlueGray: "#658ea9",
+  accentSalmon: "#ffad9e", // softer version
+  accentMint: "#a8cfd8", // softer version
+  accentBlueGray: "#90aac3", // lighter blue-gray
+  background: "#f8f8f8", // light khaki/neutral
+  cardBackground: "#ffffff", // bright white for card contrast
+  elevatedBackground: "#f0f0f0", // slightly elevated sections
+  textPrimary: "#1a1a1a", // near-black text
+  textSecondary: "#555555", // dark gray text
+  textTertiary: "#888888", // lighter gray text
+  error: "#d9534f",
+  success: "#5cb85c",
+  warning: "#f0ad4e",
+  info: "#5bc0de",
+  border: "#dddddd",
+  divider: "#eeeeee",
+  buttonHover: "#e2e2e2",
+  shadow: "rgba(0, 0, 0, 0.1)",
+  heartRed: "#e63946",
+  darkAccent: "#40535c",
 };
 
 export const THEME = {
