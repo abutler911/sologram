@@ -4,7 +4,7 @@ import styled, { keyframes } from "styled-components";
 import { FaCamera, FaLock, FaEnvelope, FaChevronRight } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
 import MainLayout from "../components/layout/MainLayout";
-import { COLORS, THEME } from "../theme"; // Import your theme
+import { COLORS, THEME } from "../theme";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -142,7 +142,7 @@ const PageWrapper = styled.div`
     bottom: 0;
     background: radial-gradient(
         circle at top right,
-        ${COLORS.primaryPurple}30,
+        ${COLORS.primaryTeal}30,
         transparent 70%
       ),
       radial-gradient(
@@ -167,13 +167,9 @@ const LoginContainer = styled.div`
 `;
 
 const FormContainer = styled.div`
-  background: linear-gradient(
-    145deg,
-    ${COLORS.cardBackground},
-    ${COLORS.elevatedBackground}
-  );
-  border-radius: 16px;
-  box-shadow: 0 10px 30px ${COLORS.shadow}, 0 0 0 1px ${COLORS.primaryPurple}20;
+  background: ${COLORS.cardBackground};
+  border-radius: 8px;
+  box-shadow: 0 10px 20px ${COLORS.shadow}, 0 0 0 1px ${COLORS.border};
   padding: 2.5rem;
   width: 100%;
   max-width: 450px;
@@ -186,19 +182,14 @@ const FormContainer = styled.div`
     top: 0;
     left: 0;
     width: 100%;
-    height: 5px;
-    background: linear-gradient(
-      to right,
-      ${COLORS.primaryPurple},
-      ${COLORS.primaryBlue},
-      ${COLORS.primaryGreen}
-    );
+    height: 4px;
+    background: ${COLORS.primaryTeal};
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     padding: 2rem 1.5rem;
     max-width: 95%;
-    border-radius: 12px;
+    border-radius: 8px;
   }
 `;
 
@@ -212,17 +203,13 @@ const LogoContainer = styled.div`
 const LogoIconWrapper = styled.div`
   width: 50px;
   height: 50px;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryPurple},
-    ${COLORS.primaryBlue}
-  );
-  border-radius: 50%;
+  background: ${COLORS.primaryTeal};
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 0.75rem;
-  box-shadow: 0 5px 15px ${COLORS.primaryPurple}50;
+  box-shadow: 0 5px 15px ${COLORS.primaryTeal}50;
   animation: ${pulse} 3s infinite ease-in-out;
   position: relative;
 
@@ -233,12 +220,8 @@ const LogoIconWrapper = styled.div`
     left: -3px;
     right: -3px;
     bottom: -3px;
-    border-radius: 50%;
-    background: linear-gradient(
-      135deg,
-      ${COLORS.primaryPurple},
-      ${COLORS.primaryBlue}
-    );
+    border-radius: 12px;
+    background: ${COLORS.primaryTeal};
     z-index: -1;
     opacity: 0.5;
     filter: blur(5px);
@@ -253,14 +236,8 @@ const LogoIconWrapper = styled.div`
 const LogoText = styled.h1`
   font-size: 2.2rem;
   font-weight: 700;
-  background: linear-gradient(
-    to right,
-    ${COLORS.primaryPurple},
-    ${COLORS.primaryBlue}
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 2px 10px ${COLORS.primaryPurple}40;
+  color: ${COLORS.accentTeal};
+  text-shadow: 0 2px 8px ${COLORS.primaryTeal}40;
 `;
 
 const Tagline = styled.p`
@@ -278,12 +255,7 @@ const Tagline = styled.p`
     left: 25%;
     right: 25%;
     height: 2px;
-    background: linear-gradient(
-      to right,
-      transparent,
-      ${COLORS.primaryPurple}40,
-      transparent
-    );
+    background: ${COLORS.divider};
   }
 `;
 
@@ -309,7 +281,7 @@ const InputIcon = styled.div`
   left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: ${COLORS.primaryPurple};
+  color: ${COLORS.accentTeal};
   z-index: 1;
   transition: all 0.3s ease;
 `;
@@ -320,11 +292,7 @@ const InputHighlight = styled.div`
   left: 0;
   height: 2px;
   width: 0;
-  background: linear-gradient(
-    to right,
-    ${COLORS.primaryPurple},
-    ${COLORS.primaryBlue}
-  );
+  background: ${COLORS.primaryTeal};
   transition: width 0.3s ease;
 `;
 
@@ -333,7 +301,7 @@ const Input = styled.input`
   padding: 1.1rem 1rem 1.1rem 2.75rem;
   background-color: ${COLORS.elevatedBackground};
   border: 1px solid ${COLORS.border};
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 1rem;
   color: ${COLORS.textPrimary};
   transition: all 0.3s;
@@ -345,8 +313,8 @@ const Input = styled.input`
 
   &:focus {
     outline: none;
-    border-color: ${COLORS.primaryPurple};
-    box-shadow: 0 0 0 3px ${COLORS.primaryPurple}30;
+    border-color: ${COLORS.accentTeal};
+    box-shadow: 0 0 0 3px ${COLORS.primaryTeal}30;
 
     & + ${InputHighlight} {
       width: 100%;
@@ -365,7 +333,7 @@ const Input = styled.input`
   @media (max-width: 768px), screen and (display-mode: standalone) {
     padding: 1.2rem 1rem 1.2rem 2.75rem;
     font-size: 1.05rem;
-    border-radius: 10px;
+    border-radius: 6px;
   }
 `;
 
@@ -377,7 +345,7 @@ const ButtonGlow = styled.div`
   bottom: -20px;
   background: radial-gradient(
     circle at center,
-    ${COLORS.primaryPurple}30,
+    ${COLORS.primaryTeal}30,
     transparent 70%
   );
   opacity: 0;
@@ -396,14 +364,10 @@ const ButtonIcon = styled.span`
 
 const SubmitButton = styled.button`
   width: 100%;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryPurple},
-    ${COLORS.primaryBlue}
-  );
+  background: ${COLORS.primaryTeal};
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 1.1rem;
   font-size: 1.1rem;
   font-weight: 600;
@@ -433,7 +397,8 @@ const SubmitButton = styled.button`
 
   &:hover {
     transform: translateY(-3px);
-    box-shadow: 0 7px 14px ${COLORS.primaryPurple}50;
+    background: ${COLORS.accentTeal};
+    box-shadow: 0 7px 14px ${COLORS.primaryTeal}50;
 
     &:before {
       left: 100%;
@@ -450,11 +415,12 @@ const SubmitButton = styled.button`
 
   &:active {
     transform: translateY(0);
-    box-shadow: 0 3px 8px ${COLORS.primaryPurple}30;
+    box-shadow: 0 3px 8px ${COLORS.primaryTeal}30;
   }
 
   &:disabled {
-    background: linear-gradient(135deg, #888888, #666666);
+    background: ${COLORS.elevatedBackground};
+    color: ${COLORS.textTertiary};
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
@@ -467,7 +433,7 @@ const SubmitButton = styled.button`
   @media (max-width: 768px), screen and (display-mode: standalone) {
     padding: 1.2rem;
     font-size: 1.1rem;
-    border-radius: 10px;
+    border-radius: 6px;
   }
 `;
 
