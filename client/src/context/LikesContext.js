@@ -107,6 +107,7 @@ export const LikesProvider = ({ children }) => {
   );
 
   // Like a post
+  // In LikesContext.js, update the likePost function
   const likePost = useCallback(
     async (postId, onSuccess) => {
       if (!isAuthenticated) {
@@ -130,9 +131,8 @@ export const LikesProvider = ({ children }) => {
           }
         );
 
-        // Get response text first for better error handling
-        const responseText = await response.text();
         let responseData;
+        const responseText = await response.text();
 
         try {
           responseData = JSON.parse(responseText);
@@ -140,6 +140,7 @@ export const LikesProvider = ({ children }) => {
           console.log("Response was not valid JSON");
         }
 
+        // If response is 200 (includes already liked case which we now handle in the backend)
         if (response.ok) {
           // Update local state
           setLikedPosts((prev) => ({
@@ -152,25 +153,8 @@ export const LikesProvider = ({ children }) => {
           }
 
           return true;
-        } else if (
-          responseText.includes("already liked") ||
-          (responseData &&
-            responseData.message &&
-            responseData.message.includes("already liked"))
-        ) {
-          // Already liked - update UI state without error message
-          setLikedPosts((prev) => ({
-            ...prev,
-            [postId]: true,
-          }));
-
-          if (typeof onSuccess === "function") {
-            onSuccess();
-          }
-
-          return true;
         } else {
-          // Other error
+          // Error case
           const errorMessage = responseData?.message || "Failed to like post";
           toast.error(errorMessage);
           return false;

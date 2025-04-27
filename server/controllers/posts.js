@@ -317,6 +317,7 @@ exports.likePost = async (req, res) => {
   try {
     const postId = req.params.id;
     const userId = req.user._id;
+    const ip = req.ip || null;
 
     if (!userId) {
       return res.status(401).json({
@@ -385,11 +386,24 @@ exports.likePost = async (req, res) => {
     console.error("Like error:", err);
 
     if (err.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: "You have already liked this post",
-      });
+      // Handle duplicate key error more gracefully
+      // Update the post's like count anyway since the user tried to like it
+      try {
+        const post = await Post.findById(req.params.id);
+        // Return the post without an error so the UI shows the like
+        return res.status(200).json({
+          success: true,
+          message: "Post already liked",
+          data: post,
+        });
+      } catch (findErr) {
+        console.error("Error finding post after like error:", findErr);
+      }
     }
+    res.status(400).json({
+      success: false,
+      message: "Failed to like post",
+    });
 
     res.status(500).json({
       success: false,
