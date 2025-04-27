@@ -533,13 +533,15 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
             <PostTitle>{post.caption}</PostTitle>
             {post.content && (
               <Content>
-                {post.content.length > 220
-                  ? `${post.content.slice(0, 220)}... `
-                  : post.content}
-                {post.content.length > 220 && (
-                  <ReadMoreLink to={`/post/${post._id}`}>
-                    read more
-                  </ReadMoreLink>
+                {post.content.length > 220 ? (
+                  <>
+                    {post.content.slice(0, 220)}...
+                    <ReadMoreLink to={`/post/${post._id}`}>
+                      read more
+                    </ReadMoreLink>
+                  </>
+                ) : (
+                  post.content
                 )}
               </Content>
             )}
@@ -1195,7 +1197,7 @@ const PostTitle = styled.h2`
 const Content = styled.p`
   color: ${COLORS.textSecondary};
   font-size: 0.8rem;
-  line-height: 1.3;
+  line-height: 1.4;
   margin: 8px 0;
   word-break: break-word;
   overflow: hidden;
@@ -1205,6 +1207,20 @@ const Content = styled.p`
   -webkit-box-orient: vertical;
   transition: color 0.2s ease;
   letter-spacing: 0.01em;
+
+  a {
+    display: inline;
+    margin-left: 4px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: ${COLORS.accentSalmon}; /* <- salmon accent for "read more" */
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+      color: ${COLORS.primarySalmon}; /* slightly darker salmon on hover */
+    }
+  }
 `;
 
 const TagsContainer = styled.div`
