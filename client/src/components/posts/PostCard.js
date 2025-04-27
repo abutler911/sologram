@@ -484,9 +484,16 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
             )}
 
             {isDoubleTapLiking && (
-              <HeartAnimation>
-                <FaHeart />
-              </HeartAnimation>
+              <>
+                <HeartAnimation>
+                  <FaHeart />
+                </HeartAnimation>
+                <BurstWrapper>
+                  {[...Array(8)].map((_, i) => (
+                    <BurstHeart key={i} index={i} />
+                  ))}
+                </BurstWrapper>
+              </>
             )}
           </MediaContainer>
         )}
@@ -1081,7 +1088,7 @@ const ActionGroup = styled.div`
 const LikeButton = styled.button`
   background: none;
   border: none;
-  color: ${(props) => (props.liked ? COLORS.error : COLORS.textTertiary)};
+  color: ${(props) => (props.liked ? COLORS.heartRed : COLORS.textTertiary)};
   font-size: 1.5rem;
   cursor: ${(props) =>
     props.disabled && !props.liked ? "default" : "pointer"};
@@ -1095,7 +1102,7 @@ const LikeButton = styled.button`
     transform: ${(props) =>
       !props.disabled || props.liked ? "scale(1.15)" : "none"};
     color: ${(props) =>
-      !props.disabled && !props.liked ? COLORS.accentTeal : ""};
+      !props.disabled && !props.liked ? COLORS.heartRed : ""};
   }
 
   &:active {
@@ -1106,7 +1113,9 @@ const LikeButton = styled.button`
   ${(props) =>
     props.liked &&
     css`
-      filter: drop-shadow(0 0 10px rgba(33, 212, 199, 0.5));
+      filter: drop-shadow(
+        0 0 10px rgba(230, 57, 70, 0.5)
+      ); // Red glow around heart
     `}
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -1491,6 +1500,44 @@ const UserAvatarImage = styled.img`
   &:hover {
     transform: scale(1.08);
     box-shadow: 0 0 15px ${COLORS.primaryTeal}80;
+  }
+`;
+
+const BurstWrapper = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+`;
+
+const BurstHeart = styled.div`
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: ${COLORS.heartRed};
+  border-radius: 50%;
+  opacity: 0;
+  animation: ${(props) => burst(props.index)} 700ms ease forwards;
+`;
+
+const burst = (index) => keyframes`
+  0% {
+    transform: scale(0) translate(0, 0);
+    opacity: 1;
+  }
+  80% {
+    transform: scale(1) translate(${
+      Math.cos((index / 8) * 2 * Math.PI) * 40
+    }px, ${Math.sin((index / 8) * 2 * Math.PI) * 40}px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.5) translate(${
+      Math.cos((index / 8) * 2 * Math.PI) * 50
+    }px, ${Math.sin((index / 8) * 2 * Math.PI) * 50}px);
+    opacity: 0;
   }
 `;
 

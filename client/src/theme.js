@@ -21,6 +21,7 @@ export const COLORS = {
   buttonHover: "#303030", // Darker hover state
   shadow: "rgba(0, 0, 0, 0.3)", // Slightly stronger shadow
   darkAccent: "#0A1929", // Very dark blue for accents
+  heartRed: "#E63946",
 };
 
 export const THEME = {
