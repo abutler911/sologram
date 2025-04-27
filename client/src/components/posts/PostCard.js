@@ -237,7 +237,7 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
     setIsZoomed(false);
   }, []);
 
-  // Direct implementation to avoid context errors
+  // Updated handleLike with POST method instead of PUT
   const handleLike = useCallback(async () => {
     if (!isAuthenticated) {
       toast.error("Please log in to like posts");
@@ -250,8 +250,9 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
     setIsDoubleTapLiking(true);
 
     try {
+      // Changed from PUT to POST since the backend might be expecting POST
       const response = await fetch(`/api/posts/${post._id}/like`, {
-        method: "PUT",
+        method: "POST", // Changed from PUT to POST
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -268,6 +269,8 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
       } else {
         // Handle error response
         const errorText = await response.text();
+        console.log("Error response text:", errorText);
+
         if (errorText.includes("already liked")) {
           setHasLiked(true);
         } else {
@@ -633,7 +636,7 @@ const PostCard = memo(({ post: initialPost, onDelete, index = 0 }) => {
   );
 });
 
-// Add a standalone likes counter for non-authenticated users
+// STYLED COMPONENTS
 const LikesCounterStandalone = styled.div`
   display: flex;
   align-items: center;
