@@ -19,21 +19,22 @@ exports.getPosts = async (req, res) => {
       .limit(limit)
       .lean();
 
-    // Fetch real-time likes count for each post
     const postIds = posts.map((post) => post._id);
 
-    // Group Like counts
-    const likes = await Like.aggregate([
-      { $match: { post: { $in: postIds } } },
-      { $group: { _id: "$post", count: { $sum: 1 } } },
-    ]);
+    let likesMap = {};
 
-    const likesMap = {};
-    likes.forEach((like) => {
-      likesMap[like._id.toString()] = like.count;
-    });
+    if (postIds.length > 0) {
+      const likes = await Like.aggregate([
+        { $match: { post: { $in: postIds } } },
+        { $group: { _id: "$post", count: { $sum: 1 } } },
+      ]);
 
-    // Attach the real like counts
+      likesMap = likes.reduce((acc, like) => {
+        acc[like._id.toString()] = like.count;
+        return acc;
+      }, {});
+    }
+
     const postsWithLikes = posts.map((post) => ({
       ...post,
       likes: likesMap[post._id.toString()] || 0,
