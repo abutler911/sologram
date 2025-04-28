@@ -274,16 +274,28 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         return;
       }
 
-      const response = await fetch(
-        `https://thesologram.com/api/posts/${post._id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // Get the API base URL from the environment or use the default
+      const baseURL = process.env.REACT_APP_API_URL || "";
+
+      // Construct the proper URL - if baseURL is empty, it'll use a relative path
+      const url = baseURL
+        ? `${baseURL}/api/posts/${post._id}`
+        : `/api/posts/${post._id}`;
+
+      console.log(`Attempting to delete post with ID: ${post._id}`);
+      console.log(`Using URL: ${url}`);
+
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        // Add credentials to ensure cookies are sent with the request
+        credentials: "include",
+      });
+
+      console.log(`Delete response status: ${response.status}`);
 
       if (response.ok) {
         // Call parent's onDelete if it exists
@@ -300,23 +312,50 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         // Refresh the window
         window.location.reload();
       } else {
-        // Log detailed error information
-        console.error("Delete response:", {
+        // Try to parse error response
+        let errorMessage = "Delete failed";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // If response isn't JSON, try to get text
+          try {
+            const errorText = await response.text();
+            if (errorText) errorMessage = errorText;
+          } catch (e2) {
+            // If we can't get text either, just use status
+            errorMessage = `Delete failed: ${response.status}`;
+          }
+        }
+
+        console.error("Error response:", {
           status: response.status,
           statusText: response.statusText,
+          message: errorMessage,
         });
 
-        const errorText = await response.text();
-        console.error("Error response body:", errorText);
-
-        throw new Error(`Delete failed: ${response.status}`);
+        throw new Error(errorMessage);
       }
     } catch (err) {
       console.error("Error deleting post:", err);
-      toast.error("Failed to delete post");
+      toast.error(err.message || "Failed to delete post");
       setShowDeleteModal(false);
     }
   }, [post._id, onDelete]);
+
+  const checkApiConfig = () => {
+    const config = {
+      token: localStorage.getItem("token") ? "Token exists" : "No token found",
+      baseUrl:
+        process.env.REACT_APP_API_URL || "Not defined (using relative URLs)",
+      browserUrl: window.location.href,
+      protocol: window.location.protocol,
+      host: window.location.host,
+    };
+
+    console.table(config);
+    return config;
+  };
 
   const handleNext = useCallback(
     (e) => {
