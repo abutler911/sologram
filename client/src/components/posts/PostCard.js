@@ -264,56 +264,56 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     setShowDeleteModal(false);
   }, []);
 
-  // Fixed handleDelete function with proper error handling and window refresh
   const handleDelete = useCallback(async () => {
     try {
-      // Make sure we have the token
+      // Get the token
       const token = localStorage.getItem("token");
+
       if (!token) {
         toast.error("Authentication required. Please log in again.");
         return;
       }
 
-      // Make the DELETE request
-      const response = await fetch(`/api/posts/${post._id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `https://thesologram.com/api/posts/${post._id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      // Check for successful response
       if (response.ok) {
-        // Call onDelete callback if it exists
+        // Call parent's onDelete if it exists
         if (typeof onDelete === "function") {
           onDelete(post._id);
         } else {
           console.warn("onDelete is not a function. Check parent component.");
         }
 
-        // Close the delete modal
+        // Close modal and show success message
         setShowDeleteModal(false);
-
-        // Show success message
         toast.success("Post deleted successfully");
 
         // Refresh the window
         window.location.reload();
       } else {
-        // Try to get error details from response
-        const errorData = await response.json().catch(() => null);
-        const errorMessage = errorData?.message || "Delete failed";
-        throw new Error(errorMessage);
+        // Log detailed error information
+        console.error("Delete response:", {
+          status: response.status,
+          statusText: response.statusText,
+        });
+
+        const errorText = await response.text();
+        console.error("Error response body:", errorText);
+
+        throw new Error(`Delete failed: ${response.status}`);
       }
     } catch (err) {
-      // Log the full error for debugging
       console.error("Error deleting post:", err);
-
-      // Show user-friendly error message
-      toast.error(err.message || "Failed to delete post");
-
-      // Close the delete modal
+      toast.error("Failed to delete post");
       setShowDeleteModal(false);
     }
   }, [post._id, onDelete]);
