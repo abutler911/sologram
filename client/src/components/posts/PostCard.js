@@ -53,7 +53,7 @@ const slideIn = keyframes`
 const fontFaceStyles = css`
   @font-face {
     font-family: "ParadiseSignature";
-    src: url("/src/assets/fonts/Paradise Signature.otf") format("opentype");
+    src: url("/fonts/Paradise Signature.otf") format("opentype");
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -61,9 +61,9 @@ const fontFaceStyles = css`
 
   @font-face {
     font-family: "Autography";
-    src: url("/src/assets/fonts/Autography.woff2") format("woff2"),
-      url("/src/assets/fonts/Autography.woff") format("woff"),
-      url("/src/assets/fonts/Autography.ttf") format("truetype");
+    src: url("/fonts/Autography.woff2") format("woff2"),
+      url("/fonts/Autography.woff") format("woff"),
+      url("/fonts/Autography.ttf") format("truetype");
     font-weight: normal;
     font-style: normal;
     font-display: swap;
