@@ -61,7 +61,9 @@ const fontFaceStyles = css`
 
   @font-face {
     font-family: "Autography";
-    src: url("/src/assets/fonts/Autography.otf") format("opentype");
+    src: url("/src/assets/fonts/Autography.woff2") format("woff2"),
+      url("/src/assets/fonts/Autography.woff") format("woff"),
+      url("/src/assets/fonts/Autography.ttf") format("truetype");
     font-weight: normal;
     font-style: normal;
     font-display: swap;

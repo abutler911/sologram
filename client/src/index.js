@@ -21,12 +21,14 @@ axios.defaults.baseURL = process.env.REACT_APP_API_URL || "";
 const GlobalStyle = createGlobalStyle`
 
 @font-face {
-  font-family: 'Autography';
-  src: url(${AutographyFont}) format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
+    font-family: "Autography";
+    src: url("/src/assets/fonts/Autography.woff2") format("woff2"),
+      url("/src/assets/fonts/Autography.woff") format("woff"),
+      url("/src/assets/fonts/Autography.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
 
 
 
