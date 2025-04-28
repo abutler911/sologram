@@ -1235,9 +1235,9 @@ const TagsContainer = styled.div`
 
 const Tag = styled.span`
   color: ${COLORS.textPrimary};
-  font-size: 0.8rem;
+  font-size: 0.5rem;
   transition: all 0.2s ease;
-  font-weight: 600;
+  font-weight: 400;
   padding: 4px 10px;
   border-radius: 4px;
   background-color: ${COLORS.buttonHover};
