@@ -356,7 +356,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
             <UsernameContainer>
               <Username className="autography-font">{AUTHOR_NAME}</Username>
               <DateBadge>
-                <FaCalendarAlt />
                 <span>{formattedDate}</span>
               </DateBadge>
             </UsernameContainer>
@@ -786,9 +785,9 @@ const DateBadge = styled.div`
   display: flex;
   align-items: center;
   color: ${COLORS.textTertiary};
-  font-size: 0.7rem;
+  font-size: 0.4rem;
   margin-top: 1px;
-  font-weight: 500;
+  font-weight: 400;
 
   svg {
     margin-right: 4px;
