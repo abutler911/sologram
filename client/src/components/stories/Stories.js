@@ -438,7 +438,7 @@ const Stories = () => {
   );
 };
 
-// Styled Components with Modern Twilight theme
+// Styled Components with SoloGram Theme
 const StoriesContainer = styled.div`
   display: flex;
   overflow-x: auto;
@@ -463,7 +463,7 @@ const StoryArchiveLink = styled(Link)`
   transition: color 0.3s;
 
   &:hover {
-    color: ${COLORS.accentPurple};
+    color: ${COLORS.primaryBlueGray};
   }
 
   svg {
@@ -541,7 +541,8 @@ const StoryImageWrapper = styled.div`
 
   /* Gradient border approach */
   padding: 3px;
-  background: ${THEME.story.border.active};
+  background: ${THEME.story.border
+    .active}; /* Uses the theme's blue-gray color */
 
   /* For the inner content (the actual image container) */
   &::before {
@@ -621,6 +622,7 @@ const ProgressBarContainer = styled.div`
   }
 `;
 
+// FIXED: Progress bar transition to make it animate smoother
 const ProgressBar = styled.div`
   height: 2px;
   flex: 1;
@@ -641,12 +643,12 @@ const ProgressBar = styled.div`
         : props.active
         ? `${props.progress * 100}%`
         : "0"};
-    background-color: ${COLORS.primaryPurple};
-    transition: width 1s linear;
+    background-color: ${COLORS.primarySalmon}; /* Updated to salmon color */
+    transition: width 0.1s linear; /* Changed from 1s to 0.1s for smoother updates */
   }
 `;
 
-// New header component with improved spacing for title/timestamp
+// FIXED: Header gradient to improve text visibility on dark backgrounds
 const StoryHeader = styled.div`
   position: absolute;
   top: 0;
@@ -659,8 +661,9 @@ const StoryHeader = styled.div`
   z-index: 5;
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.7) 0%,
-    rgba(0, 0, 0, 0) 100%
+    rgba(0, 0, 0, 0.8) 0%,
+    /* Darker background from 0.7 to 0.8 */ rgba(0, 0, 0, 0.5) 50%,
+    /* Added middle point for smoother gradient */ rgba(0, 0, 0, 0) 100%
   );
   pointer-events: none;
 
@@ -677,22 +680,23 @@ const StoryHeaderContent = styled.div`
   padding-left: 16px;
 `;
 
-// Updated title style with more space
+// FIXED: Improved text shadow for better visibility
 const StoryHeaderTitle = styled.h3`
   font-size: 1rem;
-  color: ${COLORS.textPrimary};
+  color: white; /* Always white for better contrast */
   margin: 0 0 4px 0;
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); /* Stronger text shadow */
   white-space: normal;
   line-height: 1.3;
 `;
 
+// FIXED: Improved text shadow for better visibility
 const StoryTimestamp = styled.span`
-  color: ${COLORS.textSecondary};
+  color: rgba(255, 255, 255, 0.9); /* Slightly transparent white */
   font-size: 0.875rem;
   font-weight: 500;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); /* Stronger text shadow */
 `;
 
 // Adjusted position of controls to be higher and more prominent
@@ -711,9 +715,9 @@ const ControlsBar = styled.div`
 `;
 
 const CloseButton = styled.button`
-  background: ${COLORS.elevatedBackground};
+  background: ${COLORS.primaryBlueGray}; /* Updated to theme color */
   border: none;
-  color: ${COLORS.textPrimary};
+  color: white;
   font-size: 1.5rem;
   cursor: pointer;
   display: flex;
@@ -725,14 +729,14 @@ const CloseButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: ${COLORS.buttonHover};
+    background-color: ${COLORS.accentBlueGray}; /* Updated to theme color */
   }
 `;
 
 const DeleteButton = styled.button`
-  background-color: rgba(244, 67, 54, 0.7);
+  background-color: ${COLORS.primarySalmon}; /* Updated to theme color */
   border: none;
-  color: ${COLORS.textPrimary};
+  color: white;
   font-size: 1.25rem;
   cursor: pointer;
   display: flex;
@@ -744,7 +748,7 @@ const DeleteButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: ${COLORS.error};
+    background-color: ${COLORS.accentSalmon}; /* Updated to theme color */
   }
 
   &:disabled {
@@ -808,7 +812,7 @@ const NavArea = styled.div`
   }
 `;
 
-// Modal styling remains largely the same but updated with theme colors
+// Modal styling updated with theme colors
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -833,8 +837,8 @@ const DeleteModal = styled.div`
 `;
 
 const DeleteModalHeader = styled.div`
-  background-color: ${COLORS.error};
-  color: ${COLORS.textPrimary};
+  background-color: ${COLORS.primarySalmon}; /* Updated to theme color */
+  color: white;
   padding: 1.25rem;
   display: flex;
   align-items: center;
@@ -869,8 +873,8 @@ const DeleteModalButtons = styled.div`
 `;
 
 const ConfirmDeleteButton = styled.button`
-  background-color: ${COLORS.error};
-  color: ${COLORS.textPrimary};
+  background-color: ${COLORS.primarySalmon}; /* Updated to theme color */
+  color: white;
   border: none;
   border-radius: 4px;
   padding: 0.75rem 1.25rem;
@@ -879,7 +883,7 @@ const ConfirmDeleteButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #c0392b;
+    background-color: ${COLORS.accentSalmon}; /* Updated to theme color */
   }
 
   &:disabled {
