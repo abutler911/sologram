@@ -181,6 +181,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
                       mediaUrl: result.mediaUrl,
                       cloudinaryId: result.cloudinaryId,
                       mediaType: result.mediaType,
+                      type: result.mediaType,
                       uploading: false,
                     }
                   : item
@@ -251,7 +252,18 @@ function PostCreator({ initialData = null, isEditing = false }) {
         const onProgress = (percent) => {
           if (!mountedRef.current) return;
           setMedia((prev) =>
-            prev.map((p) => (p.id === id ? { ...p, progress: percent } : p))
+            prev.map((p) =>
+              p.id === id
+                ? {
+                    ...p,
+                    uploading: false,
+                    mediaUrl: result.mediaUrl,
+                    cloudinaryId: result.cloudinaryId,
+                    mediaType: result.mediaType,
+                    type: result.mediaType,
+                  }
+                : p
+            )
           );
         };
 
