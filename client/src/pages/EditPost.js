@@ -8,6 +8,9 @@ import { toast } from "react-hot-toast";
 import PostCreator from "../components/posts/PostCreator";
 import { COLORS, THEME } from "../theme";
 
+// Import LoadingSpinner component
+import LoadingSpinner from "../components/common/LoadingSpinner";
+
 const EditPost = () => {
   const { id } = useParams();
   const [post, setPost] = useState(null);
@@ -44,8 +47,7 @@ const EditPost = () => {
       <PageWrapper>
         <Container>
           <LoadingContainer>
-            <LoadingSpinner />
-            <LoadingText>Loading post...</LoadingText>
+            <LoadingSpinner text="Loading post" size="50px" />
           </LoadingContainer>
         </Container>
       </PageWrapper>
@@ -134,30 +136,6 @@ const LoadingContainer = styled.div`
   align-items: center;
   justify-content: center;
   min-height: 400px;
-`;
-
-const LoadingSpinner = styled.div`
-  border: 4px solid ${COLORS.border};
-  border-top: 4px solid ${COLORS.primaryPurple};
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
-
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
-  }
-`;
-
-const LoadingText = styled.div`
-  font-size: 1.125rem;
-  color: ${COLORS.textTertiary};
 `;
 
 // Error styles

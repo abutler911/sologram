@@ -12,11 +12,19 @@ import {
 } from "react-icons/fa";
 import { COLORS, THEME } from "../theme"; // Import the theme
 
+// Import LoadingSpinner component
+import LoadingSpinner from "../components/common/LoadingSpinner";
+// Import DeleteConfirmationModal component
+import DeleteConfirmationModal from "../components/common/DeleteConfirmationModal";
+
 const StoryArchive = () => {
   const [archivedStories, setArchivedStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  // State for delete confirmation modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [storyToDelete, setStoryToDelete] = useState(null);
 
   useEffect(() => {
     const fetchArchivedStories = async () => {
@@ -54,27 +62,29 @@ const StoryArchive = () => {
     fetchArchivedStories();
   }, [retryCount]);
 
-  const handleDelete = async (id) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to permanently delete this archived story?"
-      )
-    ) {
-      return;
-    }
+  const openDeleteModal = (id) => {
+    setStoryToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleDelete = async () => {
+    if (!storyToDelete) return;
 
     try {
       const token = localStorage.getItem("token");
       // Use the original endpoint that's already implemented on the server
-      const response = await axios.delete(`/api/archived-stories/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.delete(
+        `/api/archived-stories/${storyToDelete}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.data.success) {
         setArchivedStories((prevStories) =>
-          prevStories.filter((story) => story._id !== id)
+          prevStories.filter((story) => story._id !== storyToDelete)
         );
         toast.success("Story deleted permanently");
       } else {
@@ -83,6 +93,9 @@ const StoryArchive = () => {
     } catch (err) {
       console.error("Error deleting story:", err);
       toast.error("Failed to delete story");
+    } finally {
+      setShowDeleteModal(false);
+      setStoryToDelete(null);
     }
   };
 
@@ -94,10 +107,9 @@ const StoryArchive = () => {
     return (
       <PageWrapper>
         <Container>
-          <LoadingMessage>
-            <LoadingSpinner />
-            Loading archived stories...
-          </LoadingMessage>
+          <LoadingContainer>
+            <LoadingSpinner text="Loading archived stories" />
+          </LoadingContainer>
         </Container>
       </PageWrapper>
     );
@@ -171,7 +183,7 @@ const StoryArchive = () => {
                     >
                       View
                     </ViewButton>
-                    <DeleteButton onClick={() => handleDelete(story._id)}>
+                    <DeleteButton onClick={() => openDeleteModal(story._id)}>
                       <FaTrash />
                     </DeleteButton>
                   </ActionButtons>
@@ -183,6 +195,18 @@ const StoryArchive = () => {
           <EmptyMessage>
             No archived stories yet. Stories will appear here after they expire.
           </EmptyMessage>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <DeleteConfirmationModal
+            isOpen={showDeleteModal}
+            onClose={() => setShowDeleteModal(false)}
+            onConfirm={handleDelete}
+            title="Delete Archived Story"
+            message="Are you sure you want to permanently delete this archived story? This action cannot be undone."
+            confirmButtonText="Delete Permanently"
+          />
         )}
       </Container>
     </PageWrapper>
@@ -252,30 +276,12 @@ const PageTitle = styled.h1`
   }
 `;
 
-const LoadingMessage = styled.div`
-  text-align: center;
-  color: ${COLORS.textSecondary};
-  font-size: 1.125rem;
-  padding: 3rem 0;
+const LoadingContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-`;
-
-const LoadingSpinner = styled.div`
-  width: 40px;
-  height: 40px;
-  border: 3px solid ${COLORS.primaryPurple}30;
-  border-radius: 50%;
-  border-top-color: ${COLORS.primaryPurple};
-  animation: spin 1s ease-in-out infinite;
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
+  justify-content: center;
+  min-height: 300px;
 `;
 
 const ErrorContainer = styled.div`

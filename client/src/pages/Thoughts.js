@@ -12,6 +12,10 @@ import { format } from "date-fns";
 // Import ThoughtCard component
 import ThoughtCard from "../components/ThoughtCard";
 
+// Import LoadingSpinner and DeleteConfirmationModal components
+import LoadingSpinner from "../components/common/LoadingSpinner";
+import DeleteConfirmationModal from "../components/common/DeleteConfirmationModal";
+
 // Import theme constants
 import { COLORS, THEME } from "../theme";
 import { moodColors, moodEmojis } from "../utils/themeConstants";
@@ -308,14 +312,6 @@ const ErrorMessage = styled.div`
   animation: ${fadeIn} 0.4s ease-out;
 `;
 
-const LoadingMessage = styled.div`
-  color: ${COLORS.textTertiary};
-  text-align: center;
-  padding: 2rem 0;
-  font-style: italic;
-  animation: ${fadeIn} 0.4s ease-out;
-`;
-
 const EmptyMessage = styled.div`
   color: ${COLORS.textTertiary};
   text-align: center;
@@ -325,114 +321,10 @@ const EmptyMessage = styled.div`
 `;
 
 const LoadingMore = styled.div`
-  color: ${COLORS.textTertiary};
-  text-align: center;
   padding: 1.5rem 0;
-  font-style: italic;
-  font-size: 0.875rem;
-  animation: ${fadeIn} 0.4s ease-out;
-`;
-
-// Modal components
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(3px);
   display: flex;
   justify-content: center;
-  align-items: center;
-  z-index: 2000;
-  padding: 1rem;
-  animation: ${fadeIn} 0.3s ease-out;
-`;
-
-const DeleteModal = styled.div`
-  background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
-  max-width: 400px;
-  width: 100%;
-  z-index: 1001;
-  padding: 1.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   animation: ${fadeIn} 0.4s ease-out;
-`;
-
-const DeleteModalContent = styled.div`
-  padding: 1.5rem;
-  color: ${COLORS.textSecondary};
-  line-height: 1.6;
-
-  h3 {
-    color: ${COLORS.primarySalmon};
-    margin-bottom: 1rem;
-    font-size: 1.5rem;
-  }
-`;
-
-const DeleteModalButtons = styled.div`
-  display: flex;
-  padding: 1rem 1.5rem;
-  justify-content: flex-end;
-  gap: 1rem;
-
-  @media (max-width: 480px) {
-    flex-direction: column;
-  }
-`;
-
-const ConfirmDeleteButton = styled.button`
-  background-color: ${COLORS.error};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1.25rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 3px 8px rgba(207, 102, 121, 0.3);
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(207, 102, 121, 0.4);
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-
-  @media (max-width: 480px) {
-    order: 1;
-  }
-`;
-
-const CancelButton = styled.button`
-  background-color: transparent;
-  color: ${COLORS.textSecondary};
-  border: 1px solid ${COLORS.border};
-  border-radius: 8px;
-  padding: 0.75rem 1.25rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background-color: ${COLORS.elevatedBackground};
-    transform: translateY(-2px);
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-
-  @media (max-width: 480px) {
-    order: 2;
-  }
 `;
 
 const Backdrop = styled.div`
@@ -443,22 +335,6 @@ const Backdrop = styled.div`
   bottom: 0;
   background: rgba(0, 0, 0, 0.6);
   z-index: 999;
-`;
-
-// Define animations for modal
-const shine = keyframes`
-  0% {
-    background-position: -100px;
-  }
-  40%, 100% {
-    background-position: 200px;
-  }
-`;
-
-const pulseGlow = keyframes`
-  0% { box-shadow: 0 0 15px rgba(233, 137, 115, 0.4); }
-  50% { box-shadow: 0 0 25px rgba(233, 137, 115, 0.7); }
-  100% { box-shadow: 0 0 15px rgba(233, 137, 115, 0.4); }
 `;
 
 // Retweet modal components
@@ -492,6 +368,38 @@ const RetweetModal = styled.div`
     animation: ${shine} 3s infinite;
     z-index: 10;
   }
+`;
+
+// Define animations for modal
+const shine = keyframes`
+  0% {
+    background-position: -100px;
+  }
+  40%, 100% {
+    background-position: 200px;
+  }
+`;
+
+const pulseGlow = keyframes`
+  0% { box-shadow: 0 0 15px rgba(233, 137, 115, 0.4); }
+  50% { box-shadow: 0 0 25px rgba(233, 137, 115, 0.7); }
+  100% { box-shadow: 0 0 15px rgba(233, 137, 115, 0.4); }
+`;
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  padding: 1rem;
+  animation: ${fadeIn} 0.3s ease-out;
 `;
 
 const ModalIcon = styled.div`
@@ -574,6 +482,7 @@ const RetweetCloseButton = styled.button`
 const Thoughts = () => {
   const [thoughts, setThoughts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -601,7 +510,12 @@ const Thoughts = () => {
   const fetchThoughts = useCallback(
     async (reset = false) => {
       try {
-        setLoading(true);
+        if (reset) {
+          setLoading(true);
+        } else {
+          setLoadingMore(true);
+        }
+
         const currentPage = reset ? 1 : page;
         const url = searchQuery
           ? `/api/thoughts/search?query=${searchQuery}&page=${currentPage}`
@@ -629,6 +543,7 @@ const Thoughts = () => {
         toast.error("Failed to load thoughts");
       } finally {
         setLoading(false);
+        setLoadingMore(false);
       }
     },
     [page, searchQuery]
@@ -700,12 +615,7 @@ const Thoughts = () => {
   };
 
   // Delete modal functions
-  const cancelDelete = () => {
-    setShowDeleteModal(false);
-    setThoughtToDelete(null);
-  };
-
-  const confirmDelete = async () => {
+  const handleDeleteConfirm = async () => {
     if (!thoughtToDelete) return;
     try {
       await axios.delete(`/api/thoughts/${thoughtToDelete}`);
@@ -728,6 +638,7 @@ const Thoughts = () => {
       window.innerHeight + document.documentElement.scrollTop >=
         document.documentElement.offsetHeight - 200 &&
       !loading &&
+      !loadingMore &&
       hasMore
     ) {
       setPage((prevPage) => prevPage + 1);
@@ -737,7 +648,7 @@ const Thoughts = () => {
   useEffect(() => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [loading, hasMore]);
+  }, [loading, loadingMore, hasMore]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -826,35 +737,44 @@ const Thoughts = () => {
         <ThoughtsContainer isAdmin={isAdmin}>
           {error ? (
             <ErrorMessage>{error}</ErrorMessage>
-          ) : filteredThoughts.length > 0 ? (
-            filteredThoughts.map((thought) => (
-              <ThoughtCard
-                key={thought._id}
-                thought={thought}
-                defaultUser={defaultUser}
-                formatDate={formatDate}
-                handleLike={handleLike}
-                handleRetweet={handleRetweet}
-                handlePin={handlePin}
-                canCreateThought={canCreateThought}
-                onDelete={(id) => {
-                  setThoughtToDelete(id);
-                  setShowDeleteModal(true);
-                }}
-              />
-            ))
           ) : loading ? (
-            <LoadingMessage>Loading thoughts...</LoadingMessage>
+            <LoadingSpinner text="Loading thoughts" />
+          ) : filteredThoughts.length > 0 ? (
+            <>
+              {filteredThoughts.map((thought) => (
+                <ThoughtCard
+                  key={thought._id}
+                  thought={thought}
+                  defaultUser={defaultUser}
+                  formatDate={formatDate}
+                  handleLike={handleLike}
+                  handleRetweet={handleRetweet}
+                  handlePin={handlePin}
+                  canCreateThought={canCreateThought}
+                  onDelete={(id) => {
+                    setThoughtToDelete(id);
+                    setShowDeleteModal(true);
+                  }}
+                />
+              ))}
+
+              {loadingMore && hasMore && (
+                <LoadingMore>
+                  <LoadingSpinner
+                    size="30px"
+                    text="Loading more"
+                    textSize="0.875rem"
+                    height="80px"
+                  />
+                </LoadingMore>
+              )}
+            </>
           ) : (
             <EmptyMessage>
               No thoughts found
               {searchQuery && " matching your search"}
               {selectedMood !== "all" && ` with mood "${selectedMood}"`}.
             </EmptyMessage>
-          )}
-
-          {loading && thoughts.length > 0 && (
-            <LoadingMore>Loading more thoughts...</LoadingMore>
           )}
         </ThoughtsContainer>
       </PageWrapper>
@@ -863,20 +783,14 @@ const Thoughts = () => {
       {canCreateThought && (
         <>
           {showDeleteModal && (
-            <ModalOverlay>
-              <DeleteModal>
-                <DeleteModalContent>
-                  <h3>Delete Thought</h3>
-                  <p>This cannot be undone. Are you sure?</p>
-                </DeleteModalContent>
-                <DeleteModalButtons>
-                  <CancelButton onClick={cancelDelete}>Cancel</CancelButton>
-                  <ConfirmDeleteButton onClick={confirmDelete}>
-                    Delete
-                  </ConfirmDeleteButton>
-                </DeleteModalButtons>
-              </DeleteModal>
-            </ModalOverlay>
+            <DeleteConfirmationModal
+              isOpen={showDeleteModal}
+              onClose={() => setShowDeleteModal(false)}
+              onConfirm={handleDeleteConfirm}
+              title="Delete Thought"
+              message="This cannot be undone. Are you sure?"
+              confirmButtonText="Delete"
+            />
           )}
         </>
       )}
