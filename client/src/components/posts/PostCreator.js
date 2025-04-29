@@ -325,22 +325,10 @@ function PostCreator({ initialData = null, isEditing = false }) {
           },
         ]);
 
-        // Start upload
         const onProgress = (percent) => {
           if (!mountedRef.current) return;
           setMedia((prev) =>
-            prev.map((p) =>
-              p.id === id
-                ? {
-                    ...p,
-                    uploading: false,
-                    mediaUrl: result.mediaUrl,
-                    cloudinaryId: result.cloudinaryId,
-                    mediaType: result.mediaType,
-                    type: result.mediaType,
-                  }
-                : p
-            )
+            prev.map((p) => (p.id === id ? { ...p, progress: percent } : p))
           );
         };
 
@@ -348,7 +336,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
 
         if (!mountedRef.current) return;
 
-        // Update state with success
         setMedia((prev) =>
           prev.map((p) =>
             p.id === id
@@ -358,6 +345,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
                   mediaUrl: result.mediaUrl,
                   cloudinaryId: result.cloudinaryId,
                   mediaType: result.mediaType,
+                  type: result.mediaType,
                 }
               : p
           )
