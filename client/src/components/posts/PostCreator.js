@@ -23,6 +23,7 @@ const uploadFile = async (file, onProgress) => {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("upload_preset", "unsigned_post_upload");
+  formData.append("folder", "sologram");
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
