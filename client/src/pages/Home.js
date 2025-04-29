@@ -260,6 +260,8 @@ const Home = forwardRef((props, ref) => {
                     <LoadingSpinner
                       size="medium"
                       color={COLORS.primarySalmon}
+                      text=""
+                      noMinHeight={true}
                     />
                   </LoadingContainer>
                 }
