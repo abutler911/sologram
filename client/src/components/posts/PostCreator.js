@@ -353,7 +353,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
               : p
           )
         );
-
+        console.log("Media updated after camera upload:", result);
         toast.success("Upload complete");
       } catch (error) {
         console.error("Camera upload error:", error);
@@ -765,7 +765,10 @@ function PostCreator({ initialData = null, isEditing = false }) {
             {media.length > 0 && (
               <NextButton
                 onClick={() => setStep(2)}
-                disabled={media.some((item) => item.uploading)}
+                disabled={
+                  media.length === 0 ||
+                  media.some((item) => !item.mediaUrl || item.uploading)
+                }
               >
                 Next <FaArrowRight />
               </NextButton>
