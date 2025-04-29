@@ -141,7 +141,7 @@ const BackLink = styled(Link)`
   transition: all 0.3s ease;
 
   &:hover {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primarySalmon};
     transform: translateX(-3px);
   }
 
@@ -188,8 +188,8 @@ const LogoIcon = styled.div`
   border-radius: 50%;
   background: linear-gradient(
     135deg,
-    ${COLORS.primaryPurple},
-    ${COLORS.primaryBlue}
+    ${COLORS.primarySalmon},
+    ${COLORS.primaryBlueGray}
   );
   color: white;
   display: flex;
@@ -231,7 +231,7 @@ const Section = styled.section`
 
 const SectionTitle = styled.h2`
   font-size: 1.25rem;
-  color: ${COLORS.primaryPurple};
+  color: ${COLORS.primarySalmon};
   margin: 0 0 1rem 0;
 `;
 
@@ -241,12 +241,12 @@ const Paragraph = styled.div`
   line-height: 1.6;
 
   a {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryBlueGray};
     text-decoration: none;
     transition: color 0.2s;
 
     &:hover {
-      color: ${COLORS.accentBlue};
+      color: ${COLORS.accentBlueGray};
       text-decoration: underline;
     }
   }
@@ -268,7 +268,7 @@ const ListItem = styled.li`
   line-height: 1.6;
 
   &::marker {
-    color: ${COLORS.primaryGreen};
+    color: ${COLORS.primaryMint};
   }
 `;
 

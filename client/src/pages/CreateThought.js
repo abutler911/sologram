@@ -13,6 +13,7 @@ import {
 } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
 import MainLayout from "../components/layout/MainLayout";
+import { COLORS, THEME } from "../theme"; // Import the theme
 
 const CreateThought = () => {
   const [content, setContent] = useState("");
@@ -37,15 +38,16 @@ const CreateThought = () => {
     { value: "amused", label: "Amused", emoji: "😄" },
   ];
 
+  // Updated mood colors to match new theme
   const moodColors = {
-    inspired: "#ffcb66",
-    reflective: "#7891c9",
-    excited: "#ff7e5f",
-    creative: "#7be0ad",
-    calm: "#00b2ff",
-    curious: "#a06eff",
-    nostalgic: "#ff61a6",
-    amused: "#fcbe32",
+    inspired: COLORS.primaryKhaki,
+    reflective: COLORS.primaryBlueGray,
+    excited: COLORS.primarySalmon,
+    creative: COLORS.primaryMint,
+    calm: COLORS.accentMint,
+    curious: COLORS.accentBlueGray,
+    nostalgic: COLORS.accentSalmon,
+    amused: COLORS.primaryKhaki,
   };
 
   const handleImageChange = (e) => {
@@ -258,9 +260,9 @@ const CreateThought = () => {
   );
 };
 
-// Styled components
+// Styled components updated with new theme colors
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   padding: 1rem 0;
 `;
@@ -279,13 +281,13 @@ const Header = styled.div`
 const BackLink = styled(Link)`
   display: inline-flex;
   align-items: center;
-  color: #dddddd;
+  color: ${COLORS.textSecondary};
   text-decoration: none;
   margin-bottom: 1rem;
   transition: color 0.3s;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.primarySalmon};
   }
 
   svg {
@@ -295,7 +297,7 @@ const BackLink = styled(Link)`
 
 const PageTitle = styled.h1`
   font-size: 1.75rem;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
   margin: 0;
 `;
 
@@ -311,10 +313,10 @@ const FormGroup = styled.div`
 
 const ContentTextarea = styled.textarea`
   width: 100%;
-  background-color: #1e1e1e;
-  border: 1px solid #333333;
+  background-color: ${COLORS.cardBackground};
+  border: 1px solid ${COLORS.border};
   border-radius: 8px;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
   padding: 1rem;
   font-size: 1.125rem;
   min-height: 150px;
@@ -322,11 +324,11 @@ const ContentTextarea = styled.textarea`
 
   &:focus {
     outline: none;
-    border-color: #ff7e5f;
+    border-color: ${COLORS.primarySalmon};
   }
 
   &::placeholder {
-    color: #666666;
+    color: ${COLORS.textTertiary};
   }
 `;
 
@@ -334,16 +336,16 @@ const CharCount = styled.div`
   text-align: right;
   margin-top: 0.5rem;
   font-size: 0.875rem;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
 
   &.warning {
-    color: #ffbb00;
+    color: ${COLORS.warning};
   }
 `;
 
 const Label = styled.label`
   display: block;
-  color: #dddddd;
+  color: ${COLORS.textSecondary};
   margin-bottom: 0.75rem;
   font-weight: 500;
 `;
@@ -360,8 +362,9 @@ const MoodOptions = styled.div`
 
 const MoodOption = styled.button`
   background-color: ${(props) =>
-    props.selected ? props.moodColor : "#2a2a2a"};
-  color: ${(props) => (props.selected ? "#121212" : "#dddddd")};
+    props.selected ? props.moodColor : COLORS.elevatedBackground};
+  color: ${(props) =>
+    props.selected ? COLORS.textPrimary : COLORS.textSecondary};
   border: none;
   border-radius: 999px;
   padding: 0.5rem 1rem;
@@ -371,7 +374,7 @@ const MoodOption = styled.button`
 
   &:hover {
     background-color: ${(props) => props.moodColor};
-    color: #121212;
+    color: ${COLORS.textPrimary};
   }
 
   span {
@@ -386,36 +389,36 @@ const TagForm = styled.form`
 
 const TagInput = styled.input`
   flex: 1;
-  background-color: #1e1e1e;
-  border: 1px solid #333333;
+  background-color: ${COLORS.cardBackground};
+  border: 1px solid ${COLORS.border};
   border-right: none;
   border-radius: 8px 0 0 8px;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
 
   &:focus {
     outline: none;
-    border-color: #ff7e5f;
+    border-color: ${COLORS.primarySalmon};
   }
 
   &::placeholder {
-    color: #666666;
+    color: ${COLORS.textTertiary};
   }
 `;
 
 const AddTagButton = styled.button`
-  background-color: #1e1e1e;
-  border: 1px solid #333333;
+  background-color: ${COLORS.cardBackground};
+  border: 1px solid ${COLORS.border};
   border-left: none;
   border-radius: 0 8px 8px 0;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   padding: 0 1rem;
   cursor: pointer;
   transition: color 0.3s;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -431,7 +434,7 @@ const Tag = styled.div`
   gap: 0.5rem;
   background-color: rgba(
     ${(props) => {
-      const hexColor = props.moodColor || "#ff7e5f";
+      const hexColor = props.moodColor || COLORS.primarySalmon;
       // Convert hex to RGB with opacity
       const r = parseInt(hexColor.slice(1, 3), 16);
       const g = parseInt(hexColor.slice(3, 5), 16);
@@ -439,7 +442,7 @@ const Tag = styled.div`
       return `${r}, ${g}, ${b}, 0.2`;
     }}
   );
-  color: ${(props) => props.moodColor || "#ff7e5f"};
+  color: ${(props) => props.moodColor || COLORS.primarySalmon};
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
   font-size: 0.875rem;
@@ -466,18 +469,18 @@ const UploadButton = styled.button`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #1e1e1e;
-  border: 1px dashed #444444;
+  background-color: ${COLORS.cardBackground};
+  border: 1px dashed ${COLORS.border};
   border-radius: 8px;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
   padding: 1rem 2rem;
   cursor: pointer;
   transition: all 0.3s;
 
   &:hover {
-    background-color: #2a2a2a;
-    border-color: #ff7e5f;
-    color: #ffffff;
+    background-color: ${COLORS.elevatedBackground};
+    border-color: ${COLORS.primarySalmon};
+    color: ${COLORS.textPrimary};
   }
 
   svg {
@@ -495,7 +498,7 @@ const ImagePreview = styled.div`
     width: 100%;
     max-height: 300px;
     object-fit: contain;
-    background-color: #1e1e1e;
+    background-color: ${COLORS.cardBackground};
   }
 `;
 
@@ -511,7 +514,7 @@ const RemoveImageButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: white;
   cursor: pointer;
   transition: background-color 0.3s;
 
@@ -526,10 +529,10 @@ const SubmitButton = styled.button`
   justify-content: center;
   gap: 0.75rem;
   width: 100%;
-  background-color: #ff7e5f;
+  background-color: ${COLORS.primarySalmon};
   border: none;
   border-radius: 8px;
-  color: #ffffff;
+  color: white;
   padding: 1rem;
   font-size: 1rem;
   font-weight: 600;
@@ -537,11 +540,12 @@ const SubmitButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #ff6347;
+    background-color: #cc6e5f; /* Darker salmon on hover */
   }
 
   &:disabled {
-    background-color: #444444;
+    background-color: ${COLORS.elevatedBackground};
+    color: ${COLORS.textTertiary};
     cursor: not-allowed;
   }
 `;
@@ -549,14 +553,14 @@ const SubmitButton = styled.button`
 const AccessDenied = styled.div`
   text-align: center;
   padding: 4rem 2rem;
-  color: #ffffff;
+  color: ${COLORS.textPrimary};
 
   h2 {
     margin-bottom: 1rem;
   }
 
   p {
-    color: #aaaaaa;
+    color: ${COLORS.textSecondary};
     margin-bottom: 2rem;
   }
 `;
@@ -570,7 +574,7 @@ const ProgressBar = styled.div`
   position: relative;
   height: 10px;
   border-radius: 5px;
-  background-color: #333;
+  background-color: ${COLORS.elevatedBackground};
   margin-bottom: 0.5rem;
 
   &::after {
@@ -579,7 +583,8 @@ const ProgressBar = styled.div`
     top: -1.75rem;
     right: 0;
     font-size: 0.85rem;
-    color: ${(props) => (props.charCount > 800 ? "#ff4d4d" : "#aaa")};
+    color: ${(props) =>
+      props.charCount > 800 ? COLORS.error : COLORS.textTertiary};
   }
 
   &::before {
@@ -591,10 +596,10 @@ const ProgressBar = styled.div`
     background-color: ${(props) => {
       const c = props.charCount;
       const p = props.percentage;
-      if (c > 800) return "#ff4d4d"; // over limit — red
-      if (p > 90) return "#ff4d4d"; // almost there — red
-      if (p > 65) return "#ffc107"; // getting close — yellow
-      return "#7be0ad"; // chill zone — green
+      if (c > 800) return COLORS.error; // over limit
+      if (p > 90) return COLORS.error; // almost there
+      if (p > 65) return COLORS.warning; // getting close
+      return COLORS.primaryMint; // chill zone
     }};
     border-radius: 5px;
     transition: width 0.3s ease, background-color 0.3s ease;
@@ -616,7 +621,7 @@ const ProgressBar = styled.div`
 `;
 
 const CharWarning = styled.div`
-  color: #ff4d4d;
+  color: ${COLORS.error};
   font-size: 0.9rem;
   margin-top: -0.5rem;
   margin-bottom: 1rem;

@@ -10,15 +10,11 @@ const NotFound = () => {
       <LogoIcon>
         <FaCamera />
       </LogoIcon>
-
       <NotFoundCode>404</NotFoundCode>
-
       <NotFoundTitle>Page Not Found</NotFoundTitle>
-
       <NotFoundMessage>
         Oops! The page you're looking for doesn't exist or has been moved.
       </NotFoundMessage>
-
       <BackToHomeLink to="/">
         <FaHome />
         <span>Back to Home</span>
@@ -40,11 +36,10 @@ const NotFoundContainer = styled.div`
 `;
 
 const LogoIcon = styled.div`
-  color: ${COLORS.primaryPurple};
+  color: ${COLORS.primarySalmon};
   font-size: 4rem;
   margin-bottom: 1rem;
   animation: pulse 2s infinite ease-in-out;
-
   @keyframes pulse {
     0% {
       transform: scale(1);
@@ -61,14 +56,13 @@ const LogoIcon = styled.div`
 const NotFoundCode = styled.h1`
   font-size: 6rem;
   font-weight: 700;
-  color: ${COLORS.primaryPurple};
   margin: 0 0 1rem;
   line-height: 1;
   background: linear-gradient(
     45deg,
-    ${COLORS.primaryPurple},
-    ${COLORS.primaryBlue},
-    ${COLORS.primaryGreen}
+    ${COLORS.primarySalmon},
+    ${COLORS.primaryBlueGray},
+    ${COLORS.primaryMint}
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -92,7 +86,7 @@ const NotFoundMessage = styled.p`
 const BackToHomeLink = styled(Link)`
   display: flex;
   align-items: center;
-  background-color: ${COLORS.primaryGreen};
+  background-color: ${COLORS.primaryBlueGray};
   color: white;
   text-decoration: none;
   padding: 0.75rem 1.5rem;
@@ -101,7 +95,7 @@ const BackToHomeLink = styled(Link)`
   transition: all 0.3s ease;
 
   &:hover {
-    background-color: ${COLORS.accentGreen};
+    background-color: ${COLORS.accentBlueGray};
     transform: translateY(-2px);
     box-shadow: 0 4px 8px ${COLORS.shadow};
   }

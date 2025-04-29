@@ -93,7 +93,7 @@ const PageWrapper = styled.div`
   justify-content: center;
 `;
 
-// Dark theme styled components
+// Styled components updated with new theme colors
 const Container = styled.div`
   width: 100%;
   max-width: 1000px; /* Increased from 800px for wider content */
@@ -131,7 +131,7 @@ const BackLink = styled(Link)`
   transition: color 0.3s;
 
   &:hover {
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.primarySalmon};
   }
 
   svg {
@@ -174,8 +174,8 @@ const LogoIcon = styled.div`
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
-  background-color: ${COLORS.primaryPurple};
-  color: ${COLORS.textPrimary};
+  background-color: ${COLORS.primaryBlueGray};
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -214,7 +214,7 @@ const Section = styled.section`
 
 const SectionTitle = styled.h2`
   font-size: 1.25rem;
-  color: ${COLORS.primaryBlue};
+  color: ${COLORS.primarySalmon};
   margin: 0 0 1rem 0;
 `;
 

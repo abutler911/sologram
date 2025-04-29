@@ -130,7 +130,7 @@ const CollectionsList = () => {
   );
 };
 
-// Styled Components with Modern Twilight theme
+// Styled Components with updated theme colors
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
   min-height: 100vh;
@@ -169,15 +169,15 @@ const PageTitle = styled.h1`
 
   svg {
     margin-right: 0.75rem;
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.primarySalmon};
   }
 `;
 
 const CreateButton = styled(Link)`
   display: flex;
   align-items: center;
-  background-color: ${COLORS.primaryPurple};
-  color: ${COLORS.textPrimary};
+  background-color: ${COLORS.primarySalmon};
+  color: white;
   border: none;
   border-radius: 4px;
   padding: 0.75rem 1.25rem;
@@ -187,7 +187,7 @@ const CreateButton = styled(Link)`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #4527a0; /* Darker purple on hover */
+    background-color: #cc6e5f; /* Darker salmon on hover */
   }
 
   svg {
@@ -211,7 +211,7 @@ const CollectionCard = styled.div`
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 4px 12px ${COLORS.shadow};
-    border: 1px solid ${COLORS.primaryPurple}20;
+    border: 1px solid ${COLORS.primarySalmon}20;
   }
 `;
 
@@ -302,8 +302,8 @@ const EmptyText = styled.h3`
 
 const EmptyActionLink = styled(Link)`
   display: inline-block;
-  background-color: ${COLORS.primaryPurple};
-  color: ${COLORS.textPrimary};
+  background-color: ${COLORS.primarySalmon};
+  color: white;
   text-decoration: none;
   padding: 0.75rem 1.25rem;
   border-radius: 4px;
@@ -311,7 +311,7 @@ const EmptyActionLink = styled(Link)`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #4527a0; /* Darker purple on hover */
+    background-color: #cc6e5f; /* Darker salmon on hover */
   }
 `;
 

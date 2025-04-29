@@ -89,8 +89,8 @@ const Title = styled.h1`
     height: 3px;
     background: linear-gradient(
       90deg,
-      ${COLORS.primaryPurple},
-      ${COLORS.primaryBlue}
+      ${COLORS.primarySalmon},
+      ${COLORS.primaryBlueGray}
     );
     margin: 0.5rem auto 0;
     border-radius: 3px;
@@ -108,7 +108,7 @@ const ProfileImage = styled.img`
   height: 180px;
   object-fit: cover;
   border-radius: 50%;
-  border: 4px solid ${COLORS.primaryPurple};
+  border: 4px solid ${COLORS.primarySalmon};
   box-shadow: 0 5px 15px ${COLORS.shadow};
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 
@@ -124,24 +124,24 @@ const Content = styled.div`
   font-size: 1.1rem;
 
   h2 {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryBlueGray};
     margin-top: 2rem;
     margin-bottom: 1rem;
   }
 
   h3 {
-    color: ${COLORS.accentPurple};
+    color: ${COLORS.accentSalmon};
     margin-top: 1.5rem;
     margin-bottom: 0.75rem;
   }
 
   a {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryBlueGray};
     text-decoration: none;
     position: relative;
 
     &:hover {
-      color: ${COLORS.accentBlue};
+      color: ${COLORS.accentBlueGray};
       text-decoration: underline;
     }
   }
@@ -157,7 +157,7 @@ const Content = styled.div`
   }
 
   blockquote {
-    border-left: 3px solid ${COLORS.primaryGreen};
+    border-left: 3px solid ${COLORS.primaryMint};
     padding-left: 1rem;
     margin-left: 0;
     font-style: italic;

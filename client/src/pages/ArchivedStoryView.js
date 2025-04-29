@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../context/AuthContext";
+import { COLORS, THEME } from "../theme"; // Import the theme
 
 const ArchivedStoryView = () => {
   const { user, isAuthenticated } = useContext(AuthContext);
@@ -222,7 +223,7 @@ const ArchivedStoryView = () => {
 };
 
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   padding: 1rem 0;
 `;
@@ -247,11 +248,11 @@ const Header = styled.div`
 const BackLink = styled(Link)`
   display: flex;
   align-items: center;
-  color: #ddd;
+  color: ${COLORS.textSecondary};
   text-decoration: none;
 
   &:hover {
-    color: #ff7e5f;
+    color: ${COLORS.primarySalmon};
   }
 
   svg {
@@ -262,7 +263,7 @@ const BackLink = styled(Link)`
 const DeleteButton = styled.button`
   display: flex;
   align-items: center;
-  background-color: #e74c3c;
+  background-color: ${COLORS.error};
   color: white;
   border: none;
   border-radius: 4px;
@@ -271,7 +272,7 @@ const DeleteButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #c0392b;
+    background-color: #c0392b; /* Darker red on hover */
   }
 
   svg {
@@ -280,27 +281,27 @@ const DeleteButton = styled.button`
 `;
 
 const StoryTitle = styled.h1`
-  color: #fff;
+  color: ${COLORS.textPrimary};
   font-size: 1.75rem;
   margin: 0 0 0.5rem;
 `;
 
 const StoryDate = styled.div`
-  color: #aaa;
+  color: ${COLORS.textTertiary};
   font-size: 1rem;
   margin-bottom: 2rem;
 `;
 
 const LoadingMessage = styled.div`
   text-align: center;
-  color: #ddd;
+  color: ${COLORS.textSecondary};
   font-size: 1.125rem;
   padding: 3rem 0;
 `;
 
 const ErrorMessage = styled.div`
   background-color: rgba(248, 215, 218, 0.9);
-  color: #721c24;
+  color: ${COLORS.error};
   padding: 1rem;
   border-radius: 4px;
   margin-bottom: 2rem;
@@ -311,7 +312,7 @@ const MediaContainer = styled.div`
   width: 100%;
   overflow: hidden;
   border-radius: 8px;
-  background-color: #000;
+  background-color: ${COLORS.elevatedBackground};
   aspect-ratio: 16 / 9;
 
   @media (max-width: 768px) {
@@ -407,7 +408,7 @@ const Dot = styled.button`
   height: 0.75rem;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? "#ff7e5f" : "rgba(255, 255, 255, 0.5)"};
+    props.active ? COLORS.primarySalmon : "rgba(255, 255, 255, 0.5)"};
   border: none;
   padding: 0;
   cursor: pointer;
@@ -415,7 +416,7 @@ const Dot = styled.button`
 
   &:hover {
     background-color: ${(props) =>
-      props.active ? "#ff7e5f" : "rgba(255, 255, 255, 0.8)"};
+      props.active ? COLORS.primarySalmon : "rgba(255, 255, 255, 0.8)"};
   }
 `;
 
