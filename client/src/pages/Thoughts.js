@@ -32,6 +32,21 @@ const float = keyframes`
   100% { transform: translateY(0px); }
 `;
 
+const shine = keyframes`
+  0% {
+    background-position: -100px;
+  }
+  40%, 100% {
+    background-position: 200px;
+  }
+`;
+
+const pulseGlow = keyframes`
+  0% { box-shadow: 0 0 15px rgba(233, 137, 115, 0.4); }
+  50% { box-shadow: 0 0 25px rgba(233, 137, 115, 0.7); }
+  100% { box-shadow: 0 0 15px rgba(233, 137, 115, 0.4); }
+`;
+
 // Styled components for the page layout
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
@@ -337,7 +352,6 @@ const Backdrop = styled.div`
   z-index: 999;
 `;
 
-// Retweet modal components
 const RetweetModal = styled.div`
   position: relative;
   background-color: ${COLORS.cardBackground};
@@ -368,22 +382,6 @@ const RetweetModal = styled.div`
     animation: ${shine} 3s infinite;
     z-index: 10;
   }
-`;
-
-// Define animations for modal
-const shine = keyframes`
-  0% {
-    background-position: -100px;
-  }
-  40%, 100% {
-    background-position: 200px;
-  }
-`;
-
-const pulseGlow = keyframes`
-  0% { box-shadow: 0 0 15px rgba(233, 137, 115, 0.4); }
-  50% { box-shadow: 0 0 25px rgba(233, 137, 115, 0.7); }
-  100% { box-shadow: 0 0 15px rgba(233, 137, 115, 0.4); }
 `;
 
 const ModalOverlay = styled.div`
