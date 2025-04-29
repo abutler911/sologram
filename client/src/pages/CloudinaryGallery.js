@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -15,19 +15,18 @@ import {
 } from "react-icons/fa";
 import { getTransformedImageUrl } from "../utils/cloudinary";
 import { COLORS, THEME } from "../theme";
-import { AuthContext } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useAdminCheck } from "../hooks/useAdminCheck";
 
 const CloudinaryGallery = () => {
-  // Use the existing auth context instead of a custom hook
-  const { user } = useContext(AuthContext);
-  const navigate = useNavigate();
+  // Check if user is admin, redirect if not
+  const isAdmin = useAdminCheck();
 
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
   const [filters, setFilters] = useState({
     type: "all", // all, image, video
     dateRange: "all", // all, today, thisWeek, thisMonth, custom
@@ -42,15 +41,6 @@ const CloudinaryGallery = () => {
     videos: 0,
     storage: 0,
   });
-
-  // Verify admin status using the existing auth context
-  useEffect(() => {
-    // Redirect if not admin
-    if (user && user.role !== "admin") {
-      toast.error("You need admin privileges to access this page");
-      navigate("/");
-    }
-  }, [user, navigate]);
 
   // Load assets from Cloudinary
   useEffect(() => {
@@ -252,6 +242,45 @@ const CloudinaryGallery = () => {
         </HeaderActions>
       </GalleryHeader>
 
+      {/* Add this debugging info section */}
+      <DebugPanel>
+        <DebugHeader onClick={() => setShowDebug(!showDebug)}>
+          <h3>Media Source Information</h3>
+          {showDebug ? <FaTimes /> : <FaChevronDown />}
+        </DebugHeader>
+        {showDebug && (
+          <DebugContent>
+            <p>
+              This gallery displays media from your Cloudinary account that's
+              associated with SoloGram. If you're seeing unexpected media, you
+              may need to adjust the filtering in the backend API.
+            </p>
+            <h4>Folders represented in current results:</h4>
+            <FolderList>
+              {Array.from(
+                new Set(assets.map((asset) => asset.folder || "Root folder"))
+              ).map((folder) => (
+                <FolderItem key={folder}>{folder}</FolderItem>
+              ))}
+            </FolderList>
+            <h4>Suggestions if you see unexpected media:</h4>
+            <ul>
+              <li>
+                Check the "folder" value for assets to understand where they're
+                coming from
+              </li>
+              <li>
+                Update the backend to filter by specific folders used by
+                SoloGram
+              </li>
+              <li>
+                Consider adding tags to your uploads to identify SoloGram media
+              </li>
+            </ul>
+          </DebugContent>
+        )}
+      </DebugPanel>
+
       {filterOpen && (
         <FilterPanel>
           <FilterHeader>
@@ -378,12 +407,6 @@ const CloudinaryGallery = () => {
                       format: "auto",
                     })}
                     alt={asset.public_id}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      // Use a placeholder if image fails to load
-                      e.target.src =
-                        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="300" height="300"><rect width="24" height="24" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="3" text-anchor="middle" fill="%23999">Image Error</text></svg>';
-                    }}
                   />
                 ) : (
                   <VideoThumbnail>
@@ -402,12 +425,6 @@ const CloudinaryGallery = () => {
                         }
                       )}
                       alt={asset.public_id}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        // Use a video placeholder if thumbnail fails to load
-                        e.target.src =
-                          'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="300" height="300"><rect width="24" height="24" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="3" text-anchor="middle" fill="%23999">Video</text></svg>';
-                      }}
                     />
                   </VideoThumbnail>
                 )}
@@ -449,11 +466,6 @@ const CloudinaryGallery = () => {
                       quality: "auto",
                     })}
                     alt={selectedAsset.public_id}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src =
-                        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="800" height="800"><rect width="24" height="24" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="3" text-anchor="middle" fill="%23999">Image Error</text></svg>';
-                    }}
                   />
                 ) : (
                   <PreviewVideo controls>
@@ -473,6 +485,10 @@ const CloudinaryGallery = () => {
                 <InfoGroup>
                   <InfoLabel>ID:</InfoLabel>
                   <InfoValue>{selectedAsset.public_id}</InfoValue>
+                </InfoGroup>
+                <InfoGroup>
+                  <InfoLabel>Folder Path:</InfoLabel>
+                  <InfoValue>{selectedAsset.folder || "Root folder"}</InfoValue>
                 </InfoGroup>
                 <InfoGroup>
                   <InfoLabel>Type:</InfoLabel>
@@ -1108,6 +1124,71 @@ const NoAssetsMessage = styled.div`
   background-color: ${COLORS.elevatedBackground};
   border-radius: 8px;
   margin: 1rem 0;
+`;
+
+// Debug Panel Styled Components
+const DebugPanel = styled.div`
+  margin-bottom: 2rem;
+  background-color: ${COLORS.cardBackground};
+  border-radius: 8px;
+  box-shadow: 0 2px 8px ${COLORS.shadow};
+  overflow: hidden;
+  border: 1px dashed ${COLORS.primarySalmon};
+`;
+
+const DebugHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background-color: ${COLORS.primarySalmon}20;
+  cursor: pointer;
+
+  h3 {
+    margin: 0;
+    color: ${COLORS.primarySalmon};
+    font-size: 1rem;
+  }
+
+  svg {
+    color: ${COLORS.primarySalmon};
+  }
+`;
+
+const DebugContent = styled.div`
+  padding: 1.5rem;
+  font-size: 0.875rem;
+  color: ${COLORS.textSecondary};
+
+  h4 {
+    color: ${COLORS.textPrimary};
+    margin: 1.5rem 0 0.5rem;
+    font-size: 0.9375rem;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.5rem;
+  }
+
+  li {
+    margin: 0.5rem 0;
+  }
+`;
+
+const FolderList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+`;
+
+const FolderItem = styled.div`
+  background-color: ${COLORS.elevatedBackground};
+  border-radius: 4px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+  color: ${COLORS.textSecondary};
 `;
 
 export default CloudinaryGallery;
