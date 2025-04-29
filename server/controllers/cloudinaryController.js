@@ -13,7 +13,7 @@ exports.getCloudinaryAssets = async (req, res) => {
       console.log("Trying folder parameter...");
       const folderResponse = await cloudinary.api.resources({
         resource_type: "image",
-        max_results: 500,
+        max_results: 800,
         type: "upload",
         folder: "sologram",
       });
@@ -23,6 +23,93 @@ exports.getCloudinaryAssets = async (req, res) => {
           `Found ${folderResponse.resources.length} images with folder parameter`
         );
         allResources = [...allResources, ...folderResponse.resources];
+      }
+      try {
+        console.log("Trying subfolder search...");
+        const subfoldersResponse = await cloudinary.api.subfolders({
+          folder: "sologram",
+        });
+
+        if (
+          subfoldersResponse.folders &&
+          subfoldersResponse.folders.length > 0
+        ) {
+          console.log(`Found ${subfoldersResponse.folders.length} subfolders`);
+
+          // For each subfolder, get its resources
+          for (const subfolder of subfoldersResponse.folders) {
+            try {
+              const subfolderPath = subfolder.path;
+              console.log(`Checking subfolder: ${subfolderPath}`);
+
+              const subfolderImagesResponse = await cloudinary.api.resources({
+                resource_type: "image",
+                max_results: 100,
+                type: "upload",
+                folder: subfolderPath,
+              });
+
+              if (
+                subfolderImagesResponse.resources &&
+                subfolderImagesResponse.resources.length > 0
+              ) {
+                console.log(
+                  `Found ${subfolderImagesResponse.resources.length} images in subfolder ${subfolderPath}`
+                );
+
+                // Add only resources not already in the array
+                const existingIds = new Set(
+                  allResources.map((r) => r.public_id)
+                );
+                const newResources = subfolderImagesResponse.resources.filter(
+                  (r) => !existingIds.has(r.public_id)
+                );
+
+                console.log(
+                  `Adding ${newResources.length} unique new resources from subfolder ${subfolderPath}`
+                );
+                allResources = [...allResources, ...newResources];
+              }
+
+              // Also check for videos in this subfolder
+              const subfolderVideosResponse = await cloudinary.api.resources({
+                resource_type: "video",
+                max_results: 100,
+                type: "upload",
+                folder: subfolderPath,
+              });
+
+              if (
+                subfolderVideosResponse.resources &&
+                subfolderVideosResponse.resources.length > 0
+              ) {
+                console.log(
+                  `Found ${subfolderVideosResponse.resources.length} videos in subfolder ${subfolderPath}`
+                );
+
+                // Add only resources not already in the array
+                const existingIds = new Set(
+                  allResources.map((r) => r.public_id)
+                );
+                const newResources = subfolderVideosResponse.resources.filter(
+                  (r) => !existingIds.has(r.public_id)
+                );
+
+                console.log(
+                  `Adding ${newResources.length} unique new videos from subfolder ${subfolderPath}`
+                );
+                allResources = [...allResources, ...newResources];
+              }
+            } catch (error) {
+              console.error(
+                `Error fetching resources from subfolder ${subfolder.path}:`,
+                error.message
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching subfolders:", error.message);
       }
     } catch (error) {
       console.error("Error fetching with folder parameter:", error.message);
