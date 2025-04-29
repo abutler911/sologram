@@ -12,13 +12,12 @@ import {
   FaArrowRight,
   FaArrowLeft,
 } from "react-icons/fa";
-import { COLORS, THEME } from "../../theme"; // Import your theme
+import { COLORS, THEME } from "../../theme";
 
 // Default placeholder image
 const PLACEHOLDER_IMG =
   "https://via.placeholder.com/300x300?text=Image+Not+Available";
 
-// Simple file uploader function
 const uploadFile = async (file, onProgress) => {
   const formData = new FormData();
   formData.append("file", file);
@@ -56,6 +55,84 @@ const uploadFile = async (file, onProgress) => {
     xhr.onerror = () => reject(new Error("Network error during upload"));
     xhr.send(formData);
   });
+};
+
+export const useMediaUpload = ({ setMedia }) => {
+  const mountedRef = useRef(true);
+
+  const addFileToState = (file, id, objectUrl) => {
+    const isVideo = file.type.startsWith("video");
+    return {
+      id,
+      file,
+      previewUrl: objectUrl,
+      type: isVideo ? "video" : "image",
+      mediaType: isVideo ? "video" : "image",
+      filter: "none",
+      filterClass: "",
+      uploading: true,
+      progress: 0,
+      error: false,
+    };
+  };
+
+  const uploadAndTrack = async (file, id) => {
+    const onProgress = (percent) => {
+      if (!mountedRef.current) return;
+      setMedia((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, progress: percent } : item
+        )
+      );
+    };
+
+    try {
+      const result = await uploadFile(file, onProgress);
+      if (!mountedRef.current) return;
+
+      setMedia((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                mediaUrl: result.mediaUrl,
+                cloudinaryId: result.cloudinaryId,
+                mediaType: result.mediaType,
+                type: result.mediaType,
+                uploading: false,
+              }
+            : item
+        )
+      );
+
+      toast.success("Upload complete");
+    } catch (error) {
+      console.error("Upload error:", error);
+      if (mountedRef.current) {
+        setMedia((prev) =>
+          prev.map((item) =>
+            item.id === id ? { ...item, uploading: false, error: true } : item
+          )
+        );
+        toast.error("Upload failed");
+      }
+    }
+  };
+
+  const handleNewFiles = async (files) => {
+    const newItems = files.map((file) => {
+      const id = `${file.name}_${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(2, 8)}`;
+      const objectUrl = URL.createObjectURL(file);
+      uploadAndTrack(file, id);
+      return addFileToState(file, id, objectUrl);
+    });
+
+    setMedia((prev) => [...prev, ...newItems]);
+  };
+
+  return { handleNewFiles, mountedRef };
 };
 
 // Main component
