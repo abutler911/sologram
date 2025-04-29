@@ -447,7 +447,7 @@ const CloudinaryGallery = () => {
   return (
     <GalleryContainer>
       <GalleryHeader>
-        <h1>Cloudinary Media Gallery</h1>
+        <h1>Media Gallery</h1>
         <HeaderActions>
           <FilterButton onClick={() => setFilterOpen(!filterOpen)}>
             <FaFilter /> Filter
@@ -483,45 +483,6 @@ const CloudinaryGallery = () => {
           </StatsContainer>
         </HeaderActions>
       </GalleryHeader>
-
-      {/* Add this debugging info section */}
-      <DebugPanel>
-        <DebugHeader onClick={() => setShowDebug(!showDebug)}>
-          <h3>Media Source Information</h3>
-          {showDebug ? <FaTimes /> : <FaChevronDown />}
-        </DebugHeader>
-        {showDebug && (
-          <DebugContent>
-            <p>
-              This gallery displays media from your Cloudinary account that's
-              associated with SoloGram. If you're seeing unexpected media, you
-              may need to adjust the filtering in the backend API.
-            </p>
-            <h4>Folders represented in current results:</h4>
-            <FolderList>
-              {Array.from(
-                new Set(assets.map((asset) => asset.folder || "Root folder"))
-              ).map((folder) => (
-                <FolderItem key={folder}>{folder}</FolderItem>
-              ))}
-            </FolderList>
-            <h4>Suggestions if you see unexpected media:</h4>
-            <ul>
-              <li>
-                Check the "folder" value for assets to understand where they're
-                coming from
-              </li>
-              <li>
-                Update the backend to filter by specific folders used by
-                SoloGram
-              </li>
-              <li>
-                Consider adding tags to your uploads to identify SoloGram media
-              </li>
-            </ul>
-          </DebugContent>
-        )}
-      </DebugPanel>
 
       {filterOpen && (
         <FilterPanel>

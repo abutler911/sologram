@@ -375,6 +375,10 @@ const Stories = () => {
                     ? (10 - timeLeft) / 10
                     : 0
                 }
+                style={{
+                  transition:
+                    index === activeStoryIndex ? "width 0.2s linear" : "none",
+                }}
               />
             ))}
           </ProgressBarContainer>
@@ -668,7 +672,7 @@ const ProgressBar = styled.div`
         ? `${props.progress * 100}%`
         : "0"};
     background-color: ${COLORS.primarySalmon}; /* Updated to salmon color */
-    transition: width 0.016s linear; /* Changed for smoother animation with requestAnimationFrame */
+    transition: width 0.2s linear; /* Slowed down to create a more continuous fill effect */
   }
 `;
 
