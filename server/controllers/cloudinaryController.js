@@ -13,7 +13,7 @@ exports.getCloudinaryAssets = async (req, res) => {
       console.log("Trying folder parameter...");
       const folderResponse = await cloudinary.api.resources({
         resource_type: "image",
-        max_results: 800,
+        max_results: 1000,
         type: "upload",
         folder: "sologram",
       });
@@ -120,7 +120,7 @@ exports.getCloudinaryAssets = async (req, res) => {
       console.log("Trying prefix parameter...");
       const prefixResponse = await cloudinary.api.resources({
         resource_type: "image",
-        max_results: 500,
+        max_results: 1000,
         type: "upload",
         prefix: "sologram/",
       });
@@ -144,7 +144,38 @@ exports.getCloudinaryAssets = async (req, res) => {
     } catch (error) {
       console.error("Error fetching with prefix parameter:", error.message);
     }
+    try {
+      console.log("Trying recursive prefix search...");
+      const recursivePrefixResponse = await cloudinary.api.resources({
+        resource_type: "image",
+        max_results: 200,
+        type: "upload",
+        prefix: "sologram/",
+        recursive: true, // Some versions support this parameter
+      });
 
+      if (
+        recursivePrefixResponse.resources &&
+        recursivePrefixResponse.resources.length > 0
+      ) {
+        console.log(
+          `Found ${recursivePrefixResponse.resources.length} images with recursive prefix`
+        );
+
+        // Add only resources not already in the array
+        const existingIds = new Set(allResources.map((r) => r.public_id));
+        const newResources = recursivePrefixResponse.resources.filter(
+          (r) => !existingIds.has(r.public_id)
+        );
+
+        console.log(
+          `Adding ${newResources.length} unique new resources from recursive prefix search`
+        );
+        allResources = [...allResources, ...newResources];
+      }
+    } catch (error) {
+      console.error("Error with recursive prefix search:", error.message);
+    }
     // Third try: Get videos with folder parameter
     try {
       console.log("Trying video folder parameter...");
