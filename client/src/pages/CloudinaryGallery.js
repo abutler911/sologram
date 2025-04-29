@@ -113,12 +113,13 @@ const CloudinaryGallery = () => {
         `Deleting ${selectedAssets.length} assets...`
       );
 
-      // Delete assets in sequence to avoid overwhelming the server
       let successCount = 0;
       let failureCount = 0;
 
       for (const publicId of selectedAssets) {
         try {
+          // Your backend handles resource type detection
+          // Just pass the publicId directly
           await axios.delete(`/api/admin/cloudinary/${publicId}`);
           successCount++;
         } catch (error) {
@@ -290,7 +291,14 @@ const CloudinaryGallery = () => {
     }
 
     try {
+      // Your backend API expects the full publicId including folder
+      // No need to remove extensions or do complex parsing - the backend handles that
+      console.log(`Attempting to delete asset with publicId: ${publicId}`);
+
+      // Make the DELETE request to your backend API
+      // The URL should match your API route exactly
       await axios.delete(`/api/admin/cloudinary/${publicId}`);
+
       toast.success("Asset deleted successfully");
 
       // Update local state
@@ -314,7 +322,27 @@ const CloudinaryGallery = () => {
       }));
     } catch (error) {
       console.error("Error deleting asset:", error);
-      toast.error("Failed to delete asset");
+
+      // More descriptive error message based on error status
+      if (error.response) {
+        if (error.response.status === 404) {
+          toast.error(
+            "API endpoint not found. Check your API routes configuration."
+          );
+        } else if (error.response.status === 403) {
+          toast.error("Cannot delete assets outside the SoloGram folder.");
+        } else if (error.response.status === 400) {
+          toast.error(error.response.data?.message || "Invalid request.");
+        } else {
+          toast.error(
+            `Server error: ${error.response.data?.message || error.message}`
+          );
+        }
+      } else {
+        toast.error(
+          "Failed to connect to the server. Please check your network connection."
+        );
+      }
     }
   };
 
