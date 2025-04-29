@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useContext } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -15,11 +15,13 @@ import {
 } from "react-icons/fa";
 import { getTransformedImageUrl } from "../utils/cloudinary";
 import { COLORS, THEME } from "../theme";
-import { useAdminCheck } from "../hooks/useAdminCheck";
+import { AuthContext } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const CloudinaryGallery = () => {
-  // Check if user is admin, redirect if not
-  const isAdmin = useAdminCheck();
+  // Use the existing auth context instead of a custom hook
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +42,15 @@ const CloudinaryGallery = () => {
     videos: 0,
     storage: 0,
   });
+
+  // Verify admin status using the existing auth context
+  useEffect(() => {
+    // Redirect if not admin
+    if (user && user.role !== "admin") {
+      toast.error("You need admin privileges to access this page");
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   // Load assets from Cloudinary
   useEffect(() => {
@@ -367,6 +378,12 @@ const CloudinaryGallery = () => {
                       format: "auto",
                     })}
                     alt={asset.public_id}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      // Use a placeholder if image fails to load
+                      e.target.src =
+                        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="300" height="300"><rect width="24" height="24" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="3" text-anchor="middle" fill="%23999">Image Error</text></svg>';
+                    }}
                   />
                 ) : (
                   <VideoThumbnail>
@@ -385,6 +402,12 @@ const CloudinaryGallery = () => {
                         }
                       )}
                       alt={asset.public_id}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        // Use a video placeholder if thumbnail fails to load
+                        e.target.src =
+                          'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="300" height="300"><rect width="24" height="24" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="3" text-anchor="middle" fill="%23999">Video</text></svg>';
+                      }}
                     />
                   </VideoThumbnail>
                 )}
@@ -426,6 +449,11 @@ const CloudinaryGallery = () => {
                       quality: "auto",
                     })}
                     alt={selectedAsset.public_id}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src =
+                        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="800" height="800"><rect width="24" height="24" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="3" text-anchor="middle" fill="%23999">Image Error</text></svg>';
+                    }}
                   />
                 ) : (
                   <PreviewVideo controls>
