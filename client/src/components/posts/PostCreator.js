@@ -309,7 +309,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
       try {
         const objectUrl = URL.createObjectURL(file);
 
-        // Add to media with uploading status
+        // Add file to media list
         setMedia((current) => [
           ...current,
           {
@@ -325,6 +325,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
           },
         ]);
 
+        // Define onProgress separately
         const onProgress = (percent) => {
           if (!mountedRef.current) return;
           setMedia((prev) =>
@@ -332,10 +333,12 @@ function PostCreator({ initialData = null, isEditing = false }) {
           );
         };
 
+        // Upload
         const result = await uploadFile(file, onProgress);
 
         if (!mountedRef.current) return;
 
+        // Apply result AFTER upload completes
         setMedia((prev) =>
           prev.map((p) =>
             p.id === id
@@ -354,7 +357,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
         toast.success("Upload complete");
       } catch (error) {
         console.error("Camera upload error:", error);
-
         if (mountedRef.current) {
           setMedia((prev) =>
             prev.map((p) =>
@@ -364,7 +366,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
           toast.error("Upload failed");
         }
       } finally {
-        // Reset input so camera can be triggered again
         if (event.target) event.target.value = "";
       }
     }
