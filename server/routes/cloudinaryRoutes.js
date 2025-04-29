@@ -11,7 +11,7 @@ router.use(authorize("admin"));
 router.get("/", cloudinaryController.getCloudinaryAssets);
 
 // Delete a Cloudinary asset
-router.delete("/:publicId", cloudinaryController.deleteCloudinaryAsset);
+router.delete("/:publicId(*)", cloudinaryController.deleteCloudinaryAsset);
 
 router.get("/debug", async (req, res) => {
   try {
