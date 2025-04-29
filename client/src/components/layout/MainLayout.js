@@ -6,7 +6,7 @@ import BottomNavigation from "./BottomNavigation";
 import SubscribeBanner from "../notifications/SubscribeBanner";
 import styled from "styled-components";
 import { COLORS } from "../../theme";
-import LoadingSpinner from "../common/loadingSpinner";
+import LoadingSpinner from "../common/LoadingSpinner";
 
 const InstallPrompt = lazy(() => import("../pwa/InstallPrompt"));
 const FloatingActionButtonAdjuster = lazy(() =>
