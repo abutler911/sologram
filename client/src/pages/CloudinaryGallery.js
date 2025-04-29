@@ -12,7 +12,6 @@ import {
   FaImage,
   FaVideo,
   FaCalendarAlt,
-  FaChevronDown,
   FaCheckSquare,
   FaSquare,
 } from "react-icons/fa";
@@ -919,11 +918,12 @@ const StatsContainer = styled.div`
   box-shadow: 0 2px 8px ${COLORS.shadow};
 
   @media (max-width: 768px) {
-    width: 100%;
-    overflow-x: auto;
+    flex-wrap: wrap;
+    justify-content: space-between;
     padding: 0.5rem 1rem;
-    gap: 1rem;
+    gap: 0.75rem;
     margin-top: 0.5rem;
+    overflow-x: hidden;
   }
 `;
 
@@ -931,84 +931,30 @@ const StatItem = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 70px;
+
+  @media (max-width: 768px) {
+    flex: 0 0 calc(50% - 0.5rem);
+    margin-bottom: 0.5rem;
+  }
 `;
 
 const StatValue = styled.div`
-  font-weight: 700;
   font-size: 1.25rem;
-  color: ${COLORS.primaryBlueGray};
+  font-weight: 600;
+  color: ${COLORS.primary};
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
 `;
 
 const StatLabel = styled.div`
-  font-size: 0.75rem;
-  color: ${COLORS.textTertiary};
-  white-space: nowrap;
-`;
-
-// Debug Panel Styled Components
-const DebugPanel = styled.div`
-  margin-bottom: 2rem;
-  background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
-  box-shadow: 0 2px 8px ${COLORS.shadow};
-  overflow: hidden;
-  border: 1px dashed ${COLORS.primarySalmon};
-`;
-
-const DebugHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  background-color: ${COLORS.primarySalmon}20;
-  cursor: pointer;
-
-  h3 {
-    margin: 0;
-    color: ${COLORS.primarySalmon};
-    font-size: 1rem;
-  }
-
-  svg {
-    color: ${COLORS.primarySalmon};
-  }
-`;
-
-const DebugContent = styled.div`
-  padding: 1.5rem;
   font-size: 0.875rem;
   color: ${COLORS.textSecondary};
 
-  h4 {
-    color: ${COLORS.textPrimary};
-    margin: 1.5rem 0 0.5rem;
-    font-size: 0.9375rem;
+  @media (max-width: 768px) {
+    font-size: 0.75rem;
   }
-
-  ul {
-    margin: 0;
-    padding-left: 1.5rem;
-  }
-
-  li {
-    margin: 0.5rem 0;
-  }
-`;
-
-const FolderList = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0.5rem 0;
-`;
-
-const FolderItem = styled.div`
-  background-color: ${COLORS.elevatedBackground};
-  border-radius: 4px;
-  padding: 0.25rem 0.75rem;
-  font-size: 0.8125rem;
-  color: ${COLORS.textSecondary};
 `;
 
 const FilterPanel = styled.div`
