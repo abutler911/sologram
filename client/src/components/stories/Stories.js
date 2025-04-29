@@ -12,7 +12,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
-import { COLORS, THEME } from "../../theme"; // Import your theme
+import { COLORS, THEME } from "../../theme";
 
 const Stories = () => {
   const [stories, setStories] = useState([]);

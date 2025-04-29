@@ -15,9 +15,11 @@ import {
   FaChevronDown,
 } from "react-icons/fa";
 import { getTransformedImageUrl } from "../utils/cloudinary";
-import { COLORS, THEME } from "../theme";
+import { COLORS } from "../theme";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useSwipeable } from "react-swipeable";
 
 const CloudinaryGallery = () => {
   // Use the existing auth context
@@ -225,6 +227,94 @@ const CloudinaryGallery = () => {
     return format(new Date(date), "MMM d, yyyy");
   };
 
+  const groupAssetsByDate = (assets) => {
+    const grouped = {};
+
+    assets.forEach((asset) => {
+      const date = new Date(asset.created_at);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      let dateKey;
+      let dateLabel;
+
+      // Group by specific timeframes
+      if (date.toDateString() === today.toDateString()) {
+        dateKey = "today";
+        dateLabel = "Today";
+      } else if (date.toDateString() === yesterday.toDateString()) {
+        dateKey = "yesterday";
+        dateLabel = "Yesterday";
+      } else if (today.getTime() - date.getTime() < 7 * 24 * 60 * 60 * 1000) {
+        dateKey = "thisWeek";
+        dateLabel = "This Week";
+      } else if (
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear()
+      ) {
+        dateKey = "thisMonth";
+        dateLabel = "This Month";
+      } else {
+        // Format by month and year for older content
+        dateKey = `${date.getFullYear()}-${date.getMonth()}`;
+        dateLabel = format(date, "MMMM yyyy");
+      }
+
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = {
+          label: dateLabel,
+          assets: [],
+        };
+      }
+
+      grouped[dateKey].assets.push(asset);
+    });
+
+    // Sort keys by most recent first
+    const orderedGroups = {};
+    const order = ["today", "yesterday", "thisWeek", "thisMonth"];
+
+    // Add the predefined timeframes first
+    order.forEach((key) => {
+      if (grouped[key]) {
+        orderedGroups[key] = grouped[key];
+        delete grouped[key];
+      }
+    });
+
+    // Add the rest in reverse chronological order
+    Object.keys(grouped)
+      .sort((a, b) => b.localeCompare(a))
+      .forEach((key) => {
+        orderedGroups[key] = grouped[key];
+      });
+
+    return orderedGroups;
+  };
+
+  const getVariableAspectRatio = (publicId) => {
+    const sum = publicId
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const options = ["1 / 1", "4 / 5", "4 / 3", "3 / 4", "16 / 9"];
+    return options[sum % options.length];
+  };
+
+  // Animation variants for framer-motion
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: (custom) => ({
+      opacity: 1,
+      y: 0,
+      transition: {
+        delay: custom * 0.05,
+        duration: 0.3,
+        ease: "easeOut",
+      },
+    }),
+  };
+
   return (
     <GalleryContainer>
       <GalleryHeader>
@@ -397,71 +487,91 @@ const CloudinaryGallery = () => {
       )}
 
       {loading && page === 1 ? (
-        <LoadingMessage>Loading media assets...</LoadingMessage>
+        <LoadingMessage>Loading media assets</LoadingMessage>
       ) : error ? (
         <ErrorMessage>{error}</ErrorMessage>
       ) : assets.length > 0 ? (
         <>
-          <GalleryGrid>
-            {assets.map((asset, index) => (
-              <GalleryItem
-                ref={assets.length === index + 1 ? lastAssetElementRef : null}
-                key={asset.public_id}
-                onClick={() => setSelectedAsset(asset)}
-              >
-                {asset.resource_type === "image" ? (
-                  <GalleryImage
-                    src={getTransformedImageUrl(asset.secure_url, {
-                      width: 300,
-                      height: 300,
-                      crop: "fill",
-                      quality: "auto",
-                      format: "auto",
-                    })}
-                    alt={asset.public_id}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      // Use a placeholder if image fails to load
-                      e.target.src =
-                        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="300" height="300"><rect width="24" height="24" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="3" text-anchor="middle" fill="%23999">Image Error</text></svg>';
+          {Object.entries(groupAssetsByDate(assets)).map(([dateKey, group]) => (
+            <DateSection key={dateKey}>
+              <DateHeading>
+                {group.label}
+                <DateCount>{group.assets.length}</DateCount>
+              </DateHeading>
+              <GalleryGrid>
+                {group.assets.map((asset, index) => (
+                  <GalleryItem
+                    ref={
+                      group.assets.length === index + 1 &&
+                      Object.keys(groupAssetsByDate(assets)).pop() === dateKey
+                        ? lastAssetElementRef
+                        : null
+                    }
+                    key={asset.public_id}
+                    onClick={() => setSelectedAsset(asset)}
+                    aspectRatio={getVariableAspectRatio(asset.public_id)}
+                    initial="hidden"
+                    animate="visible"
+                    custom={index % 20} // Stagger animation in groups of 20
+                    variants={itemVariants}
+                    whileHover={{
+                      y: -5,
+                      boxShadow: "0 8px 16px rgba(0, 0, 0, 0.15)",
+                      zIndex: 2,
                     }}
-                  />
-                ) : (
-                  <VideoThumbnail>
-                    <VideoIcon>
-                      <FaVideo />
-                    </VideoIcon>
-                    <VideoPreview
-                      src={getTransformedImageUrl(
-                        asset.secure_url.replace(/\.[^.]+$/, ".jpg"),
-                        {
-                          width: 300,
-                          height: 300,
+                  >
+                    {asset.resource_type === "image" ? (
+                      <GalleryImage
+                        src={getTransformedImageUrl(asset.secure_url, {
+                          width: 400,
+                          height: 400,
                           crop: "fill",
                           quality: "auto",
                           format: "auto",
-                        }
-                      )}
-                      alt={asset.public_id}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        // Use a video placeholder if thumbnail fails to load
-                        e.target.src =
-                          'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="300" height="300"><rect width="24" height="24" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="3" text-anchor="middle" fill="%23999">Video</text></svg>';
-                      }}
-                    />
-                  </VideoThumbnail>
-                )}
-                <ItemOverlay>
-                  <OverlayInfo>
-                    <AssetDate>{formatDate(asset.created_at)}</AssetDate>
-                    <AssetSize>{formatFileSize(asset.bytes)}</AssetSize>
-                  </OverlayInfo>
-                </ItemOverlay>
-              </GalleryItem>
-            ))}
-          </GalleryGrid>
-
+                        })}
+                        alt={asset.public_id}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src =
+                            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="300" height="300"><rect width="24" height="24" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="3" text-anchor="middle" fill="%23999">Image Error</text></svg>';
+                        }}
+                      />
+                    ) : (
+                      <VideoThumbnail>
+                        <VideoIcon>
+                          <FaVideo />
+                        </VideoIcon>
+                        <VideoPreview
+                          src={getTransformedImageUrl(
+                            asset.secure_url.replace(/\.[^.]+$/, ".jpg"),
+                            {
+                              width: 400,
+                              height: 400,
+                              crop: "fill",
+                              quality: "auto",
+                              format: "auto",
+                            }
+                          )}
+                          alt={asset.public_id}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src =
+                              'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="300" height="300"><rect width="24" height="24" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="3" text-anchor="middle" fill="%23999">Video</text></svg>';
+                          }}
+                        />
+                      </VideoThumbnail>
+                    )}
+                    <ItemOverlay>
+                      <OverlayInfo>
+                        <AssetDate>{formatDate(asset.created_at)}</AssetDate>
+                        <AssetSize>{formatFileSize(asset.bytes)}</AssetSize>
+                      </OverlayInfo>
+                    </ItemOverlay>
+                  </GalleryItem>
+                ))}
+              </GalleryGrid>
+            </DateSection>
+          ))}
           {loading && <LoadingMore>Loading more assets...</LoadingMore>}
         </>
       ) : (
@@ -637,10 +747,23 @@ const FilterButton = styled.button`
   padding: 0.5rem 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
 
   &:hover {
     background-color: ${COLORS.accentBlueGray};
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  @media (max-width: 767px) {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 `;
 
@@ -915,35 +1038,45 @@ const ApplyButton = styled.button`
 
 const GalleryGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.5rem;
 
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1.5rem;
+  @media (max-width: 767px) {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
   }
 `;
 
-const GalleryItem = styled.div`
+const GalleryItem = styled(motion.div)`
   background-color: ${COLORS.cardBackground};
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px ${COLORS.shadow};
   position: relative;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: ${(props) => props.aspectRatio || "1 / 1"};
   cursor: pointer;
-  transition: transform 0.3s, box-shadow 0.3s;
 
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px ${COLORS.shadow};
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 8px;
+    box-shadow: 0 0 0 0 ${COLORS.primarySalmon}50;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1;
   }
 
-  &:hover img {
-    transform: scale(1.05);
-  }
-
-  &:hover > div:last-child {
+  &:hover:before {
+    box-shadow: 0 0 0 4px ${COLORS.primarySalmon}50;
     opacity: 1;
   }
 `;
@@ -959,6 +1092,18 @@ const VideoThumbnail = styled.div`
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+
+  &:after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.2));
+    pointer-events: none;
+  }
 `;
 
 const VideoPreview = styled.img`
@@ -981,10 +1126,16 @@ const VideoIcon = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
 
   svg {
     color: white;
     font-size: 1.125rem;
+  }
+
+  ${GalleryItem}:hover & {
+    transform: translate(-50%, -50%) scale(1.1);
   }
 `;
 
@@ -1175,10 +1326,17 @@ const ActionButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
-  transition: opacity 0.3s;
+  transition: all 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
   &:hover {
     opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   @media (max-width: 768px) {
@@ -1192,6 +1350,27 @@ const LoadingMessage = styled.div`
   padding: 3rem 0;
   color: ${COLORS.textTertiary};
   font-size: 1rem;
+  position: relative;
+
+  &:after {
+    content: "...";
+    position: absolute;
+    animation: loadingDots 1.5s infinite;
+    width: 1em;
+    text-align: left;
+  }
+
+  @keyframes loadingDots {
+    0% {
+      content: ".";
+    }
+    33% {
+      content: "..";
+    }
+    66% {
+      content: "...";
+    }
+  }
 `;
 
 const LoadingMore = styled.div`
@@ -1218,6 +1397,46 @@ const NoAssetsMessage = styled.div`
   background-color: ${COLORS.elevatedBackground};
   border-radius: 8px;
   margin: 1rem 0;
+`;
+
+const DateSection = styled.div`
+  margin-top: 2rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+
+  &:first-of-type {
+    margin-top: 0;
+  }
+`;
+
+const DateHeading = styled.h2`
+  font-size: 1.25rem;
+  color: ${COLORS.textPrimary};
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+
+  &:after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: ${COLORS.border};
+    margin-left: 1rem;
+  }
+
+  @media (max-width: 767px) {
+    font-size: 1.125rem;
+  }
+`;
+
+const DateCount = styled.span`
+  background-color: ${COLORS.primaryBlueGray};
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  margin-left: 0.75rem;
 `;
 
 export default CloudinaryGallery;
