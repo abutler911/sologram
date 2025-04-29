@@ -23,7 +23,42 @@ exports.getCloudinaryAssets = async (req, res) => {
           `Found ${folderResponse.resources.length} images with folder parameter`
         );
         allResources = [...allResources, ...folderResponse.resources];
+        if (folderResponse.next_cursor) {
+          console.log("Found next_cursor, fetching next page...");
+          try {
+            const nextPageResponse = await cloudinary.api.resources({
+              resource_type: "image",
+              max_results: 1000,
+              type: "upload",
+              folder: "sologram",
+              next_cursor: folderResponse.next_cursor,
+            });
+
+            if (
+              nextPageResponse.resources &&
+              nextPageResponse.resources.length > 0
+            ) {
+              console.log(
+                `Found ${nextPageResponse.resources.length} more images in next page`
+              );
+
+              // Add only resources not already in the array
+              const existingIds = new Set(allResources.map((r) => r.public_id));
+              const newResources = nextPageResponse.resources.filter(
+                (r) => !existingIds.has(r.public_id)
+              );
+
+              console.log(
+                `Adding ${newResources.length} unique new resources from next page`
+              );
+              allResources = [...allResources, ...newResources];
+            }
+          } catch (nextPageError) {
+            console.error("Error fetching next page:", nextPageError.message);
+          }
+        }
       }
+
       try {
         console.log("Trying subfolder search...");
         const subfoldersResponse = await cloudinary.api.subfolders({
