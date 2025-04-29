@@ -1,3 +1,5 @@
+// CloudinaryGallery.js with integrated components
+
 import React, { useState, useEffect, useCallback, useContext } from "react";
 import styled from "styled-components";
 import axios from "axios";
@@ -14,13 +16,14 @@ import {
   FaCalendarAlt,
   FaCheckSquare,
   FaSquare,
-  FaExclamationTriangle,
 } from "react-icons/fa";
 import { getTransformedImageUrl } from "../utils/cloudinary";
 import { COLORS } from "../theme";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import DeleteConfirmationModal from "../components/common/DeleteConfirmationModal";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 
 const CloudinaryGallery = () => {
   // Use the existing auth context
@@ -57,6 +60,8 @@ const CloudinaryGallery = () => {
     isBulk: false,
     count: 0,
   });
+  const [loadingMore, setLoadingMore] = useState(false);
+
   // Verify admin status using the existing auth context
   useEffect(() => {
     // Redirect if not admin
@@ -256,63 +261,15 @@ const CloudinaryGallery = () => {
       });
     }
   };
-  const DeleteConfirmationModal = ({
-    show,
-    onCancel,
-    onConfirm,
-    assetName,
-    isBulk,
-    count,
-  }) => {
-    if (!show) return null;
 
-    return (
-      <ModalOverlay>
-        <DeleteModalContent onClick={(e) => e.stopPropagation()}>
-          <DeleteModalHeader>
-            <DeleteModalTitle>
-              <FaTrash /> Confirm Deletion
-            </DeleteModalTitle>
-            <CloseButton onClick={onCancel}>
-              <FaTimes />
-            </CloseButton>
-          </DeleteModalHeader>
-
-          <DeleteModalBody>
-            {isBulk ? (
-              <DeleteMessage>
-                Are you sure you want to delete{" "}
-                <DeleteHighlight>{count}</DeleteHighlight> selected
-                {count === 1 ? " asset" : " assets"}? This action cannot be
-                undone.
-              </DeleteMessage>
-            ) : (
-              <DeleteMessage>
-                Are you sure you want to delete{" "}
-                <DeleteHighlight>"{assetName}"</DeleteHighlight>? This action
-                cannot be undone.
-              </DeleteMessage>
-            )}
-
-            <DeleteWarning>
-              <FaExclamationTriangle /> Once deleted, the asset will be
-              permanently removed from Cloudinary.
-            </DeleteWarning>
-          </DeleteModalBody>
-
-          <DeleteModalFooter>
-            <CancelButton onClick={onCancel}>Cancel</CancelButton>
-            <DeleteButton onClick={onConfirm}>
-              {isBulk ? `Delete ${count} Assets` : "Delete Asset"}
-            </DeleteButton>
-          </DeleteModalFooter>
-        </DeleteModalContent>
-      </ModalOverlay>
-    );
-  };
   const fetchAssets = async () => {
     try {
-      setLoading(true);
+      // Set loading state
+      if (page === 1) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
 
       // Convert date filters to ISO strings for the API
       const apiFilters = { ...filters };
@@ -380,6 +337,7 @@ const CloudinaryGallery = () => {
       }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -387,7 +345,7 @@ const CloudinaryGallery = () => {
   const observer = React.useRef();
   const lastAssetElementRef = useCallback(
     (node) => {
-      if (loading) return;
+      if (loading || loadingMore) return;
       if (observer.current) observer.current.disconnect();
 
       observer.current = new IntersectionObserver((entries) => {
@@ -398,7 +356,7 @@ const CloudinaryGallery = () => {
 
       if (node) observer.current.observe(node);
     },
-    [loading, hasMore]
+    [loading, loadingMore, hasMore]
   );
 
   const handleDeleteAsset = async (publicId) => {
@@ -684,7 +642,13 @@ const CloudinaryGallery = () => {
       )}
 
       {loading && page === 1 ? (
-        <LoadingMessage>Loading media assets</LoadingMessage>
+        <LoadingContainer>
+          <LoadingSpinner
+            text="Loading media assets"
+            size="60px"
+            height="400px"
+          />
+        </LoadingContainer>
       ) : error ? (
         <ErrorMessage>{error}</ErrorMessage>
       ) : assets.length > 0 ? (
@@ -758,7 +722,7 @@ const CloudinaryGallery = () => {
                         />
                       </VideoThumbnail>
                     )}
-                    <ItemOverlay>
+                    <ItemOverlay className="item-overlay">
                       <OverlayInfo>
                         <AssetDate>{formatDate(asset.created_at)}</AssetDate>
                         <AssetSize>{formatFileSize(asset.bytes)}</AssetSize>
@@ -786,7 +750,16 @@ const CloudinaryGallery = () => {
               </GalleryGrid>
             </DateSection>
           ))}
-          {loading && <LoadingMore>Loading more assets...</LoadingMore>}
+          {loadingMore && (
+            <LoadingMoreContainer>
+              <LoadingSpinner
+                text="Loading more assets"
+                size="40px"
+                height="120px"
+                textSize="0.875rem"
+              />
+            </LoadingMoreContainer>
+          )}
         </>
       ) : (
         <NoAssetsMessage>
@@ -923,6 +896,8 @@ const CloudinaryGallery = () => {
           </BulkActions>
         </BulkActionBar>
       )}
+
+      {/* Using the new DeleteConfirmationModal component */}
       <DeleteConfirmationModal
         show={deleteConfirmation.show}
         onCancel={() =>
@@ -1054,7 +1029,7 @@ const StatItem = styled.div`
 const StatValue = styled.div`
   font-size: 1.25rem;
   font-weight: 600;
-  color: ${COLORS.primary};
+  color: ${COLORS.primaryBlueGray};
 
   @media (max-width: 768px) {
     font-size: 1rem;
@@ -1279,6 +1254,10 @@ const GalleryItem = styled(motion.div)`
 
   &:hover:before {
     box-shadow: 0 0 0 4px ${COLORS.primarySalmon}50;
+    opacity: 1;
+  }
+
+  &:hover .item-overlay {
     opacity: 1;
   }
 `;
@@ -1562,40 +1541,12 @@ const ActionButton = styled.button`
   }
 `;
 
-const LoadingMessage = styled.div`
-  text-align: center;
-  padding: 3rem 0;
-  color: ${COLORS.textTertiary};
-  font-size: 1rem;
-  position: relative;
-
-  &:after {
-    content: "...";
-    position: absolute;
-    animation: loadingDots 1.5s infinite;
-    width: 1em;
-    text-align: left;
-  }
-
-  @keyframes loadingDots {
-    0% {
-      content: ".";
-    }
-    33% {
-      content: "..";
-    }
-    66% {
-      content: "...";
-    }
-  }
+const LoadingContainer = styled.div`
+  margin: 2rem 0;
 `;
 
-const LoadingMore = styled.div`
-  text-align: center;
-  padding: 1.5rem 0;
-  color: ${COLORS.textTertiary};
-  font-size: 0.875rem;
-  font-style: italic;
+const LoadingMoreContainer = styled.div`
+  margin: 1rem 0;
 `;
 
 const ErrorMessage = styled.div`
@@ -1800,141 +1751,6 @@ const SelectModeButton = styled.button`
   &:hover {
     background-color: ${(props) =>
       props.active ? COLORS.accentSalmon : COLORS.buttonHover};
-  }
-`;
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1100;
-  padding: 1rem;
-`;
-
-const DeleteModalContent = styled.div`
-  background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  width: 100%;
-  max-width: 500px;
-  overflow: hidden;
-  animation: fadeInScale 0.2s ease-out;
-
-  @keyframes fadeInScale {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-`;
-
-const DeleteModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid ${COLORS.border};
-  background-color: ${COLORS.elevatedBackground};
-`;
-
-const DeleteModalTitle = styled.h3`
-  margin: 0;
-  color: ${COLORS.error};
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-
-  svg {
-    font-size: 1rem;
-  }
-`;
-
-const DeleteModalBody = styled.div`
-  padding: 1.5rem;
-`;
-
-const DeleteMessage = styled.p`
-  margin: 0 0 1.5rem 0;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: ${COLORS.textPrimary};
-`;
-
-const DeleteHighlight = styled.span`
-  font-weight: 600;
-  color: ${COLORS.error};
-`;
-
-const DeleteWarning = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background-color: ${COLORS.error}15;
-  border-left: 3px solid ${COLORS.error};
-  border-radius: 4px;
-  color: ${COLORS.textSecondary};
-  font-size: 0.875rem;
-
-  svg {
-    color: ${COLORS.error};
-    flex-shrink: 0;
-  }
-`;
-
-const DeleteModalFooter = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid ${COLORS.border};
-  background-color: ${COLORS.elevatedBackground};
-`;
-
-const CancelButton = styled.button`
-  background: none;
-  border: 1px solid ${COLORS.border};
-  color: ${COLORS.textSecondary};
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
-
-  &:hover {
-    background-color: ${COLORS.buttonHover};
-    color: ${COLORS.textPrimary};
-  }
-`;
-
-const DeleteButton = styled.button`
-  background-color: ${COLORS.error};
-  color: white;
-  border: none;
-  padding: 0.5rem 1.25rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
-
-  &:hover {
-    background-color: ${COLORS.errorDark || "#c62828"};
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
   }
 `;
 
