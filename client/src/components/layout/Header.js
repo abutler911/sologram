@@ -14,6 +14,7 @@ import {
   FaSearch,
   FaChevronDown,
   FaEllipsisV,
+  FaImage,
 } from "react-icons/fa";
 
 import { AuthContext } from "../../context/AuthContext";
@@ -198,6 +199,14 @@ const Header = ({ onSearch, onClearSearch }) => {
                 Subscribers
               </NavLink>
             )}
+            {isAdmin && (
+              <NavLink
+                to="/media-gallery"
+                active={location.pathname.startsWith("/media-gallery")}
+              >
+                Media Gallery
+              </NavLink>
+            )}
             {/* 🔥 SoloUnderground external link */}
             <NavLink
               as="a"
@@ -303,6 +312,15 @@ const Header = ({ onSearch, onClearSearch }) => {
                         <FaBell /> <span>Subscribers</span>
                       </UserMenuItem>
                     )}
+
+                    {isAdmin && (
+                      <UserMenuItem
+                        to="/media-gallery"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <FaImage /> <span>Media Gallery</span>
+                      </UserMenuItem>
+                    )}
                     <UserMenuItem
                       to="/collections"
                       onClick={() => setShowUserMenu(false)}
@@ -390,6 +408,15 @@ const Header = ({ onSearch, onClearSearch }) => {
           >
             <span>Subscribe</span>
           </MobileMenuItem>
+          {isAdmin && (
+            <MobileMenuItem
+              to="/media-gallery"
+              active={location.pathname.startsWith("/media-gallery")}
+              onClick={handleLinkClick}
+            >
+              Media Gallery
+            </MobileMenuItem>
+          )}
           {isAuthenticated && (
             <>
               <MobileMenuItem

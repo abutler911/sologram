@@ -82,6 +82,7 @@ const archivedStoryRoutes = require("./routes/archivedStories");
 const subscriberRoutes = require("./routes/subscribers");
 const analyticsRoutes = require("./routes/analytics");
 const thoughtsRoutes = require("./routes/thoughts");
+const cloudinaryRoutes = require("./routes/cloudinaryRoutes");
 
 app.use("/api/posts", postRoutes);
 app.use("/api/stories", storyRoutes);
@@ -91,6 +92,7 @@ app.use("/api/archived-stories", archivedStoryRoutes);
 app.use("/api/subscribers", subscriberRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/thoughts", thoughtsRoutes);
+app.use("/api/admin/cloudinary", cloudinaryRoutes);
 
 // Logging all requests except health
 app.use((req, res, next) => {

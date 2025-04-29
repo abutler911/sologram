@@ -116,6 +116,15 @@ const BottomNavigation = () => {
                     </CreateOptionItem>
                   </>
                 )}
+                {isAdmin && (
+                  <CreateOptionItem
+                    to="/media-gallery"
+                    onClick={() => setShowCreateOptions(false)}
+                  >
+                    <FaImages />
+                    <span>Media Gallery</span>
+                  </CreateOptionItem>
+                )}
               </CreateOptions>
             </CreateOptionsOverlay>
           )}

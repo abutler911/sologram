@@ -5,21 +5,24 @@ import styled from "styled-components";
 import ReactGA from "react-ga4";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthContext } from "./context/AuthContext";
-import { LikesProvider } from "./context/LikesContext"; // Import the LikesProvider
+import { LikesProvider } from "./context/LikesContext";
 import { initializeOneSignal } from "./utils/notificationService";
 import ScrollToTop from "./components/ScrollToTop";
 import InstallPrompt from "./components/pwa/InstallPrompt";
 import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButtonAdjuster";
 import AppRoutes from "./AppRoutes";
 
+// Separate components for better organization
 const PageTracker = () => {
   const location = useLocation();
+
   useEffect(() => {
     ReactGA.send({
       hitType: "pageview",
       page: location.pathname + location.search,
     });
   }, [location]);
+
   return null;
 };
 
@@ -39,34 +42,39 @@ function App() {
   const homeRef = useRef(null);
   const { user } = useContext(AuthContext);
 
-  // ✅ Network listener
+  // Network status effect
   useEffect(() => {
     const handleOnline = () => setNetworkStatus(true);
     const handleOffline = () => setNetworkStatus(false);
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+
+    // Handle offline/online notifications
     if (networkStatus && localStorage.getItem("wasOffline") === "true") {
       toast.success("You are back online");
       localStorage.removeItem("wasOffline");
     } else if (!networkStatus) {
       localStorage.setItem("wasOffline", "true");
     }
+
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
   }, [networkStatus]);
 
-  // Initialize OneSignal once when user loads
+  // OneSignal initialization
   useEffect(() => {
     if (!user?._id) return;
+
     console.log("[App] Initializing OneSignal for user:", user._id);
     initializeOneSignal(user._id).catch((error) => {
       console.error("[App] OneSignal initialization error:", error);
     });
   }, [user?._id]);
 
-  // 🔍 Search handlers
+  // Search handlers
   const handleSearch = (query) => {
     homeRef.current?.handleHeaderSearch?.(query);
   };
@@ -81,7 +89,6 @@ function App() {
         <ScrollToTop />
         <PageTracker />
         <div className="app">
-          {/* Wrap the app content with LikesProvider */}
           <LikesProvider>
             <Toaster position="top-right" />
             {!networkStatus && (

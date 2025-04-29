@@ -63,6 +63,9 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
       ProfilePage: React.lazy(() => import("./pages/Profile")),
       SubscriberAdmin: React.lazy(() => import("./pages/SubscriberAdmin")),
       Analytics: React.lazy(() => import("./pages/Analytics")),
+
+      // New Cloudinary Gallery page
+      CloudinaryGallery: React.lazy(() => import("./pages/CloudinaryGallery")),
     }),
     []
   );
@@ -129,7 +132,26 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
     { path: "/analytics", element: <lazyComponents.Analytics /> },
     { path: "/thoughts/:id/edit", element: <lazyComponents.EditThought /> },
     { path: "/thoughts/create", element: <lazyComponents.CreateThought /> },
+    // Add new Cloudinary Gallery route - Admin only
+    {
+      path: "/media-gallery",
+      element: (
+        <StandardLayout>
+          <lazyComponents.CloudinaryGallery />
+        </StandardLayout>
+      ),
+      roles: ["admin"],
+    },
   ];
+
+  // Create a special route component that requires admin role
+  const AdminRoute = ({ children }) => {
+    return (
+      <PrivateRoute>
+        {user && user.role === "admin" ? children : <lazyComponents.NotFound />}
+      </PrivateRoute>
+    );
+  };
 
   return (
     <Suspense fallback={<LoadingFallback />}>
@@ -140,13 +162,27 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
         ))}
 
         {/* Render private routes with authentication */}
-        {privateRoutes.map((route) => (
-          <Route
-            key={route.path}
-            path={route.path}
-            element={<PrivateRoute>{route.element}</PrivateRoute>}
-          />
-        ))}
+        {privateRoutes.map((route) => {
+          // If the route requires admin role specifically
+          if (route.roles && route.roles.includes("admin")) {
+            return (
+              <Route
+                key={route.path}
+                path={route.path}
+                element={<AdminRoute>{route.element}</AdminRoute>}
+              />
+            );
+          }
+
+          // Regular authenticated routes
+          return (
+            <Route
+              key={route.path}
+              path={route.path}
+              element={<PrivateRoute>{route.element}</PrivateRoute>}
+            />
+          );
+        })}
       </Routes>
     </Suspense>
   );
