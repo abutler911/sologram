@@ -1,19 +1,19 @@
 const { cloudinary } = require("../config/cloudinary");
 
-// Get all Cloudinary assets with multiple filtering techniques
+// Get all Cloudinary assets with optimized filtering
 exports.getCloudinaryAssets = async (req, res) => {
   try {
     console.log("Starting Cloudinary assets fetch");
 
-    // Get all resources without folder filter first
+    // Initialize resources array
     let allResources = [];
 
-    // First try: Get resources with direct folder parameter
+    // Get images with folder parameter including pagination
     try {
-      console.log("Trying folder parameter...");
+      console.log("Fetching images using folder parameter...");
       const folderResponse = await cloudinary.api.resources({
         resource_type: "image",
-        max_results: 1000,
+        max_results: 500, // Standard limit that most Cloudinary plans support
         type: "upload",
         folder: "sologram",
       });
@@ -23,319 +23,109 @@ exports.getCloudinaryAssets = async (req, res) => {
           `Found ${folderResponse.resources.length} images with folder parameter`
         );
         allResources = [...allResources, ...folderResponse.resources];
+
+        // Get next page if available
         if (folderResponse.next_cursor) {
-          console.log("Found next_cursor, fetching next page...");
-          try {
-            const nextPageResponse = await cloudinary.api.resources({
-              resource_type: "image",
-              max_results: 1000,
-              type: "upload",
-              folder: "sologram",
-              next_cursor: folderResponse.next_cursor,
-            });
+          console.log("Getting next page of images...");
+          const nextPageResponse = await cloudinary.api.resources({
+            resource_type: "image",
+            max_results: 500,
+            type: "upload",
+            folder: "sologram",
+            next_cursor: folderResponse.next_cursor,
+          });
 
-            if (
-              nextPageResponse.resources &&
-              nextPageResponse.resources.length > 0
-            ) {
-              console.log(
-                `Found ${nextPageResponse.resources.length} more images in next page`
-              );
+          if (
+            nextPageResponse.resources &&
+            nextPageResponse.resources.length > 0
+          ) {
+            console.log(
+              `Found ${nextPageResponse.resources.length} more images in next page`
+            );
 
-              // Add only resources not already in the array
-              const existingIds = new Set(allResources.map((r) => r.public_id));
-              const newResources = nextPageResponse.resources.filter(
-                (r) => !existingIds.has(r.public_id)
-              );
+            // Add only unique resources
+            const existingIds = new Set(allResources.map((r) => r.public_id));
+            const newResources = nextPageResponse.resources.filter(
+              (r) => !existingIds.has(r.public_id)
+            );
 
-              console.log(
-                `Adding ${newResources.length} unique new resources from next page`
-              );
-              allResources = [...allResources, ...newResources];
-            }
-          } catch (nextPageError) {
-            console.error("Error fetching next page:", nextPageError.message);
+            console.log(
+              `Adding ${newResources.length} unique resources from next page`
+            );
+            allResources = [...allResources, ...newResources];
           }
         }
       }
-
-      try {
-        console.log("Trying subfolder search...");
-        const subfoldersResponse = await cloudinary.api.subfolders({
-          folder: "sologram",
-        });
-
-        if (
-          subfoldersResponse.folders &&
-          subfoldersResponse.folders.length > 0
-        ) {
-          console.log(`Found ${subfoldersResponse.folders.length} subfolders`);
-
-          // For each subfolder, get its resources
-          for (const subfolder of subfoldersResponse.folders) {
-            try {
-              const subfolderPath = subfolder.path;
-              console.log(`Checking subfolder: ${subfolderPath}`);
-
-              const subfolderImagesResponse = await cloudinary.api.resources({
-                resource_type: "image",
-                max_results: 100,
-                type: "upload",
-                folder: subfolderPath,
-              });
-
-              if (
-                subfolderImagesResponse.resources &&
-                subfolderImagesResponse.resources.length > 0
-              ) {
-                console.log(
-                  `Found ${subfolderImagesResponse.resources.length} images in subfolder ${subfolderPath}`
-                );
-
-                // Add only resources not already in the array
-                const existingIds = new Set(
-                  allResources.map((r) => r.public_id)
-                );
-                const newResources = subfolderImagesResponse.resources.filter(
-                  (r) => !existingIds.has(r.public_id)
-                );
-
-                console.log(
-                  `Adding ${newResources.length} unique new resources from subfolder ${subfolderPath}`
-                );
-                allResources = [...allResources, ...newResources];
-              }
-
-              // Also check for videos in this subfolder
-              const subfolderVideosResponse = await cloudinary.api.resources({
-                resource_type: "video",
-                max_results: 100,
-                type: "upload",
-                folder: subfolderPath,
-              });
-
-              if (
-                subfolderVideosResponse.resources &&
-                subfolderVideosResponse.resources.length > 0
-              ) {
-                console.log(
-                  `Found ${subfolderVideosResponse.resources.length} videos in subfolder ${subfolderPath}`
-                );
-
-                // Add only resources not already in the array
-                const existingIds = new Set(
-                  allResources.map((r) => r.public_id)
-                );
-                const newResources = subfolderVideosResponse.resources.filter(
-                  (r) => !existingIds.has(r.public_id)
-                );
-
-                console.log(
-                  `Adding ${newResources.length} unique new videos from subfolder ${subfolderPath}`
-                );
-                allResources = [...allResources, ...newResources];
-              }
-            } catch (error) {
-              console.error(
-                `Error fetching resources from subfolder ${subfolder.path}:`,
-                error.message
-              );
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching subfolders:", error.message);
-      }
     } catch (error) {
-      console.error("Error fetching with folder parameter:", error.message);
+      console.error(
+        "Error fetching images with folder parameter:",
+        error.message
+      );
     }
 
-    // Second try: Get with prefix
+    // Get videos with folder parameter
     try {
-      console.log("Trying prefix parameter...");
-      const prefixResponse = await cloudinary.api.resources({
-        resource_type: "image",
-        max_results: 1000,
-        type: "upload",
-        prefix: "sologram/",
-      });
-
-      if (prefixResponse.resources && prefixResponse.resources.length > 0) {
-        console.log(
-          `Found ${prefixResponse.resources.length} images with prefix parameter`
-        );
-
-        // Add only resources not already in the array
-        const existingIds = new Set(allResources.map((r) => r.public_id));
-        const newResources = prefixResponse.resources.filter(
-          (r) => !existingIds.has(r.public_id)
-        );
-
-        console.log(
-          `Adding ${newResources.length} unique new resources from prefix search`
-        );
-        allResources = [...allResources, ...newResources];
-      }
-    } catch (error) {
-      console.error("Error fetching with prefix parameter:", error.message);
-    }
-    try {
-      console.log("Trying recursive prefix search...");
-      const recursivePrefixResponse = await cloudinary.api.resources({
-        resource_type: "image",
-        max_results: 200,
-        type: "upload",
-        prefix: "sologram/",
-        recursive: true, // Some versions support this parameter
-      });
-
-      if (
-        recursivePrefixResponse.resources &&
-        recursivePrefixResponse.resources.length > 0
-      ) {
-        console.log(
-          `Found ${recursivePrefixResponse.resources.length} images with recursive prefix`
-        );
-
-        // Add only resources not already in the array
-        const existingIds = new Set(allResources.map((r) => r.public_id));
-        const newResources = recursivePrefixResponse.resources.filter(
-          (r) => !existingIds.has(r.public_id)
-        );
-
-        console.log(
-          `Adding ${newResources.length} unique new resources from recursive prefix search`
-        );
-        allResources = [...allResources, ...newResources];
-      }
-    } catch (error) {
-      console.error("Error with recursive prefix search:", error.message);
-    }
-    // Third try: Get videos with folder parameter
-    try {
-      console.log("Trying video folder parameter...");
-      const videoFolderResponse = await cloudinary.api.resources({
+      console.log("Fetching videos...");
+      const videoResponse = await cloudinary.api.resources({
         resource_type: "video",
         max_results: 100,
         type: "upload",
         folder: "sologram",
       });
 
-      if (
-        videoFolderResponse.resources &&
-        videoFolderResponse.resources.length > 0
-      ) {
-        console.log(
-          `Found ${videoFolderResponse.resources.length} videos with folder parameter`
-        );
+      if (videoResponse.resources && videoResponse.resources.length > 0) {
+        console.log(`Found ${videoResponse.resources.length} videos`);
 
-        // Add only resources not already in the array
+        // Add only unique resources
         const existingIds = new Set(allResources.map((r) => r.public_id));
-        const newResources = videoFolderResponse.resources.filter(
+        const newResources = videoResponse.resources.filter(
           (r) => !existingIds.has(r.public_id)
         );
 
+        console.log(`Adding ${newResources.length} unique videos`);
         allResources = [...allResources, ...newResources];
       }
     } catch (error) {
-      console.error(
-        "Error fetching videos with folder parameter:",
-        error.message
-      );
+      console.error("Error fetching videos:", error.message);
     }
 
-    // Fourth try: Get videos with prefix
-    try {
-      console.log("Trying video prefix parameter...");
-      const videoPrefixResponse = await cloudinary.api.resources({
-        resource_type: "video",
-        max_results: 100,
-        type: "upload",
-        prefix: "sologram/",
-      });
-
-      if (
-        videoPrefixResponse.resources &&
-        videoPrefixResponse.resources.length > 0
-      ) {
-        console.log(
-          `Found ${videoPrefixResponse.resources.length} videos with prefix parameter`
-        );
-
-        // Add only resources not already in the array
-        const existingIds = new Set(allResources.map((r) => r.public_id));
-        const newResources = videoPrefixResponse.resources.filter(
-          (r) => !existingIds.has(r.public_id)
-        );
-
-        console.log(
-          `Adding ${newResources.length} unique new video resources from prefix search`
-        );
-        allResources = [...allResources, ...newResources];
-      }
-    } catch (error) {
-      console.error(
-        "Error fetching videos with prefix parameter:",
-        error.message
-      );
-    }
-
-    // Final fallback - get everything and filter
-    if (allResources.length === 0) {
+    // Backup: Use prefix parameter for any missing assets
+    if (allResources.length < 240) {
       try {
-        console.log("Fallback: fetching all resources and filtering...");
-        const allImagesResponse = await cloudinary.api.resources({
+        console.log("Using prefix parameter to find any missing assets...");
+        const prefixResponse = await cloudinary.api.resources({
           resource_type: "image",
           max_results: 500,
           type: "upload",
+          prefix: "sologram/",
         });
 
-        if (allImagesResponse.resources) {
-          const soloGramImages = allImagesResponse.resources.filter(
-            (r) => r.folder === "sologram" || r.public_id.includes("sologram/")
-          );
-
-          console.log(
-            `Filtered ${soloGramImages.length} sologram images from ${allImagesResponse.resources.length} total images`
-          );
-          allResources = [...allResources, ...soloGramImages];
-        }
-
-        const allVideosResponse = await cloudinary.api.resources({
-          resource_type: "video",
-          max_results: 100,
-          type: "upload",
-        });
-
-        if (allVideosResponse.resources) {
+        if (prefixResponse.resources) {
           const existingIds = new Set(allResources.map((r) => r.public_id));
-          const soloGramVideos = allVideosResponse.resources.filter(
-            (r) =>
-              (r.folder === "sologram" || r.public_id.includes("sologram/")) &&
-              !existingIds.has(r.public_id)
+          const newResources = prefixResponse.resources.filter(
+            (r) => !existingIds.has(r.public_id)
           );
 
           console.log(
-            `Filtered ${soloGramVideos.length} sologram videos from ${allVideosResponse.resources.length} total videos`
+            `Found ${newResources.length} additional images with prefix parameter`
           );
-          allResources = [...allResources, ...soloGramVideos];
+          allResources = [...allResources, ...newResources];
         }
       } catch (error) {
-        console.error("Error in fallback fetching:", error.message);
+        console.error("Error with prefix parameter:", error.message);
       }
     }
 
-    // Final verification filter to ensure we only have sologram assets
-    const verifiedResources = allResources.filter((asset) => {
-      return (
+    // Final verification to ensure we only have sologram assets
+    const verifiedResources = allResources.filter(
+      (asset) =>
         asset.folder === "sologram" ||
         asset.public_id.includes("sologram/") ||
         (asset.tags && asset.tags.includes("sologram"))
-      );
-    });
+    );
 
     console.log(
-      `Final count: ${verifiedResources.length} verified sologram assets out of ${allResources.length} fetched`
+      `Final count: ${verifiedResources.length} verified sologram assets`
     );
 
     // Sort by created_at (newest first)
@@ -343,21 +133,93 @@ exports.getCloudinaryAssets = async (req, res) => {
       (a, b) => new Date(b.created_at) - new Date(a.created_at)
     );
 
+    // Process filters from request
+    const { type, dateRange, startDate, endDate } = req.query;
+    let filteredResources = verifiedResources;
+
+    // Filter by type if specified
+    if (type && type !== "all") {
+      filteredResources = filteredResources.filter(
+        (asset) => asset.resource_type === type
+      );
+      console.log(
+        `Filtered by type ${type}: ${filteredResources.length} assets`
+      );
+    }
+
+    // Filter by date if specified
+    if (dateRange && dateRange !== "all") {
+      const now = new Date();
+      let fromDate;
+
+      switch (dateRange) {
+        case "today":
+          fromDate = new Date(now.setHours(0, 0, 0, 0));
+          break;
+        case "thisWeek":
+          // Start of current week (Sunday)
+          fromDate = new Date(now);
+          fromDate.setDate(now.getDate() - now.getDay());
+          fromDate.setHours(0, 0, 0, 0);
+          break;
+        case "thisMonth":
+          // Start of current month
+          fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case "custom":
+          if (startDate) {
+            fromDate = new Date(startDate);
+          }
+          break;
+      }
+
+      if (fromDate) {
+        filteredResources = filteredResources.filter(
+          (asset) => new Date(asset.created_at) >= fromDate
+        );
+      }
+
+      if (dateRange === "custom" && endDate) {
+        const toDate = new Date(endDate);
+        toDate.setHours(23, 59, 59, 999);
+
+        filteredResources = filteredResources.filter(
+          (asset) => new Date(asset.created_at) <= toDate
+        );
+      }
+
+      console.log(`Filtered by date: ${filteredResources.length} assets`);
+    }
+
+    // Calculate statistics
+    const statistics = {
+      imageCount: filteredResources.filter((r) => r.resource_type === "image")
+        .length,
+      videoCount: filteredResources.filter((r) => r.resource_type === "video")
+        .length,
+      totalStorage: filteredResources.reduce(
+        (sum, r) => sum + (r.bytes || 0),
+        0
+      ),
+    };
+
+    // Handle pagination
+    const page = parseInt(req.query.page || 1);
+    const limit = parseInt(req.query.limit || 30);
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+
+    const paginatedResources = filteredResources.slice(startIndex, endIndex);
+    const totalPages = Math.ceil(filteredResources.length / limit);
+
     return res.json({
       success: true,
-      results: verifiedResources,
-      totalCount: verifiedResources.length,
-      hasMore: false,
-      statistics: {
-        imageCount: verifiedResources.filter((r) => r.resource_type === "image")
-          .length,
-        videoCount: verifiedResources.filter((r) => r.resource_type === "video")
-          .length,
-        totalStorage: verifiedResources.reduce(
-          (sum, r) => sum + (r.bytes || 0),
-          0
-        ),
-      },
+      results: paginatedResources,
+      totalCount: filteredResources.length,
+      hasMore: page < totalPages,
+      page,
+      limit,
+      statistics,
     });
   } catch (error) {
     console.error("Error fetching Cloudinary assets:", error);
