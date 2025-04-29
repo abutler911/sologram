@@ -23,7 +23,7 @@ import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import DeleteConfirmationModal from "../components/common/DeleteConfirmationModal";
-import LoadingSpinner from "../components/common/loadingSpinner";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 
 const CloudinaryGallery = () => {
   // Use the existing auth context

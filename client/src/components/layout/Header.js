@@ -494,7 +494,7 @@ const Header = ({ onSearch, onClearSearch }) => {
   );
 };
 
-// Styled Components (updated with new Masculine Theme)
+// Styled Components (updated with the new Salmon, Khaki, Mint Blue, and Blue Gray Theme)
 const HeaderWrapper = styled.div`
   position: sticky;
   top: 0;
@@ -562,6 +562,7 @@ const Logo = styled(Link)`
     svg {
       font-size: 2.6rem;
       margin-right: 0.75rem;
+      color: ${COLORS.primarySalmon};
     }
 
     &:hover {
@@ -573,7 +574,7 @@ const Logo = styled(Link)`
     font-family: "Inter", sans-serif;
     font-size: 0.95rem;
     font-weight: 400;
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primaryMint};
     margin-top: 0.2rem;
     margin-left: 0;
     text-align: left;
@@ -621,7 +622,8 @@ const DesktopNavigation = styled.nav`
 `;
 
 const NavLink = styled(Link)`
-  color: ${(props) => (props.active ? COLORS.accentTeal : COLORS.textPrimary)};
+  color: ${(props) =>
+    props.active ? COLORS.accentSalmon : COLORS.textPrimary};
   text-decoration: none;
   font-weight: ${(props) => (props.active ? "600" : "500")};
   position: relative;
@@ -635,12 +637,12 @@ const NavLink = styled(Link)`
     bottom: -2px;
     width: ${(props) => (props.active ? "100%" : "0")};
     height: 2px;
-    background-color: ${COLORS.accentTeal};
+    background-color: ${COLORS.accentSalmon};
     transition: width 0.3s ease;
   }
 
   &:hover {
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
 
     &:after {
       width: 100%;
@@ -688,7 +690,7 @@ const ActionButton = styled.button`
   transition: color 0.3s;
 
   &:hover {
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -735,12 +737,12 @@ const ClearButton = styled.button`
   font-size: 0.75rem;
 
   &:hover {
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
   }
 `;
 
 const SearchSubmit = styled.button`
-  background-color: ${COLORS.primaryTeal};
+  background-color: ${COLORS.primarySalmon};
   border: none;
   color: white;
   display: flex;
@@ -751,7 +753,7 @@ const SearchSubmit = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: ${COLORS.accentTeal};
+    background-color: ${COLORS.accentSalmon};
   }
 `;
 
@@ -782,7 +784,7 @@ const CreateNewButtonDesktop = styled(Link)`
   align-items: center;
   gap: 0.5rem;
   background-color: ${(props) =>
-    props.thoughts ? COLORS.primaryBlue : COLORS.primaryTeal};
+    props.thoughts ? COLORS.primaryMint : COLORS.primarySalmon};
   color: white;
   text-decoration: none;
   padding: 0.5rem 1rem;
@@ -793,7 +795,7 @@ const CreateNewButtonDesktop = styled(Link)`
 
   &:hover {
     background-color: ${(props) =>
-      props.thoughts ? COLORS.accentBlue : COLORS.accentTeal};
+      props.thoughts ? COLORS.accentMint : COLORS.accentSalmon};
   }
 
   @media (max-width: 768px) {
@@ -821,7 +823,7 @@ const UserButton = styled.button`
   }
 
   &:hover .arrow-icon {
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
   }
 
   @media (max-width: 768px) {
@@ -833,15 +835,14 @@ const UserAvatar = styled.div`
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: ${COLORS.primaryBlueGray};
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${COLORS.textPrimary};
+  color: white;
 
   &:hover {
-    color: ${COLORS.accentTeal};
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: ${COLORS.accentBlueGray};
   }
 `;
 
@@ -849,7 +850,7 @@ const UserMenuDropdown = styled.div`
   position: absolute;
   top: 100%;
   right: 0;
-  background-color: ${COLORS.elevatedBackground};
+  background-color: ${COLORS.cardBackground};
   border-radius: 4px;
   box-shadow: 0 4px 12px ${COLORS.shadow};
   width: 200px;
@@ -891,7 +892,7 @@ const UserMenuItem = styled(Link)`
 
   &:hover {
     background-color: ${COLORS.buttonHover};
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
   }
 
   svg {
@@ -900,7 +901,7 @@ const UserMenuItem = styled(Link)`
   }
 
   &:hover svg {
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -919,7 +920,7 @@ const UserMenuButton = styled.button`
 
   &:hover {
     background-color: ${COLORS.buttonHover};
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
   }
 
   svg {
@@ -928,7 +929,7 @@ const UserMenuButton = styled.button`
   }
 
   &:hover svg {
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -936,7 +937,7 @@ const LoginButton = styled(Link)`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: ${COLORS.primaryKhaki};
   color: ${COLORS.textPrimary};
   text-decoration: none;
   padding: 0.5rem 1rem;
@@ -945,8 +946,8 @@ const LoginButton = styled(Link)`
   transition: all 0.3s;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.15);
-    color: ${COLORS.textPrimary};
+    background-color: ${COLORS.primaryBlueGray};
+    color: white;
   }
 
   @media (max-width: 768px) {
@@ -964,7 +965,7 @@ const MobileMenuToggle = styled.button`
   padding: 0.5rem;
 
   &:hover {
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
   }
 
   @media (max-width: 768px) {
@@ -1006,6 +1007,7 @@ const MobileMenuLogo = styled.div`
 
   svg {
     margin-right: 0.5rem;
+    color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -1017,7 +1019,7 @@ const MobileMenuCloseBtn = styled.button`
   cursor: pointer;
 
   &:hover {
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -1035,7 +1037,7 @@ const MobileMenuItem = styled(Link)`
   align-items: center;
   padding: 0.75rem 1rem;
   color: ${(props) =>
-    props.active ? COLORS.accentTeal : COLORS.textSecondary};
+    props.active ? COLORS.primarySalmon : COLORS.textSecondary};
   text-decoration: none;
   font-weight: 500;
   border-radius: 4px;
@@ -1044,7 +1046,7 @@ const MobileMenuItem = styled(Link)`
 
   &:hover {
     background-color: ${COLORS.buttonHover};
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
   }
 
   svg {
@@ -1067,7 +1069,7 @@ const MobileMenuLogoutButton = styled.button`
 
   &:hover {
     background-color: ${COLORS.buttonHover};
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
   }
 
   svg {
@@ -1079,18 +1081,19 @@ const ExternalMenuItem = styled.a`
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem;
-  color: ${COLORS.accentBlue};
+  color: ${COLORS.primaryBlueGray};
   font-weight: 600;
   border-radius: 4px;
   text-decoration: none;
 
   &:hover {
     background-color: ${COLORS.buttonHover};
+    color: ${COLORS.accentBlueGray};
   }
 
   svg {
     margin-right: 0.75rem;
-    color: ${COLORS.accentBlue};
+    color: ${COLORS.primaryBlueGray};
   }
 `;
 
@@ -1098,7 +1101,7 @@ const RegisterButton = styled(Link)`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: ${COLORS.primaryTeal};
+  background-color: ${COLORS.primarySalmon};
   color: white;
   text-decoration: none;
   padding: 0.5rem 1rem;
@@ -1107,7 +1110,7 @@ const RegisterButton = styled(Link)`
   transition: all 0.3s;
 
   &:hover {
-    background-color: ${COLORS.accentTeal};
+    background-color: ${COLORS.accentSalmon};
   }
 
   @media (max-width: 768px) {
@@ -1154,7 +1157,7 @@ const Greeting = styled.div`
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px ${COLORS.primaryTeal}30;
+    box-shadow: 0 4px 12px ${COLORS.primarySalmon}30;
     background: linear-gradient(
       135deg,
       rgba(255, 255, 255, 0.12) 0%,
@@ -1181,7 +1184,7 @@ const Greeting = styled.div`
       background: linear-gradient(
         90deg,
         transparent,
-        ${COLORS.accentTeal}50,
+        ${COLORS.primarySalmon}50,
         transparent
       );
       transform: scaleX(0);
@@ -1196,7 +1199,7 @@ const Greeting = styled.div`
 
   .username {
     font-family: "Sora", sans-serif;
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
     font-size: 1rem;
     font-weight: 600;
     letter-spacing: 0.5px;
@@ -1211,8 +1214,8 @@ const Greeting = styled.div`
 
   &:hover .username {
     transform: scale(1.05);
-    color: ${COLORS.accentTeal};
-    text-shadow: 0 1px 4px ${COLORS.accentTeal}40;
+    color: ${COLORS.accentSalmon};
+    text-shadow: 0 1px 4px ${COLORS.accentSalmon}40;
   }
 
   @media (max-width: 768px) {
@@ -1241,7 +1244,7 @@ const MobileGreeting = styled.div`
     left: 0;
     right: 0;
     height: 2px;
-    background: ${COLORS.primaryTeal};
+    background: ${COLORS.primarySalmon};
     border-radius: 2px;
   }
 
@@ -1253,7 +1256,7 @@ const MobileGreeting = styled.div`
 
   .username {
     font-family: "Sora", sans-serif;
-    color: ${COLORS.accentTeal};
+    color: ${COLORS.primarySalmon};
     font-size: 1.25rem;
     font-weight: 600;
     letter-spacing: 0.5px;

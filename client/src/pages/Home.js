@@ -18,6 +18,7 @@ import PreloadImage from "../components/PreLoadImage";
 import { COLORS, THEME } from "../theme";
 import { LikesContext } from "../context/LikesContext";
 import { AuthContext } from "../context/AuthContext";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 
 const PostCard = lazy(() => import("../components/posts/PostCard"));
 
@@ -255,11 +256,12 @@ const Home = forwardRef((props, ref) => {
             <PostGrid isPWA={isPWA}>
               <Suspense
                 fallback={
-                  <div
-                    style={{ color: COLORS.textTertiary, textAlign: "center" }}
-                  >
-                    Loading posts...
-                  </div>
+                  <LoadingContainer>
+                    <LoadingSpinner
+                      size="medium"
+                      color={COLORS.primarySalmon}
+                    />
+                  </LoadingContainer>
                 }
               >
                 {posts.map((post, index) => (
@@ -291,7 +293,10 @@ const Home = forwardRef((props, ref) => {
               </Suspense>
             </PostGrid>
           ) : loading ? (
-            <LoadingMessage>Loading posts...</LoadingMessage>
+            <LoadingContainer>
+              <LoadingSpinner size="large" color={COLORS.primarySalmon} />
+              <LoadingText>Loading posts...</LoadingText>
+            </LoadingContainer>
           ) : (
             <NoPostsMessage>
               No posts available. Start creating your own content!
@@ -299,7 +304,10 @@ const Home = forwardRef((props, ref) => {
           )}
 
           {loading && posts.length > 0 && (
-            <LoadingMore>Loading more posts...</LoadingMore>
+            <LoadingMoreContainer>
+              <LoadingSpinner size="small" color={COLORS.primarySalmon} />
+              <LoadingMoreText>Loading more posts...</LoadingMoreText>
+            </LoadingMoreContainer>
           )}
         </HomeContainer>
       </PageWrapper>
@@ -372,7 +380,7 @@ const ClearSearchButton = styled.button`
 
   &:hover {
     background-color: ${THEME.button.secondary.hoverBackground};
-    border-color: ${COLORS.primaryPurple};
+    border-color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -415,11 +423,33 @@ const ErrorMessage = styled.div`
   font-size: 0.875rem;
 `;
 
-const LoadingMessage = styled.div`
-  text-align: center;
-  margin: 2rem 0;
+const LoadingContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 3rem 0;
+  padding: 2rem;
+`;
+
+const LoadingText = styled.div`
+  margin-top: 1rem;
   color: ${COLORS.textSecondary};
   font-size: 0.9375rem;
+`;
+
+const LoadingMoreContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+`;
+
+const LoadingMoreText = styled.div`
+  color: ${COLORS.textSecondary};
+  font-style: italic;
+  font-size: 0.875rem;
 `;
 
 const NoPostsMessage = styled.div`
@@ -427,14 +457,6 @@ const NoPostsMessage = styled.div`
   margin: 2rem 0;
   color: ${COLORS.textSecondary};
   font-size: 0.9375rem;
-`;
-
-const LoadingMore = styled.div`
-  text-align: center;
-  margin: 1rem 0;
-  color: ${COLORS.textTertiary};
-  font-style: italic;
-  font-size: 0.875rem;
 `;
 
 const AboutBanner = styled.div`
@@ -449,7 +471,7 @@ const AboutBanner = styled.div`
   position: relative;
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid ${COLORS.primaryPurple};
+  border: 1px solid ${COLORS.primarySalmon};
 
   @media (max-width: 640px) {
     padding: 0.875rem;
@@ -478,7 +500,7 @@ const BannerContent = styled.div`
 const LogoContainer = styled.div`
   width: 40px;
   height: 40px;
-  background-color: ${COLORS.primaryPurple};
+  background-color: ${COLORS.primarySalmon};
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -534,7 +556,7 @@ const BannerTitle = styled.h2`
 
 const BannerTagline = styled.p`
   font-size: 0.9375rem;
-  color: ${COLORS.primaryBlue};
+  color: ${COLORS.primaryMint};
   font-weight: 500;
   font-style: italic;
   margin: 0;
