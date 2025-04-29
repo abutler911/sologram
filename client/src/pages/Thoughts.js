@@ -56,6 +56,10 @@ const PageWrapper = styled.div`
   @media (min-width: 769px) {
     padding: 1rem 0;
   }
+
+  @media (max-width: 768px) {
+    padding: 1rem 0;
+  }
 `;
 
 const Header = styled.div`
@@ -77,6 +81,11 @@ const HeaderLeft = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 0 16px;
+  }
 `;
 
 const HeaderRight = styled.div`
@@ -87,6 +96,7 @@ const HeaderRight = styled.div`
   @media (max-width: 768px) {
     width: 100%;
     justify-content: space-between;
+    padding: 0 16px;
   }
 `;
 
@@ -310,7 +320,7 @@ const ThoughtsContainer = styled.div`
   @media (max-width: 768px) {
     width: 100%;
     max-width: 100%;
-    padding: 0 2px;
+    padding: 0 16px;
   }
 `;
 

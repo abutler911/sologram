@@ -33,7 +33,6 @@ const pulse = keyframes`
   100% { transform: scale(1); }
 `;
 
-// Card container with enhanced styling
 const Card = styled.div`
   position: relative;
   background: ${COLORS.cardBackground};
@@ -47,7 +46,7 @@ const Card = styled.div`
   animation: ${fadeIn} 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
   overflow: hidden;
   transition: all 0.4s ease;
-  width: calc(100% - 4px);
+  width: 100%; // Change from calc(100% - 4px) to 100%
   max-width: 100%;
   margin-left: auto;
   margin-right: auto;
@@ -83,7 +82,7 @@ const Card = styled.div`
   @media (max-width: 768px) {
     padding: 1.25rem;
     margin-bottom: 1rem;
-    width: 98%;
+    width: 100%; // Change from 98% to 100%
   }
 `;
 
