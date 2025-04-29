@@ -15,8 +15,12 @@ import {
 } from "react-icons/fa";
 import { getTransformedImageUrl } from "../utils/cloudinary";
 import { COLORS, THEME } from "../theme";
+import { useAdminCheck } from "../hooks/useAdminCheck";
 
 const CloudinaryGallery = () => {
+  // Check if user is admin, redirect if not
+  const isAdmin = useAdminCheck();
+
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,25 +67,53 @@ const CloudinaryGallery = () => {
         },
       });
 
+      // Check if response has the expected data structure
+      if (!response.data || !response.data.results) {
+        console.error("Invalid API response format:", response.data);
+        setError(
+          "Invalid response from server. Please contact the administrator."
+        );
+        toast.error("Invalid API response format");
+        return;
+      }
+
       const { results, totalCount, hasMore, statistics } = response.data;
 
       if (page === 1) {
-        setAssets(results);
+        setAssets(results || []);
       } else {
-        setAssets((prev) => [...prev, ...results]);
+        setAssets((prev) => [...prev, ...(results || [])]);
       }
 
-      setHasMore(hasMore);
+      setHasMore(!!hasMore);
       setStats({
-        total: totalCount,
+        total: totalCount || 0,
         images: statistics?.imageCount || 0,
         videos: statistics?.videoCount || 0,
         storage: statistics?.totalStorage || 0,
       });
+
+      // Clear any previous errors
+      setError(null);
     } catch (err) {
       console.error("Error fetching Cloudinary assets:", err);
-      setError("Failed to load media assets. Please try again.");
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to load media assets. Please try again.";
+      setError(
+        `${errorMessage} ${
+          err.response?.status === 500
+            ? "There might be an issue with the Cloudinary configuration."
+            : ""
+        }`
+      );
       toast.error("Failed to load Cloudinary assets");
+
+      // Set empty assets if it's the first page
+      if (page === 1) {
+        setAssets([]);
+      }
     } finally {
       setLoading(false);
     }

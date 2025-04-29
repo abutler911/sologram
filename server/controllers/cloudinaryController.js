@@ -12,120 +12,86 @@ exports.getCloudinaryAssets = async (req, res) => {
       endDate,
     } = req.query;
 
-    // Prepare search parameters
-    let searchParams = {
-      resource_type: type === "all" ? undefined : type,
-      max_results: parseInt(limit),
-      next_cursor: req.query.cursor || undefined,
-      type: "upload", // Only get uploaded assets, not derived ones
-      prefix: "sologram", // Only get assets from the SoloGram folder
-    };
-
-    // Add date filtering if specified
-    if (dateRange && dateRange !== "all") {
-      const now = new Date();
-      let fromDate;
-
-      switch (dateRange) {
-        case "today":
-          fromDate = new Date(now.setHours(0, 0, 0, 0));
-          break;
-        case "thisWeek":
-          // Start of current week (Sunday)
-          fromDate = new Date(now);
-          fromDate.setDate(now.getDate() - now.getDay());
-          fromDate.setHours(0, 0, 0, 0);
-          break;
-        case "thisMonth":
-          // Start of current month
-          fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
-          break;
-        case "custom":
-          if (startDate) {
-            fromDate = new Date(startDate);
-          }
-          break;
-      }
-
-      if (fromDate) {
-        searchParams.start_at = fromDate.toISOString();
-      }
-
-      if (dateRange === "custom" && endDate) {
-        const toDate = new Date(endDate);
-        toDate.setHours(23, 59, 59, 999);
-        searchParams.end_at = toDate.toISOString();
-      }
+    // Basic error handling
+    if (!cloudinary || !cloudinary.api) {
+      console.error("Cloudinary configuration is missing or invalid");
+      return res.status(500).json({
+        success: false,
+        message: "Cloudinary configuration error",
+      });
     }
 
-    // Get assets count for statistics
-    const imageStats = await cloudinary.api.usage();
+    // Start with basic parameters
+    const options = {
+      max_results: parseInt(limit, 10),
+      type: "upload",
+    };
 
-    // Query for images and videos separately if type is "all"
-    let results = [];
-    let totalCount = 0;
-    let cursor;
+    // Try to get statistics first to check connection
+    let statistics = null;
+    try {
+      const usageResponse = await cloudinary.api.usage();
+      statistics = {
+        imageCount: usageResponse.resources.image.count || 0,
+        videoCount: usageResponse.resources.video.count || 0,
+        totalStorage:
+          (usageResponse.resources.image.bandwidth || 0) +
+          (usageResponse.resources.video.bandwidth || 0),
+      };
+    } catch (statsError) {
+      console.error("Error fetching Cloudinary usage statistics:", statsError);
+      // Continue even if stats fail
+    }
+
+    // Fetch resources with simple parameters to minimize errors
+    let resources = [];
 
     if (type === "video" || type === "all") {
-      const videoResponse = await cloudinary.api.resources({
-        ...searchParams,
-        resource_type: "video",
-      });
-
-      if (type === "all") {
-        results = [...results, ...videoResponse.resources];
-        totalCount += videoResponse.total_count;
-        cursor = videoResponse.next_cursor;
-      } else {
-        results = videoResponse.resources;
-        totalCount = videoResponse.total_count;
-        cursor = videoResponse.next_cursor;
+      try {
+        const videoResponse = await cloudinary.api.resources({
+          ...options,
+          resource_type: "video",
+        });
+        resources = [...resources, ...videoResponse.resources];
+      } catch (videoError) {
+        console.error("Error fetching video resources:", videoError);
       }
     }
 
     if (type === "image" || type === "all") {
-      const imageResponse = await cloudinary.api.resources({
-        ...searchParams,
-        resource_type: "image",
-      });
-
-      if (type === "all") {
-        results = [...results, ...imageResponse.resources];
-        totalCount += imageResponse.total_count;
-        cursor = imageResponse.next_cursor || cursor;
-      } else {
-        results = imageResponse.resources;
-        totalCount = imageResponse.total_count;
-        cursor = imageResponse.next_cursor;
+      try {
+        const imageResponse = await cloudinary.api.resources({
+          ...options,
+          resource_type: "image",
+        });
+        resources = [...resources, ...imageResponse.resources];
+      } catch (imageError) {
+        console.error("Error fetching image resources:", imageError);
       }
     }
 
-    // Sort results by created_at (newest first)
-    results.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-    // Extract statistics
-    const statistics = {
-      imageCount: imageStats.resources.image.count,
-      videoCount: imageStats.resources.video.count,
-      totalStorage:
-        imageStats.resources.image.bandwidth +
-        imageStats.resources.video.bandwidth,
-    };
+    // Sort by created_at (newest first)
+    resources.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     return res.json({
-      results,
-      totalCount,
-      hasMore: !!cursor,
-      nextCursor: cursor,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      statistics,
+      success: true,
+      results: resources,
+      totalCount: resources.length,
+      hasMore: false, // Simplified, not using cursor for now
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
+      statistics: statistics || {
+        imageCount: 0,
+        videoCount: 0,
+        totalStorage: 0,
+      },
     });
   } catch (error) {
     console.error("Error fetching Cloudinary assets:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "Error fetching Cloudinary assets",
+      error: error.toString(),
     });
   }
 };
@@ -142,43 +108,63 @@ exports.deleteCloudinaryAsset = async (req, res) => {
       });
     }
 
-    // Determine resource type
-    let resourceType = "image";
-    try {
-      // Try to get the resource to determine its type
-      await cloudinary.api.resource(publicId);
-    } catch (error) {
-      // If not found as image, try video
-      if (error.http_code === 404) {
-        resourceType = "video";
-      } else {
-        throw error;
-      }
-    }
-
-    // Delete the asset
-    const result = await cloudinary.uploader.destroy(publicId, {
-      resource_type: resourceType,
-    });
-
-    if (result.result !== "ok") {
-      return res.status(400).json({
+    if (!cloudinary || !cloudinary.uploader) {
+      return res.status(500).json({
         success: false,
-        message: "Failed to delete asset",
-        result,
+        message: "Cloudinary configuration error",
       });
     }
 
-    return res.json({
-      success: true,
-      message: "Asset deleted successfully",
-      result,
-    });
+    // Try with image resource type first
+    try {
+      const result = await cloudinary.uploader.destroy(publicId, {
+        resource_type: "image",
+      });
+
+      if (result.result === "ok") {
+        return res.json({
+          success: true,
+          message: "Asset deleted successfully",
+          result,
+        });
+      }
+    } catch (imageError) {
+      console.error("Error deleting image, trying video...", imageError);
+    }
+
+    // If image delete fails, try video
+    try {
+      const result = await cloudinary.uploader.destroy(publicId, {
+        resource_type: "video",
+      });
+
+      if (result.result === "ok") {
+        return res.json({
+          success: true,
+          message: "Asset deleted successfully",
+          result,
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "Failed to delete asset",
+          result,
+        });
+      }
+    } catch (videoError) {
+      console.error("Error deleting video asset:", videoError);
+      return res.status(500).json({
+        success: false,
+        message: "Error deleting asset",
+        error: videoError.toString(),
+      });
+    }
   } catch (error) {
     console.error("Error deleting Cloudinary asset:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "Error deleting Cloudinary asset",
+      error: error.toString(),
     });
   }
 };
