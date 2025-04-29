@@ -107,8 +107,7 @@ const Stories = () => {
           const elapsedTime = Date.now() - startTime;
           const progress = Math.min(elapsedTime / duration, 1);
 
-          // Update timeLeft based on progress (from 10 to 0)
-          setTimeLeft(10 - Math.floor(progress * 10));
+          setTimeLeft(10 - progress * 10);
 
           if (progress < 1) {
             // Continue animation
