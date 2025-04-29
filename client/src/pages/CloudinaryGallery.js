@@ -779,7 +779,7 @@ const CloudinaryGallery = () => {
                 onClick={() => handleCopyUrl(selectedAsset.secure_url)}
                 color={COLORS.info}
               >
-                <FaCopy /> Copy URL
+                <FaCopy /> <span>Copy URL</span>
               </ActionButton>
               <ActionButton
                 as="a"
@@ -789,13 +789,13 @@ const CloudinaryGallery = () => {
                 rel="noopener noreferrer"
                 color={COLORS.success}
               >
-                <FaDownload /> Download
+                <FaDownload /> <span>Download</span>
               </ActionButton>
               <ActionButton
                 onClick={() => handleDeleteAsset(selectedAsset.public_id)}
                 color={COLORS.error}
               >
-                <FaTrash /> Delete
+                <FaTrash /> <span>Delete</span>
               </ActionButton>
             </ModalFooter>
           </ModalContent>
@@ -1268,9 +1268,12 @@ const AssetModal = styled.div`
   justify-content: center;
   z-index: 1000;
   padding: 2rem;
+  overflow-y: auto;
 
   @media (max-width: 768px) {
     padding: 1rem;
+    align-items: flex-start;
+    padding-bottom: 80px;
   }
 `;
 
@@ -1397,8 +1400,12 @@ const ModalFooter = styled.div`
 
   @media (max-width: 768px) {
     padding: 1rem;
-    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: space-between;
     gap: 0.5rem;
+    padding-bottom: calc(
+      1rem + env(safe-area-inset-bottom, 0)
+    ); // Add safe area for iOS devices
   }
 `;
 
@@ -1431,6 +1438,14 @@ const ActionButton = styled.button`
   @media (max-width: 768px) {
     flex: 1;
     justify-content: center;
+    font-size: 0.75rem;
+    padding: 0.5rem;
+
+    @media (max-width: 360px) {
+      span {
+        display: none;
+      }
+    }
   }
 `;
 
