@@ -13,13 +13,14 @@ import {
   FaVideo,
   FaCalendarAlt,
   FaChevronDown,
+  FaCheckSquare,
+  FaSquare,
 } from "react-icons/fa";
 import { getTransformedImageUrl } from "../utils/cloudinary";
 import { COLORS } from "../theme";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useSwipeable } from "react-swipeable";
 
 const CloudinaryGallery = () => {
   // Use the existing auth context
@@ -46,6 +47,9 @@ const CloudinaryGallery = () => {
     videos: 0,
     storage: 0,
   });
+  const [selectedAssets, setSelectedAssets] = useState([]);
+  const [selectMode, setSelectMode] = useState(false);
+  const [bulkActionOpen, setBulkActionOpen] = useState(false);
 
   // Verify admin status using the existing auth context
   useEffect(() => {
@@ -60,6 +64,131 @@ const CloudinaryGallery = () => {
   useEffect(() => {
     fetchAssets();
   }, [page, filters]);
+
+  // Toggle selection mode
+  const toggleSelectMode = () => {
+    setSelectMode(!selectMode);
+    if (selectMode) {
+      setSelectedAssets([]);
+      setBulkActionOpen(false);
+    }
+  };
+
+  // Toggle selection of an asset
+  const toggleAssetSelection = (e, assetId) => {
+    e.stopPropagation(); // Prevent opening the asset modal
+
+    if (selectedAssets.includes(assetId)) {
+      setSelectedAssets(selectedAssets.filter((id) => id !== assetId));
+    } else {
+      setSelectedAssets([...selectedAssets, assetId]);
+    }
+  };
+
+  // Select all visible assets
+  const selectAllAssets = () => {
+    const allVisibleIds = assets.map((asset) => asset.public_id);
+    setSelectedAssets(allVisibleIds);
+  };
+
+  // Deselect all assets
+  const deselectAllAssets = () => {
+    setSelectedAssets([]);
+  };
+
+  // Perform bulk delete
+  const bulkDeleteAssets = async () => {
+    if (selectedAssets.length === 0) return;
+
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${selectedAssets.length} assets? This action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      // Show loading toast
+      const loadingToast = toast.loading(
+        `Deleting ${selectedAssets.length} assets...`
+      );
+
+      // Delete assets in sequence to avoid overwhelming the server
+      let successCount = 0;
+      let failureCount = 0;
+
+      for (const publicId of selectedAssets) {
+        try {
+          await axios.delete(`/api/admin/cloudinary/${publicId}`);
+          successCount++;
+        } catch (error) {
+          console.error(`Error deleting asset ${publicId}:`, error);
+          failureCount++;
+        }
+      }
+
+      // Update toast based on results
+      toast.dismiss(loadingToast);
+      if (failureCount === 0) {
+        toast.success(`Successfully deleted ${successCount} assets`);
+      } else {
+        toast.error(
+          `Deleted ${successCount} assets, but failed to delete ${failureCount} assets`
+        );
+      }
+
+      // Refresh assets
+      fetchAssets();
+
+      // Clear selection
+      setSelectedAssets([]);
+      setBulkActionOpen(false);
+    } catch (error) {
+      console.error("Error in bulk delete operation:", error);
+      toast.error("Failed to complete bulk delete operation");
+    }
+  };
+
+  // Bulk download assets
+  const bulkDownloadAssets = () => {
+    if (selectedAssets.length === 0) return;
+
+    // For smaller selections, open each in a new tab
+    if (selectedAssets.length <= 5) {
+      selectedAssets.forEach((publicId) => {
+        const asset = assets.find((asset) => asset.public_id === publicId);
+        if (asset) {
+          window.open(asset.secure_url, "_blank");
+        }
+      });
+      toast.success(`Opened ${selectedAssets.length} assets for download`);
+    } else {
+      // For larger selections, create a text file with all URLs
+      const urls = selectedAssets
+        .map((publicId) => {
+          const asset = assets.find((asset) => asset.public_id === publicId);
+          return asset ? asset.secure_url : null;
+        })
+        .filter(Boolean);
+
+      const urlText = urls.join("\n");
+      const blob = new Blob([urlText], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "cloudinary-assets-urls.txt";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Created download list with ${urls.length} assets`);
+    }
+
+    // Keep selection mode active for further operations
+  };
 
   const fetchAssets = async () => {
     try {
@@ -323,6 +452,17 @@ const CloudinaryGallery = () => {
           <FilterButton onClick={() => setFilterOpen(!filterOpen)}>
             <FaFilter /> Filter
           </FilterButton>
+          <SelectModeButton active={selectMode} onClick={toggleSelectMode}>
+            {selectMode ? (
+              <>
+                <FaCheckSquare /> Exit Selection
+              </>
+            ) : (
+              <>
+                <FaSquare /> Select Items
+              </>
+            )}
+          </SelectModeButton>
           <StatsContainer>
             <StatItem>
               <StatValue>{stats.total}</StatValue>
@@ -567,6 +707,23 @@ const CloudinaryGallery = () => {
                         <AssetSize>{formatFileSize(asset.bytes)}</AssetSize>
                       </OverlayInfo>
                     </ItemOverlay>
+                    {(selectMode ||
+                      selectedAssets.includes(asset.public_id)) && (
+                      <SelectionOverlay
+                        visible={
+                          selectMode || selectedAssets.includes(asset.public_id)
+                        }
+                        onClick={(e) =>
+                          toggleAssetSelection(e, asset.public_id)
+                        }
+                      >
+                        {selectedAssets.includes(asset.public_id) ? (
+                          <FaCheckSquare />
+                        ) : (
+                          <FaSquare />
+                        )}
+                      </SelectionOverlay>
+                    )}
                   </GalleryItem>
                 ))}
               </GalleryGrid>
@@ -683,6 +840,31 @@ const CloudinaryGallery = () => {
             </ModalFooter>
           </ModalContent>
         </AssetModal>
+      )}
+      {selectedAssets.length > 0 && (
+        <BulkActionBar visible={selectedAssets.length > 0}>
+          <BulkInfo>
+            <SelectedCount>
+              Selected <span>{selectedAssets.length}</span> items
+            </SelectedCount>
+            <SelectionActions>
+              <SelectionAction onClick={selectAllAssets}>
+                Select All
+              </SelectionAction>
+              <SelectionAction onClick={deselectAllAssets}>
+                Clear
+              </SelectionAction>
+            </SelectionActions>
+          </BulkInfo>
+          <BulkActions>
+            <BulkActionButton onClick={bulkDownloadAssets}>
+              <FaDownload /> Download
+            </BulkActionButton>
+            <BulkActionButton danger onClick={bulkDeleteAssets}>
+              <FaTrash /> Delete
+            </BulkActionButton>
+          </BulkActions>
+        </BulkActionBar>
       )}
     </GalleryContainer>
   );
@@ -1437,6 +1619,153 @@ const DateCount = styled.span`
   padding: 0.25rem 0.5rem;
   border-radius: 12px;
   margin-left: 0.75rem;
+`;
+
+const BulkActionBar = styled.div`
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: ${COLORS.primaryBlueGray};
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+  transform: translateY(${(props) => (props.visible ? "0" : "100%")});
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+`;
+
+const BulkInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: space-between;
+  }
+`;
+
+const SelectedCount = styled.div`
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  span {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+  }
+`;
+
+const SelectionActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+`;
+
+const SelectionAction = styled.button`
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+const BulkActions = styled.div`
+  display: flex;
+  gap: 0.75rem;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: space-around;
+  }
+`;
+
+const BulkActionButton = styled.button`
+  background-color: ${(props) =>
+    props.danger ? COLORS.error : COLORS.primarySalmon};
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+// Add selection UI to the GalleryItem
+const SelectionOverlay = styled.div`
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 5;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  padding: 0.25rem;
+  opacity: ${(props) => (props.visible ? 1 : 0)};
+  transition: opacity 0.2s;
+  cursor: pointer;
+
+  ${GalleryItem}:hover & {
+    opacity: 1;
+  }
+
+  svg {
+    color: white;
+    font-size: 1.25rem;
+  }
+`;
+
+const SelectModeButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: ${(props) =>
+    props.active ? COLORS.primarySalmon : COLORS.elevatedBackground};
+  color: ${(props) => (props.active ? "white" : COLORS.textSecondary)};
+  border: 1px solid
+    ${(props) => (props.active ? COLORS.primarySalmon : COLORS.border)};
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &:hover {
+    background-color: ${(props) =>
+      props.active ? COLORS.accentSalmon : COLORS.buttonHover};
+  }
 `;
 
 export default CloudinaryGallery;
