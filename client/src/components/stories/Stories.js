@@ -83,6 +83,7 @@ const Stories = () => {
   // Handle story auto-progression timer
   useEffect(() => {
     let timer;
+    let animationFrameId;
 
     if (activeStory) {
       if (!activeStory.media || activeStoryIndex >= activeStory.media.length) {
@@ -95,18 +96,41 @@ const Stories = () => {
       // Set longer duration for videos (don't auto-progress)
       const isVideo = currentMedia && currentMedia.mediaType === "video";
 
-      if (!isVideo && timeLeft > 0) {
-        timer = setTimeout(() => {
-          setTimeLeft((prev) => prev - 1);
-        }, 1000);
-      } else if (!isVideo && timeLeft <= 0) {
-        // Only auto-progress for images
-        nextStoryItem();
+      if (!isVideo) {
+        // Start time for the animation
+        const startTime = Date.now();
+        // Total duration for this story item (10 seconds)
+        const duration = 10000;
+
+        // Animation function using requestAnimationFrame for smooth progress
+        const animate = () => {
+          const elapsedTime = Date.now() - startTime;
+          const progress = Math.min(elapsedTime / duration, 1);
+
+          // Update timeLeft based on progress (from 10 to 0)
+          setTimeLeft(10 - Math.floor(progress * 10));
+
+          if (progress < 1) {
+            // Continue animation
+            animationFrameId = requestAnimationFrame(animate);
+          } else {
+            // Move to next story item when animation completes
+            nextStoryItem();
+          }
+        };
+
+        // Start the animation
+        animationFrameId = requestAnimationFrame(animate);
       }
     }
 
-    return () => clearTimeout(timer);
-  }, [activeStory, activeStoryIndex, timeLeft, nextStoryItem]);
+    return () => {
+      clearTimeout(timer);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [activeStory, activeStoryIndex, nextStoryItem]);
 
   // Handle body scroll lock when story is open
   useEffect(() => {
@@ -644,7 +668,7 @@ const ProgressBar = styled.div`
         ? `${props.progress * 100}%`
         : "0"};
     background-color: ${COLORS.primarySalmon}; /* Updated to salmon color */
-    transition: width 0.1s linear; /* Changed from 1s to 0.1s for smoother updates */
+    transition: width 0.016s linear; /* Changed for smoother animation with requestAnimationFrame */
   }
 `;
 
