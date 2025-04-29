@@ -1,60 +1,209 @@
 const { cloudinary } = require("../config/cloudinary");
 
-// Get all Cloudinary assets with filtering and pagination
+// Get all Cloudinary assets with multiple filtering techniques
 exports.getCloudinaryAssets = async (req, res) => {
   try {
-    // Simple options
-    const options = {
-      max_results: 100,
-      // Use exact folder path instead of prefix
-      folder: "sologram",
-      type: "upload",
-    };
+    console.log("Starting Cloudinary assets fetch");
 
-    // Fetch images
-    let resources = [];
+    // Get all resources without folder filter first
+    let allResources = [];
 
+    // First try: Get resources with direct folder parameter
     try {
-      const imageResponse = await cloudinary.api.resources({
-        ...options,
+      console.log("Trying folder parameter...");
+      const folderResponse = await cloudinary.api.resources({
         resource_type: "image",
+        max_results: 500,
+        type: "upload",
+        folder: "sologram",
       });
 
-      if (imageResponse.resources) {
-        resources = [...resources, ...imageResponse.resources];
+      if (folderResponse.resources && folderResponse.resources.length > 0) {
+        console.log(
+          `Found ${folderResponse.resources.length} images with folder parameter`
+        );
+        allResources = [...allResources, ...folderResponse.resources];
       }
     } catch (error) {
-      console.error("Error fetching images:", error);
+      console.error("Error fetching with folder parameter:", error.message);
     }
 
-    // Fetch videos
+    // Second try: Get with prefix
     try {
-      const videoResponse = await cloudinary.api.resources({
-        ...options,
-        resource_type: "video",
+      console.log("Trying prefix parameter...");
+      const prefixResponse = await cloudinary.api.resources({
+        resource_type: "image",
+        max_results: 500,
+        type: "upload",
+        prefix: "sologram/",
       });
 
-      if (videoResponse.resources) {
-        resources = [...resources, ...videoResponse.resources];
+      if (prefixResponse.resources && prefixResponse.resources.length > 0) {
+        console.log(
+          `Found ${prefixResponse.resources.length} images with prefix parameter`
+        );
+
+        // Add only resources not already in the array
+        const existingIds = new Set(allResources.map((r) => r.public_id));
+        const newResources = prefixResponse.resources.filter(
+          (r) => !existingIds.has(r.public_id)
+        );
+
+        console.log(
+          `Adding ${newResources.length} unique new resources from prefix search`
+        );
+        allResources = [...allResources, ...newResources];
       }
     } catch (error) {
-      console.error("Error fetching videos:", error);
+      console.error("Error fetching with prefix parameter:", error.message);
     }
+
+    // Third try: Get videos with folder parameter
+    try {
+      console.log("Trying video folder parameter...");
+      const videoFolderResponse = await cloudinary.api.resources({
+        resource_type: "video",
+        max_results: 100,
+        type: "upload",
+        folder: "sologram",
+      });
+
+      if (
+        videoFolderResponse.resources &&
+        videoFolderResponse.resources.length > 0
+      ) {
+        console.log(
+          `Found ${videoFolderResponse.resources.length} videos with folder parameter`
+        );
+
+        // Add only resources not already in the array
+        const existingIds = new Set(allResources.map((r) => r.public_id));
+        const newResources = videoFolderResponse.resources.filter(
+          (r) => !existingIds.has(r.public_id)
+        );
+
+        allResources = [...allResources, ...newResources];
+      }
+    } catch (error) {
+      console.error(
+        "Error fetching videos with folder parameter:",
+        error.message
+      );
+    }
+
+    // Fourth try: Get videos with prefix
+    try {
+      console.log("Trying video prefix parameter...");
+      const videoPrefixResponse = await cloudinary.api.resources({
+        resource_type: "video",
+        max_results: 100,
+        type: "upload",
+        prefix: "sologram/",
+      });
+
+      if (
+        videoPrefixResponse.resources &&
+        videoPrefixResponse.resources.length > 0
+      ) {
+        console.log(
+          `Found ${videoPrefixResponse.resources.length} videos with prefix parameter`
+        );
+
+        // Add only resources not already in the array
+        const existingIds = new Set(allResources.map((r) => r.public_id));
+        const newResources = videoPrefixResponse.resources.filter(
+          (r) => !existingIds.has(r.public_id)
+        );
+
+        console.log(
+          `Adding ${newResources.length} unique new video resources from prefix search`
+        );
+        allResources = [...allResources, ...newResources];
+      }
+    } catch (error) {
+      console.error(
+        "Error fetching videos with prefix parameter:",
+        error.message
+      );
+    }
+
+    // Final fallback - get everything and filter
+    if (allResources.length === 0) {
+      try {
+        console.log("Fallback: fetching all resources and filtering...");
+        const allImagesResponse = await cloudinary.api.resources({
+          resource_type: "image",
+          max_results: 500,
+          type: "upload",
+        });
+
+        if (allImagesResponse.resources) {
+          const soloGramImages = allImagesResponse.resources.filter(
+            (r) => r.folder === "sologram" || r.public_id.includes("sologram/")
+          );
+
+          console.log(
+            `Filtered ${soloGramImages.length} sologram images from ${allImagesResponse.resources.length} total images`
+          );
+          allResources = [...allResources, ...soloGramImages];
+        }
+
+        const allVideosResponse = await cloudinary.api.resources({
+          resource_type: "video",
+          max_results: 100,
+          type: "upload",
+        });
+
+        if (allVideosResponse.resources) {
+          const existingIds = new Set(allResources.map((r) => r.public_id));
+          const soloGramVideos = allVideosResponse.resources.filter(
+            (r) =>
+              (r.folder === "sologram" || r.public_id.includes("sologram/")) &&
+              !existingIds.has(r.public_id)
+          );
+
+          console.log(
+            `Filtered ${soloGramVideos.length} sologram videos from ${allVideosResponse.resources.length} total videos`
+          );
+          allResources = [...allResources, ...soloGramVideos];
+        }
+      } catch (error) {
+        console.error("Error in fallback fetching:", error.message);
+      }
+    }
+
+    // Final verification filter to ensure we only have sologram assets
+    const verifiedResources = allResources.filter((asset) => {
+      return (
+        asset.folder === "sologram" ||
+        asset.public_id.includes("sologram/") ||
+        (asset.tags && asset.tags.includes("sologram"))
+      );
+    });
+
+    console.log(
+      `Final count: ${verifiedResources.length} verified sologram assets out of ${allResources.length} fetched`
+    );
 
     // Sort by created_at (newest first)
-    resources.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    verifiedResources.sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
 
     return res.json({
       success: true,
-      results: resources,
-      totalCount: resources.length,
+      results: verifiedResources,
+      totalCount: verifiedResources.length,
       hasMore: false,
-      page: 1,
-      limit: 100,
       statistics: {
-        imageCount: resources.filter((r) => r.resource_type === "image").length,
-        videoCount: resources.filter((r) => r.resource_type === "video").length,
-        totalStorage: resources.reduce((sum, r) => sum + (r.bytes || 0), 0),
+        imageCount: verifiedResources.filter((r) => r.resource_type === "image")
+          .length,
+        videoCount: verifiedResources.filter((r) => r.resource_type === "video")
+          .length,
+        totalStorage: verifiedResources.reduce(
+          (sum, r) => sum + (r.bytes || 0),
+          0
+        ),
       },
     });
   } catch (error) {
@@ -80,7 +229,7 @@ exports.deleteCloudinaryAsset = async (req, res) => {
     }
 
     // Safety check for sologram folder
-    if (!publicId.includes("sologram/")) {
+    if (!publicId.includes("sologram")) {
       return res.status(403).json({
         success: false,
         message: "Cannot delete assets outside of SoloGram folder",
