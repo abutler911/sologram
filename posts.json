@@ -1,0 +1,2188 @@
+{
+    "_id" : ObjectId("67d77960891c616ccd423017"),
+    "caption" : "Istanbul, Turkey - August 2024",
+    "content" : "Istanbul captivated us with its unique blend of East and West, where two continents collide in spectacular fashion. We wandered through the grand Hagia Sophia, marveled at the Blue Mosque's stunning architecture, and lost ourselves in the colorful chaos of the Grand Bazaar. Our days were filled with delicious Turkish tea, and evenings watching the sunset transform the city's skyline into a silhouette of domes and minarets.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174557/sologram/slreutgtuuqab4brsvg2.jpg",
+            "cloudinaryId" : "sologram/slreutgtuuqab4brsvg2",
+            "_id" : ObjectId("67d77960891c616ccd423018")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174558/sologram/ml8nbapczffphodb3pff.jpg",
+            "cloudinaryId" : "sologram/ml8nbapczffphodb3pff",
+            "_id" : ObjectId("67d77960891c616ccd423019")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174558/sologram/zlbuv2oqwcv2hiz8d4sy.jpg",
+            "cloudinaryId" : "sologram/zlbuv2oqwcv2hiz8d4sy",
+            "_id" : ObjectId("67d77960891c616ccd42301a")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174558/sologram/byfc9vyk6twkwcv9qktt.jpg",
+            "cloudinaryId" : "sologram/byfc9vyk6twkwcv9qktt",
+            "_id" : ObjectId("67d77960891c616ccd42301b")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174559/sologram/p5j9oemapp61l9d40uh1.jpg",
+            "cloudinaryId" : "sologram/p5j9oemapp61l9d40uh1",
+            "_id" : ObjectId("67d77960891c616ccd42301c")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174559/sologram/bprr52dobaqxdryj3fza.jpg",
+            "cloudinaryId" : "sologram/bprr52dobaqxdryj3fza",
+            "_id" : ObjectId("67d77960891c616ccd42301d")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174559/sologram/izkaqobqlds6fbojccz1.jpg",
+            "cloudinaryId" : "sologram/izkaqobqlds6fbojccz1",
+            "_id" : ObjectId("67d77960891c616ccd42301e")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174559/sologram/kfmz7m43bkjalcvw4r1v.jpg",
+            "cloudinaryId" : "sologram/kfmz7m43bkjalcvw4r1v",
+            "_id" : ObjectId("67d77960891c616ccd42301f")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174559/sologram/xcxsdwmqsvkh1ouenyna.jpg",
+            "cloudinaryId" : "sologram/xcxsdwmqsvkh1ouenyna",
+            "_id" : ObjectId("67d77960891c616ccd423020")
+        }
+    ],
+    "likes" : NumberInt(0),
+    "tags" : [
+        "Istanbul #travel #travelcouple #adventure #turkey #love"
+    ],
+    "createdAt" : ISODate("2024-09-13T01:22:40.670+0000"),
+    "updatedAt" : ISODate("2025-03-19T20:15:03.621+0000"),
+    "__v" : NumberInt(3),
+    "collections" : [
+
+    ]
+}
+{
+    "_id" : ObjectId("67d77a51891c616ccd42304c"),
+    "caption" : "Edinburgh, Scotland - November 2024",
+    "content" : "Exploring the ancient cobblestone streets of Edinburgh was like stepping into a magical storybook. From the towering Edinburgh Castle perched on volcanic rock to the mysterious closes of the Royal Mile, we immersed ourselves in centuries of Scottish history. Evenings were spent sampling rich whisky in cozy pubs, listening to traditional folk music, and taking in the breathtaking views from Arthur's Seat.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174796/sologram/sht05icgiokmmxf9qg9v.jpg",
+            "cloudinaryId" : "sologram/sht05icgiokmmxf9qg9v",
+            "_id" : ObjectId("67d77a51891c616ccd42304d")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174797/sologram/m02cc2ruadxdvxg0rmlc.jpg",
+            "cloudinaryId" : "sologram/m02cc2ruadxdvxg0rmlc",
+            "_id" : ObjectId("67d77a51891c616ccd42304e")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174797/sologram/uczczd5zfdbwatidjq1i.jpg",
+            "cloudinaryId" : "sologram/uczczd5zfdbwatidjq1i",
+            "_id" : ObjectId("67d77a51891c616ccd42304f")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174797/sologram/p4oafe7novpwjhglo537.jpg",
+            "cloudinaryId" : "sologram/p4oafe7novpwjhglo537",
+            "_id" : ObjectId("67d77a51891c616ccd423050")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174798/sologram/bsizj4qux2xeuqxehetf.jpg",
+            "cloudinaryId" : "sologram/bsizj4qux2xeuqxehetf",
+            "_id" : ObjectId("67d77a51891c616ccd423051")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174798/sologram/m4prtelml8pxrrdyeqk9.jpg",
+            "cloudinaryId" : "sologram/m4prtelml8pxrrdyeqk9",
+            "_id" : ObjectId("67d77a51891c616ccd423052")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174798/sologram/ftf8zesnrutl6ezvilji.jpg",
+            "cloudinaryId" : "sologram/ftf8zesnrutl6ezvilji",
+            "_id" : ObjectId("67d77a51891c616ccd423053")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174799/sologram/nn06oy9bsejo7sgq9znj.jpg",
+            "cloudinaryId" : "sologram/nn06oy9bsejo7sgq9znj",
+            "_id" : ObjectId("67d77a51891c616ccd423054")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174800/sologram/phw1ntfwyvzlto7jgnr1.jpg",
+            "cloudinaryId" : "sologram/phw1ntfwyvzlto7jgnr1",
+            "_id" : ObjectId("67d77a51891c616ccd423055")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742174800/sologram/lh5jfhzz74kzy5qvpbps.jpg",
+            "cloudinaryId" : "sologram/lh5jfhzz74kzy5qvpbps",
+            "_id" : ObjectId("67d77a51891c616ccd423056")
+        }
+    ],
+    "likes" : NumberInt(0),
+    "tags" : [
+        "scotland #travel #adventure #travelcouple #love #edinburgh"
+    ],
+    "createdAt" : ISODate("2024-11-17T01:26:41.508+0000"),
+    "updatedAt" : ISODate("2025-03-19T20:15:07.511+0000"),
+    "__v" : NumberInt(3),
+    "collections" : [
+
+    ]
+}
+{
+    "_id" : ObjectId("67d805bb3e1ce57122ef6e2d"),
+    "caption" : "🌊 Daybreak, Smiles, and Sunshine Vibes!☀️📸",
+    "content" : "☀️📸 Hana captured some amazing family moments at the beautiful Daybreak Lake today! Perfect weather, great company, and plenty of laughs. Grateful for days like this! ❤️",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742210488/sologram/aks9avvlngcvwa2sebug.jpg",
+            "cloudinaryId" : "sologram/aks9avvlngcvwa2sebug",
+            "_id" : ObjectId("67d805bb3e1ce57122ef6e2e")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742210489/sologram/xjgfuhefp2pismas7pbn.jpg",
+            "cloudinaryId" : "sologram/xjgfuhefp2pismas7pbn",
+            "_id" : ObjectId("67d805bb3e1ce57122ef6e2f")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742210489/sologram/peybgy3v5xtxqorfh4g7.jpg",
+            "cloudinaryId" : "sologram/peybgy3v5xtxqorfh4g7",
+            "_id" : ObjectId("67d805bb3e1ce57122ef6e30")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742210490/sologram/yvazxjddjjyimowk11ri.jpg",
+            "cloudinaryId" : "sologram/yvazxjddjjyimowk11ri",
+            "_id" : ObjectId("67d805bb3e1ce57122ef6e31")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742210490/sologram/r2pfq0ejcs3v7zfsjfdi.jpg",
+            "cloudinaryId" : "sologram/r2pfq0ejcs3v7zfsjfdi",
+            "_id" : ObjectId("67d805bb3e1ce57122ef6e32")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742210490/sologram/omqezotoqk1risjeykyj.jpg",
+            "cloudinaryId" : "sologram/omqezotoqk1risjeykyj",
+            "_id" : ObjectId("67d805bb3e1ce57122ef6e33")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742210490/sologram/zbtqaxmo2pnbnbngguxf.jpg",
+            "cloudinaryId" : "sologram/zbtqaxmo2pnbnbngguxf",
+            "_id" : ObjectId("67d805bb3e1ce57122ef6e34")
+        }
+    ],
+    "likes" : NumberInt(0),
+    "tags" : [
+        "#FamilyTime #DaybreakLake #CapturedMoments #Grateful"
+    ],
+    "createdAt" : ISODate("2024-03-17T11:21:31.117+0000"),
+    "updatedAt" : ISODate("2025-03-20T02:15:08.677+0000"),
+    "__v" : NumberInt(2),
+    "collections" : [
+        ObjectId("67db7a1cd5105f59bfb26fbe")
+    ]
+}
+{
+    "_id" : ObjectId("67d886e23e1ce57122ef703f"),
+    "caption" : "✨ The Adventure Continues! ✨",
+    "content" : "Just a bunch of crazy, happy humans making memories one adventure at a time! 🏕️✈️🎉 Grateful for every laugh, every journey, and every moment together. Love our life and all the wild, wonderful experiences—we're just getting started! ❤️🔥",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742243550/sologram/bkcsrutsjkr7bp5paihc.jpg",
+            "cloudinaryId" : "sologram/bkcsrutsjkr7bp5paihc",
+            "_id" : ObjectId("67d886e23e1ce57122ef7040")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742243551/sologram/orpunbfxtlpbpd4n9oib.jpg",
+            "cloudinaryId" : "sologram/orpunbfxtlpbpd4n9oib",
+            "_id" : ObjectId("67d886e23e1ce57122ef7041")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742243551/sologram/tnlc8ag32yiyugqjv8nn.jpg",
+            "cloudinaryId" : "sologram/tnlc8ag32yiyugqjv8nn",
+            "_id" : ObjectId("67d886e23e1ce57122ef7042")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742243553/sologram/rabgrhkyhyzqfowi6wtd.jpg",
+            "cloudinaryId" : "sologram/rabgrhkyhyzqfowi6wtd",
+            "_id" : ObjectId("67d886e23e1ce57122ef7043")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742243552/sologram/qju2p7qp9rlif1ahnrwl.jpg",
+            "cloudinaryId" : "sologram/qju2p7qp9rlif1ahnrwl",
+            "_id" : ObjectId("67d886e23e1ce57122ef7044")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742243552/sologram/gvhgqa3lsgy1upkx2aos.jpg",
+            "cloudinaryId" : "sologram/gvhgqa3lsgy1upkx2aos",
+            "_id" : ObjectId("67d886e23e1ce57122ef7045")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742243553/sologram/mprpqwe77sn7bgtexncd.jpg",
+            "cloudinaryId" : "sologram/mprpqwe77sn7bgtexncd",
+            "_id" : ObjectId("67d886e23e1ce57122ef7046")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742243553/sologram/ka0dppnq0pndxdv7udxp.jpg",
+            "cloudinaryId" : "sologram/ka0dppnq0pndxdv7udxp",
+            "_id" : ObjectId("67d886e23e1ce57122ef7047")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742243553/sologram/qk6dacllb1dhbnh70dvv.jpg",
+            "cloudinaryId" : "sologram/qk6dacllb1dhbnh70dvv",
+            "_id" : ObjectId("67d886e23e1ce57122ef7048")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742243554/sologram/ffxr5jlo1sxztj6b7ayz.jpg",
+            "cloudinaryId" : "sologram/ffxr5jlo1sxztj6b7ayz",
+            "_id" : ObjectId("67d886e23e1ce57122ef7049")
+        }
+    ],
+    "likes" : NumberInt(42),
+    "tags" : [
+        "FamilyFirst #MakingMemories #AdventureAwaits #SologramExclusive 😎"
+    ],
+    "createdAt" : ISODate("2025-03-17T20:32:34.767+0000"),
+    "updatedAt" : ISODate("2025-04-27T06:04:21.633+0000"),
+    "__v" : NumberInt(2),
+    "collections" : [
+
+    ]
+}
+{
+    "_id" : ObjectId("67da52bba6c3ff7dc61886c7"),
+    "caption" : "London Adventures: February 2024 🇬🇧✨",
+    "content" : "From Westminster Abbey to Big Ben, Buckingham Palace, and beyond—London did not disappoint! We soaked in royal history, stood in awe at Stonehenge, and took in the breathtaking White Cliffs of Dover. A perfect mix of history, mystery, and stunning views. Can’t wait for the next adventure!",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742361271/sologram/dzgwvgej4sd53lpy4bel.jpg",
+            "cloudinaryId" : "sologram/dzgwvgej4sd53lpy4bel",
+            "_id" : ObjectId("67da52bba6c3ff7dc61886c8")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742361272/sologram/lu6ssyxkay2dyzl3noae.jpg",
+            "cloudinaryId" : "sologram/lu6ssyxkay2dyzl3noae",
+            "_id" : ObjectId("67da52bba6c3ff7dc61886c9")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742361273/sologram/sjwt1tdmiwm9zv1llins.jpg",
+            "cloudinaryId" : "sologram/sjwt1tdmiwm9zv1llins",
+            "_id" : ObjectId("67da52bba6c3ff7dc61886ca")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742361273/sologram/votezjsww1rizw1wxla1.jpg",
+            "cloudinaryId" : "sologram/votezjsww1rizw1wxla1",
+            "_id" : ObjectId("67da52bba6c3ff7dc61886cb")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742361274/sologram/vkwiownftbwsubsjathf.jpg",
+            "cloudinaryId" : "sologram/vkwiownftbwsubsjathf",
+            "_id" : ObjectId("67da52bba6c3ff7dc61886cc")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742361273/sologram/rzswfdyy47bbiein1s93.jpg",
+            "cloudinaryId" : "sologram/rzswfdyy47bbiein1s93",
+            "_id" : ObjectId("67da52bba6c3ff7dc61886cd")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742361274/sologram/o7vubbnqosuyrdf6foco.jpg",
+            "cloudinaryId" : "sologram/o7vubbnqosuyrdf6foco",
+            "_id" : ObjectId("67da52bba6c3ff7dc61886ce")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742361274/sologram/n875cjpwu3ss8acgcqmj.jpg",
+            "cloudinaryId" : "sologram/n875cjpwu3ss8acgcqmj",
+            "_id" : ObjectId("67da52bba6c3ff7dc61886cf")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742361274/sologram/kf0nslw9nq8bachs3ilg.jpg",
+            "cloudinaryId" : "sologram/kf0nslw9nq8bachs3ilg",
+            "_id" : ObjectId("67da52bba6c3ff7dc61886d0")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742361274/sologram/oc6gkpepmh74cqemkqwc.jpg",
+            "cloudinaryId" : "sologram/oc6gkpepmh74cqemkqwc",
+            "_id" : ObjectId("67da52bba6c3ff7dc61886d1")
+        }
+    ],
+    "likes" : NumberInt(69),
+    "tags" : [
+        "LondonCalling #TravelDiaries #StonehengeVibes #travel #explore #love"
+    ],
+    "createdAt" : ISODate("2024-02-16T05:14:35.420+0000"),
+    "updatedAt" : ISODate("2025-03-19T20:19:35.666+0000"),
+    "__v" : NumberInt(1),
+    "collections" : [
+
+    ]
+}
+{
+    "_id" : ObjectId("67db29b9f8b044d1208e1c6b"),
+    "caption" : "Apparently it's FIVE Years of Adventure: A Look Back at the Crazy, the Fun, and the Unforgettable!",
+    "content" : "Here’s a little throwback to the last three years—so many laughs, adventures, and unforgettable moments! What a wild and incredible ride it’s been. Grateful for every memory and excited for what’s next!",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742416312/sologram/ykrpoccyeurdjpvhd82a.webp",
+            "cloudinaryId" : "sologram/ykrpoccyeurdjpvhd82a",
+            "_id" : ObjectId("67db29b9f8b044d1208e1c6c")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742416312/sologram/rpo8lykfnipkubyv306q.webp",
+            "cloudinaryId" : "sologram/rpo8lykfnipkubyv306q",
+            "_id" : ObjectId("67db29b9f8b044d1208e1c6d")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742416312/sologram/jhgkxs9swepycyyks5zd.jpg",
+            "cloudinaryId" : "sologram/jhgkxs9swepycyyks5zd",
+            "_id" : ObjectId("67db29b9f8b044d1208e1c6e")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742416312/sologram/fsdimwkqofn9xsitvsap.jpg",
+            "cloudinaryId" : "sologram/fsdimwkqofn9xsitvsap",
+            "_id" : ObjectId("67db29b9f8b044d1208e1c6f")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742416312/sologram/wfpbbkjchqnu33ptpvlt.webp",
+            "cloudinaryId" : "sologram/wfpbbkjchqnu33ptpvlt",
+            "_id" : ObjectId("67db29b9f8b044d1208e1c70")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742416312/sologram/rmbme838k5qelhy5hyai.jpg",
+            "cloudinaryId" : "sologram/rmbme838k5qelhy5hyai",
+            "_id" : ObjectId("67db29b9f8b044d1208e1c71")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742416312/sologram/heprrjrxdjobkfqgyqdp.jpg",
+            "cloudinaryId" : "sologram/heprrjrxdjobkfqgyqdp",
+            "_id" : ObjectId("67db29b9f8b044d1208e1c72")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742416312/sologram/uda9ulhwlsyfeogytjlv.jpg",
+            "cloudinaryId" : "sologram/uda9ulhwlsyfeogytjlv",
+            "_id" : ObjectId("67db29b9f8b044d1208e1c73")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742416312/sologram/quxexhzw1dbejbyomw40.jpg",
+            "cloudinaryId" : "sologram/quxexhzw1dbejbyomw40",
+            "_id" : ObjectId("67db29b9f8b044d1208e1c74")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742416312/sologram/eua6lilsl8wehjnd5rhh.webp",
+            "cloudinaryId" : "sologram/eua6lilsl8wehjnd5rhh",
+            "_id" : ObjectId("67db29b9f8b044d1208e1c75")
+        }
+    ],
+    "likes" : NumberInt(3),
+    "tags" : [
+        "LivingTheDream #MakingMemories #WhatAJourney #fun #4eva #adventure"
+    ],
+    "collections" : [
+        ObjectId("67db7a1cd5105f59bfb26fbe")
+    ],
+    "createdAt" : ISODate("2025-03-19T20:31:53.944+0000"),
+    "updatedAt" : ISODate("2025-04-27T06:04:18.476+0000"),
+    "__v" : NumberInt(1)
+}
+{
+    "_id" : ObjectId("67dc21e0d5105f59bfb28bfa"),
+    "caption" : "✈️ Touchdown in Guanajuato: A Work Overnight to Remember 🇲🇽",
+    "content" : "Quick stop, big views! My work overnight in Guanajuato, Mexico was short but packed with color, culture, and—of course—great food. From the stunning colonial architecture to the energy of the city at night, this place knows how to make an impression.\r\n\r\nNot every layover comes with scenery like this, but when it does, you soak it in. Another stamp in the logbook, another memory made.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742479837/sologram/tuhr8uzhm19keer4ulkr.jpg",
+            "cloudinaryId" : "sologram/tuhr8uzhm19keer4ulkr",
+            "_id" : ObjectId("67dc21e0d5105f59bfb28bfb")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742479838/sologram/mwaoegivlejx8rfxshrv.jpg",
+            "cloudinaryId" : "sologram/mwaoegivlejx8rfxshrv",
+            "_id" : ObjectId("67dc21e0d5105f59bfb28bfc")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742479838/sologram/dkzokqkix2ox2woonbke.jpg",
+            "cloudinaryId" : "sologram/dkzokqkix2ox2woonbke",
+            "_id" : ObjectId("67dc21e0d5105f59bfb28bfd")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742479838/sologram/dbmjkvwo44gjwzn61hud.webp",
+            "cloudinaryId" : "sologram/dbmjkvwo44gjwzn61hud",
+            "_id" : ObjectId("67dc21e0d5105f59bfb28bfe")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742479839/sologram/yejqysbpgetuammjkr8g.jpg",
+            "cloudinaryId" : "sologram/yejqysbpgetuammjkr8g",
+            "_id" : ObjectId("67dc21e0d5105f59bfb28bff")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742479838/sologram/xlffies1a26mqnzo2h9p.webp",
+            "cloudinaryId" : "sologram/xlffies1a26mqnzo2h9p",
+            "_id" : ObjectId("67dc21e0d5105f59bfb28c00")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742479839/sologram/n1oaq6woccr6l1vxbdbc.webp",
+            "cloudinaryId" : "sologram/n1oaq6woccr6l1vxbdbc",
+            "_id" : ObjectId("67dc21e0d5105f59bfb28c01")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742479839/sologram/d9somtdwwugtzbelqi1c.webp",
+            "cloudinaryId" : "sologram/d9somtdwwugtzbelqi1c",
+            "_id" : ObjectId("67dc21e0d5105f59bfb28c02")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742479839/sologram/c5w70fnqrqmqzo8ufyon.jpg",
+            "cloudinaryId" : "sologram/c5w70fnqrqmqzo8ufyon",
+            "_id" : ObjectId("67dc21e0d5105f59bfb28c03")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742479839/sologram/hcjl5aazdispvri6gnxr.webp",
+            "cloudinaryId" : "sologram/hcjl5aazdispvri6gnxr",
+            "_id" : ObjectId("67dc21e0d5105f59bfb28c04")
+        }
+    ],
+    "likes" : NumberInt(0),
+    "tags" : [
+        "WorkOvernight #GuanajuatoViews #PilotLife"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2024-04-24T14:10:40.453+0000"),
+    "updatedAt" : ISODate("2025-03-20T14:10:40.453+0000"),
+    "__v" : NumberInt(0)
+}
+{
+    "_id" : ObjectId("67dde1dd234162cf15496f79"),
+    "caption" : "Vegas Work - Day 1 – A Different Kind of Trip",
+    "content" : "Most of my 4-day trips have me in a different city each night, but this one’s a little different — just back and forth between LA and Vegas, and all three nights in Vegas. Not a bad deal!\r\n\r\nI headed down to the Strip to check things out. Walked through the Bellagio gardens — they always do an amazing job with the seasonal displays. Then just wandered for a bit, took it all in, and grabbed some great pizza.\r\n\r\nSolid start to the trip. Let’s see what tomorrow brings.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742594518/sologram/xgoltmkye7kw16fbosv9.jpg",
+            "cloudinaryId" : "sologram/xgoltmkye7kw16fbosv9",
+            "_id" : ObjectId("67dde1dd234162cf15496f7a")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742594518/sologram/zzgdrbujna0mll1z9xrc.jpg",
+            "cloudinaryId" : "sologram/zzgdrbujna0mll1z9xrc",
+            "_id" : ObjectId("67dde1dd234162cf15496f7b")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742594519/sologram/zvhj7mvwayo1eluxy1k6.jpg",
+            "cloudinaryId" : "sologram/zvhj7mvwayo1eluxy1k6",
+            "_id" : ObjectId("67dde1dd234162cf15496f7c")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742594520/sologram/hyxqqfw2mmbpepjejelp.jpg",
+            "cloudinaryId" : "sologram/hyxqqfw2mmbpepjejelp",
+            "_id" : ObjectId("67dde1dd234162cf15496f7d")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742594520/sologram/rxcyurvkryyhbd1yujb2.jpg",
+            "cloudinaryId" : "sologram/rxcyurvkryyhbd1yujb2",
+            "_id" : ObjectId("67dde1dd234162cf15496f7e")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742594521/sologram/exsrydlg88updypbyz5y.jpg",
+            "cloudinaryId" : "sologram/exsrydlg88updypbyz5y",
+            "_id" : ObjectId("67dde1dd234162cf15496f7f")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742594521/sologram/b9vh9uwdpvfve6gnelg6.jpg",
+            "cloudinaryId" : "sologram/b9vh9uwdpvfve6gnelg6",
+            "_id" : ObjectId("67dde1dd234162cf15496f80")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742594521/sologram/yjihxvb3n9egenfvnrgm.jpg",
+            "cloudinaryId" : "sologram/yjihxvb3n9egenfvnrgm",
+            "_id" : ObjectId("67dde1dd234162cf15496f81")
+        }
+    ],
+    "likes" : NumberInt(6),
+    "tags" : [
+        "SoloGram #PilotLife #DayOne #VegasLayover #BellagioGardens #PizzaStop #WanderMode"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2025-03-21T22:02:05.875+0000"),
+    "updatedAt" : ISODate("2025-04-27T06:04:16.586+0000"),
+    "__v" : NumberInt(0)
+}
+{
+    "_id" : ObjectId("67de6c31c3faf1b7019f9563"),
+    "caption" : "East Coast Escape - June 2024",
+    "content" : "Cruisin’ with the boys — kicked things off in NYC, hopped on the MSC Meraviglia, and rode the vibes all the way down the coast. Couple of epic stops, nonstop laughs, and enough memories to hold us till the next one. Boys trip mode: activated and never deactivated.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629933/sologram/bt5roxsv3wcltf7ccz7l.webp",
+            "cloudinaryId" : "sologram/bt5roxsv3wcltf7ccz7l",
+            "_id" : ObjectId("67de6c31c3faf1b7019f9564")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629933/sologram/ruf4wbctazpbevbsz9x2.webp",
+            "cloudinaryId" : "sologram/ruf4wbctazpbevbsz9x2",
+            "_id" : ObjectId("67de6c31c3faf1b7019f9565")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629934/sologram/zmdpiou7p7shq86vxbbd.webp",
+            "cloudinaryId" : "sologram/zmdpiou7p7shq86vxbbd",
+            "_id" : ObjectId("67de6c31c3faf1b7019f9566")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629934/sologram/vwwtqlfzccxubdzs6max.webp",
+            "cloudinaryId" : "sologram/vwwtqlfzccxubdzs6max",
+            "_id" : ObjectId("67de6c31c3faf1b7019f9567")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629934/sologram/jzuy2xzkvi3qpcdkbfh3.webp",
+            "cloudinaryId" : "sologram/jzuy2xzkvi3qpcdkbfh3",
+            "_id" : ObjectId("67de6c31c3faf1b7019f9568")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629934/sologram/lmbjzoxmtjss7afnb1du.webp",
+            "cloudinaryId" : "sologram/lmbjzoxmtjss7afnb1du",
+            "_id" : ObjectId("67de6c31c3faf1b7019f9569")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629935/sologram/zq9ymm1vrdow0gbnjbkh.webp",
+            "cloudinaryId" : "sologram/zq9ymm1vrdow0gbnjbkh",
+            "_id" : ObjectId("67de6c31c3faf1b7019f956a")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629935/sologram/fayuade1efx2bv7ior3z.webp",
+            "cloudinaryId" : "sologram/fayuade1efx2bv7ior3z",
+            "_id" : ObjectId("67de6c31c3faf1b7019f956b")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629935/sologram/klwmpbgaxuuxotq6hbl2.jpg",
+            "cloudinaryId" : "sologram/klwmpbgaxuuxotq6hbl2",
+            "_id" : ObjectId("67de6c31c3faf1b7019f956c")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629935/sologram/ugxlwrgdjrxozlecj7pr.webp",
+            "cloudinaryId" : "sologram/ugxlwrgdjrxozlecj7pr",
+            "_id" : ObjectId("67de6c31c3faf1b7019f956d")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629935/sologram/wvdtk8idihznjfq8tn9x.jpg",
+            "cloudinaryId" : "sologram/wvdtk8idihznjfq8tn9x",
+            "_id" : ObjectId("67de6c31c3faf1b7019f956e")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629936/sologram/ksf0d5zpccukr3exymc6.webp",
+            "cloudinaryId" : "sologram/ksf0d5zpccukr3exymc6",
+            "_id" : ObjectId("67de6c31c3faf1b7019f956f")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629936/sologram/as7wh2gebtxmsdhqsxmt.webp",
+            "cloudinaryId" : "sologram/as7wh2gebtxmsdhqsxmt",
+            "_id" : ObjectId("67de6c31c3faf1b7019f9570")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629936/sologram/q6p1vm6bblsgl5wrd0cg.webp",
+            "cloudinaryId" : "sologram/q6p1vm6bblsgl5wrd0cg",
+            "_id" : ObjectId("67de6c31c3faf1b7019f9571")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629936/sologram/wubh5kj6ucjehjxdhlau.webp",
+            "cloudinaryId" : "sologram/wubh5kj6ucjehjxdhlau",
+            "_id" : ObjectId("67de6c31c3faf1b7019f9572")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629936/sologram/rtfbtvi77asowuqd747k.webp",
+            "cloudinaryId" : "sologram/rtfbtvi77asowuqd747k",
+            "_id" : ObjectId("67de6c31c3faf1b7019f9573")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629936/sologram/cztya0vbnirivorou62d.webp",
+            "cloudinaryId" : "sologram/cztya0vbnirivorou62d",
+            "_id" : ObjectId("67de6c31c3faf1b7019f9574")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629937/sologram/yeztgimzqvazsrsbtny1.webp",
+            "cloudinaryId" : "sologram/yeztgimzqvazsrsbtny1",
+            "_id" : ObjectId("67de6c31c3faf1b7019f9575")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629937/sologram/nx1cogccoro6lfppqdid.webp",
+            "cloudinaryId" : "sologram/nx1cogccoro6lfppqdid",
+            "_id" : ObjectId("67de6c31c3faf1b7019f9576")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742629937/sologram/ahsturnebh13buhwjixn.webp",
+            "cloudinaryId" : "sologram/ahsturnebh13buhwjixn",
+            "_id" : ObjectId("67de6c31c3faf1b7019f9577")
+        }
+    ],
+    "likes" : NumberInt(0),
+    "tags" : [
+        "CruiseVibes #BoysOnBoard #MeravigliaMoments #NYCToSea #SailAndChill #CoastalRun #OceanViewsAndCrew #PassportBros #DeckDays #ClassyButCruisin #WavesAndWhiskey #TravelLegends #Brocation2025"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2024-06-10T07:52:17.998+0000"),
+    "updatedAt" : ISODate("2025-03-22T07:52:17.998+0000"),
+    "__v" : NumberInt(0)
+}
+{
+    "_id" : ObjectId("67e05db2c3faf1b7019fbd52"),
+    "caption" : "Tivoli Twinkle Time - Copenhagen 2024",
+    "content" : "Visited Tivoli Gardens in Copenhagen this December and it was straight out of a holiday fairytale. From twinkling lights strung through the snow-dusted trees to warm mugs of gløgg and fresh æbleskiver, the Christmas market vibe was unreal. The whole place smelled like cinnamon and magic. If you're looking for peak holiday spirit, this is it. Denmark, you’ve officially raised the bar on Christmas.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742757297/sologram/hmf8buybzoimpp1mrqkf.jpg",
+            "cloudinaryId" : "sologram/hmf8buybzoimpp1mrqkf",
+            "_id" : ObjectId("67e05db2c3faf1b7019fbd53")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742757297/sologram/umd3echafkvuhltvqkvw.webp",
+            "cloudinaryId" : "sologram/umd3echafkvuhltvqkvw",
+            "_id" : ObjectId("67e05db2c3faf1b7019fbd54")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742757297/sologram/crwonj3qytuz2yjpibbk.webp",
+            "cloudinaryId" : "sologram/crwonj3qytuz2yjpibbk",
+            "_id" : ObjectId("67e05db2c3faf1b7019fbd55")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742757297/sologram/mptbggm95juug1izn88w.jpg",
+            "cloudinaryId" : "sologram/mptbggm95juug1izn88w",
+            "_id" : ObjectId("67e05db2c3faf1b7019fbd56")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742757297/sologram/zrougk6blslpcetwdce3.webp",
+            "cloudinaryId" : "sologram/zrougk6blslpcetwdce3",
+            "_id" : ObjectId("67e05db2c3faf1b7019fbd57")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742757297/sologram/ub7qjoqraw3o3wwdtk6d.webp",
+            "cloudinaryId" : "sologram/ub7qjoqraw3o3wwdtk6d",
+            "_id" : ObjectId("67e05db2c3faf1b7019fbd58")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742758790/sologram/yjafamhtofldmhhofwc6.jpg",
+            "cloudinaryId" : "sologram/yjafamhtofldmhhofwc6",
+            "_id" : ObjectId("67e06388c3faf1b7019fbf29")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742758790/sologram/r5bjov7cippoioh5vdrt.jpg",
+            "cloudinaryId" : "sologram/r5bjov7cippoioh5vdrt",
+            "_id" : ObjectId("67e06388c3faf1b7019fbf2a")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742758791/sologram/eeulj9qsdlgbrrti24pf.webp",
+            "cloudinaryId" : "sologram/eeulj9qsdlgbrrti24pf",
+            "_id" : ObjectId("67e06388c3faf1b7019fbf2b")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1742758791/sologram/wt7b1qwndicgei0ssjqv.webp",
+            "cloudinaryId" : "sologram/wt7b1qwndicgei0ssjqv",
+            "_id" : ObjectId("67e06388c3faf1b7019fbf2c")
+        }
+    ],
+    "likes" : NumberInt(0),
+    "tags" : [
+        "TivoliChristmas #HyggeVibes #VisitCopenhagen #SoloGramChronicles #WinterWanderlust #GløggSeason"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2023-12-13T19:14:58.755+0000"),
+    "updatedAt" : ISODate("2025-03-23T19:39:53.557+0000"),
+    "__v" : NumberInt(2)
+}
+{
+    "_id" : ObjectId("67ef319e261609836ab990a7"),
+    "caption" : "Miles and Meaning",
+    "content" : "Last night, Beth and I walked three quiet miles under a cool spring sky. We started with music, but somewhere along the way, the conversation got deeper.\n\nShe said, “Nothing really matters… and somehow, everything works out like it’s supposed to.”\n\nAnd in that moment, it felt true. The worries got lighter, the air got softer, and the walk became more than just steps—it became perspective.\n\nSometimes all you need is a little movement, a little stillness, and someone you love reminding you how to see the world.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743729050/j08sddbbk8hqpztg3zmg.jpg",
+            "cloudinaryId" : "j08sddbbk8hqpztg3zmg",
+            "filter" : "filter-vintage",
+            "_id" : ObjectId("67ef319e261609836ab990a8")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743729052/vhn9m7cx7wtk5gtl0atj.jpg",
+            "cloudinaryId" : "vhn9m7cx7wtk5gtl0atj",
+            "filter" : "filter-grayscale",
+            "_id" : ObjectId("67ef319e261609836ab990a9")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743729053/cergbzmcpidfhszclu7u.jpg",
+            "cloudinaryId" : "cergbzmcpidfhszclu7u",
+            "filter" : "filter-warm",
+            "_id" : ObjectId("67ef319e261609836ab990aa")
+        }
+    ],
+    "likes" : NumberInt(3),
+    "tags" : [
+        "Spring #Walking #Reflection #Philosophy"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2025-04-04T01:10:54.696+0000"),
+    "updatedAt" : ISODate("2025-04-27T06:04:13.075+0000"),
+    "__v" : NumberInt(0)
+}
+{
+    "_id" : ObjectId("67f2cc3d3314b33154d786e6"),
+    "caption" : "Greensboro & Garden Paths",
+    "content" : "Wheels down in GSO and straight into one of those dreamy overnights I live for.\nWandered through Downtown, strolled the Bog Garden, and soaked up some serenity in the Bicentennial Gardens—man, North Carolina knows how to show off.\n\nSomething about quiet paths under tall trees and sun breaking through the leaves makes me feel a little more grounded, a little more grateful. These overnights are the perk of the job—the chance to explore somewhere new while the world’s still asleep.\n\nBut let’s be honest...even the prettiest garden can’t compete with my babe-a back home.\nMiss you, babe-a! 🥰❤️",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965014/g4zzfko6qp2xctiw23tn.jpg",
+            "cloudinaryId" : "g4zzfko6qp2xctiw23tn",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786e7")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965018/gesruapjh1hj3i2c4iod.jpg",
+            "cloudinaryId" : "gesruapjh1hj3i2c4iod",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786e8")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965022/nxmpqrykiatpkewuvvum.jpg",
+            "cloudinaryId" : "nxmpqrykiatpkewuvvum",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786e9")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965026/wyyhdomxfnqobcwtxawn.jpg",
+            "cloudinaryId" : "wyyhdomxfnqobcwtxawn",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786ea")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965031/m5j2k1gkd16shghl5n53.jpg",
+            "cloudinaryId" : "m5j2k1gkd16shghl5n53",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786eb")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965037/hs7r9ge1cws2yyfzle2f.jpg",
+            "cloudinaryId" : "hs7r9ge1cws2yyfzle2f",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786ec")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965047/uqwcdyvkt8mayt1umlw3.jpg",
+            "cloudinaryId" : "uqwcdyvkt8mayt1umlw3",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786ed")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965052/ez792tkys5dlsjvmjfi5.jpg",
+            "cloudinaryId" : "ez792tkys5dlsjvmjfi5",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786ee")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965056/rdiuwbj75t4ibqlxwjr1.jpg",
+            "cloudinaryId" : "rdiuwbj75t4ibqlxwjr1",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786ef")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965061/wj7tyff1htpkulcjheey.jpg",
+            "cloudinaryId" : "wj7tyff1htpkulcjheey",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786f0")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965066/eyiktbdoiheo3ukvq7kp.jpg",
+            "cloudinaryId" : "eyiktbdoiheo3ukvq7kp",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786f1")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965070/mpmnbbvphoo1mbe4zreh.jpg",
+            "cloudinaryId" : "mpmnbbvphoo1mbe4zreh",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786f2")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965076/nzqewdnmoxjncrpyd1jn.jpg",
+            "cloudinaryId" : "nzqewdnmoxjncrpyd1jn",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786f3")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965081/retrnzp9alvaf8faf8jq.jpg",
+            "cloudinaryId" : "retrnzp9alvaf8faf8jq",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786f4")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743965086/etpicc7saggr0kweqm8x.jpg",
+            "cloudinaryId" : "etpicc7saggr0kweqm8x",
+            "filter" : "",
+            "_id" : ObjectId("67f2cc3d3314b33154d786f5")
+        }
+    ],
+    "likes" : NumberInt(3),
+    "tags" : [
+        "PilotLife #GreensboroVibes #LayoverLove #GardenGetaway #HeartAtHome"
+    ],
+    "collections" : [
+        ObjectId("67df7a9fc3faf1b7019fa164")
+    ],
+    "createdAt" : ISODate("2025-04-06T18:47:25.713+0000"),
+    "updatedAt" : ISODate("2025-04-27T06:00:54.859+0000"),
+    "__v" : NumberInt(1)
+}
+{
+    "_id" : ObjectId("67f2ef993314b33154d78c1f"),
+    "caption" : "✈️ From Salt Lake to Sushi: Our Epic Tokyo Adventure! 🇯🇵",
+    "content" : "Lost in translation? More like lost in the magic of Tokyo! 🎌 From neon-lit streets to hidden ramen gems, May 2024 was a whirlwind of adventure, culture, and SO much amazing food. 🍣🍜 Whether it was Shibuya’s crazy crosswalks, breathtaking temples, or the hunt for the best matcha, every moment was unforgettable. ✨ Sayōnara for now, but Tokyo—we’ll be back! 🚀",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974094/septkzqqf3soqsjnuhx4.jpg",
+            "cloudinaryId" : "septkzqqf3soqsjnuhx4",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c20")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974096/vysm7bohyzuyyx5xdzpr.jpg",
+            "cloudinaryId" : "vysm7bohyzuyyx5xdzpr",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c21")
+        },
+        {
+            "mediaType" : "video",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/video/upload/v1743974111/hyvfw2oqx8zimd5osl1p.mp4",
+            "cloudinaryId" : "hyvfw2oqx8zimd5osl1p",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c22")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974117/appg3wvq0ns6zxe3g0ua.jpg",
+            "cloudinaryId" : "appg3wvq0ns6zxe3g0ua",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c23")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974119/lzsmxwh0bn8iguvpiec0.jpg",
+            "cloudinaryId" : "lzsmxwh0bn8iguvpiec0",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c24")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974122/uycvc33mglc7scsb09ke.jpg",
+            "cloudinaryId" : "uycvc33mglc7scsb09ke",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c25")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974125/hgebsuza7tx2cihemjph.jpg",
+            "cloudinaryId" : "hgebsuza7tx2cihemjph",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c26")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974129/r8z52knnw1apd1no7lsw.jpg",
+            "cloudinaryId" : "r8z52knnw1apd1no7lsw",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c27")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974135/fqw9bnnunw3cr8ow4ufx.jpg",
+            "cloudinaryId" : "fqw9bnnunw3cr8ow4ufx",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c28")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974139/ma43v4sxl8z3lwyvixms.jpg",
+            "cloudinaryId" : "ma43v4sxl8z3lwyvixms",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c29")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974149/dh7rxpwqoqvnr8hctmvy.jpg",
+            "cloudinaryId" : "dh7rxpwqoqvnr8hctmvy",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c2a")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974156/h81lgqh1jj2yq8acnef0.jpg",
+            "cloudinaryId" : "h81lgqh1jj2yq8acnef0",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c2b")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974163/jszudcvsumnrvyykcupi.jpg",
+            "cloudinaryId" : "jszudcvsumnrvyykcupi",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c2c")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974166/jmxntzqbovkjke1rpzod.jpg",
+            "cloudinaryId" : "jmxntzqbovkjke1rpzod",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c2d")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974172/zfkzwoya1myovtdc5nuy.jpg",
+            "cloudinaryId" : "zfkzwoya1myovtdc5nuy",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c2e")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974177/fiehvbpxvke4s38foecg.jpg",
+            "cloudinaryId" : "fiehvbpxvke4s38foecg",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c2f")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974179/xefmdnqevxzqix8fwrf0.jpg",
+            "cloudinaryId" : "xefmdnqevxzqix8fwrf0",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c30")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974189/ckplyjlptsmoxzfndjso.jpg",
+            "cloudinaryId" : "ckplyjlptsmoxzfndjso",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c31")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974194/uancyc8zjwkrudlw1qro.jpg",
+            "cloudinaryId" : "uancyc8zjwkrudlw1qro",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c32")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974198/akt3ueinu7rowv6dsoly.jpg",
+            "cloudinaryId" : "akt3ueinu7rowv6dsoly",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c33")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1743974202/ue4uekbgtbukkeljxb4o.jpg",
+            "cloudinaryId" : "ue4uekbgtbukkeljxb4o",
+            "filter" : "",
+            "_id" : ObjectId("67f2ef993314b33154d78c34")
+        }
+    ],
+    "likes" : NumberInt(0),
+    "tags" : [
+        "Tokyo2024 #LostInJapan #SushiGoals"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2024-05-21T21:18:17.837+0000"),
+    "updatedAt" : ISODate("2024-05-23T21:18:17.837+0000"),
+    "__v" : NumberInt(0)
+}
+{
+    "_id" : ObjectId("67f71f9fa7353ca42f078d6b"),
+    "caption" : "Jack's 17th!!",
+    "content" : "We celebrated Jack’s 17th tonight with a solid mix of wings, laughs, and family time. He picked Buffalo Wild Wings for dinner—no surprise there—and we followed it up with cake and a low-key hangout back at the house. The family came by, which made it feel extra special. Hard to believe he's already 17!",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744248659/kargfh7eibzstx6ygwgc.jpg",
+            "cloudinaryId" : "kargfh7eibzstx6ygwgc",
+            "filter" : "",
+            "_id" : ObjectId("67f71f9fa7353ca42f078d6c")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744248661/cg7sygn4x9l7lxxoqrt9.jpg",
+            "cloudinaryId" : "cg7sygn4x9l7lxxoqrt9",
+            "filter" : "",
+            "_id" : ObjectId("67f71f9fa7353ca42f078d6d")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744248662/tcoy8nowsn8xlvoq1qu3.jpg",
+            "cloudinaryId" : "tcoy8nowsn8xlvoq1qu3",
+            "filter" : "",
+            "_id" : ObjectId("67f71f9fa7353ca42f078d6e")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744248663/rmwzbspjfstyxdo1lqie.jpg",
+            "cloudinaryId" : "rmwzbspjfstyxdo1lqie",
+            "filter" : "",
+            "_id" : ObjectId("67f71f9fa7353ca42f078d6f")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744248665/bvinyrdhozwtyk2hbhmx.jpg",
+            "cloudinaryId" : "bvinyrdhozwtyk2hbhmx",
+            "filter" : "",
+            "_id" : ObjectId("67f71f9fa7353ca42f078d70")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744248666/wvbdtzjlwjrtla91gsbx.jpg",
+            "cloudinaryId" : "wvbdtzjlwjrtla91gsbx",
+            "filter" : "",
+            "_id" : ObjectId("67f71f9fa7353ca42f078d71")
+        }
+    ],
+    "likes" : NumberInt(2),
+    "tags" : [
+        "JackTurns17 #FamilyNight #WingsAndCake #MilestoneMoments"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2025-04-10T01:32:15.948+0000"),
+    "updatedAt" : ISODate("2025-04-27T06:04:05.482+0000"),
+    "__v" : NumberInt(0)
+}
+{
+    "_id" : ObjectId("67f91346b7b953457486a524"),
+    "caption" : "Sushi, Sunset, and a Walk to Remember",
+    "content" : "Dinner at Tsunami hit the spot—fresh rolls, just the right kick, and easy conversation.\nAfterward, we walked the Jordan River trail near the ponds, where the evening light stretched long and quiet across the water.\nA few ducks stirred the surface, and the path was mostly ours.\nNo big agenda, just time together, and a reminder that the simple stuff—good food, a walk, and being with your person—can feel like everything you need.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744376316/yz2idkvsl3oqpyk6dbhx.jpg",
+            "cloudinaryId" : "yz2idkvsl3oqpyk6dbhx",
+            "filter" : "",
+            "_id" : ObjectId("67f91346b7b953457486a525")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744376319/b21wenww2iebomolkxbt.jpg",
+            "cloudinaryId" : "b21wenww2iebomolkxbt",
+            "filter" : "",
+            "_id" : ObjectId("67f91346b7b953457486a526")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744376321/y3t6sldossr6fvxh43rw.jpg",
+            "cloudinaryId" : "y3t6sldossr6fvxh43rw",
+            "filter" : "",
+            "_id" : ObjectId("67f91346b7b953457486a527")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744376322/qt5cgd8strz6wu2aclk4.jpg",
+            "cloudinaryId" : "qt5cgd8strz6wu2aclk4",
+            "filter" : "",
+            "_id" : ObjectId("67f91346b7b953457486a528")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744376325/jdampoo5c1epcp6tczr2.jpg",
+            "cloudinaryId" : "jdampoo5c1epcp6tczr2",
+            "filter" : "",
+            "_id" : ObjectId("67f91346b7b953457486a529")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744376326/ktcbbqcohmmzillgfbsr.jpg",
+            "cloudinaryId" : "ktcbbqcohmmzillgfbsr",
+            "filter" : "",
+            "_id" : ObjectId("67f91346b7b953457486a52a")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744376328/j1klxhwzabbmwvfkhn5o.jpg",
+            "cloudinaryId" : "j1klxhwzabbmwvfkhn5o",
+            "filter" : "",
+            "_id" : ObjectId("67f91346b7b953457486a52b")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744376330/lf96kiy7m5qy9zhtji0s.jpg",
+            "cloudinaryId" : "lf96kiy7m5qy9zhtji0s",
+            "filter" : "",
+            "_id" : ObjectId("67f91346b7b953457486a52c")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744376332/q5vzubcelt9bixfidiy1.jpg",
+            "cloudinaryId" : "q5vzubcelt9bixfidiy1",
+            "filter" : "",
+            "_id" : ObjectId("67f91346b7b953457486a52d")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744376334/efvjklt0xra28su3ht6i.jpg",
+            "cloudinaryId" : "efvjklt0xra28su3ht6i",
+            "filter" : "",
+            "_id" : ObjectId("67f91346b7b953457486a52e")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744376338/ggvjb1lgpcasqrrtxuur.jpg",
+            "cloudinaryId" : "ggvjb1lgpcasqrrtxuur",
+            "filter" : "",
+            "_id" : ObjectId("67f91346b7b953457486a52f")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744376341/oiofsuotrzvasiyltux4.jpg",
+            "cloudinaryId" : "oiofsuotrzvasiyltux4",
+            "filter" : "",
+            "_id" : ObjectId("67f91346b7b953457486a530")
+        }
+    ],
+    "likes" : NumberInt(3),
+    "tags" : [
+        "SouthJordanNights #TsunamiSushi #JordanRiverTrail #SimpleThings #EveningWalks #DateNightVibes #UtahOutdoors #CouplesTime #FishingPonds #PostcardMoments"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2025-04-11T13:04:06.374+0000"),
+    "updatedAt" : ISODate("2025-04-27T06:00:48.865+0000"),
+    "__v" : NumberInt(0)
+}
+{
+    "_id" : ObjectId("67fc084a581789cfdf7a8f9a"),
+    "caption" : "Morning Miles in Dayton, OH",
+    "content" : "The rhythm of a layover morning —\nWoke up and wandered through Dayton’s 2nd Street Market, letting the smells of coffee and fresh bread pull me awake.\nLunch at Gulzar’s was simple but perfect — bold spices, quiet atmosphere, the kind of place that makes you linger a little longer.\nWalked the path along the Great Miami River, just me and the stillness of a city I barely know.\nThese mornings always remind me how much I miss home — not in the heavy way, just in the little moments I wish I could share with my babe-a.\nShe would’ve loved this one.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570061/utas9vpwenvtdnamjsv7.jpg",
+            "cloudinaryId" : "utas9vpwenvtdnamjsv7",
+            "filter" : "",
+            "_id" : ObjectId("67fc084a581789cfdf7a8f9b")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570064/aqprxolbvphi77dwbvip.jpg",
+            "cloudinaryId" : "aqprxolbvphi77dwbvip",
+            "filter" : "",
+            "_id" : ObjectId("67fc084a581789cfdf7a8f9c")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570068/weklgcx0vndc4vlqmj3g.jpg",
+            "cloudinaryId" : "weklgcx0vndc4vlqmj3g",
+            "filter" : "",
+            "_id" : ObjectId("67fc084a581789cfdf7a8f9d")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570071/wmeltlucvinbkkgp6gzc.jpg",
+            "cloudinaryId" : "wmeltlucvinbkkgp6gzc",
+            "filter" : "",
+            "_id" : ObjectId("67fc084a581789cfdf7a8f9e")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570074/kguhwarziaqcumgarzq3.jpg",
+            "cloudinaryId" : "kguhwarziaqcumgarzq3",
+            "filter" : "",
+            "_id" : ObjectId("67fc084a581789cfdf7a8f9f")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570078/k7htdcu5wadla5gepyg7.jpg",
+            "cloudinaryId" : "k7htdcu5wadla5gepyg7",
+            "filter" : "",
+            "_id" : ObjectId("67fc084a581789cfdf7a8fa0")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570083/cxn5vwxlypuhlqrxpk2t.jpg",
+            "cloudinaryId" : "cxn5vwxlypuhlqrxpk2t",
+            "filter" : "",
+            "_id" : ObjectId("67fc084a581789cfdf7a8fa1")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570087/wbytbibidzad0oqmx7bk.jpg",
+            "cloudinaryId" : "wbytbibidzad0oqmx7bk",
+            "filter" : "",
+            "_id" : ObjectId("67fc084a581789cfdf7a8fa2")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570091/j9r1eort6hczvnimhkpy.jpg",
+            "cloudinaryId" : "j9r1eort6hczvnimhkpy",
+            "filter" : "",
+            "_id" : ObjectId("67fc084a581789cfdf7a8fa3")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570095/cyxziledyrwt9klxosry.jpg",
+            "cloudinaryId" : "cyxziledyrwt9klxosry",
+            "filter" : "",
+            "_id" : ObjectId("67fc084a581789cfdf7a8fa4")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570100/lra772oofwoirjpl7goa.jpg",
+            "cloudinaryId" : "lra772oofwoirjpl7goa",
+            "filter" : "",
+            "_id" : ObjectId("67fc084a581789cfdf7a8fa5")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570103/yaxlomldxxnsof6tgobc.jpg",
+            "cloudinaryId" : "yaxlomldxxnsof6tgobc",
+            "filter" : "",
+            "_id" : ObjectId("67fc084a581789cfdf7a8fa6")
+        }
+    ],
+    "likes" : NumberInt(2),
+    "tags" : [
+        "#SoloGram #DaytonLayover #MarketMornings #GulzarsIndianCuisine #GreatMiamiRiver #PilotLife #MissingHome #LayoverReflections #MorningMiles #BabeAMoments #QuietCities #FlyingAndFeeling"
+    ],
+    "collections" : [
+        ObjectId("67df7a9fc3faf1b7019fa164")
+    ],
+    "createdAt" : ISODate("2025-04-13T18:54:02.346+0000"),
+    "updatedAt" : ISODate("2025-04-27T13:28:39.631+0000"),
+    "__v" : NumberInt(1)
+}
+{
+    "_id" : ObjectId("67fc0955581789cfdf7a8ff4"),
+    "caption" : "Wings of the Past - National Museum of the United States Air Force. Dayton, OH",
+    "content" : "Spent the afternoon walking through decades of stories at the National Museum of the United States Air Force.\nJet engines, warbirds, and quiet tributes to those who flew before us — each hangar holding echoes of courage, innovation, and sacrifice.\nIt’s humbling, seeing the arc of aviation laid out like that.\nIt reminds me where this path started… and just how many carried it forward.\nGrateful for the history. Proud to be part of its future — even in a small way.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570601/oxigoovyub99td8hpwao.jpg",
+            "cloudinaryId" : "oxigoovyub99td8hpwao",
+            "filter" : "",
+            "_id" : ObjectId("67fc0955581789cfdf7a8ff5")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570605/mg0qcbuyampuar62zt4v.jpg",
+            "cloudinaryId" : "mg0qcbuyampuar62zt4v",
+            "filter" : "",
+            "_id" : ObjectId("67fc0955581789cfdf7a8ff6")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570610/cl92es8zctejwjxsdbmm.jpg",
+            "cloudinaryId" : "cl92es8zctejwjxsdbmm",
+            "filter" : "",
+            "_id" : ObjectId("67fc0955581789cfdf7a8ff7")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570615/rgqpue8otmm56xvrw07w.jpg",
+            "cloudinaryId" : "rgqpue8otmm56xvrw07w",
+            "filter" : "",
+            "_id" : ObjectId("67fc0955581789cfdf7a8ff8")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570617/oml28zjcnf9uhctwgsr3.jpg",
+            "cloudinaryId" : "oml28zjcnf9uhctwgsr3",
+            "filter" : "",
+            "_id" : ObjectId("67fc0955581789cfdf7a8ff9")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570620/vfbpiibbxkr8kd8wbz1p.jpg",
+            "cloudinaryId" : "vfbpiibbxkr8kd8wbz1p",
+            "filter" : "",
+            "_id" : ObjectId("67fc0955581789cfdf7a8ffa")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570624/mdwonqqptabx1r4kupno.jpg",
+            "cloudinaryId" : "mdwonqqptabx1r4kupno",
+            "filter" : "",
+            "_id" : ObjectId("67fc0955581789cfdf7a8ffb")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570628/ahauziyobcitybehtdx9.jpg",
+            "cloudinaryId" : "ahauziyobcitybehtdx9",
+            "filter" : "",
+            "_id" : ObjectId("67fc0955581789cfdf7a8ffc")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570632/bh7as2fdfc9ue6nxwf2z.jpg",
+            "cloudinaryId" : "bh7as2fdfc9ue6nxwf2z",
+            "filter" : "",
+            "_id" : ObjectId("67fc0955581789cfdf7a8ffd")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570637/w5gjsggipwtvjkndwsk6.jpg",
+            "cloudinaryId" : "w5gjsggipwtvjkndwsk6",
+            "filter" : "",
+            "_id" : ObjectId("67fc0955581789cfdf7a8ffe")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570641/se2jkqmbyvrp9sdk8zmf.jpg",
+            "cloudinaryId" : "se2jkqmbyvrp9sdk8zmf",
+            "filter" : "",
+            "_id" : ObjectId("67fc0955581789cfdf7a8fff")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744570645/yb69eckstot6dusuwqcb.jpg",
+            "cloudinaryId" : "yb69eckstot6dusuwqcb",
+            "filter" : "",
+            "_id" : ObjectId("67fc0955581789cfdf7a9000")
+        }
+    ],
+    "likes" : NumberInt(2),
+    "tags" : [
+        "#USAFMuseum #WingsOfHistory #DaytonLayover #PilotLife #AviationHeritage #AirForcePride #SoloGram #SkyLegacies #FlightThroughTime #GratitudeInFlight #AmericanAviation"
+    ],
+    "collections" : [
+        ObjectId("67df7a9fc3faf1b7019fa164")
+    ],
+    "createdAt" : ISODate("2025-04-13T18:58:29.504+0000"),
+    "updatedAt" : ISODate("2025-04-27T16:05:00.048+0000"),
+    "__v" : NumberInt(1)
+}
+{
+    "_id" : ObjectId("67ff1eaa382057fa446bbbf2"),
+    "caption" : "Flying Lessons and Teenage Poker Faces",
+    "content" : "Brought my stepson out to Cornerstone Aviation today—the same flight school where I used to instruct—for his first ever discovery flight. He flew for about an hour with an instructor, got a feel for the controls, and logged some honest-to-goodness stick time.\n\nHard to tell exactly how much he loved it (teenagers are basically undercover agents when it comes to emotions), but he walked off the ramp with a slight smirk and didn’t immediately hand back the headset—so I’m calling it a win.\n\nMaybe it’s a one-time adventure. Maybe it’s the beginning of something bigger. Either way, proud to have shared the skies with him today.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744769855/xi6tuuwhyj4qwg2ulu0x.jpg",
+            "cloudinaryId" : "xi6tuuwhyj4qwg2ulu0x",
+            "filter" : "",
+            "_id" : ObjectId("67ff1eaa382057fa446bbbf3")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744769856/ewizi24qmkutjnumllf8.jpg",
+            "cloudinaryId" : "ewizi24qmkutjnumllf8",
+            "filter" : "",
+            "_id" : ObjectId("67ff1eaa382057fa446bbbf4")
+        },
+        {
+            "mediaType" : "video",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/video/upload/v1744769859/npk4byjytyei9a63jagj.mp4",
+            "cloudinaryId" : "npk4byjytyei9a63jagj",
+            "filter" : "",
+            "_id" : ObjectId("67ff1eaa382057fa446bbbf5")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744769863/ufvwjq1wa7cgvamjaxfw.jpg",
+            "cloudinaryId" : "ufvwjq1wa7cgvamjaxfw",
+            "filter" : "",
+            "_id" : ObjectId("67ff1eaa382057fa446bbbf6")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744769864/slczw65x1a8jogrjgsjf.jpg",
+            "cloudinaryId" : "slczw65x1a8jogrjgsjf",
+            "filter" : "",
+            "_id" : ObjectId("67ff1eaa382057fa446bbbf7")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1744769866/or6svw8murnjfwh64xnf.jpg",
+            "cloudinaryId" : "or6svw8murnjfwh64xnf",
+            "filter" : "",
+            "_id" : ObjectId("67ff1eaa382057fa446bbbf8")
+        }
+    ],
+    "likes" : NumberInt(1),
+    "tags" : [
+        "#DiscoveryFlight #CornerstoneAviation #FirstFlight #AviationLife #FuturePilotMaybe #TeenageMystery #SaltLakeCitySkies #AviationDadMoments #SoloGramWings"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2025-04-16T03:06:18.102+0000"),
+    "updatedAt" : ISODate("2025-04-27T15:36:57.220+0000"),
+    "__v" : NumberInt(0)
+}
+{
+    "_id" : ObjectId("6802614f37a28b559f0cc01e"),
+    "caption" : "The Suit Fitting: Dad Edition",
+    "content" : "Hudson's prom is this Saturday, and since I’ll be missing it (thanks, adulting), I pulled the classic Dad move—made him try on his suit early so I could get my own moment.\n\nAnd dang… the kid cleaned up nice!\n\nHe and his girlfriend Manu are gonna look like prom royalty. Meanwhile, I’ll be stalking photos like a proud (and slightly bitter) paparazzi.\n\nStill not sure how we got from LEGOs to tuxedos so fast… but here we are.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745448478/z7hbeo2tbzv0m39mwh1c.jpg",
+            "cloudinaryId" : "z7hbeo2tbzv0m39mwh1c",
+            "filter" : "none",
+            "_id" : ObjectId("68096e28d064afd76ae6162e")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745448480/c34wibuqnjwbqqlodu9g.jpg",
+            "cloudinaryId" : "c34wibuqnjwbqqlodu9g",
+            "filter" : "none",
+            "_id" : ObjectId("68096e28d064afd76ae6162f")
+        }
+    ],
+    "likes" : NumberInt(2),
+    "tags" : [
+        "#PromTrialRun #DadTaxIncludesPhotos #SuitUpKid #SoloGram #GrowingUpTooFast"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2025-04-18T14:27:27.682+0000"),
+    "updatedAt" : ISODate("2025-04-27T15:36:48.602+0000"),
+    "__v" : NumberInt(4)
+}
+{
+    "_id" : ObjectId("680677414d9fb14926c2968d"),
+    "caption" : "From Sippy Cups to Suit Coats",
+    "content" : "One minute you’re packing juice boxes and watching Pixar movies on repeat. The next, he’s in a suit, picking up his girlfriend for prom like it’s the most normal thing in the world.\nNot sure when the shift happened, but here we are — tie on straight, cologne slightly overdone, smile locked in.\nHere’s to slow dances, fast friends, and memories that’ll last way longer than those boutonnières.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745254028/plykg5sltumqlpsockxj.jpg",
+            "cloudinaryId" : "plykg5sltumqlpsockxj",
+            "filter" : "none",
+            "_id" : ObjectId("680677414d9fb14926c2968e")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745254028/qwdprm3wnd9ryvhkekwe.jpg",
+            "cloudinaryId" : "qwdprm3wnd9ryvhkekwe",
+            "filter" : "none",
+            "_id" : ObjectId("680677414d9fb14926c2968f")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745254028/irij3zoiubwda1qgh2tp.jpg",
+            "cloudinaryId" : "irij3zoiubwda1qgh2tp",
+            "filter" : "none",
+            "_id" : ObjectId("680677414d9fb14926c29690")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745254028/otkx9qcagce46jp1xfcf.jpg",
+            "cloudinaryId" : "otkx9qcagce46jp1xfcf",
+            "filter" : "none",
+            "_id" : ObjectId("680677414d9fb14926c29691")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745254028/i9amm4tlh51c7kywzobo.jpg",
+            "cloudinaryId" : "i9amm4tlh51c7kywzobo",
+            "filter" : "none",
+            "_id" : ObjectId("680677414d9fb14926c29692")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745254028/izigxorazmji80acvami.jpg",
+            "cloudinaryId" : "izigxorazmji80acvami",
+            "filter" : "none",
+            "_id" : ObjectId("680677414d9fb14926c29693")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745254028/ephoi6lm8mimggkbnpht.jpg",
+            "cloudinaryId" : "ephoi6lm8mimggkbnpht",
+            "filter" : "none",
+            "_id" : ObjectId("680677414d9fb14926c29694")
+        }
+    ],
+    "likes" : NumberInt(1),
+    "tags" : [
+        "PromNight #DadLife #FromSippyToSuit #SoloGramMoments #PromVibes #MemoriesInTheMaking #ProudDad #MilestoneMoments"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2025-04-21T16:50:09.650+0000"),
+    "updatedAt" : ISODate("2025-04-27T05:57:02.901+0000"),
+    "__v" : NumberInt(1)
+}
+{
+    "_id" : ObjectId("680698974d9fb14926c299d5"),
+    "caption" : "Snoopy, Stories & Scrambled Eggs - Santa Rosa, CA",
+    "content" : "Santa Rosa served up the perfect overnight: a seriously good omelette, blue skies, and small-town charm with a side of nostalgia.\n\nWandered the streets, bumped into about a dozen Peanuts characters, got lost in an antique store, and found my happy place in a used bookstore that smelled like adventure and old paperbacks.\n\nNo agenda, no rush—just good food, great weather, and a town that knows how to slow down time.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745262457/ygyfz86wiskd2ocvnukm.jpg",
+            "cloudinaryId" : "ygyfz86wiskd2ocvnukm",
+            "filter" : "none",
+            "_id" : ObjectId("680698974d9fb14926c299d6")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745262453/gumqrnibqfapluoydrnp.jpg",
+            "cloudinaryId" : "gumqrnibqfapluoydrnp",
+            "filter" : "none",
+            "_id" : ObjectId("680698974d9fb14926c299d7")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745262461/yqlrysukuqkrweloenyw.jpg",
+            "cloudinaryId" : "yqlrysukuqkrweloenyw",
+            "filter" : "none",
+            "_id" : ObjectId("680698974d9fb14926c299d8")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745262459/nqcyljzkfejmusepu5km.jpg",
+            "cloudinaryId" : "nqcyljzkfejmusepu5km",
+            "filter" : "none",
+            "_id" : ObjectId("680698974d9fb14926c299d9")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745262461/kwa9lajgzkqhrztutqae.jpg",
+            "cloudinaryId" : "kwa9lajgzkqhrztutqae",
+            "filter" : "none",
+            "_id" : ObjectId("680698974d9fb14926c299da")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745262461/gskcaoz9buztstzsvg0g.jpg",
+            "cloudinaryId" : "gskcaoz9buztstzsvg0g",
+            "filter" : "none",
+            "_id" : ObjectId("680698974d9fb14926c299db")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745262460/rmnj3eju98ipt2e9maft.jpg",
+            "cloudinaryId" : "rmnj3eju98ipt2e9maft",
+            "filter" : "none",
+            "_id" : ObjectId("680698974d9fb14926c299dc")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745262472/nsykoconsamzoamsqst8.jpg",
+            "cloudinaryId" : "nsykoconsamzoamsqst8",
+            "filter" : "none",
+            "_id" : ObjectId("680698974d9fb14926c299dd")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745262480/xdvmh77ntx9sfbdh0mpu.jpg",
+            "cloudinaryId" : "xdvmh77ntx9sfbdh0mpu",
+            "filter" : "none",
+            "_id" : ObjectId("680698974d9fb14926c299de")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745262471/aed5qughqatmkejmjlw8.jpg",
+            "cloudinaryId" : "aed5qughqatmkejmjlw8",
+            "filter" : "none",
+            "_id" : ObjectId("680698974d9fb14926c299df")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745262474/vcueubleerxocbl8awa1.jpg",
+            "cloudinaryId" : "vcueubleerxocbl8awa1",
+            "filter" : "none",
+            "_id" : ObjectId("680698974d9fb14926c299e0")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745262477/oyfynad9uwerta1v2vyt.jpg",
+            "cloudinaryId" : "oyfynad9uwerta1v2vyt",
+            "filter" : "none",
+            "_id" : ObjectId("680698974d9fb14926c299e1")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745262479/cfutkhrtv4mibobw59c9.jpg",
+            "cloudinaryId" : "cfutkhrtv4mibobw59c9",
+            "filter" : "none",
+            "_id" : ObjectId("680698974d9fb14926c299e2")
+        }
+    ],
+    "likes" : NumberInt(1),
+    "tags" : [
+        "SoloGram #SantaRosaVibes #LayoverLife #OmeletteGoals #PeanutsTrail #BookstoreBrowsing #WanderWithMe #OvernightMagic #TravelSlowly #ChillStops #SoloWanders"
+    ],
+    "collections" : [
+        ObjectId("67df7a9fc3faf1b7019fa164")
+    ],
+    "createdAt" : ISODate("2025-04-21T19:12:23.483+0000"),
+    "updatedAt" : ISODate("2025-04-27T05:57:00.058+0000"),
+    "__v" : NumberInt(2)
+}
+{
+    "_id" : ObjectId("6807bb6c4d9fb14926c2a8c5"),
+    "caption" : "Smoke, Strings, and Solid Friends",
+    "content" : "Yesterday, I lost an old friend from the fire department.\n\nCorban and I served together at South Jordan Fire. And when I stepped into the fire chief role—when support got quiet—he never wavered. He had my back. That kind of loyalty is rare, and you don’t forget it.\n\nHe lived with the weight that life puts on all of us. But he kept showing up. He had just gotten married this year, hoping for a new beginning. And now he’s gone. It doesn’t feel fair.\n\nI keep thinking about those slow, quiet evenings on the back patio of Station #61—Guitars and Cigars, we called it. In the middle of a shift, between calls and chaos, we’d sit back with a smoke and listen to Corban pick up his guitar. He’d make up a tune on the spot, just messing around, and it’d have us rolling with laughter. It was simple, honest joy. And somehow, it always made the job feel a little lighter.\n\nYears ago, his two dogs had a litter—that’s where I got Bailey, my yellow lab. She’s more than just a dog to me. She’s a living reminder of a friend who gave more than people realized.\n\nCorban wasn’t perfect—none of us are—but he was real. He was loyal. And he left a mark.\n\nRest easy, brother.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745337168/czpywdd2zqwyftx6zwsm.jpg",
+            "cloudinaryId" : "czpywdd2zqwyftx6zwsm",
+            "filter" : "none",
+            "_id" : ObjectId("6807bb6c4d9fb14926c2a8c6")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745337168/ha5vsppwzti2cxdby9fz.jpg",
+            "cloudinaryId" : "ha5vsppwzti2cxdby9fz",
+            "filter" : "none",
+            "_id" : ObjectId("6807bb6c4d9fb14926c2a8c7")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745337168/c6x6refnache3oxkpzak.jpg",
+            "cloudinaryId" : "c6x6refnache3oxkpzak",
+            "filter" : "none",
+            "_id" : ObjectId("6807bb6c4d9fb14926c2a8c8")
+        }
+    ],
+    "likes" : NumberInt(1),
+    "tags" : [
+        "SouthJordanFire #FireBrotherhood #RestInPeaceCorban #GuitarsAndCigars #YellowLabLegacy #Bailey #StationLife #ChiefReflections #GoneTooSoon #TrueLoyalty"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2025-04-22T15:53:16.289+0000"),
+    "updatedAt" : ISODate("2025-04-27T05:56:56.629+0000"),
+    "__v" : NumberInt(0)
+}
+{
+    "_id" : ObjectId("680863a23e73b470f181810a"),
+    "caption" : "From Grits to Hits to Hudson",
+    "content" : "Started the evening with some finger-lickin' good Southern comfort at Sauce Boss in Draper—me, Beth, Mom, Dad, and my sister Lannea all around the table, passing plates and laughing way too loud (as it should be). Shrimp and grits, hot honey chicken, mac & cheese—the South showed up and showed out.\n\nAfter dinner, Beth and I dipped over to Bout Time for a couple drinks and some heated rounds of music bingo (don’t ask how many 2000s bangers I missed... I’m still salty).\n\nWrapped it all up by scooping up Hudson from his girlfriend’s house—those two just hit their 2-month mark. Wild how time flies. I swear he was just learning how to ride a bike, now he’s learning how to navigate a relationship.\n\nGood food. Good drinks. Good family. Great night.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745378403/nckmyyvbzaq9uwl11f5g.jpg",
+            "cloudinaryId" : "nckmyyvbzaq9uwl11f5g",
+            "filter" : "none",
+            "_id" : ObjectId("680863a23e73b470f181810b")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745378437/thfbffdrmmejbnglv3yt.jpg",
+            "cloudinaryId" : "thfbffdrmmejbnglv3yt",
+            "filter" : "none",
+            "_id" : ObjectId("680863a23e73b470f181810c")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745378587/p9o4cqm2n1dlwufp8gfz.jpg",
+            "cloudinaryId" : "p9o4cqm2n1dlwufp8gfz",
+            "filter" : "none",
+            "_id" : ObjectId("680863a23e73b470f181810d")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745378375/p1op5jtimfhozj3339sq.jpg",
+            "cloudinaryId" : "p1op5jtimfhozj3339sq",
+            "filter" : "none",
+            "_id" : ObjectId("680863a23e73b470f181810e")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745378422/sop2eeno3nyweca65c8i.jpg",
+            "cloudinaryId" : "sop2eeno3nyweca65c8i",
+            "filter" : "none",
+            "_id" : ObjectId("680863a23e73b470f181810f")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745378401/h2biigbzlmxsn1hql5hw.jpg",
+            "cloudinaryId" : "h2biigbzlmxsn1hql5hw",
+            "filter" : "none",
+            "_id" : ObjectId("680863a23e73b470f1818110")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745378494/jlcyd2geejez6eueoimm.jpg",
+            "cloudinaryId" : "jlcyd2geejez6eueoimm",
+            "filter" : "none",
+            "_id" : ObjectId("680863a23e73b470f1818111")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745378300/rlati9fhh1ynypbnusbg.jpg",
+            "cloudinaryId" : "rlati9fhh1ynypbnusbg",
+            "filter" : "none",
+            "_id" : ObjectId("680863a23e73b470f1818112")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745378456/g9j0grz9kiavliylwbau.jpg",
+            "cloudinaryId" : "g9j0grz9kiavliylwbau",
+            "filter" : "none",
+            "_id" : ObjectId("680863a23e73b470f1818113")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745378573/s3l0ynlt9sjtn2zzvsot.jpg",
+            "cloudinaryId" : "s3l0ynlt9sjtn2zzvsot",
+            "filter" : "none",
+            "_id" : ObjectId("680863a23e73b470f1818114")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745378576/bbdy6oyxkcapx1aolfyw.jpg",
+            "cloudinaryId" : "bbdy6oyxkcapx1aolfyw",
+            "filter" : "none",
+            "_id" : ObjectId("680863a23e73b470f1818115")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745378601/upgtwjamhfn4sioupx0i.jpg",
+            "cloudinaryId" : "upgtwjamhfn4sioupx0i",
+            "filter" : "none",
+            "_id" : ObjectId("680863a23e73b470f1818116")
+        }
+    ],
+    "likes" : NumberInt(1),
+    "tags" : [
+        "southernfood #family #bouttime #datenight #twomonth"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2025-04-23T03:50:58.593+0000"),
+    "updatedAt" : ISODate("2025-04-27T05:56:47.077+0000"),
+    "__v" : NumberInt(1)
+}
+{
+    "_id" : ObjectId("680badf76eba2610cd65a8e8"),
+    "caption" : "Swag, Sass, and Supplements I’ll Always Take",
+    "content" : "Day 1 of the LifeVantage Global Convention and I’ve already reached my personal growth quota for the year. Beth is thriving, glowing, possibly ascending to a higher plane. Me? I’m here for the free tote bag and hoping they wheel out snacks. So far: no snacks, lots of clapping, and a man told me to \"manifest abundance\" while standing directly in front of the men's room.\n\nSend help. Or snacks.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745595546/jqzxebb7uokkg6m9rikz.jpg",
+            "cloudinaryId" : "jqzxebb7uokkg6m9rikz",
+            "filter" : "none",
+            "_id" : ObjectId("680badf76eba2610cd65a8e9")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745595540/qpm0mle4pxfwvvzukrim.jpg",
+            "cloudinaryId" : "qpm0mle4pxfwvvzukrim",
+            "filter" : "none",
+            "_id" : ObjectId("680badf76eba2610cd65a8ea")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745595538/qmtfvejh52qjve12c4b4.jpg",
+            "cloudinaryId" : "qmtfvejh52qjve12c4b4",
+            "filter" : "none",
+            "_id" : ObjectId("680badf76eba2610cd65a8eb")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745595515/b3asc63nmzhinc5tadtu.jpg",
+            "cloudinaryId" : "b3asc63nmzhinc5tadtu",
+            "filter" : "none",
+            "_id" : ObjectId("680badf76eba2610cd65a8ec")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745595538/tbwadnrxr66tick5b0em.jpg",
+            "cloudinaryId" : "tbwadnrxr66tick5b0em",
+            "filter" : "none",
+            "_id" : ObjectId("680badf76eba2610cd65a8ed")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745595530/eczjalhztoiotan7mwzc.jpg",
+            "cloudinaryId" : "eczjalhztoiotan7mwzc",
+            "filter" : "none",
+            "_id" : ObjectId("680badf76eba2610cd65a8ee")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745595543/wpww6nmo6naulttggfq8.jpg",
+            "cloudinaryId" : "wpww6nmo6naulttggfq8",
+            "filter" : "none",
+            "_id" : ObjectId("680badf76eba2610cd65a8ef")
+        }
+    ],
+    "likes" : NumberInt(1),
+    "tags" : [
+        "SendSnacksNotSupplements #HusbandOfTheYear #LifeAdvantagedAgainstMyWill #BethMadeMeCome #CorporateCultVibes #SwagBagSurvivor #SaltLakeSlightlySalty"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2025-04-25T15:44:55.360+0000"),
+    "updatedAt" : ISODate("2025-04-27T05:56:31.609+0000"),
+    "__v" : NumberInt(0)
+}
+{
+    "_id" : ObjectId("680ce3ac6eba2610cd65ae24"),
+    "caption" : "Vibes, Views, and Victory Laps",
+    "content" : "Kicked off LifeVantage Global Convention with a bang yesterday!\nDay 1 brought the energy, the inspiration, and a few \"is this real life?\" moments at the Recognition Gala — always cool to see people’s dreams getting a standing ovation.\n\nAfter the fancy vibes, we headed to rooftop views at Van Ryder on top of the Meridien Hotel — killer skyline, killer laughs.\nHad an awesome night hanging out with Carrie (Beth’s ride-or-die mentor) and Sarah (Beth’s newest superstar consultant).\nGood friends, good drinks, great conversations — and about a hundred inside jokes that probably shouldn’t leave the rooftop.\n\nGrateful for this crazy journey, grateful for the people who make it so much fun.\nDay 1 in the books!",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745674167/j4qgerynxdqsdrgqjwz4.jpg",
+            "cloudinaryId" : "j4qgerynxdqsdrgqjwz4",
+            "filter" : "none",
+            "_id" : ObjectId("680ce3ac6eba2610cd65ae25")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745674164/oj66apj9dqjiqjthaa6m.jpg",
+            "cloudinaryId" : "oj66apj9dqjiqjthaa6m",
+            "filter" : "none",
+            "_id" : ObjectId("680ce3ac6eba2610cd65ae26")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745674149/z8jbadfjpzvnomurupce.jpg",
+            "cloudinaryId" : "z8jbadfjpzvnomurupce",
+            "filter" : "none",
+            "_id" : ObjectId("680ce3ac6eba2610cd65ae27")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745674145/ggc8wqjesduhnoyjk4ml.jpg",
+            "cloudinaryId" : "ggc8wqjesduhnoyjk4ml",
+            "filter" : "none",
+            "_id" : ObjectId("680ce3ac6eba2610cd65ae28")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745674148/jpstlxz2bsefpzvwnqzc.jpg",
+            "cloudinaryId" : "jpstlxz2bsefpzvwnqzc",
+            "filter" : "none",
+            "_id" : ObjectId("680ce3ac6eba2610cd65ae29")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745674126/z8rjhzvro2meysadihny.jpg",
+            "cloudinaryId" : "z8rjhzvro2meysadihny",
+            "filter" : "none",
+            "_id" : ObjectId("680ce3ac6eba2610cd65ae2a")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745674170/y4bau1bfaivp1q1y7c9j.jpg",
+            "cloudinaryId" : "y4bau1bfaivp1q1y7c9j",
+            "filter" : "none",
+            "_id" : ObjectId("680ce3ac6eba2610cd65ae2b")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745674178/wesiegjmjbwgymavtqiq.jpg",
+            "cloudinaryId" : "wesiegjmjbwgymavtqiq",
+            "filter" : "none",
+            "_id" : ObjectId("680ce3ac6eba2610cd65ae2c")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745674173/fqy4vdfafwm5fbpiemoz.jpg",
+            "cloudinaryId" : "fqy4vdfafwm5fbpiemoz",
+            "filter" : "none",
+            "_id" : ObjectId("680ce3ac6eba2610cd65ae2d")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745674177/vilbpwahmvtm7ixxliug.jpg",
+            "cloudinaryId" : "vilbpwahmvtm7ixxliug",
+            "filter" : "none",
+            "_id" : ObjectId("680ce3ac6eba2610cd65ae2e")
+        }
+    ],
+    "likes" : NumberInt(0),
+    "tags" : [
+        "LifeVantage #LVGlobalConvention #RecognitionGala #VanRyderVibes #RooftopCrew #MakingMemories #BigDreamEnergy #LifeInFullColor #VanRyderChronicles"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2025-04-26T13:46:20.248+0000"),
+    "updatedAt" : ISODate("2025-04-27T05:50:17.396+0000"),
+    "__v" : NumberInt(0)
+}
+{
+    "_id" : ObjectId("680d1b036eba2610cd65b05c"),
+    "caption" : "The Stories We’re Writing in Stone",
+    "content" : "At first glance, it’s easy to think, \"That’s not me.\"\nToo easy.\nBut at 3am, when the noise dies down and it’s just you and your honest thoughts, you start seeing it.\nPieces of yourself carved into these tombstones.\nChased money. Missed life.\nMet deadlines. Missed sunsets.\nLoved the grind. Forgot the people.\nIt’s terrifying when you realize how close you are to living — and dying — the wrong story.\nI know I see myself in these. And it scares the hell out of me.\nMaybe it’s time to rewrite the ending while we still can.\n\nMemento Mori. Memento Vivere.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745689197/k4n6r7tz1z3phe034bdi.jpg",
+            "cloudinaryId" : "k4n6r7tz1z3phe034bdi",
+            "filter" : "none",
+            "_id" : ObjectId("680d1b036eba2610cd65b05d")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745689199/nnx4szu7onwcug3rixif.jpg",
+            "cloudinaryId" : "nnx4szu7onwcug3rixif",
+            "filter" : "none",
+            "_id" : ObjectId("680d1b036eba2610cd65b05e")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745689199/icyxyhlz4rnjwhn4o6sd.jpg",
+            "cloudinaryId" : "icyxyhlz4rnjwhn4o6sd",
+            "filter" : "none",
+            "_id" : ObjectId("680d1b036eba2610cd65b05f")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745689199/t4bxno8q24ey1d8utogk.jpg",
+            "cloudinaryId" : "t4bxno8q24ey1d8utogk",
+            "filter" : "none",
+            "_id" : ObjectId("680d1b036eba2610cd65b060")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745689197/ulovnoxumb40xpyigoct.jpg",
+            "cloudinaryId" : "ulovnoxumb40xpyigoct",
+            "filter" : "none",
+            "_id" : ObjectId("680d1b036eba2610cd65b061")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745689199/x5iucauryead3poqj4e7.jpg",
+            "cloudinaryId" : "x5iucauryead3poqj4e7",
+            "filter" : "none",
+            "_id" : ObjectId("680d1b036eba2610cd65b062")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745689199/ae7yj4wxhiz4n28v6btf.jpg",
+            "cloudinaryId" : "ae7yj4wxhiz4n28v6btf",
+            "filter" : "none",
+            "_id" : ObjectId("680d1b036eba2610cd65b063")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745689199/cmf0xcf791ru7d5hitzf.jpg",
+            "cloudinaryId" : "cmf0xcf791ru7d5hitzf",
+            "filter" : "none",
+            "_id" : ObjectId("680d1b036eba2610cd65b064")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745689210/gym6elgqmljua4ov2z4m.jpg",
+            "cloudinaryId" : "gym6elgqmljua4ov2z4m",
+            "filter" : "none",
+            "_id" : ObjectId("680d1b036eba2610cd65b065")
+        }
+    ],
+    "likes" : NumberInt(0),
+    "tags" : [
+        "SoloGramThoughts #LifeReflection #MementoMori #BePresent #RealTalk"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2025-04-26T17:42:27.271+0000"),
+    "updatedAt" : ISODate("2025-04-27T05:40:37.707+0000"),
+    "__v" : NumberInt(0)
+}
+{
+    "_id" : ObjectId("680ed6581b993a1756d56956"),
+    "caption" : "Smoke, Hoops, and Good Vibes",
+    "content" : "Sunday well spent: Six hours of slow-smoking ribs on the Traeger — totally worth it.\nMacy and Kolton came over, and the whole crew — Beth, Macy, Kolton, Jack, Hudson, and me — piled around the table for a feast: fall-off-the-bone ribs, creamy mac and cheese, roasted squash, and fresh watermelon that tasted like pure summer.\nAfter stuffing ourselves, we rallied for a little post-feast basketball.\nRibs, laughs, trash talk, and airballs — pretty much a perfect Sunday.\nFamily time is the good stuff. Wouldn’t trade it for anything.",
+    "media" : [
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745802674/wgyzmgarvakjo3utssac.jpg",
+            "cloudinaryId" : "wgyzmgarvakjo3utssac",
+            "filter" : "none",
+            "_id" : ObjectId("680ed6581b993a1756d56957")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745802674/ylut49nhhy5a1cl62rvu.jpg",
+            "cloudinaryId" : "ylut49nhhy5a1cl62rvu",
+            "filter" : "none",
+            "_id" : ObjectId("680ed6581b993a1756d56958")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745802674/f7p93qlzddavoifedqrr.jpg",
+            "cloudinaryId" : "f7p93qlzddavoifedqrr",
+            "filter" : "none",
+            "_id" : ObjectId("680ed6581b993a1756d56959")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745802674/qpesbo4q24p1sqnfx8ov.jpg",
+            "cloudinaryId" : "qpesbo4q24p1sqnfx8ov",
+            "filter" : "none",
+            "_id" : ObjectId("680ed6581b993a1756d5695a")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745802674/bs3expaxi0lluxlreisx.jpg",
+            "cloudinaryId" : "bs3expaxi0lluxlreisx",
+            "filter" : "none",
+            "_id" : ObjectId("680ed6581b993a1756d5695b")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745802674/ywwpd4rcr4dwcfaosg3r.jpg",
+            "cloudinaryId" : "ywwpd4rcr4dwcfaosg3r",
+            "filter" : "none",
+            "_id" : ObjectId("680ed6581b993a1756d5695c")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745803615/uqavbh2k9irhmgrcj5tj.jpg",
+            "cloudinaryId" : "uqavbh2k9irhmgrcj5tj",
+            "filter" : "none",
+            "_id" : ObjectId("680ed9781b993a1756d56a1f")
+        },
+        {
+            "mediaType" : "image",
+            "mediaUrl" : "https://res.cloudinary.com/ds5rxplmr/image/upload/v1745803634/fof3qhv2erh7yj3jhrnw.jpg",
+            "cloudinaryId" : "fof3qhv2erh7yj3jhrnw",
+            "filter" : "none",
+            "_id" : ObjectId("680ed9781b993a1756d56a20")
+        }
+    ],
+    "tags" : [
+        "FamilyFirst #SundayFunday #TraegerLife #RibsAndHoops #GoodEats #SlowAndLow #FamilyTime #SmokedRibs #BasketballAndBBQ #GrillAndChill"
+    ],
+    "collections" : [
+
+    ],
+    "createdAt" : ISODate("2025-04-28T01:14:00.427+0000"),
+    "updatedAt" : ISODate("2025-04-28T01:27:20.616+0000"),
+    "__v" : NumberInt(1)
+}
