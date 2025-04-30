@@ -6,7 +6,6 @@ import PrivateRoute from "./components/PrivateRoute";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import BottomNavigation from "./components/layout/BottomNavigation";
-import SubscribeBanner from "./components/notifications/SubscribeBanner";
 
 // Loading fallback component
 const LoadingFallback = () => <div className="loading-spinner">Loading...</div>;
@@ -81,7 +80,6 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
             onClearSearch: handleClearSearch,
           }}
         >
-          <SubscribeBanner user={user} />
           <lazyComponents.Home ref={homeRef} />
         </StandardLayout>
       ),
