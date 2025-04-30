@@ -705,7 +705,7 @@ const StoriesHeader = styled.div`
     margin-bottom: 0.75rem;
 
     h3 {
-      font-size: 0.9375rem;
+      font-size: 1.1rem;
     }
   }
 `;

@@ -657,15 +657,12 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                 src={getTransformedImageUrl(
                   post.media[fullscreenIndex].mediaUrl,
                   {
-                    width: 1200,
-                    height: 1200,
-                    crop: "fit",
-                    gravity: "auto:subject",
-                    quality: "auto:best",
+                    // Try simpler transformation parameters to avoid Cloudinary errors
+                    width: 1000,
+                    height: 1000,
+                    crop: "limit", // Using 'limit' instead of 'fit' - more compatible
+                    quality: "auto", // Simplified quality parameter
                     format: "auto",
-                    dpr: "auto",
-                    effect: "improve",
-                    sharpen: 70,
                   }
                 )}
                 alt={post.caption || "Fullscreen view"}
@@ -674,6 +671,11 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                   transition: "transform 0.3s ease",
                 }}
                 loading="eager"
+                onError={(e) => {
+                  console.error("Image failed to load:", e);
+                  // Fallback to original URL if transformation fails
+                  e.target.src = post.media[fullscreenIndex].mediaUrl;
+                }}
               />
               {post.media.length > 1 && (
                 <FullscreenIndicator>
