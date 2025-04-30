@@ -55,7 +55,6 @@ const BottomNavigation = () => {
               <CreateButton onClick={toggleCreateOptions}>
                 <FaPlus />
               </CreateButton>
-              <NavLabel>Create</NavLabel>
               {showCreateOptions && (
                 <CreateOptionsOverlay
                   onClick={() => setShowCreateOptions(false)}
@@ -242,10 +241,9 @@ const NavLabel = styled.span`
 // Updated styled components for the floating Create button
 const CreateButtonWrapper = styled.div`
   display: flex;
-  flex-direction: column;
   align-items: center;
   position: absolute;
-  bottom: 10px;
+  bottom: 4px;
   z-index: 10;
 `;
 
@@ -266,8 +264,7 @@ const CreateButton = styled.button`
   font-size: 1.25rem;
   cursor: pointer;
   box-shadow: 0 3px 10px rgba(255, 100, 100, 0.3);
-  margin-bottom: 4px;
-  transform: translateY(-24px);
+  transform: translateY(-18px);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
@@ -276,12 +273,12 @@ const CreateButton = styled.button`
       ${COLORS.accentSalmon},
       ${COLORS.primarySalmon}
     );
-    transform: translateY(-26px);
+    transform: translateY(-20px);
     box-shadow: 0 5px 15px rgba(255, 100, 100, 0.4);
   }
 
   &:active {
-    transform: translateY(-22px) scale(0.95);
+    transform: translateY(-16px) scale(0.95);
     box-shadow: 0 2px 8px rgba(255, 100, 100, 0.3);
   }
 `;
