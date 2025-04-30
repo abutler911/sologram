@@ -715,9 +715,8 @@ const StoriesHeader = styled.div`
 
   h3 {
     font-size: 1rem;
-    color: ${COLORS.primaryBlueGray};
+    color: ${COLORS.textPrimary};
     margin: 0;
-    font-family: "Mystery Quest", sans-serif;
   }
 
   @media (max-width: 480px) {
@@ -939,6 +938,7 @@ const StoryUsername = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+  font-weight: 500;
 
   @media (max-width: 480px) {
     font-size: 0.6875rem;
