@@ -1,23 +1,28 @@
 import OneSignal from "react-onesignal";
 
 export const initOneSignal = async () => {
-  await OneSignal.init({
-    appId: import.meta.env.VITE_ONESIGNAL_APP_ID,
-    allowLocalhostAsSecureOrigin: true,
-    notifyButton: {
-      enable: false, // we will use our own UI
-    },
-  });
+  try {
+    if (!window.OneSignal || typeof OneSignal.init !== "function") {
+      console.warn("[OneSignal] SDK not ready yet");
+      return;
+    }
 
-  OneSignal.showSlidedownPrompt();
+    console.log("[OneSignal] Initializing...");
+    await OneSignal.init({
+      appId: import.meta.env.VITE_ONESIGNAL_APP_ID,
+      allowLocalhostAsSecureOrigin: true,
+      notifyButton: { enable: false },
+    });
 
-  // Optional: log permission changes
-  OneSignal.on("subscriptionChange", function (isSubscribed) {
-    if (isSubscribed) {
-      OneSignal.getUserId().then((playerId) => {
-        console.log("User subscribed with playerId:", playerId);
-        // Send playerId to backend
-        fetch("/api/subscribers/register", {
+    console.log("[OneSignal] Showing prompt");
+    OneSignal.showSlidedownPrompt();
+
+    OneSignal.on("subscriptionChange", async (isSubscribed) => {
+      if (isSubscribed) {
+        const playerId = await OneSignal.getUserId();
+        console.log("[OneSignal] playerId:", playerId);
+
+        await fetch("/api/subscribers/register", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -25,7 +30,9 @@ export const initOneSignal = async () => {
           },
           body: JSON.stringify({ playerId }),
         });
-      });
-    }
-  });
+      }
+    });
+  } catch (err) {
+    console.error("[OneSignal] Error during init:", err);
+  }
 };

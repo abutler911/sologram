@@ -66,7 +66,11 @@ function App() {
 
   useEffect(() => {
     if (user) {
-      initOneSignal();
+      const timer = setTimeout(() => {
+        initOneSignal();
+      }, 1500); // wait a bit for the SDK to fully load
+
+      return () => clearTimeout(timer);
     }
   }, [user]);
 
