@@ -136,7 +136,7 @@ const Header = ({ onSearch, onClearSearch }) => {
             <Logo to="/">
               <div className="logo-main">
                 <FaCamera />
-                <span>SoloGram</span>
+                <span className="logo-text">SoloGram</span>
               </div>
               <div className="tagline">One Voice. Infinite Moments.</div>
             </Logo>
@@ -487,6 +487,12 @@ const Logo = styled(Link)`
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
     transition: transform 0.3s ease;
 
+    .logo-text {
+      font-family: "Mystery Quest", cursive;
+      font-size: 2.4rem;
+      color: ${COLORS.primarySalmon};
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
+    }
     svg {
       font-size: 2.6rem;
       margin-right: 0.75rem;
