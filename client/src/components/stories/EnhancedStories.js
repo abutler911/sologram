@@ -1,36 +1,60 @@
-// components/stories/Stories.js
-import React, { useState, useEffect, useContext, useCallback } from "react";
-import styled from "styled-components";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useContext,
+} from "react";
+import styled, { keyframes, css } from "styled-components";
 import {
   FaTimes,
   FaVideo,
   FaTrash,
   FaExclamationTriangle,
   FaArchive,
+  FaChevronLeft,
+  FaChevronRight,
+  FaPlus,
 } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
 import { COLORS, THEME } from "../../theme";
 
-const Stories = () => {
+const EnhancedStories = ({ isPWA = false }) => {
+  // State from both components
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
   const [activeStory, setActiveStory] = useState(null);
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(10);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [storyToDelete, setStoryToDelete] = useState(null);
-  const [isPWA, setIsPWA] = useState(
+  const [localIsPWA, setLocalIsPWA] = useState(
     window.matchMedia("(display-mode: standalone)").matches
   );
-
-  // Get authentication context to check if user is admin
+  // References and hooks
+  const storiesRef = useRef(null);
   const { user, isAuthenticated } = useContext(AuthContext);
   const isAdmin = isAuthenticated && user && user.role === "admin";
+  const navigate = useNavigate();
+
+  // Calculate visible items based on container width
+  const [visibleItems, setVisibleItems] = useState(5);
+
+  // PWA detection
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const handleChange = (e) => setLocalIsPWA(e.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   // Define nextStoryItem as useCallback
   const nextStoryItem = useCallback(() => {
@@ -44,19 +68,11 @@ const Stories = () => {
     }
   }, [activeStory, activeStoryIndex]);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(display-mode: standalone)");
-    const handleChange = (e) => setIsPWA(e.matches);
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
-
   // Fetch stories when component mounts
   useEffect(() => {
     const fetchStories = async () => {
       try {
         setLoading(true);
-
         const response = await axios.get("/api/stories");
 
         if (response.data.success) {
@@ -64,7 +80,10 @@ const Stories = () => {
           const activeStories = response.data.data.filter(
             (story) => new Date(story.expiresAt) > now
           );
-          setStories(activeStories);
+
+          // Sort stories to prioritize unwatched stories from friends
+          const sortedStories = sortStoriesByPriority(activeStories);
+          setStories(sortedStories);
           setError(null);
         } else {
           throw new Error(response.data.message || "Failed to fetch stories");
@@ -79,6 +98,45 @@ const Stories = () => {
 
     fetchStories();
   }, []);
+
+  // Update visible items count based on container width
+  useEffect(() => {
+    const updateVisibleItems = () => {
+      const width = window.innerWidth;
+      if (width < 480) {
+        setVisibleItems(4);
+      } else if (width < 768) {
+        setVisibleItems(5);
+      } else {
+        setVisibleItems(7);
+      }
+    };
+
+    updateVisibleItems();
+    window.addEventListener("resize", updateVisibleItems);
+    return () => window.removeEventListener("resize", updateVisibleItems);
+  }, []);
+
+  // Check if scroll buttons should be visible
+  useEffect(() => {
+    if (!storiesRef.current) return;
+
+    const checkScrollButtons = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = storiesRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    };
+
+    const storiesContainer = storiesRef.current;
+    storiesContainer.addEventListener("scroll", checkScrollButtons);
+    checkScrollButtons();
+
+    return () => {
+      if (storiesContainer) {
+        storiesContainer.removeEventListener("scroll", checkScrollButtons);
+      }
+    };
+  }, [stories]);
 
   // Handle story auto-progression timer
   useEffect(() => {
@@ -138,7 +196,7 @@ const Stories = () => {
       document.body.style.overflow = "hidden";
 
       // Add extra padding for iOS notch
-      if (isPWA) {
+      if (localIsPWA || isPWA) {
         document.body.style.paddingTop = "env(safe-area-inset-top, 0)";
       }
     } else {
@@ -152,7 +210,44 @@ const Stories = () => {
       document.body.style.overflow = "";
       document.body.style.paddingTop = "";
     };
-  }, [activeStory, isPWA]);
+  }, [activeStory, localIsPWA, isPWA]);
+
+  // Utility functions
+  const sortStoriesByPriority = (storiesData) => {
+    if (!user) return storiesData;
+
+    return [...storiesData].sort((a, b) => {
+      // Your own story first
+      if (a.userId === user._id) return -1;
+      if (b.userId === user._id) return 1;
+
+      // Then unwatched stories from friends
+      const aIsUnwatched = !a.viewers?.includes(user._id);
+      const bIsUnwatched = !b.viewers?.includes(user._id);
+
+      if (aIsUnwatched && !bIsUnwatched) return -1;
+      if (!aIsUnwatched && bIsUnwatched) return 1;
+
+      // Then sort by recency
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+  };
+
+  const scrollLeft = () => {
+    if (!storiesRef.current) return;
+    storiesRef.current.scrollBy({
+      left: -200,
+      behavior: "smooth",
+    });
+  };
+
+  const scrollRight = () => {
+    if (!storiesRef.current) return;
+    storiesRef.current.scrollBy({
+      left: 200,
+      behavior: "smooth",
+    });
+  };
 
   const openStory = (story) => {
     setActiveStory(story);
@@ -298,66 +393,147 @@ const Stories = () => {
     return media.mediaUrl;
   };
 
+  const handleCreateStory = () => {
+    navigate("/stories/create");
+  };
+
+  // Render loading state
   if (loading) {
     return (
-      <StoriesContainer>
-        <LoadingMessage>Loading stories...</LoadingMessage>
+      <StoriesContainer isPWA={localIsPWA || isPWA}>
+        <StoriesHeader>
+          <h3>Stories</h3>
+          {isAuthenticated && (
+            <CreateStoryButton onClick={handleCreateStory}>
+              <FaPlus /> New Story
+            </CreateStoryButton>
+          )}
+        </StoriesHeader>
+        <StoriesWrapper>
+          {Array(5)
+            .fill(0)
+            .map((_, index) => (
+              <StoryItemSkeleton key={index} />
+            ))}
+        </StoriesWrapper>
       </StoriesContainer>
     );
   }
 
+  // Render error state
   if (error) {
     return (
-      <StoriesContainer>
+      <StoriesContainer isPWA={localIsPWA || isPWA}>
         <ErrorMessage>{error}</ErrorMessage>
       </StoriesContainer>
     );
   }
 
+  // Render empty state
   if (stories.length === 0) {
     return (
-      <StoriesContainer>
-        <EmptyMessage>No stories available</EmptyMessage>
+      <StoriesContainer isPWA={localIsPWA || isPWA}>
+        <StoriesHeader>
+          <h3>Stories</h3>
+          {isAuthenticated && (
+            <CreateStoryButton onClick={handleCreateStory}>
+              <FaPlus /> New Story
+            </CreateStoryButton>
+          )}
+        </StoriesHeader>
+        <NoStoriesMessage>
+          No stories available. Create your first story!
+        </NoStoriesMessage>
       </StoriesContainer>
     );
   }
 
   return (
     <>
-      <StoriesContainer>
-        {isAdmin && (
-          <StoryArchiveLink to="/story-archive" title="View archived stories">
-            <FaArchive />
-            <span>Archive</span>
-          </StoryArchiveLink>
-        )}
-        {stories.map((story) => {
-          const firstMedia = story.media && story.media[0];
-          const isVideo = firstMedia && firstMedia.mediaType === "video";
-          const thumbnailUrl = firstMedia
-            ? getThumbnailUrl(firstMedia)
-            : "/placeholder-image.jpg";
+      <StoriesContainer isPWA={localIsPWA || isPWA}>
+        <StoriesHeader>
+          <h3>Stories</h3>
+          <HeaderButtons>
+            {isAdmin && (
+              <StoryArchiveLink
+                to="/story-archive"
+                title="View archived stories"
+              >
+                <FaArchive />
+                <span>Archive</span>
+              </StoryArchiveLink>
+            )}
+            {isAuthenticated && (
+              <CreateStoryButton onClick={handleCreateStory}>
+                <FaPlus /> New Story
+              </CreateStoryButton>
+            )}
+          </HeaderButtons>
+        </StoriesHeader>
 
-          return (
-            <StoryCircle key={story._id} onClick={() => openStory(story)}>
-              <StoryImageWrapper>
-                <ThumbnailImage
-                  src={thumbnailUrl}
-                  alt={story.title}
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                    e.target.parentNode.classList.add("image-fallback");
-                  }}
-                />
-                {isVideo && (
-                  <VideoIndicator>
-                    <FaVideo />
-                  </VideoIndicator>
-                )}
-              </StoryImageWrapper>
-            </StoryCircle>
-          );
-        })}
+        <ScrollableContainer>
+          {canScrollLeft && (
+            <ScrollButton direction="left" onClick={scrollLeft}>
+              <FaChevronLeft />
+            </ScrollButton>
+          )}
+
+          <StoriesWrapper ref={storiesRef}>
+            {stories.map((story, index) => {
+              const firstMedia = story.media && story.media[0];
+              const isVideo = firstMedia && firstMedia.mediaType === "video";
+              const thumbnailUrl = firstMedia
+                ? getThumbnailUrl(firstMedia)
+                : "/placeholder-image.jpg";
+
+              return (
+                <StoryItem
+                  key={story._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  onClick={() => openStory(story)}
+                  active={index === activeIndex}
+                  viewed={user && story.viewers?.includes(user._id)}
+                  isOwn={user && story.userId === user._id}
+                >
+                  <StoryAvatarWrapper
+                    viewed={user && story.viewers?.includes(user._id)}
+                    isOwn={user && story.userId === user._id}
+                  >
+                    <StoryAvatar
+                      src={thumbnailUrl}
+                      alt={story.title || "Story"}
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        e.target.parentNode.classList.add("image-fallback");
+                      }}
+                    />
+                    {isVideo && (
+                      <VideoIndicator>
+                        <FaVideo />
+                      </VideoIndicator>
+                    )}
+                  </StoryAvatarWrapper>
+                  <StoryUsername>
+                    {story.user?.username
+                      ? story.user.username.length > 8
+                        ? `${story.user.username.substring(0, 8)}...`
+                        : story.user.username
+                      : "User"}
+                  </StoryUsername>
+                </StoryItem>
+              );
+            })}
+          </StoriesWrapper>
+
+          {canScrollRight && (
+            <ScrollButton direction="right" onClick={scrollRight}>
+              <FaChevronRight />
+            </ScrollButton>
+          )}
+        </ScrollableContainer>
       </StoriesContainer>
 
       {activeStory && (
@@ -465,131 +641,229 @@ const Stories = () => {
   );
 };
 
-// Styled Components with SoloGram Theme
-const StoriesContainer = styled.div`
+// Animations
+const pulse = keyframes`
+  0% {
+    box-shadow: 0 0 0 0 rgba(242, 124, 112, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(242, 124, 112, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(242, 124, 112, 0);
+  }
+`;
+
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const shimmer = keyframes`
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: 200px 0;
+  }
+`;
+
+// Enhanced Styled Components
+const StoriesContainer = styled.section`
+  background-color: ${COLORS.cardBackground};
+  border-radius: ${(props) => (props.isPWA ? "0" : "12px")};
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 3px ${COLORS.shadow};
+  animation: ${fadeIn} 0.3s ease;
+
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.5rem;
+    border-radius: ${(props) => (props.isPWA ? "0" : "8px")};
+  }
+`;
+
+const StoriesHeader = styled.div`
   display: flex;
-  overflow-x: auto;
-  padding: 1rem 0;
-  gap: 1rem;
-  position: relative;
-  scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  h3 {
+    font-size: 1rem;
+    color: ${COLORS.textPrimary};
+    margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 0.75rem;
+
+    h3 {
+      font-size: 0.9375rem;
+    }
+  }
+`;
+
+const HeaderButtons = styled.div`
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+
+  @media (max-width: 480px) {
+    gap: 0.5rem;
   }
 `;
 
 const StoryArchiveLink = styled(Link)`
-  flex: 0 0 auto;
-  width: 80px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 0.375rem;
   text-decoration: none;
-  color: ${COLORS.textTertiary};
-  transition: color 0.3s;
+  color: ${COLORS.textSecondary};
+  font-size: 0.8125rem;
+  transition: color 0.2s;
+
+  svg {
+    font-size: 0.875rem;
+  }
 
   &:hover {
     color: ${COLORS.primaryBlueGray};
   }
 
-  svg {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+  @media (max-width: 480px) {
+    font-size: 0.75rem;
+
+    svg {
+      font-size: 0.8125rem;
+    }
+
+    span {
+      display: none;
+    }
+  }
+`;
+
+const CreateStoryButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: ${COLORS.primarySalmon}22;
+  color: ${COLORS.primarySalmon};
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${COLORS.primarySalmon}33;
   }
 
-  span {
+  @media (max-width: 480px) {
+    padding: 0.375rem 0.625rem;
     font-size: 0.75rem;
   }
 `;
 
-const LoadingMessage = styled.p`
-  color: ${COLORS.textTertiary};
-  width: 100%;
-  text-align: center;
-  padding: 1rem 0;
+const ScrollableContainer = styled.div`
+  position: relative;
 `;
 
-const ErrorMessage = styled.p`
-  color: ${COLORS.error};
-  width: 100%;
-  text-align: center;
-  padding: 1rem 0;
+const StoriesWrapper = styled.div`
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  padding: 0.25rem 0.25rem;
+
+  &::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+
+  @media (max-width: 768px) {
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    gap: 0.5rem;
+  }
 `;
 
-const EmptyMessage = styled.p`
-  color: ${COLORS.textTertiary};
-  width: 100%;
-  text-align: center;
-  padding: 1rem 0;
-`;
-
-const StoryCircle = styled.div`
-  flex: 0 0 auto;
+const StoryItem = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-  padding: 0 4px;
-`;
+  flex: 0 0 auto;
+  width: 80px;
+  transition: all 0.2s ease;
 
-const ThumbnailImage = styled.img`
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-  position: relative;
-  z-index: 1;
-`;
-
-const VideoIndicator = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgba(0, 0, 0, 0.5);
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${COLORS.textPrimary};
-  font-size: 0.8rem;
-  z-index: 2; /* Ensure this appears above the thumbnail */
-`;
-
-const StoryImageWrapper = styled.div`
-  position: relative;
-  width: 78px;
-  height: 78px;
-  border-radius: 50%;
-  overflow: hidden;
-
-  /* Gradient border approach */
-  padding: 3px;
-  background: ${THEME.story.border
-    .active}; /* Uses the theme's blue-gray color */
-
-  /* For the inner content (the actual image container) */
-  &::before {
-    content: "";
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    right: 3px;
-    bottom: 3px;
-    border-radius: 50%;
-    background: ${COLORS.cardBackground};
-    z-index: 0;
+  &:hover {
+    transform: translateY(-2px);
   }
 
-  transition: transform 0.3s ease;
-
-  @media (hover: hover) {
-    &:hover {
+  ${(props) =>
+    props.active &&
+    css`
       transform: scale(1.05);
-    }
+    `}
+
+  @media (max-width: 768px) {
+    width: 72px;
+  }
+
+  @media (max-width: 480px) {
+    width: 64px;
+  }
+`;
+
+const StoryAvatarWrapper = styled.div`
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  padding: 3px;
+  margin-bottom: 0.5rem;
+  position: relative;
+  background: ${(props) => {
+    if (props.isOwn)
+      return `linear-gradient(45deg, ${COLORS.primarySalmon}, ${COLORS.primaryMint})`;
+    if (!props.viewed)
+      return `linear-gradient(45deg, ${COLORS.primarySalmon}, #E8346F)`;
+    return COLORS.border;
+  }};
+
+  ${(props) =>
+    !props.viewed &&
+    !props.isOwn &&
+    css`
+      animation: ${pulse} 2s infinite;
+    `}
+
+  @media (max-width: 768px) {
+    width: 56px;
+    height: 56px;
+  }
+
+  @media (max-width: 480px) {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 0.375rem;
   }
 
   &.image-fallback {
@@ -611,6 +885,175 @@ const StoryImageWrapper = styled.div`
   }
 `;
 
+const StoryAvatar = styled.img`
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: ${COLORS.elevatedBackground};
+`;
+
+const VideoIndicator = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${COLORS.textPrimary};
+  font-size: 0.8rem;
+  z-index: 2; /* Ensure this appears above the thumbnail */
+
+  @media (max-width: 480px) {
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+  }
+`;
+
+const StoryUsername = styled.span`
+  font-size: 0.75rem;
+  color: ${COLORS.textSecondary};
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+
+  @media (max-width: 480px) {
+    font-size: 0.6875rem;
+  }
+`;
+
+const ScrollButton = styled.button`
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: ${COLORS.cardBackground};
+  border: 1px solid ${COLORS.border};
+  color: ${COLORS.textSecondary};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px ${COLORS.shadow};
+  transition: all 0.2s ease;
+
+  ${(props) =>
+    props.direction === "left" &&
+    css`
+      left: -12px;
+    `}
+
+  ${(props) =>
+    props.direction === "right" &&
+    css`
+      right: -12px;
+    `}
+  
+  &:hover {
+    background-color: ${COLORS.elevatedBackground};
+    color: ${COLORS.textPrimary};
+  }
+
+  @media (max-width: 768px) {
+    width: 28px;
+    height: 28px;
+  }
+
+  @media (max-width: 480px) {
+    width: 24px;
+    height: 24px;
+  }
+`;
+
+const StoryItemSkeleton = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+  width: 80px;
+
+  &:before {
+    content: "";
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(
+      90deg,
+      ${COLORS.border} 8%,
+      ${COLORS.elevatedBackground} 18%,
+      ${COLORS.border} 33%
+    );
+    background-size: 200% 100%;
+    animation: ${shimmer} 1.5s infinite;
+  }
+
+  &:after {
+    content: "";
+    width: 60%;
+    height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(
+      90deg,
+      ${COLORS.border} 8%,
+      ${COLORS.elevatedBackground} 18%,
+      ${COLORS.border} 33%
+    );
+    background-size: 200% 100%;
+    animation: ${shimmer} 1.5s infinite;
+  }
+
+  @media (max-width: 768px) {
+    width: 72px;
+
+    &:before {
+      width: 56px;
+      height: 56px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    width: 64px;
+
+    &:before {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 0.375rem;
+    }
+
+    &:after {
+      height: 8px;
+    }
+  }
+`;
+
+const NoStoriesMessage = styled.div`
+  text-align: center;
+  color: ${COLORS.textTertiary};
+  font-size: 0.875rem;
+  padding: 1.5rem 1rem;
+  width: 100%;
+`;
+
+const ErrorMessage = styled.div`
+  color: ${COLORS.error};
+  width: 100%;
+  text-align: center;
+  padding: 1rem 0;
+`;
+
+// Story Viewer Modal Components
 const StoryModal = styled.div`
   position: fixed;
   top: 0;
@@ -631,7 +1074,6 @@ const StoryModal = styled.div`
   }
 `;
 
-// Progress bar moved to top
 const ProgressBarContainer = styled.div`
   display: flex;
   width: 100%;
@@ -649,7 +1091,6 @@ const ProgressBarContainer = styled.div`
   }
 `;
 
-// FIXED: Progress bar transition to make it animate smoother
 const ProgressBar = styled.div`
   height: 2px;
   flex: 1;
@@ -670,12 +1111,11 @@ const ProgressBar = styled.div`
         : props.active
         ? `${props.progress * 100}%`
         : "0"};
-    background-color: ${COLORS.primarySalmon}; /* Updated to salmon color */
-    transition: width 0.2s linear; /* Slowed down to create a more continuous fill effect */
+    background-color: ${COLORS.primarySalmon};
+    transition: width 0.2s linear;
   }
 `;
 
-// FIXED: Header gradient to improve text visibility on dark backgrounds
 const StoryHeader = styled.div`
   position: absolute;
   top: 0;
@@ -689,8 +1129,8 @@ const StoryHeader = styled.div`
   background: linear-gradient(
     to bottom,
     rgba(0, 0, 0, 0.8) 0%,
-    /* Darker background from 0.7 to 0.8 */ rgba(0, 0, 0, 0.5) 50%,
-    /* Added middle point for smoother gradient */ rgba(0, 0, 0, 0) 100%
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0) 100%
   );
   pointer-events: none;
 
@@ -700,36 +1140,32 @@ const StoryHeader = styled.div`
   }
 `;
 
-// New container for header content to control width
 const StoryHeaderContent = styled.div`
   max-width: 80%;
   padding-right: 40px;
   padding-left: 16px;
 `;
 
-// FIXED: Improved text shadow for better visibility
 const StoryHeaderTitle = styled.h3`
   font-size: 1rem;
-  color: white; /* Always white for better contrast */
+  color: white;
   margin: 0 0 4px 0;
   font-weight: 600;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); /* Stronger text shadow */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
   white-space: normal;
   line-height: 1.3;
 `;
 
-// FIXED: Improved text shadow for better visibility
 const StoryTimestamp = styled.span`
-  color: rgba(255, 255, 255, 0.9); /* Slightly transparent white */
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.875rem;
   font-weight: 500;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); /* Stronger text shadow */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 `;
 
-// Adjusted position of controls to be higher and more prominent
 const ControlsBar = styled.div`
   position: absolute;
-  top: 16px; /* Moved up */
+  top: 16px;
   right: 16px;
   z-index: 10;
   display: flex;
@@ -742,7 +1178,7 @@ const ControlsBar = styled.div`
 `;
 
 const CloseButton = styled.button`
-  background: ${COLORS.primaryBlueGray}; /* Updated to theme color */
+  background: ${COLORS.primaryBlueGray};
   border: none;
   color: white;
   font-size: 1.5rem;
@@ -756,12 +1192,12 @@ const CloseButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: ${COLORS.accentBlueGray}; /* Updated to theme color */
+    background-color: ${COLORS.accentBlueGray};
   }
 `;
 
 const DeleteButton = styled.button`
-  background-color: ${COLORS.primarySalmon}; /* Updated to theme color */
+  background-color: ${COLORS.primarySalmon};
   border: none;
   color: white;
   font-size: 1.25rem;
@@ -775,7 +1211,7 @@ const DeleteButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: ${COLORS.accentSalmon}; /* Updated to theme color */
+    background-color: ${COLORS.accentSalmon};
   }
 
   &:disabled {
@@ -784,7 +1220,6 @@ const DeleteButton = styled.button`
   }
 `;
 
-// Content area now fills viewport completely
 const StoryContent = styled.div`
   position: absolute;
   top: 0;
@@ -799,7 +1234,6 @@ const StoryContent = styled.div`
   height: 100vh;
 `;
 
-// Image now fills the screen with object-fit: contain
 const FullScreenImage = styled.img`
   width: 100%;
   height: 100%;
@@ -807,7 +1241,6 @@ const FullScreenImage = styled.img`
   max-width: 100vw;
 `;
 
-// Video now fills the screen with object-fit: contain
 const StoryVideo = styled.video`
   width: 100%;
   height: 100%;
@@ -816,7 +1249,6 @@ const StoryVideo = styled.video`
   max-width: 100vw;
 `;
 
-// Navigation overlay now covers the entire screen
 const StoryNavigation = styled.div`
   position: absolute;
   top: 0;
@@ -839,7 +1271,6 @@ const NavArea = styled.div`
   }
 `;
 
-// Modal styling updated with theme colors
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -864,7 +1295,7 @@ const DeleteModal = styled.div`
 `;
 
 const DeleteModalHeader = styled.div`
-  background-color: ${COLORS.primarySalmon}; /* Updated to theme color */
+  background-color: ${COLORS.primarySalmon};
   color: white;
   padding: 1.25rem;
   display: flex;
@@ -900,7 +1331,7 @@ const DeleteModalButtons = styled.div`
 `;
 
 const ConfirmDeleteButton = styled.button`
-  background-color: ${COLORS.primarySalmon}; /* Updated to theme color */
+  background-color: ${COLORS.primarySalmon};
   color: white;
   border: none;
   border-radius: 4px;
@@ -910,7 +1341,7 @@ const ConfirmDeleteButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: ${COLORS.accentSalmon}; /* Updated to theme color */
+    background-color: ${COLORS.accentSalmon};
   }
 
   &:disabled {
@@ -947,4 +1378,4 @@ const CancelButton = styled.button`
   }
 `;
 
-export default Stories;
+export default EnhancedStories;
