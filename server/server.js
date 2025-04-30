@@ -115,7 +115,7 @@ app.get("/health", (req, res) => {
 
 // Root route
 app.get("/", (req, res) => {
-  res.send("🚀 SoloGram backend is live!");
+  res.send(`🚀 SoloGram backend is live on Port: ${PORT}!`);
 });
 
 // Global error handler

@@ -3,8 +3,6 @@ const Like = require("../models/Like");
 const { cloudinary } = require("../config/cloudinary");
 
 exports.getPosts = async (req, res) => {
-  console.log("[DEBUG] getPosts controller hit");
-  console.log("[POSTS] Fetching posts...");
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -89,13 +87,10 @@ exports.getPost = async (req, res) => {
   }
 };
 
-// In server/controllers/posts.js - Update the createPost function
-
 exports.createPost = async (req, res) => {
   try {
     let { caption, content, tags, media = [] } = req.body;
 
-    // Defensive: handle media if it comes as a JSON string
     if (typeof media === "string") {
       try {
         media = JSON.parse(media);
@@ -114,7 +109,6 @@ exports.createPost = async (req, res) => {
       });
     }
 
-    // Validate media items
     const formattedMedia = media.map((item) => {
       if (!item.mediaUrl || !item.cloudinaryId) {
         throw new Error(
@@ -137,29 +131,6 @@ exports.createPost = async (req, res) => {
       tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
       media: formattedMedia,
     });
-
-    // Enhanced notification handling
-    try {
-      // Use the dedicated new post notification method
-      const notificationService = require("../services/notificationService");
-      const notificationResult = await notificationService.notifyNewPost(
-        newPost
-      );
-
-      // Log notification result but don't block the response
-      console.log("Notification result:", notificationResult);
-
-      // If notification failed, log error but continue
-      if (!notificationResult.success) {
-        console.error(
-          "Failed to send post notification:",
-          notificationResult.error
-        );
-      }
-    } catch (notifyError) {
-      // Log error but don't let it affect the post creation response
-      console.error("Notification error during post creation:", notifyError);
-    }
 
     res.status(201).json({ success: true, data: newPost });
   } catch (err) {

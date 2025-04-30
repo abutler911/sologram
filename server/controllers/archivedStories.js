@@ -43,6 +43,7 @@ exports.getArchivedStory = async (req, res) => {
     }
 
     const story = await Story.findById(req.params.id);
+
     if (!story) {
       return res.status(404).json({
         success: false,
@@ -76,6 +77,7 @@ exports.deleteArchivedStory = async (req, res) => {
     }
 
     const story = await Story.findById(req.params.id);
+
     if (!story) {
       return res.status(404).json({
         success: false,
@@ -90,7 +92,6 @@ exports.deleteArchivedStory = async (req, res) => {
       });
     }
 
-    // 🔐 Authorization check: only creator or admin can delete
     if (
       req.user.role !== "admin" &&
       story.createdBy.toString() !== req.user._id.toString()
@@ -101,7 +102,6 @@ exports.deleteArchivedStory = async (req, res) => {
       });
     }
 
-    // Optional: Delete from Cloudinary
     if (story.media && story.media.length > 0) {
       for (const media of story.media) {
         if (media.cloudinaryId) {
@@ -111,7 +111,6 @@ exports.deleteArchivedStory = async (req, res) => {
             console.warn(
               `Failed to delete from Cloudinary: ${media.cloudinaryId}`
             );
-            // Don’t stop the delete process over Cloudinary errors
           }
         }
       }
