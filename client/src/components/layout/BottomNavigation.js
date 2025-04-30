@@ -14,7 +14,7 @@ import {
 } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-hot-toast";
-import { subscribeToNotifications } from "../../utils/notificationService";
+
 import { COLORS } from "../../theme";
 
 const BottomNavigation = () => {
@@ -28,31 +28,6 @@ const BottomNavigation = () => {
     return path === "/"
       ? location.pathname === "/"
       : location.pathname.startsWith(path);
-  };
-
-  const handleSubscribeClick = async () => {
-    const loadingToast = toast.loading("Preparing notifications...");
-
-    try {
-      const result = await subscribeToNotifications();
-      toast.dismiss(loadingToast);
-
-      if (result) {
-        toast.success("Subscribed to notifications!");
-
-        localStorage.setItem("subscribeBannerDismissed", "true");
-        localStorage.setItem(
-          "subscribeBannerDismissedAt",
-          Date.now().toString()
-        );
-      } else {
-        toast.error("Unable to subscribe. Check your browser settings.");
-      }
-    } catch (error) {
-      toast.dismiss(loadingToast);
-      console.error("Subscription error:", error);
-      toast.error("Something went wrong. Try again later.");
-    }
   };
 
   const toggleCreateOptions = () => {
@@ -143,43 +118,9 @@ const BottomNavigation = () => {
         <FaLightbulb />
         <NavLabel>Thoughts</NavLabel>
       </NavItem>
-
-      {/* Admin button for authenticated users, Subscribe button for non-authenticated users */}
-      {isAuthenticated ? (
-        <NavItem to="/admin" active={isActive("/admin")}>
-          <FaUser />
-          <NavLabel>Admin</NavLabel>
-        </NavItem>
-      ) : (
-        <NavAction onClick={handleSubscribeClick}>
-          <FaBell />
-          <NavLabel>Subscribe</NavLabel>
-        </NavAction>
-      )}
     </NavContainer>
   );
 };
-
-const NavAction = styled.button`
-  all: unset;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 0;
-  flex: 1;
-  color: ${COLORS.textTertiary};
-  cursor: pointer;
-
-  svg {
-    font-size: 1.25rem;
-    margin-bottom: 0.25rem;
-  }
-
-  &:hover {
-    color: ${COLORS.primarySalmon};
-  }
-`;
 
 const NavContainer = styled.div`
   display: none;

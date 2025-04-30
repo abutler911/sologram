@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import Header from "./Header";
 import Footer from "./Footer";
 import BottomNavigation from "./BottomNavigation";
-import SubscribeBanner from "../notifications/SubscribeBanner";
+
 import styled from "styled-components";
 import { COLORS } from "../../theme";
 import LoadingSpinner from "../common/LoadingSpinner";
@@ -26,7 +26,6 @@ const MainLayout = ({
     <LayoutWrapper>
       {customHeader || <Header />}
       <main aria-label="Main Content">
-        {customBanner || <SubscribeBanner />}
         {isLoading ? <LoadingSpinner /> : children}
       </main>
       {!noFooter && (customFooter || <Footer />)}

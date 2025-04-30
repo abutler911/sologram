@@ -20,7 +20,7 @@ import {
 import { AuthContext } from "../../context/AuthContext";
 import HeaderSubscriptionBanner from "../subscription/HeaderSubscriptionBanner";
 import { toast } from "react-hot-toast";
-import { subscribeToNotifications } from "../../utils/notificationService";
+
 import { COLORS, THEME } from "../../theme";
 
 const Header = ({ onSearch, onClearSearch }) => {
@@ -35,31 +35,6 @@ const Header = ({ onSearch, onClearSearch }) => {
   const searchInputRef = useRef(null);
   const searchContainerRef = useRef(null);
   const userMenuRef = useRef(null);
-
-  const handleSubscribeClick = async () => {
-    const loadingToast = toast.loading("Preparing notifications...");
-
-    try {
-      const result = await subscribeToNotifications();
-      toast.dismiss(loadingToast);
-
-      if (result) {
-        toast.success("Subscribed to notifications!");
-
-        localStorage.setItem("subscribeBannerDismissed", "true");
-        localStorage.setItem(
-          "subscribeBannerDismissedAt",
-          Date.now().toString()
-        );
-      } else {
-        toast.error("Unable to subscribe. Check your browser settings.");
-      }
-    } catch (error) {
-      toast.dismiss(loadingToast);
-      console.error("Subscription error:", error);
-      toast.error("Something went wrong. Try again later.");
-    }
-  };
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -402,12 +377,7 @@ const Header = ({ onSearch, onClearSearch }) => {
           >
             <span>Thoughts</span>
           </MobileMenuItem>
-          <MobileMenuItem
-            onClick={handleSubscribeClick}
-            active={location.pathname.startsWith("/subscribe")}
-          >
-            <span>Subscribe</span>
-          </MobileMenuItem>
+
           {isAdmin && (
             <MobileMenuItem
               to="/media-gallery"
