@@ -264,7 +264,7 @@ const CreateButton = styled.button`
   font-size: 1.25rem;
   cursor: pointer;
   box-shadow: 0 3px 10px rgba(255, 100, 100, 0.3);
-  transform: translateY(-18px);
+  transform: translateY(-14px);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
@@ -273,12 +273,12 @@ const CreateButton = styled.button`
       ${COLORS.accentSalmon},
       ${COLORS.primarySalmon}
     );
-    transform: translateY(-20px);
+    transform: translateY(-16px);
     box-shadow: 0 5px 15px rgba(255, 100, 100, 0.4);
   }
 
   &:active {
-    transform: translateY(-16px) scale(0.95);
+    transform: translateY(-12px) scale(0.95);
     box-shadow: 0 2px 8px rgba(255, 100, 100, 0.3);
   }
 `;
