@@ -272,15 +272,6 @@ const Header = ({ onSearch, onClearSearch }) => {
                     <MenuDivider />
                     {isAdmin && (
                       <UserMenuItem
-                        to="/admin"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        <FaUser /> <span>Admin</span>
-                      </UserMenuItem>
-                    )}
-
-                    {isAdmin && (
-                      <UserMenuItem
                         to="/subscribers"
                         onClick={() => setShowUserMenu(false)}
                       >
@@ -405,22 +396,13 @@ const Header = ({ onSearch, onClearSearch }) => {
               </MobileMenuItem>
 
               {isAdmin && (
-                <>
-                  <MobileMenuItem
-                    to="/admin"
-                    active={location.pathname.startsWith("/admin")}
-                    onClick={handleLinkClick}
-                  >
-                    Admin
-                  </MobileMenuItem>
-                  <MobileMenuItem
-                    to="/subscribers"
-                    active={location.pathname.startsWith("/subscribers")}
-                    onClick={handleLinkClick}
-                  >
-                    Subscribers
-                  </MobileMenuItem>
-                </>
+                <MobileMenuItem
+                  to="/subscribers"
+                  active={location.pathname.startsWith("/subscribers")}
+                  onClick={handleLinkClick}
+                >
+                  Subscribers
+                </MobileMenuItem>
               )}
 
               <MobileMenuLogoutButton onClick={handleLogout}>
