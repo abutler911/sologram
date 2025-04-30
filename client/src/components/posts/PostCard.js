@@ -180,13 +180,12 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
       setIsPressing(true);
 
-      // Set timeout to detect long press
+      // Set a shorter timeout for the long press detection
       longPressTimeoutRef.current = setTimeout(() => {
-        // This runs when long press is detected
         setIsLongPressing(true);
         setShowFullscreen(true);
         setFullscreenIndex(currentMediaIndex);
-      }, 500); // 500ms is a common threshold for long press
+      }, 300); // Reduced from 500ms to 300ms for quicker response
     },
     [currentMediaIndex]
   );
@@ -657,11 +656,10 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                 src={getTransformedImageUrl(
                   post.media[fullscreenIndex].mediaUrl,
                   {
-                    // Try simpler transformation parameters to avoid Cloudinary errors
                     width: 1000,
                     height: 1000,
-                    crop: "limit", // Using 'limit' instead of 'fit' - more compatible
-                    quality: "auto", // Simplified quality parameter
+                    crop: "limit",
+                    quality: "auto",
                     format: "auto",
                   }
                 )}
@@ -673,18 +671,72 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                 loading="eager"
                 onError={(e) => {
                   console.error("Image failed to load:", e);
-                  // Fallback to original URL if transformation fails
                   e.target.src = post.media[fullscreenIndex].mediaUrl;
                 }}
               />
+
+              {/* Add navigation buttons if there are multiple media items */}
+              {post.media.length > 1 && (
+                <>
+                  <FullscreenNavButton
+                    className="prev"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent modal from closing
+                      if (fullscreenIndex > 0) {
+                        setFullscreenIndex((prev) => prev - 1);
+                      }
+                    }}
+                    disabled={fullscreenIndex === 0}
+                    aria-label="Previous image"
+                  >
+                    <FaChevronLeft />
+                  </FullscreenNavButton>
+
+                  <FullscreenNavButton
+                    className="next"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent modal from closing
+                      if (fullscreenIndex < post.media.length - 1) {
+                        setFullscreenIndex((prev) => prev + 1);
+                      }
+                    }}
+                    disabled={fullscreenIndex === post.media.length - 1}
+                    aria-label="Next image"
+                  >
+                    <FaChevronRight />
+                  </FullscreenNavButton>
+                </>
+              )}
+
               {post.media.length > 1 && (
                 <FullscreenIndicator>
                   {fullscreenIndex + 1} / {post.media.length}
                 </FullscreenIndicator>
               )}
+
+              {/* Add dots indicator for multiple images */}
+              {post.media.length > 1 && (
+                <FullscreenProgressIndicator>
+                  {post.media.map((_, index) => (
+                    <FullscreenProgressDot
+                      key={index}
+                      active={index === fullscreenIndex}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFullscreenIndex(index);
+                      }}
+                      aria-label={`Go to image ${index + 1}`}
+                    />
+                  ))}
+                </FullscreenProgressIndicator>
+              )}
             </FullscreenWrapper>
+
             <CloseFullscreenButton
-              onClick={closeFullscreen}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeFullscreen();
+              }}
               aria-label="Close fullscreen view"
             >
               ×
@@ -1694,6 +1746,79 @@ const ReadMoreLink = styled(Link)`
   &:hover {
     color: ${COLORS.primarySalmon};
     text-decoration: underline;
+  }
+`;
+
+const FullscreenNavButton = styled.button`
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+  z-index: 10;
+
+  &:hover {
+    opacity: 1;
+    background-color: ${COLORS.primaryMint};
+  }
+
+  &.prev {
+    left: 20px;
+  }
+
+  &.next {
+    right: 20px;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+
+  @media (max-width: 768px) {
+    width: 40px;
+    height: 40px;
+  }
+`;
+
+const FullscreenProgressIndicator = styled.div`
+  position: absolute;
+  bottom: 60px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  z-index: 10;
+`;
+
+const FullscreenProgressDot = styled.button`
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: ${(props) =>
+    props.active ? COLORS.primaryMint : "rgba(255, 255, 255, 0.5)"};
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+
+  &:hover {
+    transform: scale(1.2);
+    background-color: ${(props) =>
+      props.active ? COLORS.accentMint : "rgba(255, 255, 255, 0.8)"};
   }
 `;
 
