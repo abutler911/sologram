@@ -166,14 +166,7 @@ const Header = ({ onSearch, onClearSearch }) => {
                 Stories
               </NavLink>
             )}
-            {isAdmin && (
-              <NavLink
-                to="/subscribers"
-                active={location.pathname.startsWith("/subscribers")}
-              >
-                Subscribers
-              </NavLink>
-            )}
+            {/* Subscribers link removed */}
             {isAdmin && (
               <NavLink
                 to="/media-gallery"
@@ -270,14 +263,7 @@ const Header = ({ onSearch, onClearSearch }) => {
                       <small>{isAdmin ? "Admin" : "User"}</small>
                     </UserInfo>
                     <MenuDivider />
-                    {isAdmin && (
-                      <UserMenuItem
-                        to="/subscribers"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        <FaBell /> <span>Subscribers</span>
-                      </UserMenuItem>
-                    )}
+                    {/* Subscribers menu item removed */}
 
                     {isAdmin && (
                       <UserMenuItem
@@ -395,15 +381,7 @@ const Header = ({ onSearch, onClearSearch }) => {
                 <span>Profile</span>
               </MobileMenuItem>
 
-              {isAdmin && (
-                <MobileMenuItem
-                  to="/subscribers"
-                  active={location.pathname.startsWith("/subscribers")}
-                  onClick={handleLinkClick}
-                >
-                  Subscribers
-                </MobileMenuItem>
-              )}
+              {/* Subscribers mobile menu item removed */}
 
               <MobileMenuLogoutButton onClick={handleLogout}>
                 <FaSignOutAlt /> <span>Logout</span>

@@ -82,13 +82,7 @@ const BottomNavigation = () => {
                       <FaFolder />
                       <span>New Collection</span>
                     </CreateOptionItem>
-                    <CreateOptionItem
-                      to="/subscribers"
-                      onClick={() => setShowCreateOptions(false)}
-                    >
-                      <FaUsers />
-                      <span>Manage Subscribers</span>
-                    </CreateOptionItem>
+                    {/* Subscribers option removed */}
                   </>
                 )}
                 {isAdmin && (
@@ -118,6 +112,13 @@ const BottomNavigation = () => {
         <FaLightbulb />
         <NavLabel>Thoughts</NavLabel>
       </NavItem>
+
+      {isAdmin && (
+        <NavItem to="/media-gallery" active={isActive("/media-gallery")}>
+          <FaImages />
+          <NavLabel>Media</NavLabel>
+        </NavItem>
+      )}
     </NavContainer>
   );
 };
