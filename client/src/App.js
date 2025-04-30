@@ -6,7 +6,7 @@ import ReactGA from "react-ga4";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthContext } from "./context/AuthContext";
 import { LikesProvider } from "./context/LikesContext";
-import { initializeOneSignal } from "./utils/notificationService";
+import { initOneSignal } from "./utils/oneSignal";
 import ScrollToTop from "./components/ScrollToTop";
 import InstallPrompt from "./components/pwa/InstallPrompt";
 import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButtonAdjuster";
@@ -64,15 +64,11 @@ function App() {
     };
   }, [networkStatus]);
 
-  // OneSignal initialization
   useEffect(() => {
-    if (!user?._id) return;
-
-    console.log("[App] Initializing OneSignal for user:", user._id);
-    initializeOneSignal(user._id).catch((error) => {
-      console.error("[App] OneSignal initialization error:", error);
-    });
-  }, [user?._id]);
+    if (user) {
+      initOneSignal();
+    }
+  }, [user]);
 
   // Search handlers
   const handleSearch = (query) => {
