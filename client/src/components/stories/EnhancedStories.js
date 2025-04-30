@@ -885,7 +885,7 @@ const StoryAvatar = styled.img`
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  margin-top: 0.5rem;
+
   object-fit: cover;
   background-color: ${COLORS.elevatedBackground};
 `;
