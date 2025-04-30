@@ -2,7 +2,6 @@
 const mongoose = require("mongoose");
 const Story = require("../models/Story");
 const cloudinary = require("../config/cloudinary").cloudinary;
-const notificationService = require("../services/notificationService");
 
 // Helper function for handling server errors
 const handleServerError = (res, err, customMessage = "Server Error") => {

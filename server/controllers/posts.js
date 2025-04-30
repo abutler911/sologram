@@ -1,7 +1,6 @@
 const Post = require("../models/Post");
 const Like = require("../models/Like");
 const { cloudinary } = require("../config/cloudinary");
-const notificationService = require("../services/notificationService");
 
 exports.getPosts = async (req, res) => {
   console.log("[DEBUG] getPosts controller hit");

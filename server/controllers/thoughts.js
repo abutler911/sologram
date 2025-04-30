@@ -1,7 +1,6 @@
 // controllers/thoughts.js
 const Thought = require("../models/Thought");
 const { cloudinary } = require("../config/cloudinary");
-const notificationService = require("../services/notificationService");
 
 // Get all thoughts with pagination
 exports.getThoughts = async (req, res) => {

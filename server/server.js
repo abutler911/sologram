@@ -1,12 +1,10 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const axios = require("axios");
 const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const path = require("path");
 const winston = require("winston");
-const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("express-mongo-sanitize");
 const {
   setupAgenda,
@@ -43,6 +41,17 @@ const logger = winston.createLogger({
   ],
 });
 
+if (process.env.NODE_ENV !== "production") {
+  logger.add(
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      ),
+    })
+  );
+}
+
 // CORS options
 const corsOptions = {
   origin:
@@ -58,12 +67,6 @@ const corsOptions = {
   credentials: true,
   maxAge: 86400,
 };
-
-// Rate limiting
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-});
 
 // Middleware
 app.use(cors(corsOptions));
@@ -97,7 +100,7 @@ app.use("/api/admin/cloudinary", cloudinaryRoutes);
 // Logging all requests except health
 app.use((req, res, next) => {
   if (!req.originalUrl.includes("/health")) {
-    console.log(`${req.method} ${req.originalUrl}`);
+    logger.http(`${req.method} ${req.originalUrl}`);
   }
   next();
 });
@@ -117,48 +120,6 @@ app.get("/", (req, res) => {
   res.send("🚀 SoloGram backend is live!");
 });
 
-// DB test route
-app.get("/api/test-db", async (req, res) => {
-  try {
-    const count = await Post.countDocuments();
-    res.status(200).json({ connected: true, posts: count });
-  } catch (err) {
-    res.status(500).json({ connected: false, error: err.message });
-  }
-});
-
-// Test OneSignal API connection
-app.get("/api/onesignal-test", async (req, res) => {
-  try {
-    const response = await axios.get(
-      `https://onesignal.com/api/v1/apps/${process.env.ONESIGNAL_APP_ID}`,
-      {
-        headers: {
-          Authorization: `Basic ${process.env.ONESIGNAL_REST_API_KEY}`,
-        },
-      }
-    );
-
-    res.status(200).json({
-      success: true,
-      message: "OneSignal connection successful",
-      appName: response.data.name,
-      playerCount: response.data.players,
-      messageable: response.data.messageable_players,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "OneSignal connection failed",
-      error: error.response?.data || error.message,
-      appId: process.env.ONESIGNAL_APP_ID ? "Configured" : "Missing",
-      apiKey: process.env.ONESIGNAL_REST_API_KEY
-        ? `Configured (length: ${process.env.ONESIGNAL_REST_API_KEY.length})`
-        : "Missing",
-    });
-  }
-});
-
 // Global error handler
 const globalErrorHandler = (err, req, res, next) => {
   logger.error({
@@ -166,6 +127,7 @@ const globalErrorHandler = (err, req, res, next) => {
     url: req.originalUrl,
     method: req.method,
     error: err.message,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
   });
 
   res.status(500).json({
@@ -176,17 +138,11 @@ const globalErrorHandler = (err, req, res, next) => {
 };
 app.use(globalErrorHandler);
 
-app.post("/api/test-live", (req, res) => {
-  console.log("🔥 /api/test-live route hit");
-  res.json({ success: true, from: "Live Server" });
-});
-
-// ✅ Production static file serving (React) – placed last
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/build")));
 
   // React catch-all for non-API routes
-  app.get(/^\/(?!api).*/, (req, res) => {
+  app.get(/^\/(?!api|health).*/, (req, res) => {
     res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
   });
 }
