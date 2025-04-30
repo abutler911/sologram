@@ -326,6 +326,7 @@ const EnhancedStories = ({ isPWA = false }) => {
   };
 
   // Calculate the expiration time for a story
+  // Calculate the expiration time for a story
   const getExpirationTime = (story) => {
     if (!story || !story.expiresAt) return "Unknown";
 
@@ -347,6 +348,18 @@ const EnhancedStories = ({ isPWA = false }) => {
     } else {
       return `${diffMinutes}m`;
     }
+  };
+
+  // Get the username to display for a story
+  const getUsername = (story, user) => {
+    // If it's your own story, always display "Andrew"
+    if (story.userId === user?._id) {
+      return "Andrew";
+    }
+
+    // For other users, show their username (or "User" if none)
+    const username = story.user?.username || "User";
+    return username.length > 8 ? `${username.substring(0, 8)}...` : username;
   };
 
   // Function to get thumbnail URL for a media item
@@ -702,8 +715,9 @@ const StoriesHeader = styled.div`
 
   h3 {
     font-size: 1rem;
-    color: ${COLORS.textPrimary};
+    color: ${COLORS.primaryBlueGray};
     margin: 0;
+    font-family: "Mystery Quest", sans-serif;
   }
 
   @media (max-width: 480px) {
