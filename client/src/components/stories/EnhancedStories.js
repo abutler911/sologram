@@ -644,13 +644,13 @@ const EnhancedStories = ({ isPWA = false }) => {
 // Animations
 const pulse = keyframes`
   0% {
-    box-shadow: 0 0 0 0 rgba(242, 124, 112, 0.7);
+    box-shadow: 0 0 0 0 rgba(101, 142, 169, 0.7);
   }
   70% {
-    box-shadow: 0 0 0 10px rgba(242, 124, 112, 0);
+    box-shadow: 0 0 0 10px rgba(101, 142, 169, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(242, 124, 112, 0);
+    box-shadow: 0 0 0 0 rgba(101, 142, 169, 0);
   }
 `;
 
@@ -811,7 +811,7 @@ const StoryItem = styled.div`
   align-items: center;
   cursor: pointer;
   flex: 0 0 auto;
-  width: 80px;
+  width: 90px;
   transition: all 0.2s ease;
 
   &:hover {
@@ -825,17 +825,17 @@ const StoryItem = styled.div`
     `}
 
   @media (max-width: 768px) {
-    width: 72px;
+    width: 80px;
   }
 
   @media (max-width: 480px) {
-    width: 64px;
+    width: 72px;
   }
 `;
 
 const StoryAvatarWrapper = styled.div`
-  width: 64px;
-  height: 64px;
+  width: 78px;
+  height: 78px;
   border-radius: 50%;
   padding: 3px;
   margin-bottom: 0.5rem;
@@ -844,7 +844,7 @@ const StoryAvatarWrapper = styled.div`
     if (props.isOwn)
       return `linear-gradient(45deg, ${COLORS.primarySalmon}, ${COLORS.primaryMint})`;
     if (!props.viewed)
-      return `linear-gradient(45deg, ${COLORS.primarySalmon}, #E8346F)`;
+      return `linear-gradient(45deg, ${COLORS.primaryBlueGray}, ${COLORS.primaryMint})`;
     return COLORS.border;
   }};
 
@@ -853,16 +853,17 @@ const StoryAvatarWrapper = styled.div`
     !props.isOwn &&
     css`
       animation: ${pulse} 2s infinite;
+      box-shadow: 0 0 0 rgba(136, 178, 204, 0.4);
     `}
 
   @media (max-width: 768px) {
-    width: 56px;
-    height: 56px;
+    width: 68px;
+    height: 68px;
   }
 
   @media (max-width: 480px) {
-    width: 48px;
-    height: 48px;
+    width: 58px;
+    height: 58px;
     margin-bottom: 0.375rem;
   }
 
@@ -981,12 +982,12 @@ const StoryItemSkeleton = styled.div`
   flex-direction: column;
   align-items: center;
   flex: 0 0 auto;
-  width: 80px;
+  width: 90px;
 
   &:before {
     content: "";
-    width: 64px;
-    height: 64px;
+    width: 78px;
+    height: 78px;
     border-radius: 50%;
     margin-bottom: 0.5rem;
     background: linear-gradient(
@@ -1015,20 +1016,20 @@ const StoryItemSkeleton = styled.div`
   }
 
   @media (max-width: 768px) {
-    width: 72px;
+    width: 80px;
 
     &:before {
-      width: 56px;
-      height: 56px;
+      width: 68px;
+      height: 68px;
     }
   }
 
   @media (max-width: 480px) {
-    width: 64px;
+    width: 72px;
 
     &:before {
-      width: 48px;
-      height: 48px;
+      width: 58px;
+      height: 58px;
       margin-bottom: 0.375rem;
     }
 
