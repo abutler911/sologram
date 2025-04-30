@@ -45,7 +45,7 @@ const AppHeader = styled.header`
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: ${COLORS.primaryBlue}; // Changed to solid color
+  background: ${COLORS.primaryBlueGray}; // Updated to use the new primary blue-gray
   position: sticky;
   top: 0;
   z-index: 10;
@@ -82,7 +82,7 @@ const HeaderTitle = styled.h1`
 const NextButton = styled.button`
   background: none;
   border: none;
-  color: ${COLORS.accentTeal};
+  color: ${COLORS.accentMint}; // Updated to use accent mint
   font-weight: 600;
   padding: 8px;
   cursor: pointer;
@@ -90,7 +90,7 @@ const NextButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    color: ${COLORS.accentBlue};
+    color: ${COLORS.accentSalmon}; // Updated to use accent salmon on hover
     transform: translateY(-1px);
   }
 
@@ -175,7 +175,12 @@ const RemoveButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: rgba(255, 59, 48, 0.7);
+    background-color: rgba(
+      233,
+      137,
+      115,
+      0.7
+    ); // Using primarySalmon with opacity
     transform: scale(1.1);
   }
 `;
@@ -188,13 +193,13 @@ const DropzoneArea = styled.div`
   align-items: center;
   justify-content: center;
   border: 2px dashed
-    ${(props) => (props.isDragActive ? COLORS.primaryTeal : COLORS.border)};
+    ${(props) => (props.isDragActive ? COLORS.primaryMint : COLORS.border)};
   background-color: ${COLORS.elevatedBackground};
   cursor: pointer;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: ${COLORS.primaryTeal};
+    border-color: ${COLORS.primaryMint};
     background-color: ${COLORS.buttonHover};
   }
 `;
@@ -215,7 +220,7 @@ const DragActiveContent = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: ${COLORS.accentTeal};
+  color: ${COLORS.accentMint};
   text-align: center;
   padding: 16px;
   width: 100%;
@@ -224,7 +229,7 @@ const DragActiveContent = styled.div`
 const UploadIcon = styled.div`
   font-size: 3rem;
   margin-bottom: 16px;
-  color: ${COLORS.primaryTeal};
+  color: ${COLORS.primaryMint};
 `;
 
 const ActionButtonsContainer = styled.div`
@@ -259,28 +264,28 @@ const ActionButton = styled.button`
   }
 
   &:hover {
-    background-color: ${COLORS.primaryTeal}20;
+    background-color: ${COLORS.primaryMint}20;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px ${COLORS.shadow};
 
     svg {
-      color: ${COLORS.primaryTeal};
+      color: ${COLORS.primaryMint};
     }
   }
 
   &:nth-child(2):hover {
-    background-color: ${COLORS.primaryBlue}20;
+    background-color: ${COLORS.primaryBlueGray}20;
 
     svg {
-      color: ${COLORS.primaryBlue};
+      color: ${COLORS.primaryBlueGray};
     }
   }
 
   &:nth-child(3):hover {
-    background-color: ${COLORS.primaryGreen}20;
+    background-color: ${COLORS.primarySalmon}20;
 
     svg {
-      color: ${COLORS.primaryGreen};
+      color: ${COLORS.primarySalmon};
     }
   }
 `;
@@ -309,7 +314,7 @@ const ThumbnailItem = styled.div`
   flex-shrink: 0;
   cursor: pointer;
   border: 2px solid
-    ${(props) => (props.isSelected ? COLORS.primaryTeal : "transparent")};
+    ${(props) => (props.isSelected ? COLORS.primaryMint : "transparent")};
   position: relative;
   display: flex;
   align-items: center;
@@ -370,14 +375,14 @@ const AddMediaThumbnail = styled.div`
   justify-content: center;
   flex-shrink: 0;
   cursor: pointer;
-  color: ${COLORS.accentBlue};
+  color: ${COLORS.accentBlueGray};
   font-size: 1.5rem;
   border: 1px dashed ${COLORS.border};
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: ${COLORS.primaryBlue}20;
-    color: ${COLORS.accentBlue};
+    background-color: ${COLORS.primaryBlueGray}20;
+    color: ${COLORS.accentBlueGray};
     transform: scale(1.05);
   }
 `;
@@ -430,7 +435,7 @@ const ProgressBarOuter = styled.div`
 const ProgressBarInner = styled.div`
   height: 100%;
   width: ${(props) => props.width}%;
-  background: ${COLORS.primaryTeal}; // Solid color instead of gradient
+  background: ${COLORS.primaryMint}; // Updated to primary mint color
   transition: width 0.3s ease;
 `;
 
@@ -445,15 +450,15 @@ const CompressOptionContainer = styled.div`
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background-color: ${COLORS.primaryTeal}15;
+  background-color: ${COLORS.primaryMint}15;
   border-radius: 4px;
   margin: 8px 16px;
-  border: 1px solid ${COLORS.primaryTeal}30;
+  border: 1px solid ${COLORS.primaryMint}30;
 `;
 
 const CompressCheckbox = styled.input`
   margin-right: 12px;
-  accent-color: ${COLORS.primaryTeal};
+  accent-color: ${COLORS.primaryMint};
 `;
 
 const CompressLabel = styled.label`
@@ -528,7 +533,7 @@ const LoaderOverlay = styled.div`
 const Spinner = styled.div`
   border: 4px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  border-top: 4px solid ${COLORS.primaryTeal};
+  border-top: 4px solid ${COLORS.primarySalmon}; // Updated to primary salmon
   width: 40px;
   height: 40px;
   animation: spin 1s linear infinite;
@@ -558,7 +563,7 @@ const PreviewDot = styled.div`
   height: 8px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? COLORS.primaryTeal : "rgba(255, 255, 255, 0.5)"};
+    props.active ? COLORS.primarySalmon : "rgba(255, 255, 255, 0.5)"};
   cursor: pointer;
   transition: all 0.2s ease;
 
