@@ -18,7 +18,7 @@ import {
 } from "react-icons/fa";
 
 import { AuthContext } from "../../context/AuthContext";
-import HeaderSubscriptionBanner from "../subscription/HeaderSubscriptionBanner";
+
 import { toast } from "react-hot-toast";
 
 import { COLORS, THEME } from "../../theme";
@@ -458,8 +458,6 @@ const Header = ({ onSearch, onClearSearch }) => {
           </ExternalMenuItem>
         </MobileMenuContent>
       </MobileMenu>
-
-      {showSubscriptionBanner && <HeaderSubscriptionBanner />}
     </HeaderWrapper>
   );
 };
