@@ -12,6 +12,8 @@ import {
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../context/AuthContext";
 import { COLORS, THEME } from "../theme"; // Import the theme
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 const ArchivedStoryView = () => {
   const { user, isAuthenticated } = useContext(AuthContext);
@@ -121,9 +123,11 @@ const ArchivedStoryView = () => {
   if (loading) {
     return (
       <PageWrapper>
+        <Header />
         <Container>
           <LoadingMessage>Loading story...</LoadingMessage>
         </Container>
+        <Footer />
       </PageWrapper>
     );
   }
@@ -131,18 +135,21 @@ const ArchivedStoryView = () => {
   if (error || !story) {
     return (
       <PageWrapper>
+        <Header />
         <Container>
           <ErrorMessage>{error || "Story not found"}</ErrorMessage>
           <BackLink to="/story-archive">Back to Archive</BackLink>
         </Container>
+        <Footer />
       </PageWrapper>
     );
   }
 
   return (
     <PageWrapper>
+      <Header />
       <Container>
-        <Header>
+        <PageHeader>
           <BackLink to="/story-archive">
             <FaArrowLeft />
             <span>Back to Archive</span>
@@ -153,7 +160,7 @@ const ArchivedStoryView = () => {
               <span>Delete</span>
             </DeleteButton>
           )}
-        </Header>
+        </PageHeader>
 
         <StoryTitle>{story.title}</StoryTitle>
         <StoryDate>
@@ -218,6 +225,7 @@ const ArchivedStoryView = () => {
           )}
         </MediaContainer>
       </Container>
+      <Footer />
     </PageWrapper>
   );
 };
@@ -225,20 +233,22 @@ const ArchivedStoryView = () => {
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
   min-height: 100vh;
-  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
 `;
 
 const Container = styled.div`
   max-width: 1000px;
   margin: 0 auto;
   padding: 2rem;
+  flex: 1;
 
   @media (max-width: 768px) {
     padding: 1rem;
   }
 `;
 
-const Header = styled.div`
+const PageHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -250,6 +260,7 @@ const BackLink = styled(Link)`
   align-items: center;
   color: ${COLORS.textSecondary};
   text-decoration: none;
+  transition: color 0.2s ease;
 
   &:hover {
     color: ${COLORS.primarySalmon};
@@ -300,11 +311,12 @@ const LoadingMessage = styled.div`
 `;
 
 const ErrorMessage = styled.div`
-  background-color: rgba(248, 215, 218, 0.9);
+  background-color: ${COLORS.primarySalmon}15;
   color: ${COLORS.error};
   padding: 1rem;
   border-radius: 4px;
   margin-bottom: 2rem;
+  border: 1px solid ${COLORS.primarySalmon}30;
 `;
 
 const MediaContainer = styled.div`
@@ -314,6 +326,7 @@ const MediaContainer = styled.div`
   border-radius: 8px;
   background-color: ${COLORS.elevatedBackground};
   aspect-ratio: 16 / 9;
+  box-shadow: 0 4px 10px ${COLORS.shadow};
 
   @media (max-width: 768px) {
     aspect-ratio: 1 / 1;
@@ -352,7 +365,12 @@ const NavButton = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(
+    101,
+    142,
+    169,
+    0.4
+  ); /* Using primaryBlueGray with opacity */
   color: white;
   border: none;
   border-radius: 50%;
@@ -365,7 +383,7 @@ const NavButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(101, 142, 169, 0.7); /* Darker on hover */
   }
 
   &.prev {
@@ -386,11 +404,12 @@ const MediaCounter = styled.div`
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(136, 178, 204, 0.7); /* primaryMint with opacity */
   color: white;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.75rem;
+  font-weight: 600;
 `;
 
 const DotIndicators = styled.div`
@@ -412,11 +431,12 @@ const Dot = styled.button`
   border: none;
   padding: 0;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, transform 0.2s;
 
   &:hover {
     background-color: ${(props) =>
-      props.active ? COLORS.primarySalmon : "rgba(255, 255, 255, 0.8)"};
+      props.active ? COLORS.primarySalmon : COLORS.primaryKhaki};
+    transform: scale(1.1);
   }
 `;
 
