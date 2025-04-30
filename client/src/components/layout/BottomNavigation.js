@@ -34,97 +34,115 @@ const BottomNavigation = () => {
     setShowCreateOptions(!showCreateOptions);
   };
 
+  // Define the navigation items based on user role
+  const getNavItems = () => {
+    // Common nav items for all users
+    const navItems = [
+      {
+        to: "/",
+        icon: <FaHome />,
+        label: "Home",
+      },
+      {
+        to: "/collections",
+        icon: <FaFolder />,
+        label: "Collections",
+      },
+      {
+        to: "/thoughts",
+        icon: <FaLightbulb />,
+        label: "Thoughts",
+      },
+    ];
+
+    // Add media gallery link for admin users
+    if (isAdmin) {
+      navItems.push({
+        to: "/media-gallery",
+        icon: <FaImages />,
+        label: "Media",
+      });
+    }
+
+    return navItems;
+  };
+
+  const navItems = getNavItems();
+
   return (
     <NavContainer className="bottom-nav">
-      {/* Left side: 2 icons */}
-      <NavItem to="/" active={isActive("/")}>
-        <FaHome />
-        <NavLabel>Home</NavLabel>
-      </NavItem>
+      {/* Background brand for non-authenticated users */}
+      {!isAuthenticated && <BrandBackground>SOLOGRAM</BrandBackground>}
 
-      <NavItem to="/collections" active={isActive("/collections")}>
-        <FaFolder />
-        <NavLabel>Collections</NavLabel>
-      </NavItem>
+      {/* Navigation Items */}
+      <NavItemsContainer>
+        {/* Left side nav items */}
+        {navItems.map((item, index) => (
+          <NavItem key={item.to} to={item.to} active={isActive(item.to)}>
+            {item.icon}
+            <NavLabel>{item.label}</NavLabel>
+          </NavItem>
+        ))}
 
-      {/* Center create button - only for admin users */}
-      {isAdmin && (
-        <CreateButtonWrapper>
-          <CreateButton onClick={toggleCreateOptions}>
-            <FaPlus />
-          </CreateButton>
-          <NavLabel style={{ opacity: 0 }}>Create</NavLabel>
-          {showCreateOptions && (
-            <CreateOptionsOverlay onClick={() => setShowCreateOptions(false)}>
-              <CreateOptions onClick={(e) => e.stopPropagation()}>
-                <CreateOptionItem
-                  to="/create"
-                  onClick={() => setShowCreateOptions(false)}
-                >
-                  <FaCamera />
-                  <span>New Post</span>
-                </CreateOptionItem>
-
-                <CreateOptionItem
-                  to="/create-story"
-                  onClick={() => setShowCreateOptions(false)}
-                >
-                  <FaImages />
-                  <span>New Story</span>
-                </CreateOptionItem>
-
-                {isAdmin && (
-                  <>
-                    <CreateOptionItem
-                      to="/collections/create"
-                      onClick={() => setShowCreateOptions(false)}
-                    >
-                      <FaFolder />
-                      <span>New Collection</span>
-                    </CreateOptionItem>
-                    {/* Subscribers option removed */}
-                  </>
-                )}
-                {isAdmin && (
+        {/* Center create button - only for admin users */}
+        {isAdmin && (
+          <CreateButtonWrapper>
+            <CreateButton onClick={toggleCreateOptions}>
+              <FaPlus />
+            </CreateButton>
+            <NavLabel style={{ opacity: 0 }}>Create</NavLabel>
+            {showCreateOptions && (
+              <CreateOptionsOverlay onClick={() => setShowCreateOptions(false)}>
+                <CreateOptions onClick={(e) => e.stopPropagation()}>
                   <CreateOptionItem
-                    to="/media-gallery"
+                    to="/create"
+                    onClick={() => setShowCreateOptions(false)}
+                  >
+                    <FaCamera />
+                    <span>New Post</span>
+                  </CreateOptionItem>
+
+                  <CreateOptionItem
+                    to="/create-story"
                     onClick={() => setShowCreateOptions(false)}
                   >
                     <FaImages />
-                    <span>Media Gallery</span>
+                    <span>New Story</span>
                   </CreateOptionItem>
-                )}
-              </CreateOptions>
-            </CreateOptionsOverlay>
-          )}
-        </CreateButtonWrapper>
-      )}
 
-      {/* Center brand for non-authenticated users */}
-      {!isAuthenticated && (
-        <BrandCenter>
-          <BrandText>SoloGram</BrandText>
-        </BrandCenter>
-      )}
-
-      {/* Right side: 2 icons */}
-      <NavItem to="/thoughts" active={isActive("/thoughts")}>
-        <FaLightbulb />
-        <NavLabel>Thoughts</NavLabel>
-      </NavItem>
-
-      {isAdmin && (
-        <NavItem to="/media-gallery" active={isActive("/media-gallery")}>
-          <FaImages />
-          <NavLabel>Media</NavLabel>
-        </NavItem>
-      )}
+                  {isAdmin && (
+                    <>
+                      <CreateOptionItem
+                        to="/collections/create"
+                        onClick={() => setShowCreateOptions(false)}
+                      >
+                        <FaFolder />
+                        <span>New Collection</span>
+                      </CreateOptionItem>
+                    </>
+                  )}
+                  {isAdmin && (
+                    <CreateOptionItem
+                      to="/media-gallery"
+                      onClick={() => setShowCreateOptions(false)}
+                    >
+                      <FaImages />
+                      <span>Media Gallery</span>
+                    </CreateOptionItem>
+                  )}
+                </CreateOptions>
+              </CreateOptionsOverlay>
+            )}
+          </CreateButtonWrapper>
+        )}
+      </NavItemsContainer>
     </NavContainer>
   );
 };
 
 const NavContainer = styled.div`
   display: none;
+  position: relative;
 
   @media (max-width: 767px) {
     display: flex;
@@ -139,7 +157,39 @@ const NavContainer = styled.div`
     box-shadow: 0 -2px 8px ${COLORS.shadow};
     z-index: 1000;
     padding-bottom: env(safe-area-inset-bottom, 0);
+    overflow: hidden;
   }
+`;
+
+// Container for nav items to ensure they're above the brand background
+const NavItemsContainer = styled.div`
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 2;
+`;
+
+// Brand background that spans the entire navbar for unauthenticated users
+const BrandBackground = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: ${COLORS.primarySalmon};
+  opacity: 0.15;
+  letter-spacing: 2px;
+  user-select: none;
+  z-index: 1;
+  pointer-events: none;
 `;
 
 const NavItem = styled(Link)`
@@ -152,6 +202,8 @@ const NavItem = styled(Link)`
   color: ${(props) =>
     props.active ? COLORS.primarySalmon : COLORS.textTertiary};
   text-decoration: none;
+  position: relative;
+  z-index: 3;
 
   svg {
     font-size: 1.25rem;
@@ -177,6 +229,7 @@ const CreateButtonWrapper = styled.div`
   flex: 1;
   position: relative;
   margin-top: -20px; /* Move button up to be partially above the navbar */
+  z-index: 3;
 `;
 
 const CreateButton = styled.button`
@@ -250,39 +303,6 @@ const CreateOptionItem = styled(Link)`
 
   &:hover svg {
     color: ${COLORS.primarySalmon};
-  }
-`;
-
-const BrandCenter = styled.div`
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-`;
-
-const BrandText = styled.span`
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: ${COLORS.primarySalmon};
-  letter-spacing: 0.5px;
-  user-select: none;
-  animation: pulse 2.8s ease-in-out infinite;
-  opacity: 0.9;
-
-  @keyframes pulse {
-    0% {
-      transform: scale(1);
-      opacity: 0.9;
-    }
-    50% {
-      transform: scale(1.05);
-      opacity: 1;
-    }
-    100% {
-      transform: scale(1);
-      opacity: 0.9;
-    }
   }
 `;
 
