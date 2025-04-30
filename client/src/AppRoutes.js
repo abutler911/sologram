@@ -61,7 +61,6 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
       AdminDashboard: React.lazy(() => import("./pages/AdminDashboard")),
       ProfilePage: React.lazy(() => import("./pages/Profile")),
       SubscriberAdmin: React.lazy(() => import("./pages/SubscriberAdmin")),
-      Analytics: React.lazy(() => import("./pages/Analytics")),
 
       // New Cloudinary Gallery page
       CloudinaryGallery: React.lazy(() => import("./pages/CloudinaryGallery")),
@@ -127,7 +126,7 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
       path: "/collections/:id/add-posts",
       element: <lazyComponents.AddPostsToCollection />,
     },
-    { path: "/analytics", element: <lazyComponents.Analytics /> },
+
     { path: "/thoughts/:id/edit", element: <lazyComponents.EditThought /> },
     { path: "/thoughts/create", element: <lazyComponents.CreateThought /> },
     // Add new Cloudinary Gallery route - Admin only
