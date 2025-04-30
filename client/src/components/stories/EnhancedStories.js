@@ -641,7 +641,7 @@ const pulse = keyframes`
     box-shadow: 0 0 0 0 rgba(101, 142, 169, 0.7);
   }
   70% {
-    box-shadow: 0 0 0 8px rgba(101, 142, 169, 0);
+    box-shadow: 0 0 0 10px rgba(101, 142, 169, 0);
   }
   100% {
     box-shadow: 0 0 0 0 rgba(101, 142, 169, 0);
@@ -676,8 +676,8 @@ const StoriesContainer = styled.section`
   margin-bottom: 1.25rem;
   box-shadow: 0 1px 3px ${COLORS.shadow};
   animation: ${fadeIn} 0.3s ease;
-  position: relative; // Add position relative to establish a stacking context
-  z-index: 1; // Ensure proper stacking order
+  position: relative;
+  z-index: 1;
 
   @media (max-width: 768px) {
     padding: 0.75rem;
@@ -695,8 +695,8 @@ const StoriesHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
-  position: relative; // Add position relative
-  z-index: 3; // Higher z-index to ensure it stays on top
+  position: relative;
+  z-index: 5; // Higher z-index to stay on top
 
   h3 {
     font-size: 1.3rem;
@@ -780,8 +780,7 @@ const CreateStoryButton = styled.button`
 
 const ScrollableContainer = styled.div`
   position: relative;
-  z-index: 2; // Ensure proper stacking order
-  padding-top: 0.5rem; // Add a little padding at the top to push content down
+  margin-top: 8px; // Add margin to push the stories down a bit
 `;
 
 const StoriesWrapper = styled.div`
@@ -816,6 +815,8 @@ const StoryItem = styled.div`
   flex: 0 0 auto;
   width: 90px;
   transition: all 0.2s ease;
+  position: relative;
+  z-index: 2;
 
   &:hover {
     transform: translateY(-2px);
@@ -843,43 +844,20 @@ const StoryAvatarWrapper = styled.div`
   padding: 3px;
   margin-bottom: 0.5rem;
   position: relative;
-  overflow: hidden; // Ensure content stays within bounds
-  z-index: 2; // Ensure proper stacking
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 50%;
-    background: ${(props) => {
-      if (props.isOwn)
-        return `linear-gradient(45deg, ${COLORS.primarySalmon}, ${COLORS.primaryMint})`;
-      if (!props.viewed)
-        return `linear-gradient(45deg, ${COLORS.primaryBlueGray}, ${COLORS.primaryMint})`;
-      return COLORS.border;
-    }};
-    z-index: -1; // Place behind content
-  }
+  background: ${(props) => {
+    if (props.isOwn)
+      return `linear-gradient(45deg, ${COLORS.primarySalmon}, ${COLORS.primaryMint})`;
+    if (!props.viewed)
+      return `linear-gradient(45deg, ${COLORS.primaryBlueGray}, ${COLORS.primaryMint})`;
+    return COLORS.border;
+  }};
+  z-index: 2; // Ensure higher z-index than non-critical elements
 
   ${(props) =>
     !props.viewed &&
     !props.isOwn &&
     css`
-      &::after {
-        content: "";
-        position: absolute;
-        top: -3px;
-        left: -3px;
-        right: -3px;
-        bottom: -3px;
-        border-radius: 50%;
-        z-index: -2;
-        animation: ${pulse} 2s infinite;
-        box-shadow: 0 0 0 rgba(136, 178, 204, 0.4);
-      }
+      animation: ${pulse} 2s infinite;
     `}
 
   @media (max-width: 768px) {
@@ -913,10 +891,9 @@ const StoryAvatarWrapper = styled.div`
 `;
 
 const StoryAvatar = styled.img`
-  width: calc(100% - 6px);
-  height: calc(100% - 6px);
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
-  margin: 3px;
   object-fit: cover;
   background-color: ${COLORS.elevatedBackground};
 `;
