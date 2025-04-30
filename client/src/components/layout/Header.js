@@ -481,7 +481,7 @@ const Logo = styled(Link)`
     align-items: center;
     font-family: "Sora", sans-serif;
     font-size: 2.2rem;
-    font-weight: 700;
+    font-weight: 500;
     color: ${COLORS.textPrimary};
     letter-spacing: 1px;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
