@@ -350,18 +350,6 @@ const EnhancedStories = ({ isPWA = false }) => {
     }
   };
 
-  // Get the username to display for a story
-  const getUsername = (story, user) => {
-    // If it's your own story, always display "Andrew"
-    if (story.userId === user?._id) {
-      return "Andrew";
-    }
-
-    // For other users, show their username (or "User" if none)
-    const username = story.user?.username || "User";
-    return username.length > 8 ? `${username.substring(0, 8)}...` : username;
-  };
-
   // Function to get thumbnail URL for a media item
   const getThumbnailUrl = (media) => {
     if (!media) return "/placeholder-image.jpg";
@@ -529,13 +517,6 @@ const EnhancedStories = ({ isPWA = false }) => {
                       </VideoIndicator>
                     )}
                   </StoryAvatarWrapper>
-                  <StoryUsername>
-                    {story.user?.username
-                      ? story.user.username.length > 8
-                        ? `${story.user.username.substring(0, 8)}...`
-                        : story.user.username
-                      : "User"}
-                  </StoryUsername>
                 </StoryItem>
               );
             })}
@@ -714,8 +695,9 @@ const StoriesHeader = styled.div`
   margin-bottom: 1rem;
 
   h3 {
-    font-size: 1rem;
-    color: ${COLORS.textPrimary};
+    font-size: 1.3rem;
+    font-family: "Mystery Quest", sans-serif;
+    color: ${COLORS.primaryBlueGray};
     margin: 0;
   }
 
