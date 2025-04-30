@@ -2,12 +2,8 @@
 const Post = require("../models/Post");
 const Like = require("../models/Like");
 const Story = require("../models/Story");
-const Notification = require("../models/Notification");
-const User = require("../models/User"); // Updated from Subscriber
+const User = require("../models/User");
 
-/**
- * Get open rate data for recent notifications, grouped by date
- */
 exports.getOpenRateAnalytics = async (req, res) => {
   try {
     const recentNotifications = await Notification.find({ isTemplate: false })
