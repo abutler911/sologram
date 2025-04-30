@@ -173,28 +173,46 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
   const handleTouchStart = useCallback(
     (e) => {
+      // Clear any previous timeout to prevent multiple handlers
+      if (longPressTimeoutRef.current) {
+        clearTimeout(longPressTimeoutRef.current);
+      }
+
       setIsPressing(true);
 
+      // Set timeout to detect long press
       longPressTimeoutRef.current = setTimeout(() => {
+        // This runs when long press is detected
         setIsLongPressing(true);
         setShowFullscreen(true);
         setFullscreenIndex(currentMediaIndex);
-      }, 500);
+      }, 500); // 500ms is a common threshold for long press
     },
     [currentMediaIndex]
   );
 
-  const handleTouchEnd = useCallback(() => {
-    setIsPressing(false);
+  const handleTouchEnd = useCallback(
+    (e) => {
+      // Prevent default to stop any potential click events if we detected a long press
+      if (isLongPressing) {
+        e.preventDefault();
+      }
 
-    if (longPressTimeoutRef.current) {
-      clearTimeout(longPressTimeoutRef.current);
-      longPressTimeoutRef.current = null;
-    }
-    setIsLongPressing(false);
-  }, []);
+      setIsPressing(false);
 
-  const handleTouchMove = useCallback(() => {
+      // Clear the timeout to prevent it from firing after touch has ended
+      if (longPressTimeoutRef.current) {
+        clearTimeout(longPressTimeoutRef.current);
+        longPressTimeoutRef.current = null;
+      }
+
+      setIsLongPressing(false);
+    },
+    [isLongPressing]
+  );
+
+  const handleTouchMove = useCallback((e) => {
+    // If user moves finger, cancel the long press
     if (longPressTimeoutRef.current) {
       clearTimeout(longPressTimeoutRef.current);
       longPressTimeoutRef.current = null;
