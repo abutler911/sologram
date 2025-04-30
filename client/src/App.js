@@ -6,7 +6,7 @@ import ReactGA from "react-ga4";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthContext } from "./context/AuthContext";
 import { LikesProvider } from "./context/LikesContext";
-import { initOneSignal } from "./utils/oneSignal";
+
 import ScrollToTop from "./components/ScrollToTop";
 import InstallPrompt from "./components/pwa/InstallPrompt";
 import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButtonAdjuster";
@@ -63,16 +63,6 @@ function App() {
       window.removeEventListener("offline", handleOffline);
     };
   }, [networkStatus]);
-
-  useEffect(() => {
-    if (user) {
-      const timer = setTimeout(() => {
-        initOneSignal();
-      }, 1500); // wait a bit for the SDK to fully load
-
-      return () => clearTimeout(timer);
-    }
-  }, [user]);
 
   // Search handlers
   const handleSearch = (query) => {
