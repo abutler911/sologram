@@ -60,7 +60,6 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
       // Admin/Profile pages
       AdminDashboard: React.lazy(() => import("./pages/AdminDashboard")),
       ProfilePage: React.lazy(() => import("./pages/Profile")),
-      SubscriberAdmin: React.lazy(() => import("./pages/SubscriberAdmin")),
 
       // New Cloudinary Gallery page
       CloudinaryGallery: React.lazy(() => import("./pages/CloudinaryGallery")),
@@ -104,7 +103,7 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
         </StandardLayout>
       ),
     },
-    { path: "/subscribers", element: <lazyComponents.SubscriberAdmin /> },
+
     { path: "/create", element: <lazyComponents.CreatePost /> },
     { path: "/edit/:id", element: <lazyComponents.EditPost /> },
     { path: "/admin", element: <lazyComponents.AdminDashboard /> },
