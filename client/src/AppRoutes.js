@@ -6,9 +6,9 @@ import PrivateRoute from "./components/PrivateRoute";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import BottomNavigation from "./components/layout/BottomNavigation";
+import LoadingSpinner from "./components/common/LoadingSpinner";
 
-// Loading fallback component
-const LoadingFallback = () => <div className="loading-spinner">Loading...</div>;
+const LoadingFallback = () => <LoadingSpinner />;
 
 // Layout component to avoid repetition
 const StandardLayout = ({ children, headerProps }) => (
