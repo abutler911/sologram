@@ -11,9 +11,9 @@ import {
 } from "react-icons/fa";
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../context/AuthContext";
-import { COLORS, THEME } from "../theme"; // Import the theme
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import { COLORS } from "../theme"; // Import the theme
+import Header from "../components/layout/Header";
+import Footer from "../components/layout/Footer";
 
 const ArchivedStoryView = () => {
   const { user, isAuthenticated } = useContext(AuthContext);
