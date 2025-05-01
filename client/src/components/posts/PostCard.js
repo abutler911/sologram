@@ -1633,6 +1633,16 @@ const CloseFullscreenButton = styled.button`
   justify-content: center;
   transition: all 0.2s ease;
 
+  /* Remove default tap highlight on mobile devices */
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+
+  /* Provide custom active state styling instead */
+  &:active {
+    background-color: ${COLORS.primaryMint}80;
+    transform: scale(0.95);
+  }
+
   &:hover {
     background-color: ${COLORS.primaryMint};
     transform: scale(1.05);
@@ -1767,6 +1777,16 @@ const FullscreenNavButton = styled.button`
   transition: all 0.2s ease;
   z-index: 10;
 
+  /* Remove default tap highlight on mobile devices */
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+
+  /* Provide custom active state styling instead */
+  &:active {
+    background-color: ${COLORS.primaryMint}80;
+    transform: translateY(-50%) scale(0.95);
+  }
+
   &:hover {
     opacity: 1;
     background-color: ${COLORS.primaryMint};
@@ -1791,7 +1811,6 @@ const FullscreenNavButton = styled.button`
     height: 40px;
   }
 `;
-
 const FullscreenProgressIndicator = styled.div`
   position: absolute;
   bottom: 60px;
@@ -1815,10 +1834,18 @@ const FullscreenProgressDot = styled.button`
   transition: all 0.2s ease;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
 
+  /* Remove default tap highlight on mobile devices */
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+
   &:hover {
     transform: scale(1.2);
     background-color: ${(props) =>
       props.active ? COLORS.accentMint : "rgba(255, 255, 255, 0.8)"};
+  }
+
+  &:active {
+    transform: scale(0.9);
   }
 `;
 
