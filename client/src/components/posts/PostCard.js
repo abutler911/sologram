@@ -484,15 +484,17 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                     {media.mediaType === "image" ? (
                       <PostImage
                         src={getTransformedImageUrl(media.mediaUrl, {
-                          width: 614,
-                          height: 614,
+                          width: 1200,
+                          height: 630,
                           crop: "fill",
-                          gravity: "auto:subject",
-                          quality: "auto:good",
+                          gravity: "auto:faces",
+                          quality: "auto:best",
                           format: "auto",
                           dpr: "auto",
-                          effect: "improve",
-                          sharpen: 60,
+                          effect: "enhance",
+                          zoom: "1.1",
+                          sharpen: 80,
+                          flags: "progressive",
                         })}
                         sizes="100vw"
                         alt={post.caption || "Post image"}
