@@ -106,6 +106,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDoubleTapLiking, setIsDoubleTapLiking] = useState(false);
   const actionsRef = useRef(null);
   const [isLongPressing, setIsLongPressing] = useState(false);
@@ -476,6 +477,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
             onTouchMove={handleTouchMove}
             onTouchCancel={handleTouchEnd}
             isPressing={isPressing}
+            isLoading={isLoading}
           >
             <MediaCarousel {...swipeHandlers}>
               <MediaTrack currentIndex={currentMediaIndex}>
@@ -488,11 +490,12 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                           height: 1080,
                           crop: "fill",
                           gravity: "auto",
-                          quality: "auto:best",
+                          quality: "auto:good",
                           format: "auto",
                           dpr: "auto",
-                          effect: "enhance",
-                          sharpen: 30,
+                          effect: "improve:outdoor:10",
+                          color_adjustment: "saturation:10",
+                          sharpen: 15,
                           flags: "progressive",
                         })}
                         sizes="100vw"
@@ -513,6 +516,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                         className={media.filter}
                         onLoad={(e) => {
                           e.target.classList.add("loaded");
+                          setIsLoading(false);
                         }}
                       />
                     ) : (
@@ -657,11 +661,13 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                 src={getTransformedImageUrl(
                   post.media[fullscreenIndex].mediaUrl,
                   {
-                    width: 1000,
-                    height: 1000,
+                    width: 1200,
+                    height: 1200,
                     crop: "limit",
-                    quality: "auto",
+                    quality: "auto:best",
                     format: "auto",
+                    effect: "improve:outdoor:10",
+                    color_adjustment: "saturation:5",
                   }
                 )}
                 alt={post.caption || "Fullscreen view"}
@@ -1011,12 +1017,33 @@ const ActionItem = styled.button`
 const MediaContainer = styled(Link)`
   position: relative;
   width: 100%;
-  aspect-ratio: 4/3;
+  aspect-ratio: 1/1
   display: block;
   overflow: hidden;
-  background-color: #000;
+  background-color: #f3f3f3;
   transition: opacity 0.2s ease;
   opacity: ${(props) => (props.isPressing ? 0.9 : 1)};
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(to right, transparent, ${
+      COLORS.primaryMint
+    }, transparent);
+    transform: translateX(-100%);
+    animation: ${(props) =>
+      props.isLoading ? "loadingAnimation 1.5s infinite" : "none"};
+    
+    @keyframes loadingAnimation {
+      from { transform: translateX(-100%); }
+      to { transform: translateX(100%); }
+    }
+  }
 `;
 
 const MediaCarousel = styled.div`
@@ -1051,12 +1078,14 @@ const PostImage = styled.img`
   height: 100%;
   object-fit: cover;
   transition: opacity 0.5s ease, transform 0.5s ease;
-  opacity: 0.98;
-  border-radius: 12px;
+  opacity: 0;
+  border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: scale(0.98);
 
   &.loaded {
     opacity: 1;
+    transform: scale(1);
   }
 
   ${MediaContainer}:hover & {
@@ -1064,19 +1093,30 @@ const PostImage = styled.img`
   }
 
   &.filter-warm {
-    filter: saturate(1.1) sepia(0.15) contrast(1.05);
+    filter: saturate(1.2) sepia(0.15) contrast(1.05);
   }
 
   &.filter-cool {
-    filter: saturate(0.95) hue-rotate(15deg) brightness(1.05);
+    filter: saturate(0.9) hue-rotate(10deg) brightness(1.05);
   }
 
   &.filter-grayscale {
-    filter: grayscale(0.8);
+    filter: grayscale(0.9);
   }
 
   &.filter-vintage {
-    filter: sepia(0.25) saturate(1.1) contrast(1.1);
+    filter: sepia(0.35) saturate(1.3) contrast(1.1);
+  }
+  &.filter-clarendon {
+    filter: contrast(1.2) saturate(1.35);
+  }
+
+  &.filter-gingham {
+    filter: brightness(1.05) sepia(0.2);
+  }
+
+  &.filter-moon {
+    filter: grayscale(1) brightness(1.1) contrast(1.1);
   }
 `;
 
