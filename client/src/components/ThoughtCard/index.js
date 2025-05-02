@@ -1,6 +1,7 @@
+// ThoughtCard with Twilight Theme
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import styled, { keyframes, css } from "styled-components";
+import styled, { css } from "styled-components";
 import {
   FaHeart,
   FaTrash,
@@ -13,49 +14,29 @@ import {
   FaStar,
 } from "react-icons/fa";
 import { moodEmojis } from "../../utils/themeConstants";
-import { COLORS } from "../../theme";
+import twilightTheme from "../../theme/twilightTheme";
 
-// Enhanced animations
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
+// Destructure theme components for easier access
+const { colors, animations, mixins } = twilightTheme;
 
-const float = keyframes`
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-  100% { transform: translateY(0px); }
-`;
-
-const pulse = keyframes`
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-`;
-
-// Updated Card component to ensure consistent width
+// Updated Card component with twilight theme
 const Card = styled.div`
   position: relative;
-  background: ${COLORS.cardBackground};
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border: 1px solid ${COLORS.border};
-  box-shadow: 0 1px 3px ${COLORS.shadow};
-  transition: all 0.3s ease;
+  ${mixins.cardBase}
+  padding: 1.2rem;
+  margin-bottom: 1.2rem;
   width: 95%;
   max-width: 95%;
   margin-left: auto;
   margin-right: auto;
-
-  &:hover {
-    box-shadow: 0 2px 8px ${COLORS.shadow};
-  }
+  animation: ${animations.fadeIn} 0.5s ease-out;
+  ${mixins.hoverLift}
 
   ${(props) =>
     props.pinned &&
     css`
-      border-color: ${COLORS.primarySalmon};
+      border-color: ${colors.secondaryAccent};
+      background: linear-gradient(145deg, ${colors.cardBackground}, #222244);
 
       &:after {
         content: "📌";
@@ -71,7 +52,7 @@ const Card = styled.div`
   }
 `;
 
-// Mood decoration
+// Mood decoration with twilight glow
 const MoodDecoration = styled.div`
   position: absolute;
   right: 1.5rem;
@@ -80,12 +61,14 @@ const MoodDecoration = styled.div`
   opacity: 0.12;
   transform: rotate(10deg);
   z-index: 0;
-  animation: ${float} 6s ease infinite;
+  animation: ${animations.float} 6s ease infinite;
   transition: all 0.5s ease;
+  text-shadow: 0 0 15px ${colors.secondaryAccent};
 
   ${Card}:hover & {
     transform: rotate(15deg) scale(1.1);
     opacity: 0.18;
+    text-shadow: 0 0 25px ${colors.secondaryAccent};
   }
 
   @media (max-width: 768px) {
@@ -108,13 +91,14 @@ const UserInfo = styled.div`
   gap: 0.75rem;
 `;
 
-// Avatar styling simplified
+// Avatar with twilight glow
 const Avatar = styled.div`
   width: 45px;
   height: 45px;
   border-radius: 50%;
   overflow: hidden;
-  border: 1px solid ${COLORS.border};
+  border: 2px solid ${colors.secondaryAccent};
+  box-shadow: 0 0 10px rgba(148, 111, 246, 0.3);
 
   img {
     width: 100%;
@@ -123,14 +107,14 @@ const Avatar = styled.div`
   }
 `;
 
-// Default avatar
+// Default avatar with twilight gradients
 const DefaultAvatar = styled.div`
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: ${COLORS.primarySalmon};
+  ${mixins.accentGradient}
   color: #ffffff;
   font-size: 1.2rem;
   font-weight: bold;
@@ -151,24 +135,16 @@ const UsernameRow = styled.div`
 const Username = styled.div`
   font-weight: 600;
   font-size: 1.1rem;
-  color: ${COLORS.textPrimary};
+  color: ${colors.textPrimary};
+  ${mixins.textGlow}
 `;
 
 const UserHandle = styled.div`
-  color: ${COLORS.textSecondary};
+  color: ${colors.textSecondary};
   font-size: 0.85rem;
 `;
 
-// Action buttons
-const ThoughtActions = styled.div`
-  display: flex;
-  gap: 0.6rem;
-
-  @media (max-width: 480px) {
-    gap: 0.4rem;
-  }
-`;
-
+// Updated action buttons with twilight color scheme
 const AdminActions = styled.div`
   display: flex;
   gap: 0.5rem;
@@ -177,53 +153,73 @@ const AdminActions = styled.div`
 const ActionButton = styled.button`
   background: none;
   border: none;
-  color: ${COLORS.textTertiary};
-  width: 28px;
-  height: 28px;
+  color: ${colors.textTertiary};
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
 
   &:hover {
-    color: ${COLORS.primarySalmon};
-    background-color: ${COLORS.elevatedBackground};
+    color: ${colors.primaryAccent};
+    background-color: ${colors.elevatedBackground};
+    transform: translateY(-2px);
   }
 
   &.delete:hover {
-    color: ${COLORS.error};
+    color: ${colors.error};
   }
 
   &.pinned {
-    color: ${COLORS.accentSalmon};
+    color: ${colors.secondaryAccent};
   }
 `;
 
+// Content with improved text styling
 const Content = styled.p`
-  color: ${COLORS.textPrimary};
+  color: ${colors.textPrimary};
   font-size: 1rem;
-  line-height: 1.5;
+  line-height: 1.6;
   white-space: pre-wrap;
-  margin: 0.75rem 0;
+  margin: 0.85rem 0;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+
+  &::first-letter {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: ${colors.highlightAccent};
+  }
 `;
 
+// Media with improved styling
 const Media = styled.div`
-  margin: 0.75rem 0;
+  margin: 0.85rem 0;
   border-radius: 12px;
   overflow: hidden;
   width: 100%;
+  box-shadow: 0 4px 12px ${colors.shadow};
+  border: 1px solid ${colors.border};
 
   img {
     width: 100%;
     max-height: 350px;
     object-fit: cover;
     vertical-align: middle;
+    transition: transform 0.5s ease;
+
+    &:hover {
+      transform: scale(1.02);
+    }
   }
 `;
 
-// Tags
+// Tags with twilight styling
 const Tags = styled.div`
   display: flex;
   flex-wrap: wrap;
@@ -239,19 +235,21 @@ const Tags = styled.div`
 `;
 
 const Tag = styled.span`
-  background-color: ${COLORS.elevatedBackground};
-  color: ${COLORS.primarySalmon};
+  background-color: ${colors.elevatedBackground};
+  color: ${colors.primaryAccent};
   padding: 0.3rem 0.8rem;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 500;
   transition: all 0.3s ease;
   cursor: pointer;
-  border: 1px solid ${COLORS.border};
+  border: 1px solid ${colors.border};
 
   &:hover {
-    background-color: ${COLORS.buttonHover};
-    color: ${COLORS.accentSalmon};
+    background-color: ${colors.buttonHover};
+    color: ${colors.highlightAccent};
+    transform: translateY(-2px);
+    box-shadow: 0 2px 6px rgba(42, 250, 223, 0.2);
   }
 
   @media (max-width: 768px) {
@@ -260,109 +258,113 @@ const Tag = styled.span`
   }
 `;
 
-// Meta section
-const Meta = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid ${COLORS.divider};
-  position: relative;
-  z-index: 2;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-`;
-
-// Mood indicator
+// Mood indicator with twilight styling
 const MoodIndicator = styled.div`
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: ${COLORS.primarySalmon};
+  color: ${colors.secondaryAccent};
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: capitalize;
   padding: 0.3rem 0.8rem;
-  border-radius: 4px;
-  background-color: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  background-color: ${colors.elevatedBackground};
+  border: 1px solid ${colors.border};
   position: relative;
   transition: all 0.3s ease;
+  ${mixins.subtleInteractive}
+`;
 
-  &:hover {
-    background-color: ${COLORS.buttonHover};
+// Stylized time display
+const TimeDisplay = styled.div`
+  color: ${colors.textSecondary};
+  font-size: 0.85rem;
+  margin: 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+
+  svg {
+    font-size: 0.75rem;
+    opacity: 0.7;
   }
 `;
 
-const TimeDisplay = styled.div`
-  color: ${COLORS.textSecondary};
-  font-size: 0.85rem;
-  margin: 0.5rem 0;
-`;
-
-// Simplified Action bar
+// Action bar with twilight styling
 const ActionBar = styled.div`
   display: flex;
   justify-content: flex-start;
   gap: 3rem;
   margin-top: 0.5rem;
   padding-top: 0.5rem;
-  border-top: 1px solid ${COLORS.divider};
+  border-top: 1px solid ${colors.divider};
 
   @media (max-width: 480px) {
     gap: 2rem;
   }
 `;
 
-// Action Icon styling
+// Action Icon styling with twilight animation
 const ActionIcon = styled.div`
   color: ${(props) =>
-    props.active ? COLORS.primarySalmon : COLORS.textTertiary};
+    props.active ? colors.primaryAccent : colors.textTertiary};
   transition: all 0.2s ease;
-  font-size: 1rem;
+  font-size: 1.05rem;
+
+  ${(props) =>
+    props.animating &&
+    css`
+      animation: ${animations.pulse} 0.5s ease;
+      color: ${colors.primaryAccent};
+    `}
+
+  ${(props) =>
+    props.active &&
+    css`
+      filter: drop-shadow(0 0 5px ${colors.primaryAccent});
+    `}
 `;
 
 const ActionCount = styled.span`
-  color: ${COLORS.textTertiary};
+  color: ${colors.textTertiary};
   font-size: 0.85rem;
   font-weight: 500;
+  transition: color 0.2s ease;
 `;
 
-// Action items
+// Action items with improved hover effect
 const ActionItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  cursor: pointer;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  ${mixins.subtleInteractive}
 
   &:hover {
     ${ActionIcon} {
-      color: ${COLORS.primarySalmon};
+      color: ${colors.primaryAccent};
     }
 
     ${ActionCount} {
-      color: ${COLORS.primarySalmon};
+      color: ${colors.textPrimary};
     }
   }
 `;
 
-// Pinned badge
+// Pinned badge with twilight styling
 const PinnedBadge = styled.div`
   position: absolute;
   top: 0;
   right: 1.5rem;
-  background-color: ${COLORS.primarySalmon};
+  ${mixins.accentGradient}
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.4rem 1rem;
   border-radius: 0 0 6px 6px;
-  box-shadow: 0 4px 12px ${COLORS.shadow};
+  box-shadow: 0 4px 12px ${colors.shadow};
   z-index: 10;
 
   &:before {
@@ -377,7 +379,7 @@ const PinnedBadge = styled.div`
   }
 `;
 
-// ThoughtCard component with like animation
+// ThoughtCard component with twilight theme
 const ThoughtCard = ({
   thought,
   defaultUser,
@@ -396,9 +398,10 @@ const ThoughtCard = ({
     handleLike(id);
   };
 
-  // Force consistent width regardless of container
   return (
     <Card pinned={thought.pinned}>
+      {thought.pinned && <PinnedBadge>Pinned</PinnedBadge>}
+
       <Header>
         <UserInfo>
           <Avatar>
@@ -418,12 +421,14 @@ const ThoughtCard = ({
               </UserHandle>
             </UsernameRow>
 
-            {/* Just show mood as an emoji if present */}
-            {thought.mood && <span>{moodEmojis[thought.mood]}</span>}
+            {thought.mood && (
+              <MoodIndicator>
+                {moodEmojis[thought.mood]} {thought.mood}
+              </MoodIndicator>
+            )}
           </UserDetails>
         </UserInfo>
 
-        {/* Admin actions menu */}
         {canCreateThought && (
           <AdminActions>
             <ActionButton
@@ -451,6 +456,11 @@ const ThoughtCard = ({
         )}
       </Header>
 
+      {/* Show mood decoration in background if present */}
+      {thought.mood && (
+        <MoodDecoration>{moodEmojis[thought.mood]}</MoodDecoration>
+      )}
+
       {/* Content with quotes */}
       <Content>"{thought.content}"</Content>
 
@@ -460,13 +470,24 @@ const ThoughtCard = ({
         </Media>
       )}
 
-      {/* Timestamp more similar to the example */}
-      <TimeDisplay>{formatDate(thought.createdAt)}</TimeDisplay>
+      {/* Tags if present */}
+      {thought.tags && thought.tags.length > 0 && (
+        <Tags>
+          {thought.tags.map((tag, index) => (
+            <Tag key={index}>#{tag}</Tag>
+          ))}
+        </Tags>
+      )}
 
-      {/* Simplified action bar */}
+      {/* Timestamp */}
+      <TimeDisplay>
+        <FaClock /> {formatDate(thought.createdAt)}
+      </TimeDisplay>
+
+      {/* Action bar */}
       <ActionBar>
         <ActionItem onClick={() => onLikeClick(thought._id)}>
-          <ActionIcon active={thought.userHasLiked}>
+          <ActionIcon active={thought.userHasLiked} animating={isLikeAnimating}>
             {thought.userHasLiked ? <FaHeart /> : <FaRegHeart />}
           </ActionIcon>
           <ActionCount>{thought.likes}</ActionCount>
