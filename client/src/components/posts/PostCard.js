@@ -484,16 +484,15 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                     {media.mediaType === "image" ? (
                       <PostImage
                         src={getTransformedImageUrl(media.mediaUrl, {
-                          width: 1200,
-                          height: 630,
+                          width: 1080,
+                          height: 1080,
                           crop: "fill",
                           gravity: "auto",
                           quality: "auto:best",
                           format: "auto",
                           dpr: "auto",
                           effect: "enhance",
-
-                          sharpen: 80,
+                          sharpen: 30,
                           flags: "progressive",
                         })}
                         sizes="100vw"
@@ -658,15 +657,11 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                 src={getTransformedImageUrl(
                   post.media[fullscreenIndex].mediaUrl,
                   {
-                    width: 1200,
-                    height: 1200,
-                    crop: "fill",
+                    width: 1000,
+                    height: 1000,
+                    crop: "limit",
                     quality: "auto",
                     format: "auto",
-                    gravity: "auto",
-                    effect: "improve",
-                    dpr: "auto",
-                    flags: "progressive",
                   }
                 )}
                 alt={post.caption || "Fullscreen view"}
