@@ -487,12 +487,12 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                           width: 1200,
                           height: 630,
                           crop: "fill",
-                          gravity: "auto:faces",
+                          gravity: "auto",
                           quality: "auto:best",
                           format: "auto",
                           dpr: "auto",
                           effect: "enhance",
-                          zoom: "1.1",
+
                           sharpen: 80,
                           flags: "progressive",
                         })}
