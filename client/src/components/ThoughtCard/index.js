@@ -14,7 +14,7 @@ import {
   FaStar,
 } from "react-icons/fa";
 import { moodEmojis } from "../../utils/themeConstants";
-import twilightTheme from "../../theme/twilightTheme";
+import twilightTheme from "../../twilightTheme";
 
 // Destructure theme components for easier access
 const { colors, animations, mixins } = twilightTheme;
