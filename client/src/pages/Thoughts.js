@@ -313,17 +313,16 @@ const CloseSearchButton = styled.button`
 `;
 
 const ThoughtsContainer = styled.div`
-  max-width: ${(props) => (props.isAdmin ? "800px" : "600px")};
+  max-width: 800px;
   margin: 0 auto;
   padding: 0;
 
   @media (max-width: 768px) {
     width: 100%;
     max-width: 100%;
-    padding: 0 16px;
+    padding: 0;
   }
 `;
-
 const ErrorMessage = styled.div`
   background-color: rgba(233, 137, 115, 0.2);
   color: ${COLORS.error};
