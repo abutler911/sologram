@@ -33,6 +33,7 @@ const pulse = keyframes`
   100% { transform: scale(1); }
 `;
 
+// Updated Card component to ensure consistent width
 const Card = styled.div`
   position: relative;
   background: ${COLORS.cardBackground};
@@ -42,7 +43,10 @@ const Card = styled.div`
   border: 1px solid ${COLORS.border};
   box-shadow: 0 1px 3px ${COLORS.shadow};
   transition: all 0.3s ease;
-  width: 100%;
+  width: 95%;
+  max-width: 95%;
+  margin-left: auto;
+  margin-right: auto;
 
   &:hover {
     box-shadow: 0 2px 8px ${COLORS.shadow};
@@ -61,6 +65,10 @@ const Card = styled.div`
         font-size: 0.9rem;
       }
     `}
+
+  @media (min-width: 768px) {
+    max-width: 95%;
+  }
 `;
 
 // Mood decoration
