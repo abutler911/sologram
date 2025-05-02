@@ -396,6 +396,7 @@ const ThoughtCard = ({
     handleLike(id);
   };
 
+  // Force consistent width regardless of container
   return (
     <Card pinned={thought.pinned}>
       <Header>
