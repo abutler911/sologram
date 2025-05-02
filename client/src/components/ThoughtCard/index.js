@@ -36,37 +36,16 @@ const pulse = keyframes`
 const Card = styled.div`
   position: relative;
   background: ${COLORS.cardBackground};
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid
-    ${(props) => (props.pinned ? COLORS.primarySalmon : COLORS.border)};
-  box-shadow: 0 8px 24px
-    ${(props) => (props.pinned ? `rgba(233, 137, 115, 0.25)` : COLORS.shadow)};
-  animation: ${fadeIn} 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-  overflow: hidden;
-  transition: all 0.4s ease;
-  width: 100%; // Change from calc(100% - 4px) to 100%
-  max-width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-
-  &:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: ${(props) =>
-      props.mood ? COLORS.primarySalmon : COLORS.primaryBlueGray};
-    opacity: ${(props) => (props.pinned ? 1 : 0.8)};
-  }
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid ${COLORS.border};
+  box-shadow: 0 1px 3px ${COLORS.shadow};
+  transition: all 0.3s ease;
+  width: 100%;
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 30px
-      ${(props) => (props.pinned ? `rgba(233, 137, 115, 0.3)` : COLORS.shadow)};
+    box-shadow: 0 2px 8px ${COLORS.shadow};
   }
 
   ${(props) =>
@@ -74,16 +53,14 @@ const Card = styled.div`
     css`
       border-color: ${COLORS.primarySalmon};
 
-      &:hover {
-        box-shadow: 0 12px 30px rgba(233, 137, 115, 0.3);
+      &:after {
+        content: "📌";
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        font-size: 0.9rem;
       }
     `}
-
-  @media (max-width: 768px) {
-    padding: 1.25rem;
-    margin-bottom: 1rem;
-    width: 100%; // Change from 98% to 100%
-  }
 `;
 
 // Mood decoration
@@ -114,56 +91,27 @@ const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1.5rem;
-  position: relative;
-  z-index: 2;
-
-  @media (max-width: 768px) {
-    margin-bottom: 1rem;
-  }
+  margin-bottom: 0.5rem;
 `;
 
 const UserInfo = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
-  position: relative;
-  z-index: 2;
-
-  @media (max-width: 480px) {
-    gap: 0.75rem;
-  }
+  gap: 0.75rem;
 `;
 
-// Avatar styling
+// Avatar styling simplified
 const Avatar = styled.div`
-  width: 50px;
-  height: 50px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   overflow: hidden;
-  position: relative;
-  box-shadow: 0 0 0 2px ${COLORS.primarySalmon}, 0 4px 8px rgba(0, 0, 0, 0.2);
-  transition: all 0.4s ease;
-
-  @media (max-width: 480px) {
-    width: 40px;
-    height: 40px;
-  }
-
-  ${Card}:hover & {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 2px ${COLORS.accentSalmon}, 0 6px 12px rgba(0, 0, 0, 0.3);
-  }
+  border: 1px solid ${COLORS.border};
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.5s ease;
-  }
-
-  &:hover img {
-    transform: scale(1.1);
   }
 `;
 
@@ -176,69 +124,31 @@ const DefaultAvatar = styled.div`
   justify-content: center;
   background-color: ${COLORS.primarySalmon};
   color: #ffffff;
-  font-size: 1.6rem;
+  font-size: 1.2rem;
   font-weight: bold;
-  position: relative;
-
-  @media (max-width: 480px) {
-    font-size: 1.3rem;
-  }
-
-  span {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-  }
 `;
 
 const UserDetails = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  position: relative;
-  margin-top: 0.2rem;
 `;
 
-// Username styling
+const UsernameRow = styled.div`
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+`;
+
 const Username = styled.div`
   font-weight: 600;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   color: ${COLORS.textPrimary};
-  margin-bottom: 4px;
-  transition: all 0.3s;
-
-  &:hover {
-    color: ${COLORS.primarySalmon};
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1.1rem;
-  }
 `;
 
 const UserHandle = styled.div`
-  background-color: ${COLORS.elevatedBackground};
-  padding: 0.2rem 0.6rem;
-  border-radius: 4px;
   color: ${COLORS.textSecondary};
-  font-size: 0.75rem;
-  display: inline-block;
-  margin-top: 3px;
-  border: 1px solid ${COLORS.border};
-  transition: all 0.3s ease;
-
-  &:hover {
-    background-color: ${COLORS.buttonHover};
-  }
-
-  @media (max-width: 480px) {
-    font-size: 0.7rem;
-    padding: 0.1rem 0.5rem;
-  }
+  font-size: 0.85rem;
 `;
 
 // Action buttons
@@ -251,20 +161,23 @@ const ThoughtActions = styled.div`
   }
 `;
 
+const AdminActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+`;
+
 const ActionButton = styled.button`
   background: none;
   border: none;
   color: ${COLORS.textTertiary};
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+  font-size: 0.9rem;
 
   &:hover {
     color: ${COLORS.primarySalmon};
@@ -278,68 +191,27 @@ const ActionButton = styled.button`
   &.pinned {
     color: ${COLORS.accentSalmon};
   }
-
-  ${(props) =>
-    props.pinned &&
-    css`
-      background-color: ${COLORS.elevatedBackground};
-    `}
-
-  @media (max-width: 480px) {
-    width: 30px;
-    height: 30px;
-  }
 `;
 
-// Content area
 const Content = styled.p`
   color: ${COLORS.textPrimary};
   font-size: 1rem;
   line-height: 1.5;
-  background: ${COLORS.elevatedBackground};
-  padding: 1.5rem;
-  border-radius: 8px;
-  border-left: 3px solid ${COLORS.primarySalmon};
   white-space: pre-wrap;
-  position: relative;
-  z-index: 2;
-  margin: 0.5rem 0;
-  transition: all 0.4s ease;
-
-  ${Card}:hover & {
-    border-left-color: ${COLORS.accentSalmon};
-  }
-
-  @media (max-width: 768px) {
-    padding: 1.25rem;
-    font-size: 0.95rem;
-    line-height: 1.4;
-  }
+  margin: 0.75rem 0;
 `;
 
-// Media container
 const Media = styled.div`
-  margin: 1.5rem 0;
-  border-radius: 8px;
+  margin: 0.75rem 0;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 6px 20px ${COLORS.shadow};
-  position: relative;
-  z-index: 2;
   width: 100%;
-  transition: all 0.4s ease;
 
   img {
     width: 100%;
     max-height: 350px;
     object-fit: cover;
-    transition: transform 0.6s ease;
     vertical-align: middle;
-  }
-
-  ${Card}:hover & {
-    img {
-      transform: scale(1.03);
-    }
   }
 `;
 
@@ -419,128 +291,54 @@ const MoodIndicator = styled.div`
   }
 `;
 
-// Time display
 const TimeDisplay = styled.div`
   color: ${COLORS.textSecondary};
-  font-size: 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.3rem 0.8rem;
-  border-radius: 4px;
-  background-color: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  transition: all 0.3s ease;
-
-  svg {
-    font-size: 0.7rem;
-    color: ${COLORS.primaryBlueGray};
-  }
-
-  &:hover {
-    background-color: ${COLORS.buttonHover};
-  }
+  font-size: 0.85rem;
+  margin: 0.5rem 0;
 `;
 
-const Footer = styled.div`
-  margin-top: 0.75rem;
-`;
-
-// Action bar
+// Simplified Action bar
 const ActionBar = styled.div`
   display: flex;
-  justify-content: space-between;
-  padding-top: 1rem;
-  margin-top: 1rem;
+  justify-content: flex-start;
+  gap: 3rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
   border-top: 1px solid ${COLORS.divider};
-  position: relative;
-  z-index: 2;
 
   @media (max-width: 480px) {
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 2rem;
   }
 `;
 
-// Action icons
+// Action Icon styling
 const ActionIcon = styled.div`
   color: ${(props) =>
-    props.liked ? COLORS.primarySalmon : COLORS.textTertiary};
-  transition: all 0.3s ease;
+    props.active ? COLORS.primarySalmon : COLORS.textTertiary};
+  transition: all 0.2s ease;
   font-size: 1rem;
-
-  ${(props) =>
-    props.liked &&
-    css`
-      transform: scale(1.1);
-    `}
 `;
 
 const ActionCount = styled.span`
   color: ${COLORS.textTertiary};
-  font-size: 0.75rem;
-  font-weight: 600;
-  transition: color 0.3s;
+  font-size: 0.85rem;
+  font-weight: 500;
 `;
 
 // Action items
 const ActionItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.3rem;
   cursor: pointer;
-  padding: 0.4rem 0.7rem;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-  position: relative;
-
-  @media (max-width: 480px) {
-    padding: 0.3rem 0.5rem;
-    flex: 1;
-    justify-content: center;
-  }
 
   &:hover {
-    background-color: ${COLORS.elevatedBackground};
-
-    ${ActionIcon} {
-      transform: scale(1.1);
-    }
-  }
-
-  &:nth-child(1):hover {
     ${ActionIcon} {
       color: ${COLORS.primarySalmon};
     }
 
     ${ActionCount} {
       color: ${COLORS.primarySalmon};
-    }
-  }
-
-  &:nth-child(2):hover {
-    ${ActionIcon} {
-      color: ${COLORS.primaryBlueGray};
-    }
-
-    ${ActionCount} {
-      color: ${COLORS.primaryBlueGray};
-    }
-  }
-
-  &:nth-child(3):hover {
-    ${ActionIcon} {
-      color: ${COLORS.primaryMint};
-    }
-
-    ${ActionCount} {
-      color: ${COLORS.primaryMint};
-    }
-  }
-
-  &:nth-child(4):hover {
-    ${ActionIcon} {
-      color: ${COLORS.accentSalmon};
     }
   }
 `;
@@ -582,10 +380,8 @@ const ThoughtCard = ({
   canCreateThought,
   onDelete,
 }) => {
-  // State for like animation
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
 
-  // Enhanced like handler with animation
   const onLikeClick = (id) => {
     setIsLikeAnimating(true);
     setTimeout(() => setIsLikeAnimating(false), 800);
@@ -593,37 +389,38 @@ const ThoughtCard = ({
   };
 
   return (
-    <Card mood={thought.mood} pinned={thought.pinned}>
-      {thought.pinned && <PinnedBadge mood={thought.mood}>Pinned</PinnedBadge>}
-      <MoodDecoration>{moodEmojis[thought.mood]}</MoodDecoration>
-
+    <Card pinned={thought.pinned}>
       <Header>
         <UserInfo>
-          <Avatar mood={thought.mood}>
+          <Avatar>
             {defaultUser.avatar ? (
               <img src={defaultUser.avatar} alt="User avatar" />
             ) : (
-              <DefaultAvatar mood={thought.mood}>
+              <DefaultAvatar>
                 <span>{defaultUser.username.charAt(0).toUpperCase()}</span>
               </DefaultAvatar>
             )}
           </Avatar>
           <UserDetails>
-            <Username>{defaultUser.username}</Username>
-            <UserHandle>
-              @{defaultUser.username.toLowerCase().replace(/\s+/g, "")}
-            </UserHandle>
+            <UsernameRow>
+              <Username>{defaultUser.username}</Username>
+              <UserHandle>
+                @{defaultUser.username.toLowerCase().replace(/\s+/g, "")}
+              </UserHandle>
+            </UsernameRow>
+
+            {/* Just show mood as an emoji if present */}
+            {thought.mood && <span>{moodEmojis[thought.mood]}</span>}
           </UserDetails>
         </UserInfo>
 
-        {/* Only show thought actions if user has admin or creator role */}
+        {/* Admin actions menu */}
         {canCreateThought && (
-          <ThoughtActions>
+          <AdminActions>
             <ActionButton
               onClick={() => handlePin(thought._id)}
               title={thought.pinned ? "Unpin" : "Pin"}
               className={thought.pinned ? "pinned" : ""}
-              pinned={thought.pinned}
             >
               {thought.pinned ? <FaStar /> : "📌"}
             </ActionButton>
@@ -641,11 +438,12 @@ const ThoughtCard = ({
             >
               <FaTrash />
             </ActionButton>
-          </ThoughtActions>
+          </AdminActions>
         )}
       </Header>
 
-      <Content mood={thought.mood}>{thought.content}</Content>
+      {/* Content with quotes */}
+      <Content>"{thought.content}"</Content>
 
       {thought.media?.mediaUrl && (
         <Media>
@@ -653,62 +451,38 @@ const ThoughtCard = ({
         </Media>
       )}
 
-      {thought.tags && thought.tags.length > 0 && (
-        <Tags>
-          {thought.tags.map((tag, tagIndex) => (
-            <Tag key={tagIndex} mood={thought.mood}>
-              #{tag}
-            </Tag>
-          ))}
-        </Tags>
-      )}
+      {/* Timestamp more similar to the example */}
+      <TimeDisplay>{formatDate(thought.createdAt)}</TimeDisplay>
 
-      <Meta>
-        <TimeDisplay>
-          <FaClock />
-          <span>{formatDate(thought.createdAt)}</span>
-        </TimeDisplay>
-        <MoodIndicator mood={thought.mood}>
-          {moodEmojis[thought.mood]} {thought.mood}
-        </MoodIndicator>
-      </Meta>
+      {/* Simplified action bar */}
+      <ActionBar>
+        <ActionItem onClick={() => onLikeClick(thought._id)}>
+          <ActionIcon active={thought.userHasLiked}>
+            {thought.userHasLiked ? <FaHeart /> : <FaRegHeart />}
+          </ActionIcon>
+          <ActionCount>{thought.likes}</ActionCount>
+        </ActionItem>
 
-      <Footer>
-        <ActionBar>
-          <ActionItem onClick={() => onLikeClick(thought._id)}>
-            <ActionIcon
-              liked={thought.userHasLiked}
-              className={isLikeAnimating ? "animate" : ""}
-              style={{
-                animation: isLikeAnimating ? `${pulse} 0.8s ease` : "none",
-              }}
-            >
-              {thought.userHasLiked ? <FaHeart /> : <FaRegHeart />}
-            </ActionIcon>
-            <ActionCount>{thought.likes}</ActionCount>
-          </ActionItem>
+        <ActionItem>
+          <ActionIcon>
+            <FaRegComment />
+          </ActionIcon>
+          <ActionCount>{thought.comments?.length || 0}</ActionCount>
+        </ActionItem>
 
-          <ActionItem>
-            <ActionIcon>
-              <FaRegComment />
-            </ActionIcon>
-            <ActionCount>{thought.comments?.length || 0}</ActionCount>
-          </ActionItem>
+        <ActionItem onClick={() => handleRetweet(thought._id)}>
+          <ActionIcon>
+            <FaRetweet />
+          </ActionIcon>
+          <ActionCount>{thought.shares || 0}</ActionCount>
+        </ActionItem>
 
-          <ActionItem onClick={() => handleRetweet(thought._id)}>
-            <ActionIcon>
-              <FaRetweet />
-            </ActionIcon>
-            <ActionCount>{thought.shares || 0}</ActionCount>
-          </ActionItem>
-
-          <ActionItem>
-            <ActionIcon>
-              <FaShare />
-            </ActionIcon>
-          </ActionItem>
-        </ActionBar>
-      </Footer>
+        <ActionItem>
+          <ActionIcon>
+            <FaShare />
+          </ActionIcon>
+        </ActionItem>
+      </ActionBar>
     </Card>
   );
 };
