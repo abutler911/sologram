@@ -658,11 +658,15 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                 src={getTransformedImageUrl(
                   post.media[fullscreenIndex].mediaUrl,
                   {
-                    width: 1000,
-                    height: 1000,
-                    crop: "limit",
+                    width: 1200,
+                    height: 1200,
+                    crop: "fill",
                     quality: "auto",
                     format: "auto",
+                    gravity: "auto",
+                    effect: "improve",
+                    dpr: "auto",
+                    flags: "progressive",
                   }
                 )}
                 alt={post.caption || "Fullscreen view"}
@@ -1053,6 +1057,8 @@ const PostImage = styled.img`
   object-fit: cover;
   transition: opacity 0.5s ease, transform 0.5s ease;
   opacity: 0.98;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 
   &.loaded {
     opacity: 1;
