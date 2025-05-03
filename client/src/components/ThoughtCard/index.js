@@ -15,6 +15,7 @@ import {
 } from "react-icons/fa";
 import { moodEmojis } from "../../utils/themeConstants";
 import twilightTheme from "../../twilightTheme";
+import { toast } from "react-hot-toast";
 
 // Destructure theme components for easier access
 const { colors, animations, mixins } = twilightTheme;
@@ -145,6 +146,8 @@ const UserHandle = styled.div`
 const AdminActions = styled.div`
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
+  max-width: 100%;
 `;
 
 const ActionButton = styled.button`
@@ -299,6 +302,7 @@ const ActionBar = styled.div`
 
   @media (max-width: 480px) {
     gap: 2rem;
+    flex-wrap: wrap;
   }
 `;
 
@@ -335,6 +339,7 @@ const ActionItem = styled.div`
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  min-width: 60px;
   padding: 0.4rem 0.6rem;
   border-radius: 6px;
   ${mixins.subtleInteractive}
@@ -375,6 +380,36 @@ const PinnedBadge = styled.div`
     font-size: 0.7rem;
   }
 `;
+
+const handleShare = (thought) => {
+  const shareText = `"${thought.content}" - via SoloThoughts`;
+  const shareUrl = window.location.origin + `/thoughts/${thought._id}`;
+
+  if (navigator.share) {
+    navigator
+      .share({
+        title: "SoloThought",
+        text: shareText,
+        url: shareUrl,
+      })
+      .then(() => {
+        toast.success("Shared successfully!");
+      })
+      .catch((err) => {
+        console.error("Error sharing:", err);
+        toast.error("Failed to share");
+      });
+  } else {
+    navigator.clipboard
+      .writeText(shareUrl)
+      .then(() => {
+        toast.success("Link copied to clipboard!");
+      })
+      .catch(() => {
+        toast.error("Failed to copy link");
+      });
+  }
+};
 
 // ThoughtCard component with twilight theme
 const ThoughtCard = ({
@@ -504,7 +539,7 @@ const ThoughtCard = ({
           <ActionCount>{thought.shares || 0}</ActionCount>
         </ActionItem>
 
-        <ActionItem>
+        <ActionItem onClick={() => handleShare(thought)}>
           <ActionIcon>
             <FaShare />
           </ActionIcon>
