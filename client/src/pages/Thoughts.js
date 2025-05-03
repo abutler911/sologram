@@ -695,14 +695,6 @@ const Thoughts = () => {
           </HeaderLeft>
 
           <HeaderRight>
-            {/* Only show create button if user has admin or creator role */}
-            {canCreateThought && (
-              <CreateButton to="/thoughts/create">
-                <FaPlusCircle />
-                <span>New Thought</span>
-              </CreateButton>
-            )}
-
             <SearchContainer expanded={searchExpanded}>
               {!searchExpanded ? (
                 <SearchToggle onClick={() => setSearchExpanded(true)}>

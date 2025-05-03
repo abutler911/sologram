@@ -15,6 +15,7 @@ import {
   FaChevronDown,
   FaEllipsisV,
   FaImage,
+  FaPen,
 } from "react-icons/fa";
 
 import { AuthContext } from "../../context/AuthContext";
@@ -166,6 +167,14 @@ const Header = ({ onSearch, onClearSearch }) => {
                 Stories
               </NavLink>
             )}
+            {isAdmin && (
+              <UserMenuItem
+                to="/thoughts/create"
+                onClick={() => setShowUserMenu(false)}
+              >
+                <FaPen /> <span>New Thought</span>
+              </UserMenuItem>
+            )}
             {/* Subscribers link removed */}
             {isAdmin && (
               <NavLink
@@ -264,7 +273,14 @@ const Header = ({ onSearch, onClearSearch }) => {
                     </UserInfo>
                     <MenuDivider />
                     {/* Subscribers menu item removed */}
-
+                    {isAdmin && (
+                      <UserMenuItem
+                        to="/thoughts/create"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <FaPen /> <span>New Thought</span>
+                      </UserMenuItem>
+                    )}
                     {isAdmin && (
                       <UserMenuItem
                         to="/media-gallery"
