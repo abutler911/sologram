@@ -54,7 +54,7 @@ const FooterContainer = styled.footer`
   border-top: 1px solid ${COLORS.border};
   padding: 2rem 0;
   padding-bottom: calc(2rem + env(safe-area-inset-bottom));
-  margin-bottom: 65px;
+  /* Removed the margin-bottom: 65px; that was causing the white space */
 `;
 
 const FooterContent = styled.div`
