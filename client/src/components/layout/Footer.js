@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { FaHeart, FaCamera, FaEnvelope, FaGithub } from "react-icons/fa";
-import { COLORS, THEME } from "../../theme"; // Import the theme
+import { COLORS } from "../../theme";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -50,7 +50,7 @@ const Footer = () => {
 };
 
 const FooterContainer = styled.footer`
-  background-color: ${COLORS.cardBackground};
+  background-color: ${COLORS.background};
   border-top: 1px solid ${COLORS.border};
   padding: 2rem 0;
   padding-bottom: calc(2rem + env(safe-area-inset-bottom));
