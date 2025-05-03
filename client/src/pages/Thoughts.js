@@ -313,9 +313,10 @@ const CloseSearchButton = styled.button`
 `;
 
 const ThoughtsContainer = styled.div`
-  max-width: 800px;
+  width: 100%;
+  max-width: 640px;
   margin: 0 auto;
-  padding: 0 1 rem;
+  padding: 0 1rem;
 
   @media (max-width: 768px) {
     width: 100%;
@@ -323,6 +324,7 @@ const ThoughtsContainer = styled.div`
     padding: 0 1rem;
   }
 `;
+
 const ErrorMessage = styled.div`
   background-color: rgba(233, 137, 115, 0.2);
   color: ${COLORS.error};
