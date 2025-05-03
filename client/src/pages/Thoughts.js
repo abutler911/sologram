@@ -315,12 +315,12 @@ const CloseSearchButton = styled.button`
 const ThoughtsContainer = styled.div`
   max-width: 800px;
   margin: 0 auto;
-  padding: 0;
+  padding: 0 1 rem;
 
   @media (max-width: 768px) {
     width: 100%;
     max-width: 100%;
-    padding: 0;
+    padding: 0 1rem;
   }
 `;
 const ErrorMessage = styled.div`

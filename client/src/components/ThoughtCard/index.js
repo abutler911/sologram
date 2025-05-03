@@ -25,8 +25,10 @@ const Card = styled.div`
   ${mixins.cardBase}
   padding: 1.2rem;
   margin-bottom: 1.2rem;
-  width: 95%;
-  max-width: 95%;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 1rem;
   margin-left: auto;
   margin-right: auto;
   animation: ${animations.fadeIn} 0.5s ease-out;
