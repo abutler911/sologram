@@ -161,6 +161,14 @@ const Header = ({ onSearch, onClearSearch }) => {
             </NavLink>
             {isAuthenticated && (
               <NavLink
+                to="/thoughts/create"
+                active={location.pathname === "/thoughts/create"}
+              >
+                New Thought
+              </NavLink>
+            )}
+            {isAuthenticated && (
+              <NavLink
                 to="/story-archive"
                 active={location.pathname.startsWith("/story-archive")}
               >
@@ -247,7 +255,10 @@ const Header = ({ onSearch, onClearSearch }) => {
                   <FaCamera />
                   <span>Create</span>
                 </CreateNewButtonDesktop>
-                {/* Add a button for creating thoughts */}
+                <CreateNewButtonDesktop to="/thoughts/create" thoughts>
+                  <FaPen />
+                  <span>New Thought</span>
+                </CreateNewButtonDesktop>
               </>
             )}
             {isAuthenticated && (
@@ -370,6 +381,15 @@ const Header = ({ onSearch, onClearSearch }) => {
           >
             <span>Thoughts</span>
           </MobileMenuItem>
+          {isAuthenticated && (
+            <MobileMenuItem
+              to="/thoughts/create"
+              active={location.pathname === "/thoughts/create"}
+              onClick={handleLinkClick}
+            >
+              <span>New Thought</span>
+            </MobileMenuItem>
+          )}
 
           {isAdmin && (
             <MobileMenuItem
