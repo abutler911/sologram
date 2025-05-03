@@ -319,9 +319,9 @@ const ThoughtsContainer = styled.div`
   padding: 0 1rem;
 
   @media (max-width: 768px) {
-    width: 100%;
-    max-width: 100%;
-    padding: 0 1rem;
+    width: 95%; // shrink a little inside viewport
+    max-width: 95%; // prevent hitting full width
+    padding: 0; // avoid double-padding
   }
 `;
 
