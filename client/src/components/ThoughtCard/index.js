@@ -142,21 +142,6 @@ const UserHandle = styled.div`
   font-size: 0.85rem;
 `;
 
-const AdminActionsRow = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  align-items: center;
-`;
-
-// Updated action buttons with twilight color scheme
-const AdminActions = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  max-width: 100%;
-`;
-
 const ActionButton = styled.button`
   background: none;
   border: none;
@@ -184,6 +169,27 @@ const ActionButton = styled.button`
   &.pinned {
     color: ${colors.secondaryAccent};
   }
+`;
+
+const AdminActionsRow = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  align-items: center;
+  flex-wrap: nowrap;
+
+  ${ActionButton} {
+    font-size: 1rem;
+    padding: 0.3rem;
+  }
+`;
+
+// Updated action buttons with twilight color scheme
+const AdminActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  max-width: 100%;
 `;
 
 // Content with improved text styling
@@ -460,23 +466,6 @@ const ThoughtCard = ({
                 @{defaultUser.username.toLowerCase().replace(/\s+/g, "")}
               </UserHandle>
             </UsernameRow>
-
-            {canCreateThought && (
-              <AdminActionsRow>
-                <ActionButton onClick={() => handlePin(thought._id)}>
-                  {thought.pinned ? <FaStar /> : "📌"}
-                </ActionButton>
-                <ActionButton as={Link} to={`/thoughts/edit/${thought._id}`}>
-                  <FaEdit />
-                </ActionButton>
-                <ActionButton
-                  onClick={() => onDelete(thought._id)}
-                  className="delete"
-                >
-                  <FaTrash />
-                </ActionButton>
-              </AdminActionsRow>
-            )}
 
             {thought.mood && (
               <MoodIndicator>
