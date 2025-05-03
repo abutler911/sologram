@@ -10,33 +10,32 @@ import {
   FaTimes,
   FaFolder,
   FaArchive,
-  FaBell,
   FaSearch,
   FaChevronDown,
-  FaEllipsisV,
+  FaBars,
   FaImage,
   FaPen,
 } from "react-icons/fa";
 
 import { AuthContext } from "../../context/AuthContext";
-
-import { toast } from "react-hot-toast";
-
 import { COLORS, THEME } from "../../theme";
 
 const Header = ({ onSearch, onClearSearch }) => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const isAdmin = user?.role === "admin";
+
+  // Refs for handling click outside
   const searchInputRef = useRef(null);
   const searchContainerRef = useRef(null);
   const userMenuRef = useRef(null);
 
+  // Handle URL search params
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const query = params.get("search") || "";
@@ -46,12 +45,14 @@ const Header = ({ onSearch, onClearSearch }) => {
     }
   }, [location, onSearch]);
 
+  // Focus search input when expanded
   useEffect(() => {
     if (searchExpanded && searchInputRef.current) {
       searchInputRef.current.focus();
     }
   }, [searchExpanded]);
 
+  // Handle clicks outside menus
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -63,11 +64,11 @@ const Header = ({ onSearch, onClearSearch }) => {
       }
 
       if (
-        showUserMenu &&
+        userMenuOpen &&
         userMenuRef.current &&
         !userMenuRef.current.contains(event.target)
       ) {
-        setShowUserMenu(false);
+        setUserMenuOpen(false);
       }
     };
 
@@ -75,26 +76,30 @@ const Header = ({ onSearch, onClearSearch }) => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [searchExpanded, showUserMenu]);
+  }, [searchExpanded, userMenuOpen]);
 
+  // Close menus on route change
   useEffect(() => {
-    // Close mobile menu on any route change
-    setIsMenuOpen(false);
-    setShowUserMenu(false);
+    setMobileMenuOpen(false);
+    setUserMenuOpen(false);
     setSearchExpanded(false);
   }, [location.pathname]);
 
+  // Auth and Navigation Handlers
   const handleLogout = () => {
     logout();
-    setShowUserMenu(false);
+    setUserMenuOpen(false);
     navigate("/login");
   };
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const closeMenu = () => setIsMenuOpen(false);
-  const toggleUserMenu = () => setShowUserMenu(!showUserMenu);
+  const handleMenuItemClick = () => {
+    setMobileMenuOpen(false);
+    setUserMenuOpen(false);
+  };
 
+  // Search Handlers
   const handleOpenSearch = () => setSearchExpanded(true);
+
   const handleCloseSearch = () => {
     setSearchExpanded(false);
     if (searchQuery.trim() === "") {
@@ -121,18 +126,49 @@ const Header = ({ onSearch, onClearSearch }) => {
     searchInputRef.current.focus();
   };
 
-  const showSubscriptionBanner = location.pathname === "/";
+  // Navigation Items Configuration
+  const navItems = [
+    { path: "/", label: "Home" },
+    { path: "/collections", label: "Collections" },
+    { path: "/thoughts", label: "Thoughts" },
+    ...(isAuthenticated
+      ? [{ path: "/thoughts/create", label: "New Thought" }]
+      : []),
+    ...(isAuthenticated ? [{ path: "/story-archive", label: "Stories" }] : []),
+    ...(isAdmin ? [{ path: "/media-gallery", label: "Media Gallery" }] : []),
+    {
+      external: true,
+      path: "https://solounderground.com",
+      label: "SoloUnderground",
+      icon: <FaExternalLinkAlt />,
+    },
+  ];
 
-  const handleLinkClick = () => {
-    closeMenu();
-    setShowUserMenu(false);
-    setSearchExpanded(false);
+  const userMenuItems = [
+    ...(isAdmin
+      ? [
+          { path: "/thoughts/create", label: "New Thought", icon: <FaPen /> },
+          { path: "/media-gallery", label: "Media Gallery", icon: <FaImage /> },
+        ]
+      : []),
+    { path: "/collections", label: "Collections", icon: <FaFolder /> },
+    { path: "/story-archive", label: "Story Archive", icon: <FaArchive /> },
+    { path: "/profile", label: "Profile", icon: <FaUser /> },
+  ];
+
+  // Check if path is active
+  const isPathActive = (path) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
   };
+
+  const showSearchContainer = location.pathname === "/";
 
   return (
     <HeaderWrapper>
       <HeaderContainer>
         <HeaderContent searchExpanded={searchExpanded}>
+          {/* Logo */}
           <LogoContainer searchExpanded={searchExpanded}>
             <Logo to="/">
               <div className="logo-main">
@@ -143,68 +179,35 @@ const Header = ({ onSearch, onClearSearch }) => {
             </Logo>
           </LogoContainer>
 
+          {/* Desktop Navigation */}
           <DesktopNavigation>
-            <NavLink to="/" active={location.pathname === "/"}>
-              Home
-            </NavLink>
-            <NavLink
-              to="/collections"
-              active={location.pathname.startsWith("/collections")}
-            >
-              Collections
-            </NavLink>
-            <NavLink
-              to="/thoughts"
-              active={location.pathname.startsWith("/thoughts")}
-            >
-              Thoughts
-            </NavLink>
-            {isAuthenticated && (
-              <NavLink
-                to="/thoughts/create"
-                active={location.pathname === "/thoughts/create"}
-              >
-                New Thought
-              </NavLink>
+            {navItems.map((item) =>
+              item.external ? (
+                <NavLink
+                  key={item.path}
+                  as="a"
+                  href={item.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {item.label}
+                </NavLink>
+              ) : (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  active={isPathActive(item.path) ? "true" : undefined}
+                >
+                  {item.label}
+                </NavLink>
+              )
             )}
-            {isAuthenticated && (
-              <NavLink
-                to="/story-archive"
-                active={location.pathname.startsWith("/story-archive")}
-              >
-                Stories
-              </NavLink>
-            )}
-            {isAdmin && (
-              <UserMenuItem
-                to="/thoughts/create"
-                onClick={() => setShowUserMenu(false)}
-              >
-                <FaPen /> <span>New Thought</span>
-              </UserMenuItem>
-            )}
-            {/* Subscribers link removed */}
-            {isAdmin && (
-              <NavLink
-                to="/media-gallery"
-                active={location.pathname.startsWith("/media-gallery")}
-              >
-                Media Gallery
-              </NavLink>
-            )}
-            {/* 🔥 SoloUnderground external link */}
-            <NavLink
-              as="a"
-              href="https://solounderground.com"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              SoloUnderground
-            </NavLink>
           </DesktopNavigation>
 
+          {/* Header Actions (Right Side) */}
           <HeaderActions>
-            {location.pathname === "/" && (
+            {/* Search */}
+            {showSearchContainer && (
               <SearchContainer
                 ref={searchContainerRef}
                 expanded={searchExpanded}
@@ -249,18 +252,21 @@ const Header = ({ onSearch, onClearSearch }) => {
               </SearchContainer>
             )}
 
+            {/* Action Buttons for Desktop */}
             {isAuthenticated && !searchExpanded && (
-              <>
-                <CreateNewButtonDesktop to="/create">
+              <DesktopActionButtons>
+                <CreateButton to="/create" primary="true">
                   <FaCamera />
                   <span>Create</span>
-                </CreateNewButtonDesktop>
-                <CreateNewButtonDesktop to="/thoughts/create" thoughts>
+                </CreateButton>
+                <CreateButton to="/thoughts/create" secondary="true">
                   <FaPen />
                   <span>New Thought</span>
-                </CreateNewButtonDesktop>
-              </>
+                </CreateButton>
+              </DesktopActionButtons>
             )}
+
+            {/* Greeting */}
             {isAuthenticated && (
               <Greeting>
                 <span className="greeting-text">Hi,</span>{" "}
@@ -268,56 +274,31 @@ const Header = ({ onSearch, onClearSearch }) => {
               </Greeting>
             )}
 
+            {/* User Menu (Desktop) */}
             {isAuthenticated ? (
               <UserMenuContainer ref={userMenuRef}>
-                <UserButton onClick={toggleUserMenu}>
+                <UserButton onClick={() => setUserMenuOpen(!userMenuOpen)}>
                   <UserAvatar>
                     <FaUser />
                   </UserAvatar>
                   <FaChevronDown className="arrow-icon" />
                 </UserButton>
-                {showUserMenu && (
+                {userMenuOpen && (
                   <UserMenuDropdown>
                     <UserInfo>
                       <strong>{user?.username}</strong>
                       <small>{isAdmin ? "Admin" : "User"}</small>
                     </UserInfo>
                     <MenuDivider />
-                    {/* Subscribers menu item removed */}
-                    {isAdmin && (
+                    {userMenuItems.map((item) => (
                       <UserMenuItem
-                        to="/thoughts/create"
-                        onClick={() => setShowUserMenu(false)}
+                        key={item.path}
+                        to={item.path}
+                        onClick={handleMenuItemClick}
                       >
-                        <FaPen /> <span>New Thought</span>
+                        {item.icon} <span>{item.label}</span>
                       </UserMenuItem>
-                    )}
-                    {isAdmin && (
-                      <UserMenuItem
-                        to="/media-gallery"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        <FaImage /> <span>Media Gallery</span>
-                      </UserMenuItem>
-                    )}
-                    <UserMenuItem
-                      to="/collections"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <FaFolder /> <span>Collections</span>
-                    </UserMenuItem>
-                    <UserMenuItem
-                      to="/story-archive"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <FaArchive /> <span>Story Archive</span>
-                    </UserMenuItem>
-                    <UserMenuItem
-                      to="/profile"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <span>Profile</span>
-                    </UserMenuItem>
+                    ))}
                     <MenuDivider />
                     <UserMenuButton onClick={handleLogout}>
                       <FaSignOutAlt /> <span>Logout</span>
@@ -326,32 +307,38 @@ const Header = ({ onSearch, onClearSearch }) => {
                 )}
               </UserMenuContainer>
             ) : (
-              <>
-                <LoginButton to="/login">
+              <AuthButtons>
+                <AuthButton to="/login" secondary="true">
                   <FaSignInAlt /> <span>Login</span>
-                </LoginButton>
-                <RegisterButton to="/register">
+                </AuthButton>
+                <AuthButton to="/register" primary="true">
                   <FaUser /> <span>Register</span>
-                </RegisterButton>
-              </>
+                </AuthButton>
+              </AuthButtons>
             )}
 
-            <MobileMenuToggle onClick={toggleMenu}>
-              <FaEllipsisV />
+            {/* Mobile Menu Toggle */}
+            <MobileMenuToggle
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              <FaBars />
             </MobileMenuToggle>
           </HeaderActions>
         </HeaderContent>
       </HeaderContainer>
 
-      <MobileMenu isOpen={isMenuOpen}>
+      {/* Mobile Menu */}
+      <MobileMenu isOpen={mobileMenuOpen}>
         <MobileMenuHeader>
           <MobileMenuLogo>
             <FaCamera /> <span>SoloGram</span>
           </MobileMenuLogo>
-          <MobileMenuCloseBtn onClick={closeMenu}>
+          <MobileMenuCloseBtn onClick={() => setMobileMenuOpen(false)}>
             <FaTimes />
           </MobileMenuCloseBtn>
         </MobileMenuHeader>
+
+        {/* Mobile Greeting */}
         {isAuthenticated && (
           <MobileGreeting>
             <span className="greeting-text">Welcome back,</span>
@@ -359,106 +346,75 @@ const Header = ({ onSearch, onClearSearch }) => {
           </MobileGreeting>
         )}
 
+        {/* Mobile Menu Content */}
         <MobileMenuContent>
-          <MobileMenuItem
-            to="/"
-            active={location.pathname === "/"}
-            onClick={handleLinkClick}
-          >
-            Home
-          </MobileMenuItem>
-          <MobileMenuItem
-            to="/collections"
-            active={location.pathname.startsWith("/collections")}
-            onClick={handleLinkClick}
-          >
-            Collections
-          </MobileMenuItem>
-          <MobileMenuItem
-            to="/thoughts"
-            active={location.pathname.startsWith("/thoughts")}
-            onClick={handleLinkClick}
-          >
-            <span>Thoughts</span>
-          </MobileMenuItem>
-          {isAuthenticated && (
-            <MobileMenuItem
-              to="/thoughts/create"
-              active={location.pathname === "/thoughts/create"}
-              onClick={handleLinkClick}
-            >
-              <span>New Thought</span>
-            </MobileMenuItem>
+          {/* Navigation Items */}
+          {navItems.map((item) =>
+            item.external ? (
+              <ExternalMenuItem
+                key={item.path}
+                href={item.path}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleMenuItemClick}
+              >
+                {item.icon} {item.label}
+              </ExternalMenuItem>
+            ) : (
+              <MobileMenuItem
+                key={item.path}
+                to={item.path}
+                active={isPathActive(item.path) ? "true" : undefined}
+                onClick={handleMenuItemClick}
+              >
+                {item.label}
+              </MobileMenuItem>
+            )
           )}
 
-          {isAdmin && (
-            <MobileMenuItem
-              to="/media-gallery"
-              active={location.pathname.startsWith("/media-gallery")}
-              onClick={handleLinkClick}
-            >
-              Media Gallery
-            </MobileMenuItem>
-          )}
-          {isAuthenticated && (
+          {/* User-specific Mobile Items */}
+          {isAuthenticated ? (
             <>
               <MobileMenuItem
-                to="/story-archive"
-                active={location.pathname.startsWith("/story-archive")}
-                onClick={handleLinkClick}
-              >
-                Stories
-              </MobileMenuItem>
-              <MobileMenuItem
                 to="/profile"
-                active={location.pathname === "/profile"}
-                onClick={handleLinkClick}
+                active={location.pathname === "/profile" ? "true" : undefined}
+                onClick={handleMenuItemClick}
               >
                 <span>Profile</span>
               </MobileMenuItem>
-
-              {/* Subscribers mobile menu item removed */}
-
               <MobileMenuLogoutButton onClick={handleLogout}>
                 <FaSignOutAlt /> <span>Logout</span>
               </MobileMenuLogoutButton>
             </>
-          )}
-
-          {!isAuthenticated && (
+          ) : (
             <>
               <MobileMenuItem
                 to="/login"
-                active={location.pathname.startsWith("/login")}
+                active={
+                  location.pathname.startsWith("/login") ? "true" : undefined
+                }
+                onClick={handleMenuItemClick}
               >
                 <FaSignInAlt /> <span>Login</span>
               </MobileMenuItem>
               <MobileMenuItem
                 to="/register"
-                active={location.pathname.startsWith("/register")}
+                active={
+                  location.pathname.startsWith("/register") ? "true" : undefined
+                }
+                onClick={handleMenuItemClick}
               >
                 <FaUser /> <span>Register</span>
               </MobileMenuItem>
             </>
           )}
-
-          <MenuDivider />
-          <ExternalMenuItem
-            href="https://solounderground.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={handleLinkClick}
-          >
-            <FaExternalLinkAlt style={{ marginRight: "0.75rem" }} />
-            SoloUnderground
-          </ExternalMenuItem>
         </MobileMenuContent>
       </MobileMenu>
     </HeaderWrapper>
   );
 };
 
-// Styled Components (updated with the new Salmon, Khaki, Mint Blue, and Blue Gray Theme)
+// Styled Components (Refactored for consistency)
 const HeaderWrapper = styled.div`
   position: sticky;
   top: 0;
@@ -478,7 +434,7 @@ const HeaderContent = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   position: relative;
-  gap: 1rem; // Add gap to space out all elements
+  gap: 1rem;
 
   ${(props) =>
     props.searchExpanded &&
@@ -494,7 +450,7 @@ const HeaderContent = styled.div`
 `;
 
 const LogoContainer = styled.div`
-  flex: 0 0 auto; // Don't let it stretch
+  flex: 0 0 auto;
 
   ${(props) =>
     props.searchExpanded &&
@@ -529,6 +485,7 @@ const Logo = styled(Link)`
       color: ${COLORS.textPrimary};
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
     }
+
     svg {
       font-size: 2.6rem;
       margin-right: 0.75rem;
@@ -593,7 +550,7 @@ const DesktopNavigation = styled.nav`
 
 const NavLink = styled(Link)`
   color: ${(props) =>
-    props.active ? COLORS.accentSalmon : COLORS.textPrimary};
+    props.active ? COLORS.primarySalmon : COLORS.textPrimary};
   text-decoration: none;
   font-weight: ${(props) => (props.active ? "600" : "500")};
   position: relative;
@@ -607,7 +564,7 @@ const NavLink = styled(Link)`
     bottom: -2px;
     width: ${(props) => (props.active ? "100%" : "0")};
     height: 2px;
-    background-color: ${COLORS.accentSalmon};
+    background-color: ${COLORS.primarySalmon};
     transition: width 0.3s ease;
   }
 
@@ -624,6 +581,79 @@ const HeaderActions = styled.div`
   display: flex;
   align-items: center;
   gap: 1.25rem;
+`;
+
+const DesktopActionButtons = styled.div`
+  display: flex;
+  gap: 0.75rem;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const CreateButton = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: ${(props) =>
+    props.primary
+      ? COLORS.primarySalmon
+      : props.secondary
+      ? COLORS.primaryMint
+      : COLORS.primarySalmon};
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: ${(props) =>
+      props.primary
+        ? COLORS.accentSalmon
+        : props.secondary
+        ? COLORS.accentMint
+        : COLORS.accentSalmon};
+  }
+`;
+
+const AuthButtons = styled.div`
+  display: flex;
+  gap: 0.75rem;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const AuthButton = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: ${(props) =>
+    props.primary
+      ? COLORS.primarySalmon
+      : props.secondary
+      ? COLORS.primaryKhaki
+      : COLORS.primarySalmon};
+  color: ${(props) => (props.secondary ? COLORS.textPrimary : "white")};
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.3s;
+
+  &:hover {
+    background-color: ${(props) =>
+      props.primary
+        ? COLORS.accentSalmon
+        : props.secondary
+        ? COLORS.primaryBlueGray
+        : COLORS.accentSalmon};
+    color: white;
+  }
 `;
 
 const SearchContainer = styled.div`
@@ -746,30 +776,6 @@ const CloseSearchButton = styled.button`
 
   @media (min-width: 768px) {
     display: none; /* Only show on mobile */
-  }
-`;
-
-const CreateNewButtonDesktop = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: ${(props) =>
-    props.thoughts ? COLORS.primaryMint : COLORS.primarySalmon};
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-weight: 600;
-  transition: background-color 0.3s;
-  margin-left: ${(props) => (props.thoughts ? "0.5rem" : "0")};
-
-  &:hover {
-    background-color: ${(props) =>
-      props.thoughts ? COLORS.accentMint : COLORS.accentSalmon};
-  }
-
-  @media (max-width: 768px) {
-    display: none;
   }
 `;
 
@@ -900,28 +906,6 @@ const UserMenuButton = styled.button`
 
   &:hover svg {
     color: ${COLORS.primarySalmon};
-  }
-`;
-
-const LoginButton = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: ${COLORS.primaryKhaki};
-  color: ${COLORS.textPrimary};
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-weight: 500;
-  transition: all 0.3s;
-
-  &:hover {
-    background-color: ${COLORS.primaryBlueGray};
-    color: white;
-  }
-
-  @media (max-width: 768px) {
-    display: none;
   }
 `;
 
@@ -1064,27 +1048,6 @@ const ExternalMenuItem = styled.a`
   svg {
     margin-right: 0.75rem;
     color: ${COLORS.primaryBlueGray};
-  }
-`;
-
-const RegisterButton = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: ${COLORS.primarySalmon};
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-weight: 500;
-  transition: all 0.3s;
-
-  &:hover {
-    background-color: ${COLORS.accentSalmon};
-  }
-
-  @media (max-width: 768px) {
-    display: none;
   }
 `;
 
