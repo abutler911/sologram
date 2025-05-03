@@ -25,8 +25,8 @@ const Card = styled.div`
   background-color: ${colors.cardBackground};
   border-radius: 12px;
   padding: 1rem;
-  width: 100%; // fill parent container, no 95%
-  margin: 1rem 0; // only vertical space, no need for auto centering
+  width: 95%;
+  margin: 1rem auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: transform 0.2s ease;
   animation: ${animations.fadeIn} 0.5s ease-out;
