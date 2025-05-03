@@ -22,22 +22,22 @@ const { colors, animations, mixins } = twilightTheme;
 // Updated Card component with twilight theme
 const Card = styled.div`
   position: relative;
-  ${mixins.cardBase}
-  padding: 1.2rem;
-  margin-bottom: 1.2rem;
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 0 1rem;
-  margin-left: auto;
-  margin-right: auto;
+  background-color: ${colors.cardBackground};
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1rem auto; // space between cards, centered
+  width: 95%; // on mobile, don’t hit full width
+  max-width: 600px; // cap on large screens
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease;
   animation: ${animations.fadeIn} 0.5s ease-out;
+
   ${mixins.hoverLift}
 
   ${(props) =>
     props.pinned &&
     css`
-      border-color: ${colors.secondaryAccent};
+      border: 2px solid ${colors.secondaryAccent};
       background: linear-gradient(145deg, ${colors.cardBackground}, #222244);
 
       &:after {
@@ -48,10 +48,6 @@ const Card = styled.div`
         font-size: 0.9rem;
       }
     `}
-
-  @media (min-width: 768px) {
-    max-width: 95%;
-  }
 `;
 
 // Mood decoration with twilight glow
