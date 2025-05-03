@@ -281,7 +281,7 @@ const Header = ({ onSearch, onClearSearch }) => {
                       <FaCamera /> <span>New Post</span>
                     </CreateMenuItem>
                     <CreateMenuItem
-                      to="/story/create"
+                      to="/create-story"
                       onClick={handleMenuItemClick}
                     >
                       <FaBookOpen /> <span>New Story</span>
@@ -403,9 +403,9 @@ const Header = ({ onSearch, onClearSearch }) => {
                 <FaCamera /> <span>New Post</span>
               </MobileMenuItem>
               <MobileMenuItem
-                to="/story/create"
+                to="/create-story"
                 active={
-                  location.pathname === "/story/create" ? "true" : undefined
+                  location.pathname === "/create-story" ? "true" : undefined
                 }
                 onClick={handleMenuItemClick}
               >
