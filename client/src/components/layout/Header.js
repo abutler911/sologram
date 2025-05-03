@@ -15,6 +15,8 @@ import {
   FaBars,
   FaImage,
   FaPen,
+  FaPlus,
+  FaBookOpen,
 } from "react-icons/fa";
 
 import { AuthContext } from "../../context/AuthContext";
@@ -26,6 +28,7 @@ const Header = ({ onSearch, onClearSearch }) => {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const isAdmin = user?.role === "admin";
@@ -34,6 +37,7 @@ const Header = ({ onSearch, onClearSearch }) => {
   const searchInputRef = useRef(null);
   const searchContainerRef = useRef(null);
   const userMenuRef = useRef(null);
+  const createMenuRef = useRef(null);
 
   // Handle URL search params
   useEffect(() => {
@@ -70,13 +74,21 @@ const Header = ({ onSearch, onClearSearch }) => {
       ) {
         setUserMenuOpen(false);
       }
+
+      if (
+        createMenuOpen &&
+        createMenuRef.current &&
+        !createMenuRef.current.contains(event.target)
+      ) {
+        setCreateMenuOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [searchExpanded, userMenuOpen]);
+  }, [searchExpanded, userMenuOpen, createMenuOpen]);
 
   // Close menus on route change
   useEffect(() => {
@@ -95,6 +107,7 @@ const Header = ({ onSearch, onClearSearch }) => {
   const handleMenuItemClick = () => {
     setMobileMenuOpen(false);
     setUserMenuOpen(false);
+    setCreateMenuOpen(false);
   };
 
   // Search Handlers
@@ -131,16 +144,16 @@ const Header = ({ onSearch, onClearSearch }) => {
     { path: "/", label: "Home" },
     { path: "/collections", label: "Collections" },
     { path: "/thoughts", label: "Thoughts" },
-    ...(isAuthenticated
-      ? [{ path: "/thoughts/create", label: "New Thought" }]
-      : []),
     ...(isAuthenticated ? [{ path: "/story-archive", label: "Stories" }] : []),
     ...(isAdmin ? [{ path: "/media-gallery", label: "Media Gallery" }] : []),
+  ];
+
+  // External links kept separate for mobile menu placement
+  const externalLinks = [
     {
       external: true,
       path: "https://solounderground.com",
       label: "SoloUnderground",
-      icon: <FaExternalLinkAlt />,
     },
   ];
 
@@ -252,18 +265,36 @@ const Header = ({ onSearch, onClearSearch }) => {
               </SearchContainer>
             )}
 
-            {/* Action Buttons for Desktop */}
+            {/* Create Menu for Desktop */}
             {isAuthenticated && !searchExpanded && (
-              <DesktopActionButtons>
-                <CreateButton to="/create" primary="true">
-                  <FaCamera />
+              <CreateMenuContainer ref={userMenuRef}>
+                <CreateMenuButton
+                  onClick={() => setCreateMenuOpen(!createMenuOpen)}
+                >
+                  <FaPlus />
                   <span>Create</span>
-                </CreateButton>
-                <CreateButton to="/thoughts/create" secondary="true">
-                  <FaPen />
-                  <span>New Thought</span>
-                </CreateButton>
-              </DesktopActionButtons>
+                  <FaChevronDown className="arrow-icon" />
+                </CreateMenuButton>
+                {createMenuOpen && (
+                  <CreateMenuDropdown>
+                    <CreateMenuItem to="/create" onClick={handleMenuItemClick}>
+                      <FaCamera /> <span>New Post</span>
+                    </CreateMenuItem>
+                    <CreateMenuItem
+                      to="/story/create"
+                      onClick={handleMenuItemClick}
+                    >
+                      <FaBookOpen /> <span>New Story</span>
+                    </CreateMenuItem>
+                    <CreateMenuItem
+                      to="/thoughts/create"
+                      onClick={handleMenuItemClick}
+                    >
+                      <FaPen /> <span>New Thought</span>
+                    </CreateMenuItem>
+                  </CreateMenuDropdown>
+                )}
+              </CreateMenuContainer>
             )}
 
             {/* Greeting */}
@@ -349,27 +380,47 @@ const Header = ({ onSearch, onClearSearch }) => {
         {/* Mobile Menu Content */}
         <MobileMenuContent>
           {/* Navigation Items */}
-          {navItems.map((item) =>
-            item.external ? (
-              <ExternalMenuItem
-                key={item.path}
-                href={item.path}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={handleMenuItemClick}
-              >
-                {item.icon} {item.label}
-              </ExternalMenuItem>
-            ) : (
+          {navItems.map((item) => (
+            <MobileMenuItem
+              key={item.path}
+              to={item.path}
+              active={isPathActive(item.path) ? "true" : undefined}
+              onClick={handleMenuItemClick}
+            >
+              {item.label}
+            </MobileMenuItem>
+          ))}
+
+          {/* Create options for mobile */}
+          {isAuthenticated && (
+            <>
+              <MobileMenuSection>Create</MobileMenuSection>
               <MobileMenuItem
-                key={item.path}
-                to={item.path}
-                active={isPathActive(item.path) ? "true" : undefined}
+                to="/create"
+                active={location.pathname === "/create" ? "true" : undefined}
                 onClick={handleMenuItemClick}
               >
-                {item.label}
+                <FaCamera /> <span>New Post</span>
               </MobileMenuItem>
-            )
+              <MobileMenuItem
+                to="/story/create"
+                active={
+                  location.pathname === "/story/create" ? "true" : undefined
+                }
+                onClick={handleMenuItemClick}
+              >
+                <FaBookOpen /> <span>New Story</span>
+              </MobileMenuItem>
+              <MobileMenuItem
+                to="/thoughts/create"
+                active={
+                  location.pathname === "/thoughts/create" ? "true" : undefined
+                }
+                onClick={handleMenuItemClick}
+              >
+                <FaPen /> <span>New Thought</span>
+              </MobileMenuItem>
+            </>
           )}
 
           {/* User-specific Mobile Items */}
@@ -380,7 +431,7 @@ const Header = ({ onSearch, onClearSearch }) => {
                 active={location.pathname === "/profile" ? "true" : undefined}
                 onClick={handleMenuItemClick}
               >
-                <span>Profile</span>
+                <FaUser /> <span>Profile</span>
               </MobileMenuItem>
               <MobileMenuLogoutButton onClick={handleLogout}>
                 <FaSignOutAlt /> <span>Logout</span>
@@ -408,6 +459,21 @@ const Header = ({ onSearch, onClearSearch }) => {
               </MobileMenuItem>
             </>
           )}
+
+          {/* External links section at bottom */}
+          <ExternalLinksSection>
+            {externalLinks.map((item) => (
+              <ExternalMenuItem
+                key={item.path}
+                href={item.path}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleMenuItemClick}
+              >
+                {item.label}
+              </ExternalMenuItem>
+            ))}
+          </ExternalLinksSection>
         </MobileMenuContent>
       </MobileMenu>
     </HeaderWrapper>
@@ -583,39 +649,72 @@ const HeaderActions = styled.div`
   gap: 1.25rem;
 `;
 
-const DesktopActionButtons = styled.div`
-  display: flex;
-  gap: 0.75rem;
+const CreateMenuContainer = styled.div`
+  position: relative;
 
   @media (max-width: 768px) {
     display: none;
   }
 `;
 
-const CreateButton = styled(Link)`
+const CreateMenuButton = styled.button`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: ${(props) =>
-    props.primary
-      ? COLORS.primarySalmon
-      : props.secondary
-      ? COLORS.primaryMint
-      : COLORS.primarySalmon};
+  background-color: ${COLORS.primarySalmon};
   color: white;
-  text-decoration: none;
+  border: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
   font-weight: 600;
+  cursor: pointer;
   transition: background-color 0.3s;
 
+  .arrow-icon {
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+  }
+
   &:hover {
-    background-color: ${(props) =>
-      props.primary
-        ? COLORS.accentSalmon
-        : props.secondary
-        ? COLORS.accentMint
-        : COLORS.accentSalmon};
+    background-color: ${COLORS.accentSalmon};
+  }
+`;
+
+const CreateMenuDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: ${COLORS.cardBackground};
+  border-radius: 4px;
+  box-shadow: 0 4px 12px ${COLORS.shadow};
+  width: 180px;
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+  z-index: 100;
+  border: 1px solid ${COLORS.border};
+`;
+
+const CreateMenuItem = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: ${COLORS.textSecondary};
+  text-decoration: none;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: ${COLORS.buttonHover};
+    color: ${COLORS.primarySalmon};
+  }
+
+  svg {
+    font-size: 1rem;
+    color: ${COLORS.textTertiary};
+  }
+
+  &:hover svg {
+    color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -1031,9 +1130,27 @@ const MobileMenuLogoutButton = styled.button`
   }
 `;
 
+const MobileMenuSection = styled.div`
+  font-weight: 600;
+  color: ${COLORS.textSecondary};
+  padding: 0.75rem 1rem 0.5rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-top: 1rem;
+  border-top: 1px solid ${COLORS.divider};
+`;
+
+const ExternalLinksSection = styled.div`
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid ${COLORS.divider};
+`;
+
 const ExternalMenuItem = styled.a`
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 0.75rem 1rem;
   color: ${COLORS.primaryBlueGray};
   font-weight: 600;
@@ -1043,11 +1160,6 @@ const ExternalMenuItem = styled.a`
   &:hover {
     background-color: ${COLORS.buttonHover};
     color: ${COLORS.accentBlueGray};
-  }
-
-  svg {
-    margin-right: 0.75rem;
-    color: ${COLORS.primaryBlueGray};
   }
 `;
 
