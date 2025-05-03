@@ -8,7 +8,7 @@ export const COLORS = {
   accentSalmon: "#ffad9e", // softer version
   accentMint: "#a8cfd8", // softer version
   accentBlueGray: "#90aac3", // lighter blue-gray
-  background: "#f8f8f8", // light khaki/neutral
+  background: "#f8f5f0", // light khaki/neutral
   cardBackground: "#ffffff", // bright white for card contrast
   elevatedBackground: "#f0f0f0", // slightly elevated sections
   textPrimary: "#1a1a1a", // near-black text
