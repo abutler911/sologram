@@ -8,30 +8,36 @@ export const useUploadManager = (setMedia) => {
   const uploadFile = async (file, id, onProgress) => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "unsigned_post_upload");
-    formData.append("folder", "sologram");
 
     try {
-      const response = await axios.post(
-        "https://api.cloudinary.com/v1_1/ds5rxplmr/auto/upload",
-        formData,
-        {
-          onUploadProgress: (event) => {
-            if (event.lengthComputable && onProgress) {
-              const percent = Math.round((event.loaded * 100) / event.total);
-              onProgress(percent);
-            }
-          },
-        }
-      );
+      // Upload to our own server endpoint instead of directly to Cloudinary
+      const response = await axios.post("/api/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (event) => {
+          if (event.lengthComputable && onProgress) {
+            const percent = Math.round((event.loaded * 100) / event.total);
+            onProgress(percent);
+          }
+        },
+      });
 
-      const data = response.data;
-      return {
-        mediaUrl: data.secure_url,
-        cloudinaryId: data.public_id,
-        mediaType: file.type.startsWith("video") ? "video" : "image",
-      };
+      // Server should return the required data in the same format we had before
+      if (response.data && response.data.success) {
+        return {
+          mediaUrl: response.data.mediaUrl,
+          cloudinaryId: response.data.cloudinaryId,
+          mediaType: response.data.mediaType,
+        };
+      } else {
+        throw new Error(response.data?.message || "Upload failed");
+      }
     } catch (error) {
+      console.error(
+        "Upload error:",
+        error.response?.data || error.message || error
+      );
       throw new Error("Upload failed");
     }
   };
@@ -48,7 +54,8 @@ export const useUploadManager = (setMedia) => {
 
     try {
       const result = await uploadFile(file, id, onProgress);
-      if (!mountedRef.current) return;
+
+      if (!mountedRef.current) return result;
 
       setMedia((prev) =>
         prev.map((item) =>
@@ -64,7 +71,9 @@ export const useUploadManager = (setMedia) => {
             : item
         )
       );
+
       toast.success("Upload complete");
+      return result;
     } catch (error) {
       if (mountedRef.current) {
         setMedia((prev) =>
@@ -74,6 +83,7 @@ export const useUploadManager = (setMedia) => {
         );
         toast.error("Upload failed");
       }
+      throw error;
     }
   };
 
