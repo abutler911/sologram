@@ -13,917 +13,11 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 import { COLORS, THEME } from "../../theme";
+import { useUploadManager } from "../../hooks/useUploadManager";
 
 // Default placeholder image
 const PLACEHOLDER_IMG =
   "https://via.placeholder.com/300x300?text=Image+Not+Available";
-
-const uploadFile = async (file, onProgress) => {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", "unsigned_post_upload");
-  formData.append("folder", "sologram");
-
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "https://api.cloudinary.com/v1_1/ds5rxplmr/auto/upload");
-
-    xhr.upload.addEventListener("progress", (event) => {
-      if (event.lengthComputable && onProgress) {
-        const percent = Math.round((event.loaded * 100) / event.total);
-        onProgress(percent);
-      }
-    });
-
-    xhr.onload = () => {
-      try {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          const response = JSON.parse(xhr.responseText);
-          resolve({
-            mediaUrl: response.secure_url,
-            cloudinaryId: response.public_id,
-            mediaType: file.type.startsWith("video") ? "video" : "image",
-          });
-        } else {
-          reject(new Error(`Upload failed with status ${xhr.status}`));
-        }
-      } catch (err) {
-        reject(new Error("Failed to parse upload response"));
-      }
-    };
-
-    xhr.onerror = () => reject(new Error("Network error during upload"));
-    xhr.send(formData);
-  });
-};
-
-export const useMediaUpload = ({ setMedia }) => {
-  const mountedRef = useRef(true);
-
-  const addFileToState = (file, id, objectUrl) => {
-    const isVideo = file.type.startsWith("video");
-    return {
-      id,
-      file,
-      previewUrl: objectUrl,
-      type: isVideo ? "video" : "image",
-      mediaType: isVideo ? "video" : "image",
-      filter: "none",
-      filterClass: "",
-      uploading: true,
-      progress: 0,
-      error: false,
-    };
-  };
-
-  const uploadAndTrack = async (file, id) => {
-    const onProgress = (percent) => {
-      if (!mountedRef.current) return;
-      setMedia((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, progress: percent } : item
-        )
-      );
-    };
-
-    try {
-      const result = await uploadFile(file, onProgress);
-      if (!mountedRef.current) return;
-
-      setMedia((prev) =>
-        prev.map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                mediaUrl: result.mediaUrl,
-                cloudinaryId: result.cloudinaryId,
-                mediaType: result.mediaType,
-                type: result.mediaType,
-                uploading: false,
-              }
-            : item
-        )
-      );
-
-      toast.success("Upload complete");
-    } catch (error) {
-      console.error("Upload error:", error);
-      if (mountedRef.current) {
-        setMedia((prev) =>
-          prev.map((item) =>
-            item.id === id ? { ...item, uploading: false, error: true } : item
-          )
-        );
-        toast.error("Upload failed");
-      }
-    }
-  };
-
-  const handleNewFiles = async (files) => {
-    const newItems = files.map((file) => {
-      const id = `${file.name}_${Date.now()}_${Math.random()
-        .toString(36)
-        .substring(2, 8)}`;
-      const objectUrl = URL.createObjectURL(file);
-      uploadAndTrack(file, id);
-      return addFileToState(file, id, objectUrl);
-    });
-
-    setMedia((prev) => [...prev, ...newItems]);
-  };
-
-  return { handleNewFiles, mountedRef };
-};
-
-// Main component
-function PostCreator({ initialData = null, isEditing = false }) {
-  // Component state
-  const [media, setMedia] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [caption, setCaption] = useState(initialData?.caption || "");
-  const [content, setContent] = useState(initialData?.content || "");
-  const [tags, setTags] = useState(
-    initialData?.tags ? initialData.tags.join(", ") : ""
-  );
-  const [activeFilter, setActiveFilter] = useState("none");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [step, setStep] = useState(1); // 1 = Media, 2 = Details
-
-  const navigate = useNavigate();
-  const inputFileRef = useRef(null);
-  const cameraInputRef = useRef(null);
-  const videoCameraInputRef = useRef(null); // New ref for video camera
-  const mountedRef = useRef(true);
-
-  // Available filters
-  const filters = [
-    { id: "none", name: "None", className: "" },
-    { id: "warm", name: "Warm", className: "filter-warm" },
-    { id: "cool", name: "Cool", className: "filter-cool" },
-    { id: "bw", name: "B&W", className: "filter-grayscale" },
-    { id: "vintage", name: "Vintage", className: "filter-vintage" },
-  ];
-
-  // Load existing media when editing
-  useEffect(() => {
-    if (isEditing && initialData?.media?.length > 0) {
-      const existingMedia = initialData.media.map((item) => {
-        const filter = item.filter || "none";
-        const filterClass =
-          filters.find((f) => f.id === filter)?.className || "";
-
-        return {
-          id:
-            item._id ||
-            `existing_${Date.now()}_${Math.random()
-              .toString(36)
-              .substring(2, 8)}`,
-          mediaUrl: item.mediaUrl,
-          cloudinaryId: item.cloudinaryId,
-          mediaType: item.mediaType,
-          filter: filter,
-          filterClass: filterClass,
-          isExisting: true,
-          uploading: false,
-          error: false,
-        };
-      });
-
-      setMedia(existingMedia);
-    }
-  }, [isEditing, initialData]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-
-      // Revoke object URLs to prevent memory leaks
-      media.forEach((item) => {
-        if (item.previewUrl && !item.isExisting) {
-          try {
-            URL.revokeObjectURL(item.previewUrl);
-          } catch (err) {
-            console.error("Failed to revoke URL:", err);
-          }
-        }
-      });
-    };
-  }, [media]);
-
-  // Handle file drop
-  const onDrop = useCallback(async (acceptedFiles) => {
-    // Process each file
-    const newMedia = [];
-
-    for (const file of acceptedFiles) {
-      const id = `media_${Date.now()}_${Math.random()
-        .toString(36)
-        .substring(2, 8)}`;
-      const isVideo = file.type.startsWith("video/");
-      let objectUrl = "";
-
-      try {
-        objectUrl = URL.createObjectURL(file);
-
-        // Add to media immediately with uploading status
-        const mediaItem = {
-          id,
-          file,
-          previewUrl: objectUrl,
-          type: isVideo ? "video" : "image",
-          filter: "none",
-          filterClass: "", // Initialize with empty filter class
-          uploading: true,
-          progress: 0,
-          error: false,
-        };
-
-        newMedia.push(mediaItem);
-
-        // Start upload in background
-        uploadFile(file, (progress) => {
-          setMedia((currentMedia) =>
-            currentMedia.map((item) =>
-              item.id === id ? { ...item, progress } : item
-            )
-          );
-        })
-          .then((result) => {
-            setMedia((currentMedia) =>
-              currentMedia.map((item) =>
-                item.id === id
-                  ? {
-                      ...item,
-                      mediaUrl: result.mediaUrl,
-                      cloudinaryId: result.cloudinaryId,
-                      mediaType: result.mediaType,
-                      type: result.mediaType,
-                      uploading: false,
-                    }
-                  : item
-              )
-            );
-            toast.success("Upload complete");
-          })
-          .catch((error) => {
-            console.error("Upload failed:", error);
-            setMedia((currentMedia) =>
-              currentMedia.map((item) =>
-                item.id === id
-                  ? { ...item, uploading: false, error: true }
-                  : item
-              )
-            );
-            toast.error("Upload failed");
-          });
-      } catch (error) {
-        console.error("Error creating preview:", error);
-        toast.error("Could not create preview");
-      }
-    }
-
-    // Add all new media to state at once
-    setMedia((current) => [...current, ...newMedia]);
-  }, []);
-
-  // Configure dropzone
-  const { getRootProps, getInputProps } = useDropzone({
-    accept: {
-      "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp"],
-      "video/*": [".mp4", ".mov", ".avi", ".webm"],
-    },
-    onDrop,
-    maxSize: 25 * 1024 * 1024, // 25MB
-  });
-
-  // Handle camera capture
-  const handleCameraCapture = async (event) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const id = `camera_${Date.now()}_${Math.random()
-        .toString(36)
-        .substring(2, 8)}`;
-      const isVideo = file.type.startsWith("video/");
-
-      try {
-        const objectUrl = URL.createObjectURL(file);
-
-        // Add file to media list
-        setMedia((current) => [
-          ...current,
-          {
-            id,
-            file,
-            previewUrl: objectUrl,
-            type: isVideo ? "video" : "image",
-            filter: "none",
-            filterClass: "",
-            uploading: true,
-            progress: 0,
-            error: false,
-          },
-        ]);
-
-        // Define onProgress separately
-        const onProgress = (percent) => {
-          if (!mountedRef.current) return;
-          setMedia((prev) =>
-            prev.map((p) => (p.id === id ? { ...p, progress: percent } : p))
-          );
-        };
-
-        // Upload
-        const result = await uploadFile(file, onProgress);
-
-        if (!mountedRef.current) return;
-
-        // Apply result AFTER upload completes
-        setMedia((prev) =>
-          prev.map((p) =>
-            p.id === id
-              ? {
-                  ...p,
-                  uploading: false,
-                  mediaUrl: result.mediaUrl,
-                  cloudinaryId: result.cloudinaryId,
-                  mediaType: result.mediaType,
-                  type: result.mediaType,
-                }
-              : p
-          )
-        );
-        console.log("Media updated after camera upload:", result);
-        toast.success("Upload complete");
-      } catch (error) {
-        console.error("Camera upload error:", error);
-        if (mountedRef.current) {
-          setMedia((prev) =>
-            prev.map((p) =>
-              p.id === id ? { ...p, uploading: false, error: true } : p
-            )
-          );
-          toast.error("Upload failed");
-        }
-      } finally {
-        if (event.target) event.target.value = "";
-      }
-    }
-  };
-
-  // Navigation between media items
-  const showPrevious = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
-
-  const showNext = () => {
-    if (currentIndex < media.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  // Apply filter to current media
-  const applyFilter = (filterId) => {
-    setActiveFilter(filterId);
-
-    // Find the class name associated with this filter ID
-    const filterClass = filters.find((f) => f.id === filterId)?.className || "";
-
-    // Update the filter on the current media item
-    setMedia((currentMedia) =>
-      currentMedia.map((item, index) =>
-        index === currentIndex
-          ? { ...item, filter: filterId, filterClass }
-          : item
-      )
-    );
-  };
-
-  // Remove media item
-  const removeMedia = (indexToRemove) => {
-    // Remove the item
-    setMedia((current) => {
-      const newMedia = current.filter((_, index) => index !== indexToRemove);
-
-      // Adjust current index if needed
-      if (currentIndex >= newMedia.length) {
-        setCurrentIndex(Math.max(0, newMedia.length - 1));
-      }
-
-      return newMedia;
-    });
-  };
-
-  // Submit the post
-  const handleSubmit = async () => {
-    if (media.length === 0) {
-      toast.error("Please add at least one photo or video");
-      return;
-    }
-
-    if (!caption.trim()) {
-      toast.error("Please add a caption");
-      return;
-    }
-
-    // Check for any uploads still in progress
-    if (media.some((item) => item.uploading)) {
-      toast.error("Please wait for uploads to complete");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Prepare the media items for submission
-      const mediaItems = media
-        .filter((item) => !item.error && !item.isExisting)
-        .map((item) => ({
-          mediaUrl: item.mediaUrl,
-          cloudinaryId: item.cloudinaryId,
-          mediaType: item.type || item.mediaType,
-          filter: item.filter || "none", // Ensure filter is always set
-        }));
-
-      // Create the payload
-      const payload = {
-        caption,
-        content, // Add content field from state
-        tags: tags, // Send as string to let server handle splitting
-        media: mediaItems,
-      };
-
-      let response;
-
-      if (isEditing) {
-        // Add existing media IDs to keep
-        const existingMediaIds = media
-          .filter((item) => item.isExisting)
-          .map((item) => item.id)
-          .join(",");
-
-        if (existingMediaIds) {
-          payload.keepMedia = existingMediaIds;
-        }
-
-        // Update existing post
-        response = await axios.put(`/api/posts/${initialData._id}`, payload);
-        toast.success("Post updated successfully!");
-      } else {
-        // Create new post
-        response = await axios.post("/api/posts", payload);
-        toast.success("Post created successfully!");
-      }
-
-      navigate(`/post/${response.data.data._id}`);
-    } catch (error) {
-      console.error("Error creating/updating post:", error);
-      toast.error(
-        `Failed to ${isEditing ? "update" : "create"} post. Please try again.`
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Render
-  return (
-    <Container>
-      <Header>
-        <h1>{isEditing ? "Edit Post" : "Create Post"}</h1>
-        <StepIndicator>
-          <Step active={step === 1} onClick={() => step !== 1 && setStep(1)}>
-            1. Add Media
-          </Step>
-          <StepConnector />
-          <Step
-            active={step === 2}
-            disabled={media.length === 0}
-            onClick={() => media.length > 0 && step !== 2 && setStep(2)}
-          >
-            2. Add Details
-          </Step>
-        </StepIndicator>
-      </Header>
-
-      {step === 1 ? (
-        <MediaSection>
-          {media.length === 0 ? (
-            <DropArea {...getRootProps()}>
-              <input {...getInputProps()} ref={inputFileRef} />
-              <UploadIcon>
-                <FaImage />
-                <FaVideo />
-              </UploadIcon>
-              <p>Drag photos or videos here, or click to browse</p>
-              <ButtonGroup>
-                <CameraButton
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent dropzone click
-                    if (cameraInputRef.current) {
-                      cameraInputRef.current.accept = "image/*";
-                      cameraInputRef.current.capture = "environment";
-                      cameraInputRef.current.click();
-                    }
-                  }}
-                >
-                  <FaCamera />
-                  <span>Take Photo</span>
-                </CameraButton>
-                <VideoCameraButton
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent dropzone click
-                    if (videoCameraInputRef.current) {
-                      videoCameraInputRef.current.accept = "video/*";
-                      videoCameraInputRef.current.capture = "environment";
-                      videoCameraInputRef.current.click();
-                    }
-                  }}
-                >
-                  <FaVideo />
-                  <span>Record Video</span>
-                </VideoCameraButton>
-                <GalleryButton
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent dropzone click
-                    const galleryInput = document.createElement("input");
-                    galleryInput.type = "file";
-                    galleryInput.accept = "image/*,video/*";
-                    galleryInput.multiple = true;
-                    galleryInput.style.display = "none";
-
-                    galleryInput.onchange = (event) => {
-                      if (event.target.files?.length) {
-                        onDrop(Array.from(event.target.files));
-                      }
-                    };
-
-                    document.body.appendChild(galleryInput);
-                    galleryInput.click();
-
-                    // Clean up
-                    setTimeout(() => {
-                      document.body.removeChild(galleryInput);
-                    }, 1000);
-                  }}
-                >
-                  <FaImage />
-                  <span>Choose from Gallery</span>
-                </GalleryButton>
-              </ButtonGroup>
-              <input
-                type="file"
-                ref={cameraInputRef}
-                onChange={handleCameraCapture}
-                accept="image/*"
-                capture="environment"
-                style={{ display: "none" }}
-              />
-              <input
-                type="file"
-                ref={videoCameraInputRef}
-                onChange={handleCameraCapture}
-                accept="video/*"
-                capture="environment"
-                style={{ display: "none" }}
-              />
-            </DropArea>
-          ) : (
-            <MediaPreview>
-              <PreviewContainer>
-                {media[currentIndex].type === "video" ||
-                media[currentIndex].mediaType === "video" ? (
-                  <VideoPreview
-                    src={
-                      media[currentIndex].mediaUrl ||
-                      media[currentIndex].previewUrl
-                    }
-                    className={
-                      media[currentIndex].filterClass ||
-                      filters.find((f) => f.id === media[currentIndex].filter)
-                        ?.className ||
-                      ""
-                    }
-                    controls
-                    onError={(e) => {
-                      e.target.src = PLACEHOLDER_IMG;
-                    }}
-                  />
-                ) : (
-                  <ImagePreview
-                    src={
-                      media[currentIndex].mediaUrl ||
-                      media[currentIndex].previewUrl
-                    }
-                    className={
-                      media[currentIndex].filterClass ||
-                      filters.find((f) => f.id === media[currentIndex].filter)
-                        ?.className ||
-                      ""
-                    }
-                    alt="Preview"
-                    onError={(e) => {
-                      e.target.src = PLACEHOLDER_IMG;
-                    }}
-                  />
-                )}
-
-                {media[currentIndex].uploading && (
-                  <UploadOverlay>
-                    <UploadProgress>
-                      <UploadProgressInner
-                        width={media[currentIndex].progress}
-                      />
-                    </UploadProgress>
-                    <p>Uploading... {media[currentIndex].progress}%</p>
-                  </UploadOverlay>
-                )}
-
-                {media[currentIndex].error && (
-                  <ErrorOverlay>
-                    <p>Upload failed</p>
-                    <button onClick={() => removeMedia(currentIndex)}>
-                      Remove
-                    </button>
-                  </ErrorOverlay>
-                )}
-
-                <RemoveButton onClick={() => removeMedia(currentIndex)}>
-                  <FaTimes />
-                </RemoveButton>
-
-                {media.length > 1 && (
-                  <NavigationButtons>
-                    <NavButton
-                      onClick={showPrevious}
-                      disabled={currentIndex === 0}
-                    >
-                      <FaArrowLeft />
-                    </NavButton>
-                    <MediaCounter>
-                      {currentIndex + 1} / {media.length}
-                    </MediaCounter>
-                    <NavButton
-                      onClick={showNext}
-                      disabled={currentIndex === media.length - 1}
-                    >
-                      <FaArrowRight />
-                    </NavButton>
-                  </NavigationButtons>
-                )}
-              </PreviewContainer>
-
-              <FilterOptions>
-                <h3>Filters</h3>
-                <FiltersGrid>
-                  {filters.map((filter) => (
-                    <FilterItem
-                      key={filter.id}
-                      active={media[currentIndex].filter === filter.id}
-                      onClick={() => applyFilter(filter.id)}
-                    >
-                      <FilterPreview
-                        src={
-                          media[currentIndex].mediaUrl ||
-                          media[currentIndex].previewUrl
-                        }
-                        className={filter.className}
-                        alt={filter.name}
-                        onError={(e) => {
-                          e.target.src = PLACEHOLDER_IMG;
-                        }}
-                      />
-                      <span>{filter.name}</span>
-                    </FilterItem>
-                  ))}
-                </FiltersGrid>
-              </FilterOptions>
-
-              <AddMoreSection>
-                <AddMorePhotoButton
-                  as="div"
-                  onClick={() => {
-                    if (cameraInputRef.current) {
-                      cameraInputRef.current.accept = "image/*";
-                      cameraInputRef.current.capture = "environment";
-                      cameraInputRef.current.click();
-                    }
-                  }}
-                >
-                  <FaCamera /> Take Photo
-                </AddMorePhotoButton>
-                <AddMoreVideoButton
-                  as="div"
-                  onClick={() => {
-                    if (videoCameraInputRef.current) {
-                      videoCameraInputRef.current.accept = "video/*";
-                      videoCameraInputRef.current.capture = "environment";
-                      videoCameraInputRef.current.click();
-                    }
-                  }}
-                >
-                  <FaVideo /> Record Video
-                </AddMoreVideoButton>
-                <AddMoreButton
-                  as="div"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const galleryInput = document.createElement("input");
-                    galleryInput.type = "file";
-                    galleryInput.accept = "image/*,video/*";
-                    galleryInput.multiple = true;
-                    galleryInput.style.display = "none";
-
-                    galleryInput.onchange = (event) => {
-                      if (event.target.files?.length) {
-                        onDrop(Array.from(event.target.files));
-                      }
-                    };
-
-                    document.body.appendChild(galleryInput);
-                    galleryInput.click();
-
-                    // Clean up
-                    setTimeout(() => {
-                      document.body.removeChild(galleryInput);
-                    }, 1000);
-                  }}
-                >
-                  <FaImage /> Add from Gallery
-                </AddMoreButton>
-              </AddMoreSection>
-            </MediaPreview>
-          )}
-
-          <ButtonRow>
-            <CancelButton onClick={() => navigate("/")}>Cancel</CancelButton>
-            {media.length > 0 && (
-              <NextButton
-                onClick={() => setStep(2)}
-                disabled={
-                  media.length === 0 ||
-                  media.some((item) => !item.mediaUrl || item.uploading)
-                }
-              >
-                Next <FaArrowRight />
-              </NextButton>
-            )}
-          </ButtonRow>
-        </MediaSection>
-      ) : (
-        <DetailsSection>
-          <FormGroup>
-            <Label htmlFor="caption-input">Caption</Label>
-            <Input
-              id="caption-input"
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              placeholder="Write a caption..."
-              required
-            />
-            <CharCount>{caption.length}/100</CharCount>
-          </FormGroup>
-
-          <FormGroup>
-            <Label htmlFor="content-input">Content (optional)</Label>
-            <Textarea
-              id="content-input"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Add more details about your post..."
-              rows={4}
-            />
-            <CharCount>{content.length}/2000</CharCount>
-          </FormGroup>
-
-          <FormGroup>
-            <Label htmlFor="tags-input">Tags (comma separated)</Label>
-            <Input
-              id="tags-input"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="travel, nature, food..."
-            />
-          </FormGroup>
-
-          <MediaPreview small>
-            <h3>Preview</h3>
-            <PreviewContainer>
-              {media[currentIndex].type === "video" ||
-              media[currentIndex].mediaType === "video" ? (
-                <VideoPreview
-                  src={
-                    media[currentIndex].mediaUrl ||
-                    media[currentIndex].previewUrl
-                  }
-                  className={
-                    media[currentIndex].filterClass ||
-                    filters.find((f) => f.id === media[currentIndex].filter)
-                      ?.className ||
-                    ""
-                  }
-                  controls
-                  onError={(e) => {
-                    e.target.src = PLACEHOLDER_IMG;
-                  }}
-                />
-              ) : (
-                <ImagePreview
-                  src={
-                    media[currentIndex].mediaUrl ||
-                    media[currentIndex].previewUrl
-                  }
-                  className={
-                    media[currentIndex].filterClass ||
-                    filters.find((f) => f.id === media[currentIndex].filter)
-                      ?.className ||
-                    ""
-                  }
-                  alt="Preview"
-                  onError={(e) => {
-                    e.target.src = PLACEHOLDER_IMG;
-                  }}
-                />
-              )}
-
-              {media.length > 1 && (
-                <NavigationButtons>
-                  <NavButton
-                    onClick={showPrevious}
-                    disabled={currentIndex === 0}
-                  >
-                    <FaArrowLeft />
-                  </NavButton>
-                  <MediaCounter>
-                    {currentIndex + 1} / {media.length}
-                  </MediaCounter>
-                  <NavButton
-                    onClick={showNext}
-                    disabled={currentIndex === media.length - 1}
-                  >
-                    <FaArrowRight />
-                  </NavButton>
-                </NavigationButtons>
-              )}
-            </PreviewContainer>
-
-            <PostPreviewContent>
-              <PostPreviewCaption>
-                {caption || "Your caption will appear here"}
-              </PostPreviewCaption>
-
-              {content && (
-                <PostPreviewContentText>
-                  {content || "Your additional content will appear here"}
-                </PostPreviewContentText>
-              )}
-
-              {tags && (
-                <PostPreviewTags>
-                  {tags
-                    .split(",")
-                    .map((tag) => tag.trim())
-                    .filter((tag) => tag)
-                    .map((tag) => (
-                      <PostPreviewTag key={tag}>#{tag}</PostPreviewTag>
-                    ))}
-                </PostPreviewTags>
-              )}
-            </PostPreviewContent>
-          </MediaPreview>
-
-          <ButtonRow>
-            <BackButton onClick={() => setStep(1)}>
-              <FaArrowLeft /> Back
-            </BackButton>
-            <PublishButton
-              onClick={handleSubmit}
-              disabled={
-                isSubmitting ||
-                !caption.trim() ||
-                media.length === 0 ||
-                media.some((item) => item.uploading)
-              }
-            >
-              {isSubmitting
-                ? isEditing
-                  ? "Updating..."
-                  : "Publishing..."
-                : isEditing
-                ? "Update"
-                : "Publish"}
-            </PublishButton>
-          </ButtonRow>
-        </DetailsSection>
-      )}
-    </Container>
-  );
-}
 
 // Styled components - Now updated with Modern Twilight theme
 const Container = styled.div`
@@ -1632,5 +726,817 @@ const PostPreviewTag = styled.span`
   font-size: 0.75rem;
   margin-right: 5px;
 `;
+
+const TotalUploadContainer = styled.div`
+  width: 100%;
+  margin-bottom: 15px;
+`;
+
+const TotalUploadBar = styled.div`
+  width: 100%;
+  height: 10px;
+  background-color: ${COLORS.elevatedBackground};
+  border-radius: 5px;
+  overflow: hidden;
+`;
+
+const TotalUploadInner = styled.div`
+  height: 100%;
+  width: ${(props) => props.width}%;
+  background-color: ${COLORS.primarySalmon};
+  transition: width 0.3s ease;
+`;
+
+const TotalUploadText = styled.div`
+  margin-top: 5px;
+  font-size: 12px;
+  text-align: right;
+  color: ${COLORS.textSecondary};
+`;
+
+// Main component
+function PostCreator({ initialData = null, isEditing = false }) {
+  // Component state
+  const [media, setMedia] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [caption, setCaption] = useState(initialData?.caption || "");
+  const [content, setContent] = useState(initialData?.content || "");
+  const [tags, setTags] = useState(
+    initialData?.tags ? initialData.tags.join(", ") : ""
+  );
+  const [activeFilter, setActiveFilter] = useState("none");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [step, setStep] = useState(1);
+
+  const navigate = useNavigate();
+  const inputFileRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const videoCameraInputRef = useRef(null);
+  // const mountedRef = useRef(true);
+  const { startUpload, mountedRef } = useUploadManager(setMedia);
+
+  // Available filters
+  const filters = [
+    { id: "none", name: "None", className: "" },
+    { id: "warm", name: "Warm", className: "filter-warm" },
+    { id: "cool", name: "Cool", className: "filter-cool" },
+    { id: "bw", name: "B&W", className: "filter-grayscale" },
+    { id: "vintage", name: "Vintage", className: "filter-vintage" },
+  ];
+
+  // Load existing media when editing
+  useEffect(() => {
+    if (isEditing && initialData?.media?.length > 0) {
+      const existingMedia = initialData.media.map((item) => {
+        const filter = item.filter || "none";
+        const filterClass =
+          filters.find((f) => f.id === filter)?.className || "";
+
+        return {
+          id:
+            item._id ||
+            `existing_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 8)}`,
+          mediaUrl: item.mediaUrl,
+          cloudinaryId: item.cloudinaryId,
+          mediaType: item.mediaType,
+          filter: filter,
+          filterClass: filterClass,
+          isExisting: true,
+          uploading: false,
+          error: false,
+        };
+      });
+
+      setMedia(existingMedia);
+    }
+  }, [isEditing, initialData]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+
+      // Revoke object URLs to prevent memory leaks
+      media.forEach((item) => {
+        if (item.previewUrl && !item.isExisting) {
+          try {
+            URL.revokeObjectURL(item.previewUrl);
+          } catch (err) {
+            console.error("Failed to revoke URL:", err);
+          }
+        }
+      });
+    };
+  }, [media]);
+
+  const onDrop = useCallback(
+    (acceptedFiles) => {
+      const uniqueFiles = acceptedFiles.filter((file) => {
+        const isDuplicate = media.some(
+          (m) =>
+            m.file?.name === file.name &&
+            m.file?.size === file.size &&
+            m.file?.lastModified === file.lastModified
+        );
+        if (isDuplicate) {
+          toast.error(`File "${file.name}" is already added.`);
+          return false;
+        }
+        return true;
+      });
+
+      if (uniqueFiles.length === 0) return;
+
+      const newItems = uniqueFiles.map((file) => {
+        const id = `media_${Date.now()}_${Math.random()
+          .toString(36)
+          .substring(2, 8)}`;
+        const isVideo = file.type.startsWith("video/");
+        const objectUrl = URL.createObjectURL(file);
+
+        return {
+          id,
+          file,
+          previewUrl: objectUrl,
+          type: isVideo ? "video" : "image",
+          filter: "none",
+          filterClass: "",
+          uploading: true,
+          progress: 0,
+          error: false,
+        };
+      });
+
+      setMedia((prev) => [...prev, ...newItems]);
+
+      newItems.forEach((item) => {
+        startUpload(item.file, item.id);
+      });
+    },
+    [media, startUpload]
+  );
+
+  // Configure dropzone
+  const { getRootProps, getInputProps } = useDropzone({
+    accept: {
+      "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp"],
+      "video/*": [".mp4", ".mov", ".avi", ".webm"],
+    },
+    onDrop,
+    maxSize: 25 * 1024 * 1024, // 25MB
+  });
+
+  // Handle camera capture
+  const handleCameraCapture = async (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const isDuplicate = media.some(
+        (m) =>
+          m.file?.name === file.name &&
+          m.file?.size === file.size &&
+          m.file?.lastModified === file.lastModified
+      );
+      if (isDuplicate) {
+        toast.error(`File "${file.name}" is already added.`);
+        return;
+      }
+      const id = `camera_${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(2, 8)}`;
+      const isVideo = file.type.startsWith("video/");
+
+      try {
+        const objectUrl = URL.createObjectURL(file);
+
+        // Add file to media list
+        setMedia((current) => [
+          ...current,
+          {
+            id,
+            file,
+            previewUrl: objectUrl,
+            type: isVideo ? "video" : "image",
+            filter: "none",
+            filterClass: "",
+            uploading: true,
+            progress: 0,
+            error: false,
+          },
+        ]);
+
+        // Define onProgress separately
+        const onProgress = (percent) => {
+          if (!mountedRef.current) return;
+          setMedia((prev) =>
+            prev.map((p) => (p.id === id ? { ...p, progress: percent } : p))
+          );
+        };
+
+        // Upload
+        const result = await startUpload(file, id);
+
+        if (!mountedRef.current) return;
+
+        // Apply result AFTER upload completes
+        setMedia((prev) =>
+          prev.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  uploading: false,
+                  mediaUrl: result.mediaUrl,
+                  cloudinaryId: result.cloudinaryId,
+                  mediaType: result.mediaType,
+                  type: result.mediaType,
+                }
+              : p
+          )
+        );
+        console.log("Media updated after camera upload:", result);
+        toast.success("Upload complete");
+      } catch (error) {
+        console.error("Camera upload error:", error);
+        if (mountedRef.current) {
+          setMedia((prev) =>
+            prev.map((p) =>
+              p.id === id ? { ...p, uploading: false, error: true } : p
+            )
+          );
+          toast.error("Upload failed");
+        }
+      } finally {
+        if (event.target) event.target.value = "";
+      }
+    }
+  };
+
+  // Navigation between media items
+  const showPrevious = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const showNext = () => {
+    if (currentIndex < media.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  // Apply filter to current media
+  const applyFilter = (filterId) => {
+    setActiveFilter(filterId);
+
+    // Find the class name associated with this filter ID
+    const filterClass = filters.find((f) => f.id === filterId)?.className || "";
+
+    // Update the filter on the current media item
+    setMedia((currentMedia) =>
+      currentMedia.map((item, index) =>
+        index === currentIndex
+          ? { ...item, filter: filterId, filterClass }
+          : item
+      )
+    );
+  };
+
+  // Remove media item
+  const removeMedia = (indexToRemove) => {
+    // Remove the item
+    setMedia((current) => {
+      const newMedia = current.filter((_, index) => index !== indexToRemove);
+
+      // Adjust current index if needed
+      if (currentIndex >= newMedia.length) {
+        setCurrentIndex(Math.max(0, newMedia.length - 1));
+      }
+
+      return newMedia;
+    });
+  };
+
+  const totalProgress = media.length
+    ? Math.round(
+        media.reduce((sum, item) => sum + (item.progress || 0), 0) /
+          media.length
+      )
+    : 0;
+
+  // Submit the post
+  const handleSubmit = async () => {
+    if (media.length === 0) {
+      toast.error("Please add at least one photo or video");
+      return;
+    }
+
+    if (!caption.trim()) {
+      toast.error("Please add a caption");
+      return;
+    }
+
+    // Check for any uploads still in progress
+    if (media.some((item) => item.uploading)) {
+      toast.error("Please wait for uploads to complete");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Prepare the media items for submission
+      const mediaItems = media
+        .filter((item) => !item.error && !item.isExisting)
+        .map((item) => ({
+          mediaUrl: item.mediaUrl,
+          cloudinaryId: item.cloudinaryId,
+          mediaType: item.type || item.mediaType,
+          filter: item.filter || "none", // Ensure filter is always set
+        }));
+
+      // Create the payload
+      const payload = {
+        caption,
+        content, // Add content field from state
+        tags: tags, // Send as string to let server handle splitting
+        media: mediaItems,
+      };
+
+      let response;
+
+      if (isEditing) {
+        // Add existing media IDs to keep
+        const existingMediaIds = media
+          .filter((item) => item.isExisting)
+          .map((item) => item.id)
+          .join(",");
+
+        if (existingMediaIds) {
+          payload.keepMedia = existingMediaIds;
+        }
+
+        // Update existing post
+        response = await axios.put(`/api/posts/${initialData._id}`, payload);
+        toast.success("Post updated successfully!");
+      } else {
+        // Create new post
+        response = await axios.post("/api/posts", payload);
+        toast.success("Post created successfully!");
+      }
+
+      navigate(`/post/${response.data.data._id}`);
+    } catch (error) {
+      console.error("Error creating/updating post:", error);
+      toast.error(
+        `Failed to ${isEditing ? "update" : "create"} post. Please try again.`
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Container>
+      <Header>
+        <h1>{isEditing ? "Edit Post" : "Create Post"}</h1>
+        <StepIndicator>
+          <Step active={step === 1} onClick={() => step !== 1 && setStep(1)}>
+            1. Add Media
+          </Step>
+          <StepConnector />
+          <Step
+            active={step === 2}
+            disabled={media.length === 0}
+            onClick={() => media.length > 0 && step !== 2 && setStep(2)}
+          >
+            2. Add Details
+          </Step>
+        </StepIndicator>
+      </Header>
+
+      {step === 1 ? (
+        <MediaSection>
+          {media.length === 0 ? (
+            <DropArea {...getRootProps()}>
+              <input {...getInputProps()} ref={inputFileRef} />
+              <UploadIcon>
+                <FaImage />
+                <FaVideo />
+              </UploadIcon>
+              <p>Drag photos or videos here, or click to browse</p>
+              <ButtonGroup>
+                <CameraButton
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (cameraInputRef.current) {
+                      cameraInputRef.current.accept = "image/*";
+                      cameraInputRef.current.capture = "environment";
+                      cameraInputRef.current.click();
+                    }
+                  }}
+                >
+                  <FaCamera />
+                  <span>Take Photo</span>
+                </CameraButton>
+                <VideoCameraButton
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (videoCameraInputRef.current) {
+                      videoCameraInputRef.current.accept = "video/*";
+                      videoCameraInputRef.current.capture = "environment";
+                      videoCameraInputRef.current.click();
+                    }
+                  }}
+                >
+                  <FaVideo />
+                  <span>Record Video</span>
+                </VideoCameraButton>
+                <GalleryButton
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const galleryInput = document.createElement("input");
+                    galleryInput.type = "file";
+                    galleryInput.accept = "image/*,video/*";
+                    galleryInput.multiple = true;
+                    galleryInput.style.display = "none";
+
+                    galleryInput.onchange = (event) => {
+                      if (event.target.files?.length) {
+                        onDrop(Array.from(event.target.files));
+                      }
+                    };
+
+                    document.body.appendChild(galleryInput);
+                    galleryInput.click();
+
+                    setTimeout(() => {
+                      document.body.removeChild(galleryInput);
+                    }, 1000);
+                  }}
+                >
+                  <FaImage />
+                  <span>Choose from Gallery</span>
+                </GalleryButton>
+              </ButtonGroup>
+              <input
+                type="file"
+                ref={cameraInputRef}
+                onChange={handleCameraCapture}
+                accept="image/*"
+                capture="environment"
+                style={{ display: "none" }}
+              />
+              <input
+                type="file"
+                ref={videoCameraInputRef}
+                onChange={handleCameraCapture}
+                accept="video/*"
+                capture="environment"
+                style={{ display: "none" }}
+              />
+            </DropArea>
+          ) : (
+            <MediaPreview>
+              {media.some((item) => item.uploading) && (
+                <TotalUploadContainer>
+                  <TotalUploadBar>
+                    <TotalUploadInner width={totalProgress} />
+                  </TotalUploadBar>
+                  <TotalUploadText>{totalProgress}% overall</TotalUploadText>
+                </TotalUploadContainer>
+              )}
+
+              <PreviewContainer>
+                {media[currentIndex].type === "video" ||
+                media[currentIndex].mediaType === "video" ? (
+                  <VideoPreview
+                    src={
+                      media[currentIndex].mediaUrl ||
+                      media[currentIndex].previewUrl
+                    }
+                    className={
+                      media[currentIndex].filterClass ||
+                      filters.find((f) => f.id === media[currentIndex].filter)
+                        ?.className ||
+                      ""
+                    }
+                    controls
+                    onError={(e) => {
+                      e.target.src = PLACEHOLDER_IMG;
+                    }}
+                  />
+                ) : (
+                  <ImagePreview
+                    src={
+                      media[currentIndex].mediaUrl ||
+                      media[currentIndex].previewUrl
+                    }
+                    className={
+                      media[currentIndex].filterClass ||
+                      filters.find((f) => f.id === media[currentIndex].filter)
+                        ?.className ||
+                      ""
+                    }
+                    alt="Preview"
+                    onError={(e) => {
+                      e.target.src = PLACEHOLDER_IMG;
+                    }}
+                  />
+                )}
+
+                {media[currentIndex].uploading && (
+                  <UploadOverlay>
+                    <UploadProgress>
+                      <UploadProgressInner
+                        width={media[currentIndex].progress}
+                      />
+                    </UploadProgress>
+                    <p>Uploading... {media[currentIndex].progress}%</p>
+                  </UploadOverlay>
+                )}
+
+                {media[currentIndex].error && (
+                  <ErrorOverlay>
+                    <p>Upload failed</p>
+                    <button onClick={() => removeMedia(currentIndex)}>
+                      Remove
+                    </button>
+                  </ErrorOverlay>
+                )}
+
+                <RemoveButton onClick={() => removeMedia(currentIndex)}>
+                  <FaTimes />
+                </RemoveButton>
+
+                {media.length > 1 && (
+                  <NavigationButtons>
+                    <NavButton
+                      onClick={showPrevious}
+                      disabled={currentIndex === 0}
+                    >
+                      <FaArrowLeft />
+                    </NavButton>
+                    <MediaCounter>
+                      {currentIndex + 1} / {media.length}
+                    </MediaCounter>
+                    <NavButton
+                      onClick={showNext}
+                      disabled={currentIndex === media.length - 1}
+                    >
+                      <FaArrowRight />
+                    </NavButton>
+                  </NavigationButtons>
+                )}
+              </PreviewContainer>
+
+              <FilterOptions>
+                <h3>Filters</h3>
+                <FiltersGrid>
+                  {filters.map((filter) => (
+                    <FilterItem
+                      key={filter.id}
+                      active={media[currentIndex].filter === filter.id}
+                      onClick={() => applyFilter(filter.id)}
+                    >
+                      <FilterPreview
+                        src={
+                          media[currentIndex].mediaUrl ||
+                          media[currentIndex].previewUrl
+                        }
+                        className={filter.className}
+                        alt={filter.name}
+                        onError={(e) => {
+                          e.target.src = PLACEHOLDER_IMG;
+                        }}
+                      />
+                      <span>{filter.name}</span>
+                    </FilterItem>
+                  ))}
+                </FiltersGrid>
+              </FilterOptions>
+
+              <AddMoreSection>
+                <AddMorePhotoButton
+                  as="div"
+                  onClick={() => {
+                    if (cameraInputRef.current) {
+                      cameraInputRef.current.accept = "image/*";
+                      cameraInputRef.current.capture = "environment";
+                      cameraInputRef.current.click();
+                    }
+                  }}
+                >
+                  <FaCamera /> Take Photo
+                </AddMorePhotoButton>
+                <AddMoreVideoButton
+                  as="div"
+                  onClick={() => {
+                    if (videoCameraInputRef.current) {
+                      videoCameraInputRef.current.accept = "video/*";
+                      videoCameraInputRef.current.capture = "environment";
+                      videoCameraInputRef.current.click();
+                    }
+                  }}
+                >
+                  <FaVideo /> Record Video
+                </AddMoreVideoButton>
+                <AddMoreButton
+                  as="div"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const galleryInput = document.createElement("input");
+                    galleryInput.type = "file";
+                    galleryInput.accept = "image/*,video/*";
+                    galleryInput.multiple = true;
+                    galleryInput.style.display = "none";
+
+                    galleryInput.onchange = (event) => {
+                      if (event.target.files?.length) {
+                        onDrop(Array.from(event.target.files));
+                      }
+                    };
+
+                    document.body.appendChild(galleryInput);
+                    galleryInput.click();
+
+                    setTimeout(() => {
+                      document.body.removeChild(galleryInput);
+                    }, 1000);
+                  }}
+                >
+                  <FaImage /> Add from Gallery
+                </AddMoreButton>
+              </AddMoreSection>
+            </MediaPreview>
+          )}
+
+          <ButtonRow>
+            <CancelButton onClick={() => navigate("/")}>Cancel</CancelButton>
+            {media.length > 0 && (
+              <NextButton
+                onClick={() => setStep(2)}
+                disabled={
+                  media.length === 0 ||
+                  media.some((item) => !item.mediaUrl || item.uploading)
+                }
+              >
+                Next <FaArrowRight />
+              </NextButton>
+            )}
+          </ButtonRow>
+        </MediaSection>
+      ) : (
+        <DetailsSection>
+          <FormGroup>
+            <Label htmlFor="caption-input">Caption</Label>
+            <Input
+              id="caption-input"
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              placeholder="Write a caption..."
+              required
+            />
+            <CharCount>{caption.length}/100</CharCount>
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="content-input">Content (optional)</Label>
+            <Textarea
+              id="content-input"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Add more details about your post..."
+              rows={4}
+            />
+            <CharCount>{content.length}/2000</CharCount>
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="tags-input">Tags (comma separated)</Label>
+            <Input
+              id="tags-input"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="travel, nature, food..."
+            />
+          </FormGroup>
+
+          <MediaPreview small>
+            <h3>Preview</h3>
+            <PreviewContainer>
+              {media[currentIndex].type === "video" ||
+              media[currentIndex].mediaType === "video" ? (
+                <VideoPreview
+                  src={
+                    media[currentIndex].mediaUrl ||
+                    media[currentIndex].previewUrl
+                  }
+                  className={
+                    media[currentIndex].filterClass ||
+                    filters.find((f) => f.id === media[currentIndex].filter)
+                      ?.className ||
+                    ""
+                  }
+                  controls
+                  onError={(e) => {
+                    e.target.src = PLACEHOLDER_IMG;
+                  }}
+                />
+              ) : (
+                <ImagePreview
+                  src={
+                    media[currentIndex].mediaUrl ||
+                    media[currentIndex].previewUrl
+                  }
+                  className={
+                    media[currentIndex].filterClass ||
+                    filters.find((f) => f.id === media[currentIndex].filter)
+                      ?.className ||
+                    ""
+                  }
+                  alt="Preview"
+                  onError={(e) => {
+                    e.target.src = PLACEHOLDER_IMG;
+                  }}
+                />
+              )}
+
+              {media.length > 1 && (
+                <NavigationButtons>
+                  <NavButton
+                    onClick={showPrevious}
+                    disabled={currentIndex === 0}
+                  >
+                    <FaArrowLeft />
+                  </NavButton>
+                  <MediaCounter>
+                    {currentIndex + 1} / {media.length}
+                  </MediaCounter>
+                  <NavButton
+                    onClick={showNext}
+                    disabled={currentIndex === media.length - 1}
+                  >
+                    <FaArrowRight />
+                  </NavButton>
+                </NavigationButtons>
+              )}
+            </PreviewContainer>
+
+            <PostPreviewContent>
+              <PostPreviewCaption>
+                {caption || "Your caption will appear here"}
+              </PostPreviewCaption>
+
+              {content && (
+                <PostPreviewContentText>
+                  {content || "Your additional content will appear here"}
+                </PostPreviewContentText>
+              )}
+
+              {tags && (
+                <PostPreviewTags>
+                  {tags
+                    .split(",")
+                    .map((tag) => tag.trim())
+                    .filter((tag) => tag)
+                    .map((tag) => (
+                      <PostPreviewTag key={tag}>#{tag}</PostPreviewTag>
+                    ))}
+                </PostPreviewTags>
+              )}
+            </PostPreviewContent>
+          </MediaPreview>
+
+          <ButtonRow>
+            <BackButton onClick={() => setStep(1)}>
+              <FaArrowLeft /> Back
+            </BackButton>
+            <PublishButton
+              onClick={handleSubmit}
+              disabled={
+                isSubmitting ||
+                !caption.trim() ||
+                media.length === 0 ||
+                media.some((item) => item.uploading)
+              }
+            >
+              {isSubmitting
+                ? isEditing
+                  ? "Updating..."
+                  : "Publishing..."
+                : isEditing
+                ? "Update"
+                : "Publish"}
+            </PublishButton>
+          </ButtonRow>
+        </DetailsSection>
+      )}
+    </Container>
+  );
+}
 
 export default PostCreator;
