@@ -1,24 +1,21 @@
-// Create or update client/src/utils/api.js
 import axios from "axios";
 
-// Create an axios instance with proper base URL handling
+// Create axios instance
 const api = axios.create({
-  // In development, baseURL can be empty to use the proxy in package.json
-  // In production, use the actual API URL
   baseURL:
     process.env.NODE_ENV === "production"
-      ? "https://sologram-api.onrender.com"
-      : "",
-  timeout: 30000, // 30 seconds timeout
+      ? "https://sologram-api.onrender.com/api"
+      : "/api", // assumes proxy setup in dev
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor: attach access token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -27,20 +24,47 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle common errors
+// Response interceptor: handle 401 + refresh flow
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Handle token expiration
-    if (error.response && error.response.status === 401) {
-      // Token expired, clear local storage and redirect to login
-      localStorage.removeItem("token");
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshResponse = await axios.post(
+          `${
+            process.env.NODE_ENV === "production"
+              ? "https://sologram-api.onrender.com/api"
+              : "/api"
+          }/auth/refresh-token`,
+          {},
+          { withCredentials: true }
+        );
+
+        const newAccessToken = refreshResponse.data.accessToken;
+        localStorage.setItem("accessToken", newAccessToken);
+
+        // Update original request with new token
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+        return api(originalRequest); // Retry original request
+      } catch (refreshError) {
+        console.error("Token refresh failed:", refreshError);
+
+        localStorage.removeItem("accessToken");
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
       }
     }
 
-    // Handle server errors
     if (!error.response) {
       console.error("Network error - please check your connection");
     }
