@@ -59,6 +59,41 @@ const UserSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  refreshToken: {
+    type: String,
+    select: false,
+  },
+
+  refreshTokenExpiresAt: {
+    type: Date,
+    select: false,
+  },
+
+  passwordChangedAt: {
+    type: Date,
+    select: false,
+  },
+
+  passwordResetToken: {
+    type: String,
+    select: false,
+  },
+
+  passwordResetExpires: {
+    type: Date,
+    select: false,
+  },
+
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
+
+  lastLogin: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 // Hash password before saving
@@ -77,6 +112,31 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
 // Method to get display name
 UserSchema.methods.getDisplayName = function () {
   return this.firstName || this.username;
+};
+
+UserSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
+  if (this.passwordChangedAt) {
+    const changedTimestamp = parseInt(
+      this.passwordChangedAt.getTime() / 1000,
+      10
+    );
+    return JWTTimestamp < changedTimestamp;
+  }
+  return false;
+};
+
+// Add instance method to generate password reset token
+UserSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+
+  this.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  return resetToken;
 };
 
 module.exports = mongoose.model("User", UserSchema);

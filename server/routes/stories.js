@@ -11,6 +11,7 @@ const {
   deleteStory,
 } = require("../controllers/stories");
 const { protect, authorize } = require("../middleware/auth");
+const { storyCreationLimiter } = require("../middleware/rateLimiter");
 
 router.get("/", getStories);
 router.get("/:id", getStory);
@@ -18,6 +19,7 @@ router.post(
   "/",
   protect,
   authorize(["admin", "creator"]),
+  storyCreationLimiter,
   uploadMultiple.array("media", 20),
   createStory
 );

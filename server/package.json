@@ -18,12 +18,13 @@
     "agenda": "^5.0.0",
     "bcrypt": "^5.1.1",
     "cloudinary": "^1.41.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^7.5.0",
-    "helmet": "^8.0.0",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.12.1",
     "morgan": "^1.10.0",
@@ -32,6 +33,7 @@
     "node-cron": "^3.0.3",
     "recharts": "^2.15.2",
     "twilio": "^5.5.0",
+    "uuid": "^11.1.0",
     "winston": "^3.17.0"
   },
   "devDependencies": {

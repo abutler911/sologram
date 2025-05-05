@@ -12,6 +12,7 @@ const {
   checkUserLikesBatch,
 } = require("../controllers/posts");
 const { protect } = require("../middleware/auth");
+const { postCreationLimiter } = require("../middleware/rateLimiter");
 
 // Public routes
 router.get("/", getPosts);
@@ -19,7 +20,7 @@ router.get("/search", searchPosts);
 router.get("/:id", getPost);
 
 // Protected routes (require authentication)
-router.post("/", protect, createPost);
+router.post("/", protect, postCreationLimiter, createPost);
 router.put("/:id", protect, updatePost);
 router.delete("/:id", protect, deletePost);
 router.post("/:id/like", protect, likePost);

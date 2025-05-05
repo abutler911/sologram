@@ -1,4 +1,4 @@
-// routes/auth.js
+// routes/auth.js - Update with new routes
 const express = require("express");
 const router = express.Router();
 const { upload } = require("../config/cloudinary");
@@ -9,14 +9,21 @@ const {
   updateProfile,
   updateBio,
   promoteToCreator,
+  refreshToken, // New
+  logout, // New
 } = require("../controllers/auth");
 
 const { protect, authorize } = require("../middleware/auth");
+const { authLimiter } = require("../middleware/rateLimiter"); // You'll need to create this
 
-router.post("/login", login);
+// Public routes
+router.post("/login", authLimiter, login);
 router.post("/register", upload.single("profileImage"), register);
+router.post("/refresh-token", refreshToken); // New route
 
+// Protected routes
 router.get("/me", protect, getMe);
+router.post("/logout", protect, logout); // New route
 router.put(
   "/update-profile",
   protect,

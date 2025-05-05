@@ -10,8 +10,12 @@ const {
   setupAgenda,
   gracefulShutdown: agendaShutdown,
 } = require("./services/storyArchiver");
-
+const securityHeaders = require("./middleware/securityHeaders");
 require("dotenv").config();
+const errorHandler = require("./middleware/errorHandler");
+const requestIdMiddleware = require("./middleware/requestId");
+const AppError = require("./utils/AppError");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -69,6 +73,9 @@ const corsOptions = {
 };
 
 // Middleware
+securityHeaders(app);
+app.use(requestIdMiddleware);
+app.use(cookieParser());
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "300mb" }));
 app.use(express.urlencoded({ extended: true, limit: "300mb" }));
@@ -120,6 +127,11 @@ app.get("/", (req, res) => {
   res.send(`🚀 SoloGram backend is live on Port: ${PORT}!`);
 });
 
+app.all("*", (req, res, next) => {
+  next(new AppError(`Cannot find ${req.originalUrl} on this server!`, 404));
+});
+
+app.use(errorHandler);
 // Global error handler
 const globalErrorHandler = (err, req, res, next) => {
   logger.error({
