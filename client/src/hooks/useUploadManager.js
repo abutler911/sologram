@@ -1,9 +1,20 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
 export const useUploadManager = (setMedia) => {
   const mountedRef = useRef(true);
+
+  // Set mountedRef to true on initialization
+  useEffect(() => {
+    mountedRef.current = true;
+
+    // Only set mountedRef to false when component is unmounting
+    return () => {
+      console.log("Component unmounting - cleaning up uploadManager");
+      mountedRef.current = false;
+    };
+  }, []); // Empty dependency array means this only runs on mount/unmount
 
   const uploadFile = async (file, id, onProgress) => {
     console.log(
@@ -47,15 +58,11 @@ export const useUploadManager = (setMedia) => {
     } catch (error) {
       // Detailed error logging
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         console.error("Upload error - server response:", error.response.data);
         console.error("Upload error - status:", error.response.status);
       } else if (error.request) {
-        // The request was made but no response was received
         console.error("Upload error - no response received:", error.request);
       } else {
-        // Something happened in setting up the request that triggered an Error
         console.error("Upload error:", error.message);
       }
       throw new Error(
@@ -68,7 +75,11 @@ export const useUploadManager = (setMedia) => {
     console.log(`Starting upload process for ${file.name}`);
 
     const onProgress = (percent) => {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) {
+        console.log("Component no longer mounted, skipping progress update");
+        return;
+      }
+
       setMedia((prev) =>
         prev.map((item) =>
           item.id === id ? { ...item, progress: percent } : item
@@ -81,13 +92,21 @@ export const useUploadManager = (setMedia) => {
       console.log("Upload result:", result);
 
       if (!mountedRef.current) {
-        console.log("Component unmounted, not updating state");
+        console.log("Component no longer mounted, skipping state update");
         return result;
       }
 
       console.log("Updating media state with result");
-      setMedia((prev) =>
-        prev.map((item) =>
+      setMedia((prev) => {
+        // Verify the item still exists in the array
+        const itemExists = prev.some((item) => item.id === id);
+
+        if (!itemExists) {
+          console.warn(`Media item with id ${id} no longer exists in state`);
+          return prev;
+        }
+
+        return prev.map((item) =>
           item.id === id
             ? {
                 ...item,
@@ -98,8 +117,8 @@ export const useUploadManager = (setMedia) => {
                 type: result.mediaType,
               }
             : item
-        )
-      );
+        );
+      });
 
       toast.success("Upload complete");
       return result;
@@ -108,11 +127,19 @@ export const useUploadManager = (setMedia) => {
 
       if (mountedRef.current) {
         console.log("Marking upload as failed in state");
-        setMedia((prev) =>
-          prev.map((item) =>
+        setMedia((prev) => {
+          // Check if item still exists
+          const itemExists = prev.some((item) => item.id === id);
+
+          if (!itemExists) {
+            console.warn(`Media item with id ${id} no longer exists in state`);
+            return prev;
+          }
+
+          return prev.map((item) =>
             item.id === id ? { ...item, uploading: false, error: true } : item
-          )
-        );
+          );
+        });
         toast.error(`Upload failed: ${error.message || "Unknown error"}`);
       }
 
