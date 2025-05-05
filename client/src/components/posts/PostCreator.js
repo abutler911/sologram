@@ -832,9 +832,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   }, [media]);
 
   const onDrop = useCallback(
-    async (acceptedFiles) => {
-      console.log(`Dropped ${acceptedFiles.length} files`);
-
+    (acceptedFiles) => {
       const uniqueFiles = acceptedFiles.filter((file) => {
         const isDuplicate = media.some(
           (m) =>
@@ -850,14 +848,9 @@ function PostCreator({ initialData = null, isEditing = false }) {
         return true;
       });
 
-      if (uniqueFiles.length === 0) {
-        console.log("No unique files to upload");
-        return;
-      }
+      if (uniqueFiles.length === 0) return;
 
-      console.log(`Processing ${uniqueFiles.length} unique files`);
-
-      // Create new media items
+      // Add all files to the media array first
       const newItems = uniqueFiles.map((file) => {
         const id = `media_${Date.now()}_${Math.random()
           .toString(36)
@@ -878,23 +871,18 @@ function PostCreator({ initialData = null, isEditing = false }) {
         };
       });
 
-      // Update state first
       setMedia((prev) => [...prev, ...newItems]);
 
-      // A slight delay can help ensure the component is fully updated
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      // Process uploads one at a time to avoid overwhelming the server
-      for (const item of newItems) {
-        try {
-          console.log(`Starting upload for ${item.id}: ${item.file.name}`);
-          await startUpload(item.file, item.id);
-          console.log(`Upload complete for ${item.id}`);
-        } catch (error) {
-          console.error(`Upload failed for ${item.id}:`, error);
-          // Error handling is done in startUpload
-        }
-      }
+      // Then start uploads for each item
+      newItems.forEach((item) => {
+        startUpload(item.file, item.id)
+          .then((result) => {
+            console.log(`Upload complete for ${item.id}:`, result);
+          })
+          .catch((error) => {
+            console.error(`Upload failed for ${item.id}:`, error);
+          });
+      });
     },
     [media, startUpload]
   );
@@ -913,13 +901,10 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const handleCameraCapture = async (event) => {
     const file = event.target.files?.[0];
     if (!file) {
-      console.log("No file selected");
       return;
     }
 
-    console.log(
-      `Camera/video capture - File: ${file.name}, Size: ${file.size}, Type: ${file.type}`
-    );
+    console.log(`Camera capture - File: ${file.name}, Type: ${file.type}`);
 
     const isDuplicate = media.some(
       (m) =>
@@ -937,51 +922,30 @@ function PostCreator({ initialData = null, isEditing = false }) {
       .toString(36)
       .substring(2, 8)}`;
     const isVideo = file.type.startsWith("video/");
+    const objectUrl = URL.createObjectURL(file);
 
+    // First add the file to the media list
+    setMedia((current) => [
+      ...current,
+      {
+        id,
+        file,
+        previewUrl: objectUrl,
+        type: isVideo ? "video" : "image",
+        filter: "none",
+        filterClass: "",
+        uploading: true,
+        progress: 0,
+        error: false,
+      },
+    ]);
+
+    // Then start the upload
     try {
-      const objectUrl = URL.createObjectURL(file);
-      console.log(`Created object URL: ${objectUrl}`);
-
-      // Add file to media list
-      setMedia((current) => [
-        ...current,
-        {
-          id,
-          file,
-          previewUrl: objectUrl,
-          type: isVideo ? "video" : "image",
-          filter: "none",
-          filterClass: "",
-          uploading: true,
-          progress: 0,
-          error: false,
-        },
-      ]);
-
-      console.log(`Added media item: ${id}, starting upload`);
-
-      // A slight delay can help ensure the component is fully updated before upload starts
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      try {
-        // Upload - we await this separately to handle errors better
-        const result = await startUpload(file, id);
-        console.log(`Upload successful for ${id}:`, result);
-
-        // If we reached this point, the upload was successful, but we don't need to update state
-        // because startUpload already takes care of that
-        toast.success("Upload complete");
-      } catch (error) {
-        console.error(`Upload failed for ${id}:`, error);
-        toast.error("Upload failed: " + (error.message || "Unknown error"));
-
-        // The error state should already be handled by startUpload, so no need to update state here
-      }
+      const result = await startUpload(file, id);
+      console.log(`Upload completed successfully:`, result);
     } catch (error) {
-      console.error("Camera capture error:", error);
-      toast.error(
-        "Failed to process capture: " + (error.message || "Unknown error")
-      );
+      console.error("Upload failed:", error);
     } finally {
       if (event.target) {
         event.target.value = "";
