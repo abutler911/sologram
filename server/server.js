@@ -1,3 +1,4 @@
+// server.js
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -11,25 +12,63 @@ const {
   gracefulShutdown: agendaShutdown,
 } = require("./services/storyArchiver");
 const securityHeaders = require("./middleware/securityHeaders");
-require("dotenv").config();
 const errorHandler = require("./middleware/errorHandler");
 const requestIdMiddleware = require("./middleware/requestId");
 const AppError = require("./utils/AppError");
 const cookieParser = require("cookie-parser");
 
+// Load environment variables
+require("dotenv").config();
+
+// Check critical environment variables
+const checkEnvVariables = () => {
+  const requiredVars = ["JWT_SECRET", "JWT_REFRESH_SECRET", "MONGODB_URI"];
+
+  const missing = requiredVars.filter((varName) => !process.env[varName]);
+
+  if (missing.length > 0) {
+    console.warn(
+      `WARNING: Missing environment variables: ${missing.join(", ")}`
+    );
+
+    if (process.env.NODE_ENV === "production") {
+      console.error(
+        "Missing required environment variables in production. This is a security risk!"
+      );
+    } else {
+      console.warn(
+        "Using fallback values for development only. DO NOT use in production!"
+      );
+
+      // Set temporary development values (only for non-production)
+      if (!process.env.JWT_SECRET) {
+        process.env.JWT_SECRET = "temp_dev_secret_" + Date.now();
+      }
+
+      if (!process.env.JWT_REFRESH_SECRET) {
+        process.env.JWT_REFRESH_SECRET = "temp_refresh_secret_" + Date.now();
+      }
+    }
+  }
+};
+
+// Run environment variable check
+checkEnvVariables();
+
 const app = express();
 const PORT = process.env.PORT || 5000;
-const Post = require("./models/Post");
 
 // Global error handling for unhandled exceptions
 process.on("uncaughtException", (err) => {
   console.error("UNCAUGHT EXCEPTION! 💥", err);
   setTimeout(() => process.exit(1), 1000);
 });
+
 process.on("unhandledRejection", (reason) => {
   console.error("UNHANDLED REJECTION! 💥", reason);
   setTimeout(() => process.exit(1), 1000);
 });
+
 process.on("SIGTERM", () => {
   console.log("👋 SIGTERM RECEIVED. Shutting down gracefully");
   setTimeout(() => process.exit(0), 2000);
@@ -72,10 +111,20 @@ const corsOptions = {
   maxAge: 86400,
 };
 
-// Middleware
+// Middleware setup
+// Must be set before rate limiter middleware
+app.set("trust proxy", 1);
+
+// Apply security headers early in middleware chain
 securityHeaders(app);
+
+// Add request ID for tracing
 app.use(requestIdMiddleware);
+
+// Parse cookies for auth
 app.use(cookieParser());
+
+// Standard middleware
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "300mb" }));
 app.use(express.urlencoded({ extended: true, limit: "300mb" }));
@@ -94,6 +143,7 @@ const thoughtsRoutes = require("./routes/thoughts");
 const cloudinaryRoutes = require("./routes/cloudinaryRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 
+// Apply routes
 app.use("/api/posts", postRoutes);
 app.use("/api/stories", storyRoutes);
 app.use("/api/auth", authRoutes);
@@ -127,29 +177,15 @@ app.get("/", (req, res) => {
   res.send(`🚀 SoloGram backend is live on Port: ${PORT}!`);
 });
 
+// Handle undefined routes
 app.all("*", (req, res, next) => {
   next(new AppError(`Cannot find ${req.originalUrl} on this server!`, 404));
 });
 
+// Apply error handling middleware - only once
 app.use(errorHandler);
-// Global error handler
-const globalErrorHandler = (err, req, res, next) => {
-  logger.error({
-    message: "Server error",
-    url: req.originalUrl,
-    method: req.method,
-    error: err.message,
-    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
-  });
 
-  res.status(500).json({
-    success: false,
-    message: "Server error",
-    error: process.env.NODE_ENV === "development" ? err.message : undefined,
-  });
-};
-app.use(globalErrorHandler);
-
+// Static files for production
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/build")));
 
@@ -166,18 +202,21 @@ async function startServer() {
       `Starting server in ${process.env.NODE_ENV || "development"} mode`
     );
 
+    // Check environment variables
     const requiredEnv = ["MONGODB_URI", "JWT_SECRET"];
     const missing = requiredEnv.filter((key) => !process.env[key]);
     if (missing.length) {
       logger.warn(`Missing environment variables: ${missing.join(", ")}`);
     }
 
+    // Connect to database
     const connectDB = require("./config/db");
     const dbConnected = await connectDB();
     if (!dbConnected) {
       logger.warn("MongoDB failed to connect. Server will still start.");
     }
 
+    // Setup background jobs
     try {
       await setupAgenda();
       logger.info("Agenda initialized");
@@ -185,6 +224,7 @@ async function startServer() {
       logger.error("Agenda failed to initialize:", err.message);
     }
 
+    // Start server
     const server = app.listen(PORT, () => {
       logger.info(`Server listening on port ${PORT}`);
     });
@@ -193,17 +233,27 @@ async function startServer() {
       logger.error("Server error", err.message);
     });
 
+    // Handle graceful shutdown
     process.on("SIGINT", gracefulShutdown);
     process.on("SIGTERM", gracefulShutdown);
 
     async function gracefulShutdown() {
       logger.info("Graceful shutdown initiated");
+
+      // Add timeout to force exit if shutdown hangs
+      const shutdownTimeout = setTimeout(() => {
+        logger.error("Shutdown timed out, forcing exit");
+        process.exit(1);
+      }, 10000); // 10 second timeout
+
       try {
         await agendaShutdown();
         await mongoose.connection.close();
+        clearTimeout(shutdownTimeout);
         logger.info("Shutdown complete");
         process.exit(0);
       } catch (err) {
+        clearTimeout(shutdownTimeout);
         logger.error("Shutdown error", err.message);
         process.exit(1);
       }
@@ -214,4 +264,5 @@ async function startServer() {
   }
 }
 
+// Start the server
 startServer();

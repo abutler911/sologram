@@ -72,63 +72,81 @@ exports.register = async (req, res, next) => {
   }
 };
 
-exports.login = async (req, res, next) => {
+exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if email and password exist
+    // Validate input
     if (!email || !password) {
-      return next(new AppError("Please provide email and password", 400));
+      return res.status(400).json({
+        success: false,
+        message: "Please provide email and password",
+      });
     }
+
+    // Log environment variables status (for debugging)
+    console.log(`JWT_SECRET defined: ${!!process.env.JWT_SECRET}`);
+    console.log(
+      `JWT_REFRESH_SECRET defined: ${!!process.env.JWT_REFRESH_SECRET}`
+    );
 
     // Find user
     const user = await User.findOne({ email }).select("+password");
 
     // Check if user exists and password is correct
     if (!user || !(await user.matchPassword(password))) {
-      return next(new AppError("Invalid credentials", 401));
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
     }
 
-    // Generate tokens
-    const accessToken = generateAccessToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
-    const refreshTokenExpiresAt = getRefreshTokenExpiryDate();
+    // Generate tokens - with try/catch for better error handling
+    let accessToken, refreshToken;
+    try {
+      accessToken = jwt.sign(
+        { id: user._id },
+        process.env.JWT_SECRET || "temp_dev_secret",
+        { expiresIn: "15m" }
+      );
 
-    // Save refresh token to user
-    user.refreshToken = refreshToken;
-    user.refreshTokenExpiresAt = refreshTokenExpiresAt;
-    user.lastLogin = Date.now();
-    await user.save({ validateBeforeSave: false });
+      refreshToken = jwt.sign(
+        { id: user._id },
+        process.env.JWT_REFRESH_SECRET || "temp_refresh_secret",
+        { expiresIn: "7d" }
+      );
+    } catch (err) {
+      console.error("Token generation error:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Error generating authentication tokens",
+      });
+    }
 
-    // Remove password from output
+    // Response object
     user.password = undefined;
-    user.refreshToken = undefined;
-    user.refreshTokenExpiresAt = undefined;
-
-    // Set cookie for refresh token
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      expires: refreshTokenExpiresAt,
-    });
 
     res.status(200).json({
       success: true,
-      accessToken,
+      token: accessToken,
+      refreshToken,
       user: {
         _id: user._id,
-        username: user.username,
-        email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+        bio: user.bio,
         profileImage: user.profileImage,
         role: user.role,
-        bio: user.bio,
       },
     });
   } catch (err) {
-    next(err);
+    console.error("Login error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
   }
 };
 

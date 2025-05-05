@@ -1,4 +1,3 @@
-// middleware/auth.js
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const AppError = require("../utils/AppError");
@@ -16,39 +15,55 @@ exports.protect = async (req, res, next) => {
     }
 
     if (!token) {
-      return next(new AppError("Not authorized to access this resource", 401));
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized to access this resource",
+      });
     }
 
     // Verify token
     let decoded;
     try {
+      if (!process.env.JWT_SECRET) {
+        throw new Error("JWT_SECRET environment variable is not set");
+      }
+
       decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
+      console.error("JWT verification error:", err.message);
+
       if (err.name === "TokenExpiredError") {
-        return next(new AppError("Token expired. Please log in again.", 401));
+        return res.status(401).json({
+          success: false,
+          message: "Token expired. Please log in again.",
+        });
       }
-      return next(new AppError("Invalid token. Please log in again.", 401));
+
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token. Please log in again.",
+      });
     }
 
     // Check if user still exists
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return next(new AppError("User no longer exists", 401));
-    }
-
-    // Check if user changed password after token was issued
-    if (user.changedPasswordAfter && user.changedPasswordAfter(decoded.iat)) {
-      return next(
-        new AppError("Password recently changed. Please log in again.", 401)
-      );
+      return res.status(401).json({
+        success: false,
+        message: "User no longer exists",
+      });
     }
 
     // Add user to request
     req.user = user;
     next();
   } catch (err) {
-    next(err);
+    console.error("Auth middleware error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Authentication error",
+    });
   }
 };
 
