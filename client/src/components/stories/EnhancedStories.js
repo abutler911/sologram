@@ -490,14 +490,52 @@ const EnhancedStories = ({ isPWA = false }) => {
   if (stories.length === 0) {
     return (
       <StoriesContainer isPWA={localIsPWA || isPWA}>
-        <StoriesHeader>
-          <h3>Stories</h3>
-          {isAuthenticated && (
-            <CreateStoryButton onClick={handleCreateStory}>
-              <FaPlus /> New Story
-            </CreateStoryButton>
-          )}
-        </StoriesHeader>
+        <StoriesHeaderContainer>
+          <HeaderContentWrapper>
+            <TitleGroup>
+              <IconWrapper>
+                <FaStar className="icon-spark" />
+                <FaCameraRetro className="icon-main" />
+              </IconWrapper>
+              <TitleWrapper>
+                <h3>Moment Capsules</h3>
+                <Subtitle animate={headerAnimated}>
+                  Capture today&apos;s magic
+                </Subtitle>
+              </TitleWrapper>
+            </TitleGroup>
+
+            <HeaderButtons>
+              {isAdmin && (
+                <StoryArchiveLink
+                  to="/story-archive"
+                  title="View archived stories"
+                >
+                  <FaArchive />
+                  <span>Archive</span>
+                </StoryArchiveLink>
+              )}
+              {isAuthenticated && (
+                <ButtonGroup>
+                  <ActiveStoriesIndicator>
+                    <FaFire />
+                    <span className="count">{stories.length}</span>
+                    <span className="text">Active</span>
+                  </ActiveStoriesIndicator>
+
+                  <CreateStoryButton onClick={handleCreateStory}>
+                    <ButtonContent>
+                      <FaPlus className="icon" />
+                      <span>New Story</span>
+                    </ButtonContent>
+                    <ButtonGlow />
+                  </CreateStoryButton>
+                </ButtonGroup>
+              )}
+            </HeaderButtons>
+          </HeaderContentWrapper>
+        </StoriesHeaderContainer>
+
         <NoStoriesMessage>
           No stories available. Create your first story!
         </NoStoriesMessage>
@@ -508,25 +546,51 @@ const EnhancedStories = ({ isPWA = false }) => {
   return (
     <>
       <StoriesContainer isPWA={localIsPWA || isPWA}>
-        <StoriesHeader>
-          <h3>Stories</h3>
-          <HeaderButtons>
-            {isAdmin && (
-              <StoryArchiveLink
-                to="/story-archive"
-                title="View archived stories"
-              >
-                <FaArchive />
-                <span>Archive</span>
-              </StoryArchiveLink>
-            )}
-            {isAuthenticated && (
-              <CreateStoryButton onClick={handleCreateStory}>
-                <FaPlus /> New Story
-              </CreateStoryButton>
-            )}
-          </HeaderButtons>
-        </StoriesHeader>
+        <StoriesHeaderContainer>
+          <HeaderContentWrapper>
+            <TitleGroup>
+              <IconWrapper>
+                <FaStar className="icon-spark" />
+                <FaCameraRetro className="icon-main" />
+              </IconWrapper>
+              <TitleWrapper>
+                <h3>Moment Capsules</h3>
+                <Subtitle animate={headerAnimated}>
+                  Capture today&apos;s magic
+                </Subtitle>
+              </TitleWrapper>
+            </TitleGroup>
+
+            <HeaderButtons>
+              {isAdmin && (
+                <StoryArchiveLink
+                  to="/story-archive"
+                  title="View archived stories"
+                >
+                  <FaArchive />
+                  <span>Archive</span>
+                </StoryArchiveLink>
+              )}
+              {isAuthenticated && (
+                <ButtonGroup>
+                  <ActiveStoriesIndicator>
+                    <FaFire />
+                    <span className="count">{stories.length}</span>
+                    <span className="text">Active</span>
+                  </ActiveStoriesIndicator>
+
+                  <CreateStoryButton onClick={handleCreateStory}>
+                    <ButtonContent>
+                      <FaPlus className="icon" />
+                      <span>New Story</span>
+                    </ButtonContent>
+                    <ButtonGlow />
+                  </CreateStoryButton>
+                </ButtonGroup>
+              )}
+            </HeaderButtons>
+          </HeaderContentWrapper>
+        </StoriesHeaderContainer>
 
         <ScrollableContainer>
           {canScrollLeft && (
