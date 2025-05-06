@@ -404,7 +404,7 @@ const EnhancedStories = ({ isPWA = false }) => {
   };
 
   const handleCreateStory = () => {
-    navigate("/stories/create");
+    navigate("/create-story");
   };
 
   // Render loading state
