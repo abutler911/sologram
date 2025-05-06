@@ -788,11 +788,11 @@ const StoriesWrapper = styled.div`
   gap: 1rem;
   overflow-x: auto;
   scroll-behavior: smooth;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  padding: 0.25rem 0.25rem;
-  position: relative; // Add position relative
-  z-index: 1; // Ensure proper stacking
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 1rem;
+  position: relative;
+  z-index: 1;
 
   &::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
