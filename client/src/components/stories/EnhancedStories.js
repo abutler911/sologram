@@ -15,6 +15,9 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaPlus,
+  FaCameraRetro,
+  FaSparkles,
+  FaHourglassHalf,
 } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -39,6 +42,7 @@ const EnhancedStories = ({ isPWA = false }) => {
   const [localIsPWA, setLocalIsPWA] = useState(
     window.matchMedia("(display-mode: standalone)").matches
   );
+  const [headerAnimated, setHeaderAnimated] = useState(false);
   // References and hooks
   const storiesRef = useRef(null);
   const { user, isAuthenticated } = useContext(AuthContext);
@@ -54,6 +58,10 @@ const EnhancedStories = ({ isPWA = false }) => {
     const handleChange = (e) => setLocalIsPWA(e.matches);
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  useEffect(() => {
+    setHeaderAnimated(true);
   }, []);
 
   // Define nextStoryItem as useCallback
@@ -402,14 +410,61 @@ const EnhancedStories = ({ isPWA = false }) => {
   if (loading) {
     return (
       <StoriesContainer isPWA={localIsPWA || isPWA}>
-        <StoriesHeader>
-          <h3>Stories</h3>
-          {isAuthenticated && (
-            <CreateStoryButton onClick={handleCreateStory}>
-              <FaPlus /> New Story
-            </CreateStoryButton>
-          )}
-        </StoriesHeader>
+        <StoriesHeaderContainer>
+          <HeaderContentWrapper>
+            <TitleGroup>
+              <IconWrapper>
+                <FaSparkles className="icon-spark" />
+                <FaCameraRetro className="icon-main" />
+              </IconWrapper>
+              <TitleWrapper>
+                <h3>Moment Capsules</h3>
+                <Subtitle animate={headerAnimated}>
+                  Capture today's magic
+                </Subtitle>
+              </TitleWrapper>
+            </TitleGroup>
+
+            <HeaderButtons>
+              {isAdmin && (
+                <StoryArchiveLink
+                  to="/story-archive"
+                  title="View archived stories"
+                >
+                  <FaArchive />
+                  <span>Archive</span>
+                </StoryArchiveLink>
+              )}
+              {isAuthenticated && (
+                <ButtonGroup>
+                  <ActiveStoriesIndicator>
+                    <FaFire />
+                    <span className="count">{stories.length}</span>
+                    <span className="text">Active</span>
+                  </ActiveStoriesIndicator>
+
+                  <CreateStoryButton onClick={handleCreateStory}>
+                    <ButtonContent>
+                      <FaPlus className="icon" />
+                      <span>New Story</span>
+                    </ButtonContent>
+                    <ButtonGlow />
+                  </CreateStoryButton>
+                </ButtonGroup>
+              )}
+            </HeaderButtons>
+          </HeaderContentWrapper>
+
+          <ProgressIndicator>
+            <Timeframe>
+              <FaHourglassHalf />
+              <span>Stories refresh in 24h</span>
+            </Timeframe>
+            <ProgressBar>
+              <Progress width="33%" />
+            </ProgressBar>
+          </ProgressIndicator>
+        </StoriesHeaderContainer>
         <StoriesWrapper>
           {Array(5)
             .fill(0)
@@ -638,13 +693,13 @@ const EnhancedStories = ({ isPWA = false }) => {
 // Animations
 const pulse = keyframes`
   0% {
-    box-shadow: 0 0 0 0 rgba(101, 142, 169, 0.7);
+    transform: scale(1);
   }
-  70% {
-    box-shadow: 0 0 0 10px rgba(101, 142, 169, 0);
+  50% {
+    transform: scale(1.05);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(101, 142, 169, 0);
+    transform: scale(1);
   }
 `;
 
@@ -661,10 +716,25 @@ const fadeIn = keyframes`
 
 const shimmer = keyframes`
   0% {
-    background-position: -200px 0;
+    background-position: -200% 0;
   }
   100% {
-    background-position: 200px 0;
+    background-position: 200% 0;
+  }
+`;
+
+const glowPulse = keyframes`
+  0% {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0.5;
+    transform: scale(0.95);
   }
 `;
 
@@ -721,6 +791,8 @@ const HeaderButtons = styled.div`
 
   @media (max-width: 480px) {
     gap: 0.5rem;
+    width: 100%;
+    justify-content: flex-end;
   }
 `;
 
@@ -732,6 +804,10 @@ const StoryArchiveLink = styled(Link)`
   color: ${COLORS.textSecondary};
   font-size: 0.8125rem;
   transition: color 0.2s;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 
   svg {
     font-size: 0.875rem;
@@ -739,10 +815,12 @@ const StoryArchiveLink = styled(Link)`
 
   &:hover {
     color: ${COLORS.primaryBlueGray};
+    background: rgba(255, 255, 255, 0.12);
   }
 
   @media (max-width: 480px) {
     font-size: 0.75rem;
+    padding: 0.4rem 0.5rem;
 
     svg {
       font-size: 0.8125rem;
@@ -755,21 +833,32 @@ const StoryArchiveLink = styled(Link)`
 `;
 
 const CreateStoryButton = styled.button`
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background-color: ${COLORS.primarySalmon}22;
-  color: ${COLORS.primarySalmon};
+  padding: 0.6rem 1.25rem;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
+  );
   border: none;
-  border-radius: 4px;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
+  border-radius: 6px;
+  color: white;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.3s, box-shadow 0.3s;
+  box-shadow: 0 4px 12px ${COLORS.primarySalmon}40;
 
   &:hover {
-    background-color: ${COLORS.primarySalmon}33;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px ${COLORS.primarySalmon}60;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
   }
 
   @media (max-width: 480px) {
@@ -1098,28 +1187,10 @@ const ProgressBarContainer = styled.div`
 `;
 
 const ProgressBar = styled.div`
-  height: 2px;
-  flex: 1;
-  background-color: rgba(255, 255, 255, 0.3);
-  position: relative;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
   overflow: hidden;
-  border-radius: 1px;
-
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: ${(props) =>
-      props.complete
-        ? "100%"
-        : props.active
-        ? `${props.progress * 100}%`
-        : "0"};
-    background-color: ${COLORS.primarySalmon};
-    transition: width 0.2s linear;
-  }
 `;
 
 const StoryHeader = styled.div`
@@ -1384,4 +1455,279 @@ const CancelButton = styled.button`
   }
 `;
 
+const StoriesHeaderContainer = styled.div`
+  background: linear-gradient(
+    135deg,
+    ${COLORS.cardBackground} 0%,
+    ${COLORS.elevatedBackground} 100%
+  );
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  animation: ${fadeIn} 0.6s ease-out forwards;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      ${COLORS.primarySalmon},
+      ${COLORS.primaryMint},
+      ${COLORS.primarySalmon}
+    );
+    background-size: 200% 100%;
+    animation: ${shimmer} 3s infinite linear;
+  }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: ${(props) => (props.isPWA ? "0" : "8px")};
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+`;
+
+const HeaderContentWrapper = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+`;
+
+const TitleGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+`;
+
+const IconWrapper = styled.div`
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon}88,
+    ${COLORS.primaryMint}88
+  );
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+  .icon-main {
+    font-size: 1.4rem;
+    color: white;
+    z-index: 2;
+  }
+
+  .icon-spark {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    font-size: 0.9rem;
+    color: ${COLORS.primarySalmon};
+    background: ${COLORS.cardBackground};
+    border-radius: 50%;
+    padding: 3px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    animation: ${pulse} 2s infinite ease-in-out;
+  }
+
+  @media (max-width: 768px) {
+    width: 36px;
+    height: 36px;
+
+    .icon-main {
+      font-size: 1.2rem;
+    }
+
+    .icon-spark {
+      font-size: 0.8rem;
+    }
+  }
+`;
+
+const TitleWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+
+  h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: ${COLORS.textPrimary};
+    letter-spacing: 0.5px;
+    position: relative;
+    display: inline-block;
+    font-family: "Mystery Quest", sans-serif;
+    color: ${COLORS.primaryBlueGray};
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 40px;
+      height: 2px;
+      background: ${COLORS.primarySalmon};
+      border-radius: 1px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    h3 {
+      font-size: 1.2rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    h3 {
+      font-size: 1.1rem;
+    }
+  }
+`;
+
+const Subtitle = styled.div`
+  font-size: 0.85rem;
+  color: ${COLORS.textSecondary};
+  opacity: ${(props) => (props.animate ? 1 : 0)};
+  transform: translateY(${(props) => (props.animate ? 0 : "10px")});
+  transition: all 0.5s ease-out 0.2s;
+  font-style: italic;
+
+  @media (max-width: 480px) {
+    font-size: 0.75rem;
+  }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    gap: 0.5rem;
+  }
+`;
+
+const ActiveStoriesIndicator = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+
+  svg {
+    color: ${COLORS.primarySalmon};
+    font-size: 0.9rem;
+  }
+
+  .count {
+    font-weight: 700;
+    color: ${COLORS.textPrimary};
+  }
+
+  .text {
+    color: ${COLORS.textSecondary};
+    font-size: 0.85rem;
+    margin-left: 0.25rem;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+
+    .text {
+      display: none;
+    }
+  }
+`;
+
+const ButtonContent = styled.div`
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .icon {
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 480px) {
+    .icon {
+      font-size: 0.8rem;
+    }
+  }
+`;
+
+const ButtonGlow = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.8),
+    transparent 70%
+  );
+  opacity: 0.5;
+  z-index: 1;
+  animation: ${glowPulse} 2s infinite ease-in-out;
+`;
+
+const ProgressIndicator = styled.div`
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const Timeframe = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: ${COLORS.textTertiary};
+
+  svg {
+    font-size: 0.75rem;
+  }
+`;
+
+const Progress = styled.div`
+  height: 100%;
+  width: ${(props) => props.width || "0%"};
+  background: linear-gradient(
+    90deg,
+    ${COLORS.primaryMint},
+    ${COLORS.primarySalmon}
+  );
+  border-radius: 2px;
+`;
 export default EnhancedStories;
