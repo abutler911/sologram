@@ -16,8 +16,9 @@ import {
   FaChevronRight,
   FaPlus,
   FaCameraRetro,
-  FaSparkles,
+  FaStar,
   FaHourglassHalf,
+  FaFire,
 } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -414,7 +415,7 @@ const EnhancedStories = ({ isPWA = false }) => {
           <HeaderContentWrapper>
             <TitleGroup>
               <IconWrapper>
-                <FaSparkles className="icon-spark" />
+                <FaStar className="icon-spark" />
                 <FaCameraRetro className="icon-main" />
               </IconWrapper>
               <TitleWrapper>
