@@ -20,14 +20,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
-import { COLORS, THEME } from "../../theme";
+import { COLORS } from "../../theme";
 
 const EnhancedStories = ({ isPWA = false }) => {
   // State from both components
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [activeStory, setActiveStory] = useState(null);
@@ -46,7 +46,7 @@ const EnhancedStories = ({ isPWA = false }) => {
   const navigate = useNavigate();
 
   // Calculate visible items based on container width
-  const [visibleItems, setVisibleItems] = useState(5);
+  const [setVisibleItems] = useState(5);
 
   // PWA detection
   useEffect(() => {
@@ -402,14 +402,6 @@ const EnhancedStories = ({ isPWA = false }) => {
   if (loading) {
     return (
       <StoriesContainer isPWA={localIsPWA || isPWA}>
-        <StoriesHeader>
-          <h3>Stories</h3>
-          {isAuthenticated && (
-            <CreateStoryButton onClick={handleCreateStory}>
-              <FaPlus /> New Story
-            </CreateStoryButton>
-          )}
-        </StoriesHeader>
         <StoriesWrapper>
           {Array(5)
             .fill(0)
@@ -918,21 +910,6 @@ const VideoIndicator = styled.div`
     width: 20px;
     height: 20px;
     font-size: 0.7rem;
-  }
-`;
-
-const StoryUsername = styled.span`
-  font-size: 0.75rem;
-  color: ${COLORS.textSecondary};
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  font-weight: 500;
-
-  @media (max-width: 480px) {
-    font-size: 0.6875rem;
   }
 `;
 
