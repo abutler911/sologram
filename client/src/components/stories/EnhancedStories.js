@@ -664,10 +664,6 @@ const EnhancedStories = ({ isPWA = false }) => {
                     ? (10 - timeLeft) / 10
                     : 0
                 }
-                style={{
-                  transition:
-                    index === activeStoryIndex ? "width 0.2s linear" : "none",
-                }}
               />
             ))}
           </ProgressBarContainer>
@@ -1252,10 +1248,28 @@ const ProgressBarContainer = styled.div`
 `;
 
 const ProgressBar = styled.div`
-  height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+  height: 2px;
+  flex: 1;
+  background-color: rgba(255, 255, 255, 0.3);
+  position: relative;
   overflow: hidden;
+  border-radius: 1px;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: ${(props) =>
+      props.complete
+        ? "100%"
+        : props.active
+        ? `${props.progress * 100}%`
+        : "0"};
+    background-color: ${COLORS.primarySalmon};
+    transition: width 0.2s linear;
+  }
 `;
 
 const StoryHeader = styled.div`
