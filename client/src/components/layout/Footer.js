@@ -61,6 +61,11 @@ const FooterContent = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    padding: 0 1.5rem;
+  }
+
   @media (max-width: 768px) {
     padding: 0 1rem;
   }
@@ -71,6 +76,12 @@ const TopSection = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    /* Keep two column layout but adjust spacing */
+    margin-bottom: 1.25rem;
+  }
+
   @media (max-width: 768px) {
     flex-direction: column;
     gap: 1.5rem;
@@ -100,6 +111,20 @@ const LogoSection = styled.div`
     font-size: 0.9rem;
     font-style: italic;
     color: ${COLORS.accentSalmon};
+  }
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .logo {
+      font-size: 1.3rem;
+
+      .icon {
+        font-size: 1.3rem;
+      }
+    }
+
+    .tagline {
+      font-size: 0.8rem;
+    }
   }
 `;
 
@@ -137,6 +162,11 @@ const BottomSection = styled.div`
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    /* Keep layout but adjust spacing */
+    gap: 0.75rem;
+  }
 
   @media (max-width: 768px) {
     flex-direction: column;

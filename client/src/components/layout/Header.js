@@ -510,6 +510,11 @@ const HeaderContent = styled.div`
     }
   `}
 
+  @media (min-width: 768px) and (max-width: 1024px) {
+    padding: 0.75rem 1.5rem;
+    gap: 0.75rem;
+  }
+
   @media (max-width: 768px) {
     padding: 0.75rem 1rem;
   }
@@ -587,6 +592,26 @@ const Logo = styled(Link)`
     }
   }
 
+  /* Tablet-specific styling */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .logo-main {
+      font-size: 1.8rem;
+
+      .logo-text {
+        font-size: 1.7rem;
+      }
+
+      svg {
+        font-size: 2.2rem;
+        margin-right: 0.625rem;
+      }
+    }
+
+    .tagline {
+      font-size: 0.85rem;
+    }
+  }
+
   @media (max-width: 767px) {
     .logo-main {
       font-size: 1.5rem;
@@ -608,6 +633,11 @@ const DesktopNavigation = styled.nav`
   gap: 2.25rem;
   align-items: center;
   margin-left: 2rem;
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    gap: 1.5rem;
+    margin-left: 1.25rem;
+  }
 
   @media (max-width: 768px) {
     display: none;
@@ -641,12 +671,21 @@ const NavLink = styled(Link)`
       width: 100%;
     }
   }
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    font-size: 0.9rem;
+    padding: 0.4rem 0;
+  }
 `;
 
 const HeaderActions = styled.div`
   display: flex;
   align-items: center;
   gap: 1.25rem;
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    gap: 0.875rem;
+  }
 `;
 
 const CreateMenuContainer = styled.div`
@@ -677,6 +716,15 @@ const CreateMenuButton = styled.button`
 
   &:hover {
     background-color: ${COLORS.accentSalmon};
+  }
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.9rem;
+
+    span {
+      display: none;
+    }
   }
 `;
 
@@ -804,8 +852,12 @@ const SearchForm = styled.form`
   box-shadow: 0 2px 5px ${COLORS.shadow};
   width: 100%;
 
-  @media (min-width: 768px) {
+  @media (min-width: 1025px) {
     width: 280px;
+  }
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    width: 220px;
   }
 `;
 
@@ -1261,6 +1313,16 @@ const Greeting = styled.div`
     transform: scale(1.05);
     color: ${COLORS.accentSalmon};
     text-shadow: 0 1px 4px ${COLORS.accentSalmon}40;
+  }
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    margin-right: 0.75rem;
+
+    .username {
+      font-size: 0.85rem;
+    }
   }
 
   @media (max-width: 768px) {

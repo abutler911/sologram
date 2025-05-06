@@ -387,6 +387,11 @@ const HomeContainer = styled.div`
   margin: 0 auto;
   padding: 0.75rem 2rem;
 
+  @media (min-width: 768px) and (max-width: 1024px) {
+    max-width: 100%;
+    padding: 0.75rem 1.25rem;
+  }
+
   @media (max-width: 768px) {
     max-width: 100%;
     padding: ${(props) => (props.isPWA ? "0.5rem 0.25rem" : "0.5rem 0.5rem")};
@@ -417,6 +422,11 @@ const AboutBannerWrapper = styled.div`
   box-sizing: border-box;
   border: 1px solid ${COLORS.primarySalmon};
 
+  @media (min-width: 768px) and (max-width: 1024px) {
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
   @media (max-width: 640px) {
     padding: 0.875rem;
   }
@@ -430,7 +440,6 @@ const AboutBannerWrapper = styled.div`
     margin-bottom: 1rem;
   }
 `;
-
 const BannerContent = styled.div`
   display: flex;
   align-items: center;
@@ -587,6 +596,17 @@ const PostGrid = styled.div`
   padding: 0;
   margin: 0;
   width: 100%;
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    /* Tablet-specific styling */
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    padding: 0 0.5rem;
+  }
+
+  @media (min-width: 1025px) {
+    grid-template-columns: 1fr;
+  }
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr; /* Always one column on mobile/PWA */
