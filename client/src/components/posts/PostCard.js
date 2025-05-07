@@ -840,7 +840,12 @@ const Card = styled.article`
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   will-change: transform, box-shadow;
   border: 3px solid ${COLORS.primaryMint};
-  position: relative;
+
+  /* add z-index stacking */
+  & > * {
+    position: relative;
+    z-index: 1;
+  }
 
   &:before {
     content: "";
@@ -852,6 +857,8 @@ const Card = styled.article`
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
     pointer-events: none;
+    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
+    z-index: 0;
   }
 
   &:hover {
@@ -1017,14 +1024,14 @@ const ActionItem = styled.button`
 const MediaContainer = styled(Link)`
   position: relative;
   width: 100%;
-  aspect-ratio: 1/1
+  aspect-ratio: 1/1;
   display: block;
   overflow: hidden;
   background-color: #f3f3f3;
   transition: opacity 0.2s ease;
   opacity: ${(props) => (props.isPressing ? 0.9 : 1)};
   border: 1px solid rgba(0, 0, 0, 0.1);
-  
+
   &:before {
     content: "";
     position: absolute;
@@ -1032,16 +1039,23 @@ const MediaContainer = styled(Link)`
     left: 0;
     width: 100%;
     height: 2px;
-    background: linear-gradient(to right, transparent, ${
-      COLORS.primaryMint
-    }, transparent);
+    background: linear-gradient(
+      to right,
+      transparent,
+      ${COLORS.primaryMint},
+      transparent
+    );
     transform: translateX(-100%);
     animation: ${(props) =>
       props.isLoading ? "loadingAnimation 1.5s infinite" : "none"};
-    
+
     @keyframes loadingAnimation {
-      from { transform: translateX(-100%); }
-      to { transform: translateX(100%); }
+      from {
+        transform: translateX(-100%);
+      }
+      to {
+        transform: translateX(100%);
+      }
     }
   }
 `;
