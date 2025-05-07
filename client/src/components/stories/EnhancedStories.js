@@ -8,32 +8,21 @@ import React, {
 import styled, { keyframes, css } from "styled-components";
 import {
   FaTimes,
-  FaVideo,
   FaTrash,
   FaExclamationTriangle,
-  FaArchive,
-  FaChevronLeft,
-  FaChevronRight,
   FaPlus,
-  FaCameraRetro,
-  FaStar,
-  FaHourglassHalf,
-  FaFire,
 } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
-import { COLORS, THEME } from "../../theme";
+import { COLORS } from "../../theme";
 
 const EnhancedStories = ({ isPWA = false }) => {
-  // State from both components
+  // State
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
   const [activeStory, setActiveStory] = useState(null);
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(10);
@@ -43,17 +32,12 @@ const EnhancedStories = ({ isPWA = false }) => {
   const [localIsPWA, setLocalIsPWA] = useState(
     window.matchMedia("(display-mode: standalone)").matches
   );
-  const [headerAnimated, setHeaderAnimated] = useState(false);
-  // Add this with your other state declarations at the top of the component
-  const [progress, setProgress] = useState(0.33);
+
   // References and hooks
   const storiesRef = useRef(null);
   const { user, isAuthenticated } = useContext(AuthContext);
   const isAdmin = isAuthenticated && user && user.role === "admin";
   const navigate = useNavigate();
-
-  // Calculate visible items based on container width
-  const [visibleItems, setVisibleItems] = useState(5);
 
   // PWA detection
   useEffect(() => {
@@ -61,10 +45,6 @@ const EnhancedStories = ({ isPWA = false }) => {
     const handleChange = (e) => setLocalIsPWA(e.matches);
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
-
-  useEffect(() => {
-    setHeaderAnimated(true);
   }, []);
 
   // Define nextStoryItem as useCallback
@@ -109,45 +89,6 @@ const EnhancedStories = ({ isPWA = false }) => {
 
     fetchStories();
   }, []);
-
-  // Update visible items count based on container width
-  useEffect(() => {
-    const updateVisibleItems = () => {
-      const width = window.innerWidth;
-      if (width < 480) {
-        setVisibleItems(4);
-      } else if (width < 768) {
-        setVisibleItems(5);
-      } else {
-        setVisibleItems(7);
-      }
-    };
-
-    updateVisibleItems();
-    window.addEventListener("resize", updateVisibleItems);
-    return () => window.removeEventListener("resize", updateVisibleItems);
-  }, []);
-
-  // Check if scroll buttons should be visible
-  useEffect(() => {
-    if (!storiesRef.current) return;
-
-    const checkScrollButtons = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = storiesRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
-    };
-
-    const storiesContainer = storiesRef.current;
-    storiesContainer.addEventListener("scroll", checkScrollButtons);
-    checkScrollButtons();
-
-    return () => {
-      if (storiesContainer) {
-        storiesContainer.removeEventListener("scroll", checkScrollButtons);
-      }
-    };
-  }, [stories]);
 
   // Handle story auto-progression timer
   useEffect(() => {
@@ -244,22 +185,6 @@ const EnhancedStories = ({ isPWA = false }) => {
     });
   };
 
-  const scrollLeft = () => {
-    if (!storiesRef.current) return;
-    storiesRef.current.scrollBy({
-      left: -200,
-      behavior: "smooth",
-    });
-  };
-
-  const scrollRight = () => {
-    if (!storiesRef.current) return;
-    storiesRef.current.scrollBy({
-      left: 200,
-      behavior: "smooth",
-    });
-  };
-
   const openStory = (story) => {
     setActiveStory(story);
     setActiveStoryIndex(0);
@@ -337,7 +262,6 @@ const EnhancedStories = ({ isPWA = false }) => {
   };
 
   // Calculate the expiration time for a story
-  // Calculate the expiration time for a story
   const getExpirationTime = (story) => {
     if (!story || !story.expiresAt) return "Unknown";
 
@@ -413,64 +337,6 @@ const EnhancedStories = ({ isPWA = false }) => {
   if (loading) {
     return (
       <StoriesContainer isPWA={localIsPWA || isPWA}>
-        <StoriesHeaderContainer>
-          <HeaderContentWrapper>
-            <TitleGroup>
-              <IconWrapper>
-                <FaStar className="icon-spark" />
-                <FaCameraRetro className="icon-main" />
-              </IconWrapper>
-              <TitleWrapper>
-                <h3>Moment Capsules</h3>
-                <Subtitle animate={headerAnimated}>
-                  Capture today's magic
-                </Subtitle>
-              </TitleWrapper>
-            </TitleGroup>
-
-            <HeaderButtons>
-              {isAdmin && (
-                <StoryArchiveLink
-                  to="/story-archive"
-                  title="View archived stories"
-                >
-                  <FaArchive />
-                  <span>Archive</span>
-                </StoryArchiveLink>
-              )}
-              {isAuthenticated && (
-                <ButtonGroup>
-                  <ActiveStoriesIndicator>
-                    <FaFire />
-                    <span className="count">{stories.length}</span>
-                    <span className="text">Active</span>
-                  </ActiveStoriesIndicator>
-
-                  <CreateStoryButton onClick={handleCreateStory}>
-                    <ButtonContent>
-                      <FaPlus className="icon" />
-                      <span>New Story</span>
-                    </ButtonContent>
-                    <ButtonGlow />
-                  </CreateStoryButton>
-                </ButtonGroup>
-              )}
-            </HeaderButtons>
-          </HeaderContentWrapper>
-
-          <ProgressIndicator>
-            <Timeframe>
-              <FaHourglassHalf />
-              <span>Stories refresh in 24h</span>
-            </Timeframe>
-            <ProgressBarBackground complete={progress >= 1}>
-              <ProgressFill progress={progress} complete={progress >= 1} />
-              {progress > 0 && progress < 1 && (
-                <ProgressParticle progress={progress} />
-              )}
-            </ProgressBarBackground>
-          </ProgressIndicator>
-        </StoriesHeaderContainer>
         <StoriesWrapper>
           {Array(5)
             .fill(0)
@@ -492,58 +358,25 @@ const EnhancedStories = ({ isPWA = false }) => {
   }
 
   // Render empty state
-  if (stories.length === 0) {
+  if (stories.length === 0 && !isAuthenticated) {
+    return null; // Don't show anything if no stories and not authenticated
+  }
+
+  if (stories.length === 0 && isAuthenticated) {
     return (
       <StoriesContainer isPWA={localIsPWA || isPWA}>
-        <StoriesHeaderContainer>
-          <HeaderContentWrapper>
-            <TitleGroup>
-              <IconWrapper>
-                <FaStar className="icon-spark" />
-                <FaCameraRetro className="icon-main" />
-              </IconWrapper>
-              <TitleWrapper>
-                <h3>Moment Capsules</h3>
-                <Subtitle animate={headerAnimated}>
-                  Capture today&apos;s magic
-                </Subtitle>
-              </TitleWrapper>
-            </TitleGroup>
-
-            <HeaderButtons>
-              {isAdmin && (
-                <StoryArchiveLink
-                  to="/story-archive"
-                  title="View archived stories"
-                >
-                  <FaArchive />
-                  <span>Archive</span>
-                </StoryArchiveLink>
-              )}
-              {isAuthenticated && (
-                <ButtonGroup>
-                  <ActiveStoriesIndicator>
-                    <FaFire />
-                    <span className="count">{stories.length}</span>
-                    <span className="text">Active</span>
-                  </ActiveStoriesIndicator>
-
-                  <CreateStoryButton onClick={handleCreateStory}>
-                    <ButtonContent>
-                      <FaPlus className="icon" />
-                      <span>New Story</span>
-                    </ButtonContent>
-                    <ButtonGlow />
-                  </CreateStoryButton>
-                </ButtonGroup>
-              )}
-            </HeaderButtons>
-          </HeaderContentWrapper>
-        </StoriesHeaderContainer>
-
-        <NoStoriesMessage>
-          No stories available. Create your first story!
-        </NoStoriesMessage>
+        <ScrollableContainer>
+          <StoriesWrapper ref={storiesRef}>
+            <CreateStoryItem onClick={handleCreateStory}>
+              <CreateStoryAvatarWrapper>
+                <CreateStoryButton>
+                  <FaPlus />
+                </CreateStoryButton>
+              </CreateStoryAvatarWrapper>
+              <CreateStoryLabel>Your Story</CreateStoryLabel>
+            </CreateStoryItem>
+          </StoriesWrapper>
+        </ScrollableContainer>
       </StoriesContainer>
     );
   }
@@ -551,82 +384,36 @@ const EnhancedStories = ({ isPWA = false }) => {
   return (
     <>
       <StoriesContainer isPWA={localIsPWA || isPWA}>
-        <StoriesHeaderContainer>
-          <HeaderContentWrapper>
-            <TitleGroup>
-              <IconWrapper>
-                <FaStar className="icon-spark" />
-                <FaCameraRetro className="icon-main" />
-              </IconWrapper>
-              <TitleWrapper>
-                <h3>Moment Capsules</h3>
-                <Subtitle animate={headerAnimated}>
-                  Capture today&apos;s magic
-                </Subtitle>
-              </TitleWrapper>
-            </TitleGroup>
-
-            <HeaderButtons>
-              {isAdmin && (
-                <StoryArchiveLink
-                  to="/story-archive"
-                  title="View archived stories"
-                >
-                  <FaArchive />
-                  <span>Archive</span>
-                </StoryArchiveLink>
-              )}
-              {isAuthenticated && (
-                <ButtonGroup>
-                  <ActiveStoriesIndicator>
-                    <FaFire />
-                    <span className="count">{stories.length}</span>
-                    <span className="text">Active</span>
-                  </ActiveStoriesIndicator>
-
-                  <CreateStoryButton onClick={handleCreateStory}>
-                    <ButtonContent>
-                      <FaPlus className="icon" />
-                      <span>New Story</span>
-                    </ButtonContent>
-                    <ButtonGlow />
-                  </CreateStoryButton>
-                </ButtonGroup>
-              )}
-            </HeaderButtons>
-          </HeaderContentWrapper>
-        </StoriesHeaderContainer>
-
         <ScrollableContainer>
-          {canScrollLeft && (
-            <ScrollButton direction="left" onClick={scrollLeft}>
-              <FaChevronLeft />
-            </ScrollButton>
-          )}
-
           <StoriesWrapper ref={storiesRef}>
+            {isAuthenticated && (
+              <CreateStoryItem onClick={handleCreateStory}>
+                <CreateStoryAvatarWrapper>
+                  <CreateStoryButton>
+                    <FaPlus />
+                  </CreateStoryButton>
+                </CreateStoryAvatarWrapper>
+                <CreateStoryLabel>Your Story</CreateStoryLabel>
+              </CreateStoryItem>
+            )}
+
             {stories.map((story, index) => {
               const firstMedia = story.media && story.media[0];
-              const isVideo = firstMedia && firstMedia.mediaType === "video";
               const thumbnailUrl = firstMedia
                 ? getThumbnailUrl(firstMedia)
                 : "/placeholder-image.jpg";
+              const username = story.username || "User";
+              const isOwnStory = user && story.userId === user._id;
+              const isViewed = user && story.viewers?.includes(user._id);
 
               return (
                 <StoryItem
                   key={story._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
                   onClick={() => openStory(story)}
-                  active={index === activeIndex}
-                  viewed={user && story.viewers?.includes(user._id)}
-                  isOwn={user && story.userId === user._id}
+                  viewed={isViewed}
+                  isOwn={isOwnStory}
                 >
-                  <StoryAvatarWrapper
-                    viewed={user && story.viewers?.includes(user._id)}
-                    isOwn={user && story.userId === user._id}
-                  >
+                  <StoryAvatarWrapper viewed={isViewed} isOwn={isOwnStory}>
                     <StoryAvatar
                       src={thumbnailUrl}
                       alt={story.title || "Story"}
@@ -636,25 +423,16 @@ const EnhancedStories = ({ isPWA = false }) => {
                         e.target.parentNode.classList.add("image-fallback");
                       }}
                     />
-                    {isVideo && (
-                      <VideoIndicator>
-                        <FaVideo />
-                      </VideoIndicator>
-                    )}
                   </StoryAvatarWrapper>
+                  <StoryUsername>{username}</StoryUsername>
                 </StoryItem>
               );
             })}
           </StoriesWrapper>
-
-          {canScrollRight && (
-            <ScrollButton direction="right" onClick={scrollRight}>
-              <FaChevronRight />
-            </ScrollButton>
-          )}
         </ScrollableContainer>
       </StoriesContainer>
 
+      {/* Story Viewer Modal */}
       {activeStory && (
         <StoryModal>
           <ProgressBarContainer>
@@ -670,9 +448,6 @@ const EnhancedStories = ({ isPWA = false }) => {
               return (
                 <ProgressBarBackground key={index} complete={progress >= 1}>
                   <ProgressFill progress={progress} complete={progress >= 1} />
-                  {progress > 0 && progress < 1 && (
-                    <ProgressParticle progress={progress} />
-                  )}
                 </ProgressBarBackground>
               );
             })}
@@ -680,7 +455,7 @@ const EnhancedStories = ({ isPWA = false }) => {
 
           <StoryHeader>
             <StoryHeaderContent>
-              <StoryHeaderTitle>{activeStory.title}</StoryHeaderTitle>
+              <div className="story-user">{activeStory.title || "Story"}</div>
               <StoryTimestamp>{getExpirationTime(activeStory)}</StoryTimestamp>
             </StoryHeaderContent>
           </StoryHeader>
@@ -762,18 +537,6 @@ const EnhancedStories = ({ isPWA = false }) => {
 };
 
 // Animations
-const pulse = keyframes`
-  0% { box-shadow: 0 0 5px ${COLORS.primarySalmon}; }
-  50% { box-shadow: 0 0 15px ${COLORS.primaryMint}; }
-  100% { box-shadow: 0 0 5px ${COLORS.primarySalmon}; }
-`;
-
-const gradientFlow = keyframes`
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-`;
-
 const fadeIn = keyframes`
   from {
     opacity: 0;
@@ -794,170 +557,45 @@ const shimmer = keyframes`
   }
 `;
 
-const glowPulse = keyframes`
-  0% {
-    opacity: 0.5;
-    transform: scale(0.95);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.05);
-  }
-  100% {
-    opacity: 0.5;
-    transform: scale(0.95);
-  }
-`;
-
-// Enhanced Styled Components
+// Instagram-style Styled Components
 const StoriesContainer = styled.section`
-  background-color: transparent; // Changed from COLORS.cardBackground
-  border-radius: 0; // Removed border radius
-  padding: 8px 0; // Reduced padding and only keep vertical padding
-  margin-bottom: 0; // Remove bottom margin to blend with posts
-  box-shadow: none; // Removed shadow
+  background-color: transparent;
+  border-radius: 0;
+  padding: 8px 0 12px; // Just enough padding for spacing
+  margin: 0; // No margins
+  box-shadow: none;
   position: relative;
   z-index: 1;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05); // Subtle separator
-
-  // Instead of margin, use padding to create some separation
-  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05); // Subtle separator like Instagram
 
   @media (max-width: 768px) {
-    padding: 8px 0 12px;
+    padding: 8px 0 10px;
   }
 
   @media (max-width: 480px) {
-    padding: 6px 0 10px;
-  }
-`;
-
-const StoriesHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  position: relative;
-  z-index: 5; // Higher z-index to stay on top
-
-  h3 {
-    font-size: 1.3rem;
-    font-family: "Mystery Quest", sans-serif;
-    color: ${COLORS.primaryBlueGray};
-    margin: 0;
-  }
-
-  @media (max-width: 480px) {
-    margin-bottom: 0.75rem;
-
-    h3 {
-      font-size: 1.1rem;
-    }
-  }
-`;
-
-const HeaderButtons = styled.div`
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-
-  @media (max-width: 480px) {
-    gap: 0.5rem;
-    width: 100%;
-    justify-content: flex-end;
-  }
-`;
-
-const StoryArchiveLink = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  text-decoration: none;
-  color: #262626; // Instagram text color
-  font-size: 0.85rem;
-  transition: none;
-  border-radius: 4px;
-  padding: 6px 10px;
-  background: transparent;
-  border: 1px solid #dbdbdb; // Instagram-style border
-
-  svg {
-    font-size: 0.9rem;
-  }
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.05); // Subtle hover effect
-    color: #262626;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 0.8rem;
-    padding: 5px 8px;
-
-    svg {
-      font-size: 0.85rem;
-    }
-
-    span {
-      display: none;
-    }
-  }
-`;
-
-const CreateStoryButton = styled.button`
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  padding: 6px 12px;
-  background: transparent; // No background
-  border: 1px solid #dbdbdb; // Instagram-style border
-  border-radius: 4px;
-  color: #262626; // Instagram text color
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  box-shadow: none;
-  font-size: 0.85rem;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.05); // Subtle hover effect
-    transform: none; // No transform
-    box-shadow: none; // No shadow
-  }
-
-  @media (max-width: 768px) {
-    padding: 5px 10px;
-    font-size: 0.8rem;
-  }
-
-  @media (max-width: 480px) {
-    padding: 4px 8px;
-    font-size: 0.75rem;
+    padding: 6px 0 8px;
   }
 `;
 
 const ScrollableContainer = styled.div`
   position: relative;
-  margin-top: 0; // Remove top margin
   width: 100%;
   overflow-x: auto;
 `;
 
-// Modify stories wrapper
 const StoriesWrapper = styled.div`
   display: flex;
   gap: 12px; // Instagram-like spacing
   overflow-x: auto;
   scroll-behavior: smooth;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: none; // Hide scrollbar
+  -ms-overflow-style: none; // Hide scrollbar
   padding: 4px 16px; // Instagram-like padding
   position: relative;
   z-index: 1;
 
   &::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    display: none; // Hide scrollbar
   }
 
   @media (max-width: 768px) {
@@ -978,19 +616,13 @@ const StoryItem = styled.div`
   cursor: pointer;
   flex: 0 0 auto;
   width: 66px; // Instagram-like size
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease; // Only fade opacity on hover
   position: relative;
   z-index: 2;
 
   &:hover {
-    transform: none; // Remove hover effect
+    opacity: 0.9; // Subtle hover effect like Instagram
   }
-
-  ${(props) =>
-    props.active &&
-    css`
-      transform: none; // Remove active effect
-    `}
 
   @media (max-width: 768px) {
     width: 64px;
@@ -1002,28 +634,21 @@ const StoryItem = styled.div`
 `;
 
 const StoryAvatarWrapper = styled.div`
-  width: 62px; // Instagram-like size
-  height: 62px; // Instagram-like size
+  width: 62px; // Instagram size
+  height: 62px;
   border-radius: 50%;
-  padding: 2px; // Instagram uses thinner borders
-  margin-bottom: 6px; // Smaller bottom margin
+  padding: 2px; // Instagram's thin border
+  margin-bottom: 6px; // Space between avatar and username
   position: relative;
   background: ${(props) => {
-    // Instagram uses a gradient border for stories
+    // Instagram-like gradient for stories
     if (props.isOwn)
       return `linear-gradient(45deg, #C13584, #E1306C, #FD1D1D, #F56040, #FCAF45)`;
     if (!props.viewed)
       return `linear-gradient(45deg, #C13584, #E1306C, #FD1D1D, #F56040, #FCAF45)`;
-    return "#dbdbdb"; // Instagram's viewed story border color
+    return "#dbdbdb"; // Instagram gray for viewed stories
   }};
   z-index: 2;
-
-  ${(props) =>
-    !props.viewed &&
-    !props.isOwn &&
-    css`
-      animation: none; // Remove pulse animation
-    `}
 
   @media (max-width: 768px) {
     width: 56px;
@@ -1047,7 +672,7 @@ const StoryAvatarWrapper = styled.div`
       font-family: "Font Awesome 5 Free";
       font-weight: 900;
       font-size: 1.2rem;
-      color: #8e8e8e; // Instagram's secondary text color
+      color: #8e8e8e; // Instagram gray
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1055,54 +680,92 @@ const StoryAvatarWrapper = styled.div`
   }
 `;
 
-// Instagram-style story avatar
 const StoryAvatar = styled.img`
   width: 100%;
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  background-color: #fafafa; // Instagram background color
-  border: 2px solid white; // Instagram adds a white border inside the gradient
+  background-color: #fafafa; // Instagram background
+  border: 2px solid white; // Instagram-style white border
 `;
 
-// Instagram-style video indicator is more subtle
-const VideoIndicator = styled.div`
-  display: none; // Instagram doesn't show video indicators on story thumbnails
-
-  /* Alternative styling if you want to keep it
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgba(0, 0, 0, 0.5);
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 0.7rem;
-  z-index: 2;
-
-  @media (max-width: 480px) {
-    width: 18px;
-    height: 18px;
-    font-size: 0.6rem;
-  }
-  */
-`;
-
-// Instagram-style story username
 const StoryUsername = styled.span`
-  font-size: 12px; // Instagram-size text
+  font-size: 12px; // Instagram font size
   color: #262626; // Instagram text color
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
-  font-weight: 400; // Instagram uses lighter fonts
+  font-weight: 400; // Instagram font weight
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif; // Instagram font stack
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
+`;
+
+// Your Story / Create Story item
+const CreateStoryItem = styled(StoryItem)`
+  // Same styles as StoryItem
+`;
+
+const CreateStoryAvatarWrapper = styled.div`
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  margin-bottom: 6px;
+  position: relative;
+  background: #fafafa; // Instagram background
+  border: 1px dashed #dbdbdb; // Instagram-like dashed border
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    width: 56px;
+    height: 56px;
+  }
+
+  @media (max-width: 480px) {
+    width: 54px;
+    height: 54px;
+    margin-bottom: 4px;
+  }
+`;
+
+const CreateStoryButton = styled.div`
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #0095f6; // Instagram blue
+  color: white;
+  font-size: 14px;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  @media (max-width: 480px) {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+  }
+`;
+
+const CreateStoryLabel = styled.span`
+  font-size: 12px;
+  color: #262626; // Instagram text color
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-weight: 400;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif;
 
@@ -1111,64 +774,51 @@ const StoryUsername = styled.span`
   }
 `;
 
-const ScrollButton = styled.button`
-  display: none; // Hide scroll buttons
-`;
-
+// Loading skeleton
 const StoryItemSkeleton = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   flex: 0 0 auto;
-  width: 90px;
+  width: 66px;
 
   &:before {
     content: "";
-    width: 78px;
-    height: 78px;
+    width: 62px;
+    height: 62px;
     border-radius: 50%;
-    margin-bottom: 0.5rem;
-    background: linear-gradient(
-      90deg,
-      ${COLORS.border} 8%,
-      ${COLORS.elevatedBackground} 18%,
-      ${COLORS.border} 33%
-    );
+    margin-bottom: 6px;
+    background: linear-gradient(90deg, #efefef 8%, #fbfbfb 18%, #efefef 33%);
     background-size: 200% 100%;
     animation: ${shimmer} 1.5s infinite;
   }
 
   &:after {
     content: "";
-    width: 60%;
+    width: 40px;
     height: 10px;
     border-radius: 4px;
-    background: linear-gradient(
-      90deg,
-      ${COLORS.border} 8%,
-      ${COLORS.elevatedBackground} 18%,
-      ${COLORS.border} 33%
-    );
+    background: linear-gradient(90deg, #efefef 8%, #fbfbfb 18%, #efefef 33%);
     background-size: 200% 100%;
     animation: ${shimmer} 1.5s infinite;
   }
 
   @media (max-width: 768px) {
-    width: 80px;
+    width: 64px;
 
     &:before {
-      width: 68px;
-      height: 68px;
+      width: 56px;
+      height: 56px;
     }
   }
 
   @media (max-width: 480px) {
-    width: 72px;
+    width: 62px;
 
     &:before {
-      width: 58px;
-      height: 58px;
-      margin-bottom: 0.375rem;
+      width: 54px;
+      height: 54px;
+      margin-bottom: 4px;
     }
 
     &:after {
@@ -1178,18 +828,17 @@ const StoryItemSkeleton = styled.div`
 `;
 
 const NoStoriesMessage = styled.div`
-  text-align: center;
-  color: ${COLORS.textTertiary};
-  font-size: 0.875rem;
-  padding: 1.5rem 1rem;
-  width: 100%;
+  display: none; // Hide message for cleaner Instagram-like experience
 `;
 
 const ErrorMessage = styled.div`
-  color: ${COLORS.error};
+  color: #ed4956; // Instagram error red
   width: 100%;
   text-align: center;
-  padding: 1rem 0;
+  padding: 12px 0;
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
 `;
 
 // Story Viewer Modal Components
@@ -1199,7 +848,7 @@ const StoryModal = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: ${COLORS.background};
+  background-color: #000000;
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -1230,50 +879,21 @@ const ProgressBarContainer = styled.div`
   }
 `;
 
-const ProgressBar = styled.div`
-  height: 4px;
-  flex: 1;
-  background-color: rgba(255, 255, 255, 0.2);
+const ProgressBarBackground = styled.div`
   position: relative;
+  flex: 1;
+  height: 2px; // Instagram uses thinner bars
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.3); // More transparent background
   overflow: hidden;
-  border-radius: 2px;
+`;
 
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: ${(props) =>
-      props.complete
-        ? "100%"
-        : props.active
-        ? `${props.progress * 100}%`
-        : "0"};
-    background: linear-gradient(
-      270deg,
-      ${COLORS.primarySalmon},
-      ${COLORS.primaryMint},
-      ${COLORS.primarySalmon}
-    );
-    background-size: 400% 400%;
-    animation: gradientFlow 3s ease infinite;
-    transition: width 0.4s ease-out;
-    border-radius: 2px;
-    box-shadow: 0 0 6px ${COLORS.primarySalmon}, 0 0 10px ${COLORS.primaryMint};
-  }
-
-  @keyframes gradientFlow {
-    0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0% 50%;
-    }
-  }
+const ProgressFill = styled.div`
+  height: 100%;
+  width: ${(props) => (props.complete ? "100%" : `${props.progress * 100}%`)};
+  background: white; // Simple white fill instead of gradient
+  transition: width 0.1s linear; // Linear transition like Instagram
+  border-radius: 1px;
 `;
 
 const StoryHeader = styled.div`
@@ -1299,33 +919,28 @@ const StoryHeader = styled.div`
   }
 `;
 
-const StoryHeaderTitle = styled.div`
+const StoryHeaderContent = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 
-  img {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 2px solid white;
-  }
-
-  h3 {
-    font-size: 0.9rem;
+  .story-user {
+    font-size: 14px;
     color: white;
-    margin: 0;
     font-weight: 600;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      Helvetica, Arial, sans-serif;
   }
 `;
 
-// Make timestamp more subtle
 const StoryTimestamp = styled.span`
   color: rgba(255, 255, 255, 0.8);
-  font-size: 0.8rem;
+  font-size: 12px;
   font-weight: normal;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
 `;
 
 const ControlsBar = styled.div`
@@ -1334,7 +949,7 @@ const ControlsBar = styled.div`
   right: 16px;
   z-index: 10;
   display: flex;
-  gap: 1rem;
+  gap: 12px;
 
   /* iOS Safe Area Support */
   @supports (padding-top: env(safe-area-inset-top)) {
@@ -1343,40 +958,45 @@ const ControlsBar = styled.div`
 `;
 
 const CloseButton = styled.button`
-  background: ${COLORS.primaryBlueGray};
+  background: rgba(0, 0, 0, 0.3);
   border: none;
   color: white;
-  font-size: 1.5rem;
+  font-size: 18px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: ${COLORS.accentBlueGray};
+    background-color: rgba(0, 0, 0, 0.5);
   }
 `;
 
 const DeleteButton = styled.button`
-  background-color: ${COLORS.primarySalmon};
+  background-color: rgba(
+    237,
+    73,
+    86,
+    0.8
+  ); // Instagram delete color with transparency
   border: none;
   color: white;
-  font-size: 1.25rem;
+  font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: ${COLORS.accentSalmon};
+    background-color: rgba(237, 73, 86, 1);
   }
 
   &:disabled {
@@ -1394,7 +1014,7 @@ const StoryContent = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: ${COLORS.background};
+  background-color: #000000;
   width: 100vw;
   height: 100vh;
 `;
@@ -1451,62 +1071,70 @@ const ModalOverlay = styled.div`
 `;
 
 const DeleteModal = styled.div`
-  background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
+  background-color: white;
+  border-radius: 12px;
   width: 100%;
   max-width: 400px;
   overflow: hidden;
-  box-shadow: 0 4px 20px ${COLORS.shadow};
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
 `;
 
 const DeleteModalHeader = styled.div`
-  background-color: ${COLORS.primarySalmon};
+  background-color: #ed4956; // Instagram-red
   color: white;
-  padding: 1.25rem;
+  padding: 16px;
   display: flex;
   align-items: center;
+  justify-content: center;
 
   svg {
-    font-size: 1.5rem;
-    margin-right: 0.75rem;
+    font-size: 20px;
+    margin-right: 8px;
   }
 `;
 
 const DeleteModalTitle = styled.h3`
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 16px;
   font-weight: 600;
 `;
 
 const DeleteModalContent = styled.div`
-  padding: 1.5rem;
-  color: ${COLORS.textSecondary};
+  padding: 20px 16px;
+  color: #262626;
   line-height: 1.5;
+  text-align: center;
+  font-size: 14px;
 `;
 
 const DeleteModalButtons = styled.div`
   display: flex;
-  padding: 1rem 1.5rem;
-  justify-content: flex-end;
-  gap: 1rem;
+  padding: 8px 16px 16px;
+  justify-content: center;
+  gap: 16px;
 
   @media (max-width: 480px) {
     flex-direction: column;
+    gap: 8px;
   }
 `;
 
 const ConfirmDeleteButton = styled.button`
-  background-color: ${COLORS.primarySalmon};
+  background-color: #ed4956; // Instagram red
   color: white;
   border: none;
   border-radius: 4px;
-  padding: 0.75rem 1.25rem;
+  padding: 8px 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s;
+  font-size: 14px;
+  flex: 1;
+  min-width: 120px;
 
   &:hover {
-    background-color: ${COLORS.accentSalmon};
+    background-color: #c62330;
   }
 
   &:disabled {
@@ -1521,16 +1149,18 @@ const ConfirmDeleteButton = styled.button`
 
 const CancelButton = styled.button`
   background-color: transparent;
-  color: ${COLORS.textSecondary};
-  border: 1px solid ${COLORS.border};
+  color: #262626;
+  border: 1px solid #dbdbdb;
   border-radius: 4px;
-  padding: 0.75rem 1.25rem;
+  padding: 8px 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  font-size: 14px;
+  flex: 1;
+  min-width: 120px;
 
   &:hover {
-    background-color: ${COLORS.buttonHover};
+    background-color: #fafafa;
   }
 
   &:disabled {
@@ -1541,207 +1171,6 @@ const CancelButton = styled.button`
   @media (max-width: 480px) {
     order: 2;
   }
-`;
-
-const StoriesHeaderContainer = styled.div`
-  background: transparent; // Remove gradient background
-  border-radius: 0; // Remove border radius
-  padding: 0 16px 12px; // Adjust padding
-  margin-bottom: 0; // Remove margin
-  box-shadow: none; // Remove shadow
-  border: none; // Remove border
-  position: relative;
-  overflow: hidden;
-  animation: none; // Remove animation
-
-  // Remove the colored top border
-  &::before {
-    display: none;
-  }
-
-  @media (max-width: 768px) {
-    padding: 0 12px 8px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 0 8px 6px;
-  }
-`;
-
-const HeaderContentWrapper = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0; // Add padding instead of margin
-
-  @media (max-width: 600px) {
-    padding: 6px 0;
-  }
-`;
-
-const TitleGroup = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const IconWrapper = styled.div`
-  position: relative;
-  width: 32px; // Smaller size
-  height: 32px; // Smaller size
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: transparent; // Remove gradient background
-  box-shadow: none; // Remove shadow
-
-  .icon-main {
-    font-size: 1.2rem;
-    color: #262626; // Instagram-style dark color
-  }
-
-  .icon-spark {
-    display: none; // Remove the spark icon
-  }
-
-  @media (max-width: 768px) {
-    width: 28px;
-    height: 28px;
-
-    .icon-main {
-      font-size: 1.1rem;
-    }
-  }
-`;
-
-const TitleWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-
-  h3 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #262626; // Instagram-style dark color
-    letter-spacing: normal;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      Helvetica, Arial, sans-serif; // Instagram font stack
-
-    // Remove the underline
-    &::after {
-      display: none;
-    }
-  }
-
-  @media (max-width: 768px) {
-    h3 {
-      font-size: 0.9rem;
-    }
-  }
-`;
-
-const Subtitle = styled.div`
-  display: none; // Remove subtitle for a cleaner look
-
-  /* Alternative styling if you want to keep it
-  font-size: 0.75rem;
-  color: #8e8e8e; // Instagram-style secondary text
-  opacity: ${(props) => (props.animate ? 1 : 0)};
-  transform: translateY(${(props) => (props.animate ? 0 : "10px")});
-  transition: all 0.5s ease-out 0.2s;
-  font-style: normal; // Remove italic
-  */
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const ActiveStoriesIndicator = styled.div`
-  display: none; // Remove this element for Instagram-like minimalism
-
-  /* Alternative styling if you want to keep it
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
-  background: transparent;
-  border-radius: 4px;
-  border: 1px solid #dbdbdb;
-
-  svg {
-    color: #262626;
-    font-size: 0.8rem;
-  }
-
-  .count {
-    font-weight: 600;
-    color: #262626;
-  }
-
-  .text {
-    color: #8e8e8e;
-    font-size: 0.8rem;
-    margin-left: 2px;
-  }
-  */
-`;
-
-const ButtonContent = styled.div`
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-
-  .icon {
-    font-size: 0.8rem;
-  }
-
-  @media (max-width: 480px) {
-    .icon {
-      font-size: 0.75rem;
-    }
-  }
-`;
-
-const ButtonGlow = styled.div`
-  display: none;
-`;
-
-const ProgressIndicator = styled.div`
-  display: none;
-`;
-
-// Simplify timeframe display
-const Timeframe = styled.div`
-  display: none;
-`;
-
-const Progress = styled.div`
-  height: 100%;
-  width: ${(props) => props.width || "0%"};
-  background: linear-gradient(
-    90deg,
-    ${COLORS.primaryMint},
-    ${COLORS.primarySalmon}
-  );
-  border-radius: 2px;
-`;
-
-export const ProgressBarBackground = styled.div`
-  display: none;
-`;
-
-export const ProgressFill = styled.div`
-  display: none;
-`;
-
-export const ProgressParticle = styled.div`
-  display: none;
 `;
 
 export default EnhancedStories;
