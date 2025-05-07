@@ -402,7 +402,7 @@ const EnhancedStories = ({ isPWA = false }) => {
               const thumbnailUrl = firstMedia
                 ? getThumbnailUrl(firstMedia)
                 : "/placeholder-image.jpg";
-              const username = story.username || "User";
+              const username = story.username || "Andrew";
               const isOwnStory = user && story.userId === user._id;
               const isViewed = user && story.viewers?.includes(user._id);
 
