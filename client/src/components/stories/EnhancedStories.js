@@ -811,23 +811,24 @@ const glowPulse = keyframes`
 
 // Enhanced Styled Components
 const StoriesContainer = styled.section`
-  background-color: ${COLORS.cardBackground};
-  border-radius: ${(props) => (props.isPWA ? "0" : "12px")};
-  padding: 1rem;
-  margin-bottom: 1.25rem;
-  box-shadow: 0 1px 3px ${COLORS.shadow};
-  animation: ${fadeIn} 0.3s ease;
+  background-color: transparent; // Changed from COLORS.cardBackground
+  border-radius: 0; // Removed border radius
+  padding: 8px 0; // Reduced padding and only keep vertical padding
+  margin-bottom: 0; // Remove bottom margin to blend with posts
+  box-shadow: none; // Removed shadow
   position: relative;
   z-index: 1;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05); // Subtle separator
+
+  // Instead of margin, use padding to create some separation
+  padding-bottom: 12px;
 
   @media (max-width: 768px) {
-    padding: 0.75rem;
-    margin-bottom: 1rem;
+    padding: 8px 0 12px;
   }
 
   @media (max-width: 480px) {
-    padding: 0.5rem;
-    border-radius: ${(props) => (props.isPWA ? "0" : "8px")};
+    padding: 6px 0 10px;
   }
 `;
 
@@ -870,31 +871,31 @@ const HeaderButtons = styled.div`
 const StoryArchiveLink = styled(Link)`
   display: flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: 4px;
   text-decoration: none;
-  color: ${COLORS.textSecondary};
-  font-size: 0.8125rem;
-  transition: color 0.2s;
-  border-radius: 6px;
-  padding: 0.4rem 0.75rem;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #262626; // Instagram text color
+  font-size: 0.85rem;
+  transition: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid #dbdbdb; // Instagram-style border
 
   svg {
-    font-size: 0.875rem;
+    font-size: 0.9rem;
   }
 
   &:hover {
-    color: ${COLORS.primaryBlueGray};
-    background: rgba(255, 255, 255, 0.12);
+    background-color: rgba(0, 0, 0, 0.05); // Subtle hover effect
+    color: #262626;
   }
 
   @media (max-width: 480px) {
-    font-size: 0.75rem;
-    padding: 0.4rem 0.5rem;
+    font-size: 0.8rem;
+    padding: 5px 8px;
 
     svg {
-      font-size: 0.8125rem;
+      font-size: 0.85rem;
     }
 
     span {
@@ -908,49 +909,50 @@ const CreateStoryButton = styled.button`
   overflow: hidden;
   display: flex;
   align-items: center;
-  padding: 0.6rem 1.25rem;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.accentSalmon}
-  );
-  border: none;
-  border-radius: 6px;
-  color: white;
+  padding: 6px 12px;
+  background: transparent; // No background
+  border: 1px solid #dbdbdb; // Instagram-style border
+  border-radius: 4px;
+  color: #262626; // Instagram text color
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.3s, box-shadow 0.3s;
-  box-shadow: 0 4px 12px ${COLORS.primarySalmon}40;
+  transition: background-color 0.2s;
+  box-shadow: none;
+  font-size: 0.85rem;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px ${COLORS.primarySalmon}60;
+    background-color: rgba(0, 0, 0, 0.05); // Subtle hover effect
+    transform: none; // No transform
+    box-shadow: none; // No shadow
   }
 
   @media (max-width: 768px) {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
+    padding: 5px 10px;
+    font-size: 0.8rem;
   }
 
   @media (max-width: 480px) {
-    padding: 0.375rem 0.625rem;
+    padding: 4px 8px;
     font-size: 0.75rem;
   }
 `;
 
 const ScrollableContainer = styled.div`
   position: relative;
-  margin-top: 8px; // Add margin to push the stories down a bit
+  margin-top: 0; // Remove top margin
+  width: 100%;
+  overflow-x: auto;
 `;
 
+// Modify stories wrapper
 const StoriesWrapper = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: 12px; // Instagram-like spacing
   overflow-x: auto;
   scroll-behavior: smooth;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  padding: 1rem;
+  padding: 4px 16px; // Instagram-like padding
   position: relative;
   z-index: 1;
 
@@ -959,11 +961,13 @@ const StoriesWrapper = styled.div`
   }
 
   @media (max-width: 768px) {
-    gap: 0.75rem;
+    gap: 10px;
+    padding: 4px 12px;
   }
 
   @media (max-width: 480px) {
-    gap: 0.5rem;
+    gap: 8px;
+    padding: 4px 8px;
   }
 `;
 
@@ -973,62 +977,63 @@ const StoryItem = styled.div`
   align-items: center;
   cursor: pointer;
   flex: 0 0 auto;
-  width: 90px;
+  width: 66px; // Instagram-like size
   transition: all 0.2s ease;
   position: relative;
   z-index: 2;
 
   &:hover {
-    transform: translateY(-2px);
+    transform: none; // Remove hover effect
   }
 
   ${(props) =>
     props.active &&
     css`
-      transform: scale(1.05);
+      transform: none; // Remove active effect
     `}
 
   @media (max-width: 768px) {
-    width: 80px;
+    width: 64px;
   }
 
   @media (max-width: 480px) {
-    width: 72px;
+    width: 62px;
   }
 `;
 
 const StoryAvatarWrapper = styled.div`
-  width: 78px;
-  height: 78px;
+  width: 62px; // Instagram-like size
+  height: 62px; // Instagram-like size
   border-radius: 50%;
-  padding: 3px;
-  margin-bottom: 0.5rem;
+  padding: 2px; // Instagram uses thinner borders
+  margin-bottom: 6px; // Smaller bottom margin
   position: relative;
   background: ${(props) => {
+    // Instagram uses a gradient border for stories
     if (props.isOwn)
-      return `linear-gradient(45deg, ${COLORS.primarySalmon}, ${COLORS.primaryMint})`;
+      return `linear-gradient(45deg, #C13584, #E1306C, #FD1D1D, #F56040, #FCAF45)`;
     if (!props.viewed)
-      return `linear-gradient(45deg, ${COLORS.primaryBlueGray}, ${COLORS.primaryMint})`;
-    return COLORS.border;
+      return `linear-gradient(45deg, #C13584, #E1306C, #FD1D1D, #F56040, #FCAF45)`;
+    return "#dbdbdb"; // Instagram's viewed story border color
   }};
-  z-index: 2; // Ensure higher z-index than non-critical elements
+  z-index: 2;
 
   ${(props) =>
     !props.viewed &&
     !props.isOwn &&
     css`
-      animation: ${pulse} 2s infinite;
+      animation: none; // Remove pulse animation
     `}
 
   @media (max-width: 768px) {
-    width: 68px;
-    height: 68px;
+    width: 56px;
+    height: 56px;
   }
 
   @media (max-width: 480px) {
-    width: 58px;
-    height: 58px;
-    margin-bottom: 0.375rem;
+    width: 54px;
+    height: 54px;
+    margin-bottom: 4px;
   }
 
   &.image-fallback {
@@ -1037,12 +1042,12 @@ const StoryAvatarWrapper = styled.div`
     justify-content: center;
 
     &:before {
-      background-color: ${COLORS.elevatedBackground};
+      background-color: #fafafa; // Instagram background color
       content: "\\f03e";
       font-family: "Font Awesome 5 Free";
       font-weight: 900;
-      font-size: 1.5rem;
-      color: ${COLORS.textTertiary};
+      font-size: 1.2rem;
+      color: #8e8e8e; // Instagram's secondary text color
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1050,96 +1055,64 @@ const StoryAvatarWrapper = styled.div`
   }
 `;
 
+// Instagram-style story avatar
 const StoryAvatar = styled.img`
   width: 100%;
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  background-color: ${COLORS.elevatedBackground};
+  background-color: #fafafa; // Instagram background color
+  border: 2px solid white; // Instagram adds a white border inside the gradient
 `;
 
+// Instagram-style video indicator is more subtle
 const VideoIndicator = styled.div`
+  display: none; // Instagram doesn't show video indicators on story thumbnails
+
+  /* Alternative styling if you want to keep it
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   background-color: rgba(0, 0, 0, 0.5);
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${COLORS.textPrimary};
-  font-size: 0.8rem;
-  z-index: 2; /* Ensure this appears above the thumbnail */
+  color: white;
+  font-size: 0.7rem;
+  z-index: 2;
 
   @media (max-width: 480px) {
-    width: 20px;
-    height: 20px;
-    font-size: 0.7rem;
+    width: 18px;
+    height: 18px;
+    font-size: 0.6rem;
   }
+  */
 `;
 
+// Instagram-style story username
 const StoryUsername = styled.span`
-  font-size: 0.75rem;
-  color: ${COLORS.textSecondary};
+  font-size: 12px; // Instagram-size text
+  color: #262626; // Instagram text color
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
-  font-weight: 500;
+  font-weight: 400; // Instagram uses lighter fonts
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
 
   @media (max-width: 480px) {
-    font-size: 0.6875rem;
+    font-size: 11px;
   }
 `;
 
 const ScrollButton = styled.button`
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: ${COLORS.cardBackground};
-  border: 1px solid ${COLORS.border};
-  color: ${COLORS.textSecondary};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 2px 6px ${COLORS.shadow};
-  transition: all 0.2s ease;
-
-  ${(props) =>
-    props.direction === "left" &&
-    css`
-      left: -12px;
-    `}
-
-  ${(props) =>
-    props.direction === "right" &&
-    css`
-      right: -12px;
-    `}
-  
-  &:hover {
-    background-color: ${COLORS.elevatedBackground};
-    color: ${COLORS.textPrimary};
-  }
-
-  @media (max-width: 768px) {
-    width: 28px;
-    height: 28px;
-  }
-
-  @media (max-width: 480px) {
-    width: 24px;
-    height: 24px;
-  }
+  display: none; // Hide scroll buttons
 `;
 
 const StoryItemSkeleton = styled.div`
@@ -1308,46 +1281,51 @@ const StoryHeader = styled.div`
   top: 0;
   left: 0;
   right: 0;
-  padding: 48px 16px 16px;
+  padding: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   z-index: 5;
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.8) 0%,
-    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0.3) 0%,
     rgba(0, 0, 0, 0) 100%
   );
   pointer-events: none;
 
   /* iOS Safe Area Support */
   @supports (padding-top: env(safe-area-inset-top)) {
-    padding-top: calc(48px + env(safe-area-inset-top, 0));
+    padding-top: calc(16px + env(safe-area-inset-top, 0));
   }
 `;
 
-const StoryHeaderContent = styled.div`
-  max-width: 80%;
-  padding-right: 40px;
-  padding-left: 16px;
+const StoryHeaderTitle = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid white;
+  }
+
+  h3 {
+    font-size: 0.9rem;
+    color: white;
+    margin: 0;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
 `;
 
-const StoryHeaderTitle = styled.h3`
-  font-size: 1rem;
-  color: white;
-  margin: 0 0 4px 0;
-  font-weight: 600;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-  white-space: normal;
-  line-height: 1.3;
-`;
-
+// Make timestamp more subtle
 const StoryTimestamp = styled.span`
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  font-weight: normal;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 `;
 
 const ControlsBar = styled.div`
@@ -1566,46 +1544,27 @@ const CancelButton = styled.button`
 `;
 
 const StoriesHeaderContainer = styled.div`
-  background: linear-gradient(
-    135deg,
-    ${COLORS.cardBackground} 0%,
-    ${COLORS.elevatedBackground} 100%
-  );
-  border-radius: 12px;
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent; // Remove gradient background
+  border-radius: 0; // Remove border radius
+  padding: 0 16px 12px; // Adjust padding
+  margin-bottom: 0; // Remove margin
+  box-shadow: none; // Remove shadow
+  border: none; // Remove border
   position: relative;
   overflow: hidden;
-  animation: ${fadeIn} 0.6s ease-out forwards;
+  animation: none; // Remove animation
 
+  // Remove the colored top border
   &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(
-      90deg,
-      ${COLORS.primarySalmon},
-      ${COLORS.primaryMint},
-      ${COLORS.primarySalmon}
-    );
-    background-size: 200% 100%;
-    animation: ${shimmer} 3s infinite linear;
+    display: none;
   }
 
   @media (max-width: 768px) {
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border-radius: ${(props) => (props.isPWA ? "0" : "8px")};
+    padding: 0 12px 8px;
   }
 
   @media (max-width: 480px) {
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
+    padding: 0 8px 6px;
   }
 `;
 
@@ -1613,64 +1572,45 @@ const HeaderContentWrapper = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 8px 0; // Add padding instead of margin
 
   @media (max-width: 600px) {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
+    padding: 6px 0;
   }
 `;
 
 const TitleGroup = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.875rem;
+  gap: 8px;
 `;
 
 const IconWrapper = styled.div`
   position: relative;
-  width: 42px;
-  height: 42px;
+  width: 32px; // Smaller size
+  height: 32px; // Smaller size
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primarySalmon}88,
-    ${COLORS.primaryMint}88
-  );
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: transparent; // Remove gradient background
+  box-shadow: none; // Remove shadow
 
   .icon-main {
-    font-size: 1.4rem;
-    color: white;
-    z-index: 2;
+    font-size: 1.2rem;
+    color: #262626; // Instagram-style dark color
   }
 
   .icon-spark {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    font-size: 0.9rem;
-    color: ${COLORS.primarySalmon};
-    background: ${COLORS.cardBackground};
-    border-radius: 50%;
-    padding: 3px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    animation: ${pulse} 2s infinite ease-in-out;
+    display: none; // Remove the spark icon
   }
 
   @media (max-width: 768px) {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
 
     .icon-main {
-      font-size: 1.2rem;
-    }
-
-    .icon-spark {
-      font-size: 0.8rem;
+      font-size: 1.1rem;
     }
   }
 `;
@@ -1680,101 +1620,74 @@ const TitleWrapper = styled.div`
   flex-direction: column;
 
   h3 {
-    margin: 0 0 0.25rem;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: ${COLORS.textPrimary};
-    letter-spacing: 0.5px;
-    position: relative;
-    display: inline-block;
-    font-family: "Mystery Quest", sans-serif;
-    color: ${COLORS.primaryBlueGray};
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #262626; // Instagram-style dark color
+    letter-spacing: normal;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      Helvetica, Arial, sans-serif; // Instagram font stack
 
+    // Remove the underline
     &::after {
-      content: "";
-      position: absolute;
-      bottom: -2px;
-      left: 0;
-      width: 40px;
-      height: 2px;
-      background: ${COLORS.primarySalmon};
-      border-radius: 1px;
+      display: none;
     }
   }
 
   @media (max-width: 768px) {
     h3 {
-      font-size: 1.2rem;
-    }
-  }
-
-  @media (max-width: 480px) {
-    h3 {
-      font-size: 1.1rem;
+      font-size: 0.9rem;
     }
   }
 `;
 
 const Subtitle = styled.div`
-  font-size: 0.85rem;
-  color: ${COLORS.textSecondary};
+  display: none; // Remove subtitle for a cleaner look
+
+  /* Alternative styling if you want to keep it
+  font-size: 0.75rem;
+  color: #8e8e8e; // Instagram-style secondary text
   opacity: ${(props) => (props.animate ? 1 : 0)};
   transform: translateY(${(props) => (props.animate ? 0 : "10px")});
   transition: all 0.5s ease-out 0.2s;
-  font-style: italic;
-
-  @media (max-width: 480px) {
-    font-size: 0.75rem;
-  }
+  font-style: normal; // Remove italic
+  */
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
-
-  @media (max-width: 768px) {
-    gap: 0.75rem;
-  }
-
-  @media (max-width: 480px) {
-    gap: 0.5rem;
-  }
+  gap: 8px;
 `;
 
 const ActiveStoriesIndicator = styled.div`
+  display: none; // Remove this element for Instagram-like minimalism
+
+  /* Alternative styling if you want to keep it
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: rgba(255, 255, 255, 0.07);
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 4px;
+  padding: 5px 10px;
+  background: transparent;
+  border-radius: 4px;
+  border: 1px solid #dbdbdb;
 
   svg {
-    color: ${COLORS.primarySalmon};
-    font-size: 0.9rem;
+    color: #262626;
+    font-size: 0.8rem;
   }
 
   .count {
-    font-weight: 700;
-    color: ${COLORS.textPrimary};
+    font-weight: 600;
+    color: #262626;
   }
 
   .text {
-    color: ${COLORS.textSecondary};
-    font-size: 0.85rem;
-    margin-left: 0.25rem;
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.4rem 0.6rem;
+    color: #8e8e8e;
     font-size: 0.8rem;
-
-    .text {
-      display: none;
-    }
+    margin-left: 2px;
   }
+  */
 `;
 
 const ButtonContent = styled.div`
@@ -1782,52 +1695,30 @@ const ButtonContent = styled.div`
   z-index: 2;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 4px;
 
   .icon {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
   }
 
   @media (max-width: 480px) {
     .icon {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
     }
   }
 `;
 
 const ButtonGlow = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 255, 255, 0.8),
-    transparent 70%
-  );
-  opacity: 0.5;
-  z-index: 1;
-  animation: ${glowPulse} 2s infinite ease-in-out;
+  display: none;
 `;
 
 const ProgressIndicator = styled.div`
-  margin-top: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  display: none;
 `;
 
+// Simplify timeframe display
 const Timeframe = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-  color: ${COLORS.textTertiary};
-
-  svg {
-    font-size: 0.75rem;
-  }
+  display: none;
 `;
 
 const Progress = styled.div`
@@ -1842,75 +1733,15 @@ const Progress = styled.div`
 `;
 
 export const ProgressBarBackground = styled.div`
-  position: relative;
-  flex: 1;
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.2);
-  overflow: hidden;
-
-  ${(props) =>
-    props.complete &&
-    css`
-      animation: ${pulse} 1.5s infinite;
-    `}
+  display: none;
 `;
 
 export const ProgressFill = styled.div`
-  height: 100%;
-  width: ${(props) => (props.complete ? "100%" : `${props.progress * 100}%`)};
-  background: linear-gradient(
-    270deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.primaryMint},
-    ${COLORS.primarySalmon}
-  );
-  background-size: 400% 400%;
-  animation: ${gradientFlow} 3s ease infinite;
-  transition: width 0.4s ease-out;
-  border-radius: 3px;
-
-  /* Optional wave overlay */
-  mask-image: repeating-linear-gradient(
-    -45deg,
-    rgba(0, 0, 0, 1) 0px,
-    rgba(0, 0, 0, 1) 4px,
-    rgba(0, 0, 0, 0) 4px,
-    rgba(0, 0, 0, 0) 8px
-  );
-  mask-size: 16px 16px;
+  display: none;
 `;
 
 export const ProgressParticle = styled.div`
-  position: absolute;
-  top: 50%;
-  left: ${(props) => `${props.progress * 100}%`};
-  transform: translate(-50%, -50%);
-  width: 12px;
-  height: 12px;
-  background: radial-gradient(
-    circle,
-    ${COLORS.primaryMint} 0%,
-    transparent 70%
-  );
-  border-radius: 50%;
-  box-shadow: 0 0 10px ${COLORS.primaryMint}, 0 0 20px ${COLORS.primaryMint};
-  animation: particlePulse 1.2s infinite;
-
-  @keyframes particlePulse {
-    0% {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
-    50% {
-      transform: translate(-50%, -50%) scale(1.4);
-      opacity: 0.7;
-    }
-    100% {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
-  }
+  display: none;
 `;
 
 export default EnhancedStories;
