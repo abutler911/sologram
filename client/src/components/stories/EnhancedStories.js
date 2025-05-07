@@ -1248,12 +1248,12 @@ const ProgressBarContainer = styled.div`
 `;
 
 const ProgressBar = styled.div`
-  height: 2px;
+  height: 4px;
   flex: 1;
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.2);
   position: relative;
   overflow: hidden;
-  border-radius: 1px;
+  border-radius: 2px;
 
   &::after {
     content: "";
@@ -1267,8 +1267,29 @@ const ProgressBar = styled.div`
         : props.active
         ? `${props.progress * 100}%`
         : "0"};
-    background-color: ${COLORS.primarySalmon};
-    transition: width 0.2s linear;
+    background: linear-gradient(
+      270deg,
+      ${COLORS.primarySalmon},
+      ${COLORS.primaryMint},
+      ${COLORS.primarySalmon}
+    );
+    background-size: 400% 400%;
+    animation: gradientFlow 3s ease infinite;
+    transition: width 0.4s ease-out;
+    border-radius: 2px;
+    box-shadow: 0 0 6px ${COLORS.primarySalmon}, 0 0 10px ${COLORS.primaryMint};
+  }
+
+  @keyframes gradientFlow {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
   }
 `;
 
