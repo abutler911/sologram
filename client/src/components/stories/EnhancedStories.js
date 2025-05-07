@@ -44,6 +44,8 @@ const EnhancedStories = ({ isPWA = false }) => {
     window.matchMedia("(display-mode: standalone)").matches
   );
   const [headerAnimated, setHeaderAnimated] = useState(false);
+  // Add this with your other state declarations at the top of the component
+  const [progress, setProgress] = useState(0.33);
   // References and hooks
   const storiesRef = useRef(null);
   const { user, isAuthenticated } = useContext(AuthContext);
@@ -461,9 +463,12 @@ const EnhancedStories = ({ isPWA = false }) => {
               <FaHourglassHalf />
               <span>Stories refresh in 24h</span>
             </Timeframe>
-            <ProgressBar>
-              <Progress width="33%" />
-            </ProgressBar>
+            <ProgressBarBackground complete={progress >= 1}>
+              <ProgressFill progress={progress} complete={progress >= 1} />
+              {progress > 0 && progress < 1 && (
+                <ProgressParticle progress={progress} />
+              )}
+            </ProgressBarBackground>
           </ProgressIndicator>
         </StoriesHeaderContainer>
         <StoriesWrapper>
@@ -653,19 +658,24 @@ const EnhancedStories = ({ isPWA = false }) => {
       {activeStory && (
         <StoryModal>
           <ProgressBarContainer>
-            {activeStory.media.map((_, index) => (
-              <ProgressBar
-                key={index}
-                active={index === activeStoryIndex}
-                complete={index < activeStoryIndex}
-                progress={
-                  index === activeStoryIndex &&
-                  activeStory.media[index].mediaType !== "video"
-                    ? (10 - timeLeft) / 10
-                    : 0
-                }
-              />
-            ))}
+            {activeStory.media.map((_, index) => {
+              const progress =
+                index < activeStoryIndex
+                  ? 1
+                  : index === activeStoryIndex &&
+                    activeStory.media[index].mediaType !== "video"
+                  ? (10 - timeLeft) / 10
+                  : 0;
+
+              return (
+                <ProgressBarBackground key={index} complete={progress >= 1}>
+                  <ProgressFill progress={progress} complete={progress >= 1} />
+                  {progress > 0 && progress < 1 && (
+                    <ProgressParticle progress={progress} />
+                  )}
+                </ProgressBarBackground>
+              );
+            })}
           </ProgressBarContainer>
 
           <StoryHeader>
@@ -753,15 +763,15 @@ const EnhancedStories = ({ isPWA = false }) => {
 
 // Animations
 const pulse = keyframes`
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { box-shadow: 0 0 5px ${COLORS.primarySalmon}; }
+  50% { box-shadow: 0 0 15px ${COLORS.primaryMint}; }
+  100% { box-shadow: 0 0 5px ${COLORS.primarySalmon}; }
+`;
+
+const gradientFlow = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 `;
 
 const fadeIn = keyframes`
@@ -1830,4 +1840,77 @@ const Progress = styled.div`
   );
   border-radius: 2px;
 `;
+
+export const ProgressBarBackground = styled.div`
+  position: relative;
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+
+  ${(props) =>
+    props.complete &&
+    css`
+      animation: ${pulse} 1.5s infinite;
+    `}
+`;
+
+export const ProgressFill = styled.div`
+  height: 100%;
+  width: ${(props) => (props.complete ? "100%" : `${props.progress * 100}%`)};
+  background: linear-gradient(
+    270deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.primaryMint},
+    ${COLORS.primarySalmon}
+  );
+  background-size: 400% 400%;
+  animation: ${gradientFlow} 3s ease infinite;
+  transition: width 0.4s ease-out;
+  border-radius: 3px;
+
+  /* Optional wave overlay */
+  mask-image: repeating-linear-gradient(
+    -45deg,
+    rgba(0, 0, 0, 1) 0px,
+    rgba(0, 0, 0, 1) 4px,
+    rgba(0, 0, 0, 0) 4px,
+    rgba(0, 0, 0, 0) 8px
+  );
+  mask-size: 16px 16px;
+`;
+
+export const ProgressParticle = styled.div`
+  position: absolute;
+  top: 50%;
+  left: ${(props) => `${props.progress * 100}%`};
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(
+    circle,
+    ${COLORS.primaryMint} 0%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  box-shadow: 0 0 10px ${COLORS.primaryMint}, 0 0 20px ${COLORS.primaryMint};
+  animation: particlePulse 1.2s infinite;
+
+  @keyframes particlePulse {
+    0% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: translate(-50%, -50%) scale(1.4);
+      opacity: 0.7;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+  }
+`;
+
 export default EnhancedStories;
