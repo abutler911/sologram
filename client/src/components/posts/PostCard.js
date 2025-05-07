@@ -886,7 +886,7 @@ const ActionsContainer = styled.div`
 const Username = styled.span`
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif;
-  font-size: 14px; // Instagram-like size
+  font-size: 18px; // Instagram-like size
   font-weight: 600; // Bolder
   letter-spacing: 0;
   margin: 0;
