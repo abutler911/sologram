@@ -1,218 +1,84 @@
 import React from "react";
 import styled from "styled-components";
 import { FaHeart, FaCamera, FaEnvelope, FaGithub } from "react-icons/fa";
-import { COLORS } from "../../theme";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   return (
     <FooterContainer>
       <FooterContent>
-        <TopSection>
-          <LogoSection>
-            <div className="logo">
-              <FaCamera className="icon" />
-              <span>SoloGram</span>
-            </div>
-            <div className="tagline">One Voice. Infinite Moments.</div>
-          </LogoSection>
-          <SocialLinks>
-            <SocialLink href="mailto:abutler911@gmail.com" aria-label="Email">
-              <FaEnvelope />
-            </SocialLink>
-            <SocialLink
-              href="https://github.com/abutler911"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="GitHub"
-            >
-              <FaGithub />
-            </SocialLink>
-          </SocialLinks>
-        </TopSection>
-        <Divider />
-        <BottomSection>
-          <Copyright>
-            &copy; {currentYear} SoloGram. All rights reserved.
-          </Copyright>
-          <CreatedWithLove>
-            Created with <HeartIcon /> by Andrew
-          </CreatedWithLove>
-          <FooterLinks>
-            <FooterLink href="/about">About</FooterLink>
-            <FooterLink href="/privacy">Privacy</FooterLink>
-            <FooterLink href="/terms">Terms</FooterLink>
-          </FooterLinks>
-        </BottomSection>
+        <FooterLinks>
+          <FooterLink href="/about">About</FooterLink>
+          <FooterLink href="/privacy">Privacy</FooterLink>
+          <FooterLink href="/terms">Terms</FooterLink>
+          <FooterLink href="mailto:abutler911@gmail.com">Contact</FooterLink>
+          <FooterLink
+            href="https://github.com/abutler911"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub
+          </FooterLink>
+        </FooterLinks>
+        <Copyright>&copy; {currentYear} SoloGram</Copyright>
       </FooterContent>
     </FooterContainer>
   );
 };
 
+// Instagram uses a very minimal, clean footer with subtle colors
 const FooterContainer = styled.footer`
-  background-color: ${COLORS.background};
-  border-top: 1px solid ${COLORS.border};
-  padding: 2rem 0;
-  padding-bottom: calc(2rem + env(safe-area-inset-bottom));
-  /* Removed the margin-bottom: 65px; that was causing the white space */
+  background-color: transparent;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 20px 0;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  color: #8e8e8e;
+  margin-top: 24px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
 `;
 
 const FooterContent = styled.div`
-  max-width: 1200px;
+  max-width: 470px; // Match the Instagram feed width
   margin: 0 auto;
-  padding: 0 2rem;
-
-  @media (min-width: 768px) and (max-width: 1024px) {
-    padding: 0 1.5rem;
-  }
-
-  @media (max-width: 768px) {
-    padding: 0 1rem;
-  }
-`;
-
-const TopSection = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-
-  @media (min-width: 768px) and (max-width: 1024px) {
-    /* Keep two column layout but adjust spacing */
-    margin-bottom: 1.25rem;
-  }
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 1.5rem;
-    align-items: flex-start;
-  }
-`;
-
-const LogoSection = styled.div`
+  padding: 0 16px;
   display: flex;
   flex-direction: column;
-  color: ${COLORS.primaryBlueGray};
-
-  .logo {
-    display: flex;
-    align-items: center;
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-
-    .icon {
-      font-size: 1.5rem;
-      margin-right: 0.5rem;
-    }
-  }
-
-  .tagline {
-    font-size: 0.9rem;
-    font-style: italic;
-    color: ${COLORS.accentSalmon};
-  }
-
-  @media (min-width: 768px) and (max-width: 1024px) {
-    .logo {
-      font-size: 1.3rem;
-
-      .icon {
-        font-size: 1.3rem;
-      }
-    }
-
-    .tagline {
-      font-size: 0.8rem;
-    }
-  }
-`;
-
-const SocialLinks = styled.div`
-  display: flex;
-  gap: 1.25rem;
-
-  a {
-    font-size: 1.25rem;
-  }
+  align-items: center;
 
   @media (max-width: 768px) {
-    margin-top: 0.5rem;
+    padding: 0 16px;
   }
-`;
-
-const SocialLink = styled.a`
-  color: ${COLORS.textSecondary};
-  transition: color 0.3s;
-
-  &:hover {
-    color: ${COLORS.primarySalmon};
-  }
-`;
-
-const Divider = styled.hr`
-  border: none;
-  border-top: 1px solid ${COLORS.divider};
-  margin-bottom: 1.5rem;
-`;
-
-const BottomSection = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-
-  @media (min-width: 768px) and (max-width: 1024px) {
-    /* Keep layout but adjust spacing */
-    gap: 0.75rem;
-  }
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    text-align: center;
-  }
-`;
-
-const Copyright = styled.p`
-  color: ${COLORS.textTertiary};
-  margin: 0;
-  font-size: 0.875rem;
-`;
-
-const CreatedWithLove = styled.p`
-  color: ${COLORS.textTertiary};
-  display: flex;
-  align-items: center;
-  font-size: 0.875rem;
-  margin: 0;
-`;
-
-const HeartIcon = styled(FaHeart)`
-  color: ${COLORS.heartRed};
-  margin: 0 0.25rem;
 `;
 
 const FooterLinks = styled.div`
   display: flex;
-  gap: 1rem;
-
-  @media (max-width: 768px) {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 12px;
 `;
 
 const FooterLink = styled.a`
-  color: ${COLORS.textSecondary};
-  font-size: 0.875rem;
+  color: #8e8e8e;
+  font-size: 12px;
   text-decoration: none;
-  transition: color 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  font-weight: 500;
 
   &:hover {
-    color: ${COLORS.accentMint};
-    text-decoration: underline;
+    color: #262626;
   }
+`;
+
+const Copyright = styled.p`
+  margin: 0;
+  color: #8e8e8e;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
 `;
 
 export default Footer;
