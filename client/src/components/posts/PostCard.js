@@ -809,71 +809,45 @@ const LikesCounterStandalone = styled.div`
 // Include all other styled components from the original file
 const CardWrapper = styled.div`
   ${fontFaceStyles}
-  background-color: ${COLORS.background};
+  background-color: transparent;
   width: 100%;
   max-width: 600px;
   display: flex;
   justify-content: center;
-  margin: 24px auto;
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  margin: 0 auto; // Removed vertical margins
+  padding-bottom: 16px; // Added padding at bottom instead
+  transition: opacity 0.5s ease;
   animation: ${fadeIn} 0.6s ease-out;
-  filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.6));
-  border-radius: 8px;
+  filter: none; // Removed drop-shadow
+  border-radius: 0;
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    width: 94%;
-    margin: 18px auto;
-    padding: 0;
-    max-width: 480px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 0 12px 0;
+    max-width: 100%; // Full width on mobile
   }
 `;
 
 const Card = styled.article`
   position: relative;
-  background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
-  overflow: hidden;
+  background-color: transparent;
+  border-radius: 0;
+  overflow: visible; // Changed from hidden to allow content to flow
   width: 100%;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 24px ${COLORS.shadow}, 0 2px 6px rgba(0, 0, 0, 0.15);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  will-change: transform, box-shadow;
-  border: 3px solid ${COLORS.primaryMint};
-
-  /* add z-index stacking */
-  & > * {
-    position: relative;
-    z-index: 1;
-  }
+  box-shadow: none;
+  transition: none;
+  border: none;
 
   &:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    pointer-events: none;
-    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
-    z-index: 0;
+    display: none; // Remove pseudo element
   }
 
   &:hover {
-    transform: translateY(-5px) scale(1.01);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 5px 15px rgba(0, 0, 0, 0.2);
-  }
-
-  @media (max-width: 768px), screen and (display-mode: standalone) {
-    border-radius: 8px;
-    border-width: 2px;
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
-
-    &:active {
-      transform: scale(0.99);
-    }
+    transform: none; // Remove hover effects
+    box-shadow: none;
   }
 `;
 
@@ -881,26 +855,17 @@ const CardHeader = styled.header`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
-  background-color: ${COLORS.elevatedBackground};
+  padding: 12px 16px;
+  background-color: transparent;
   position: relative;
-  border-bottom: 1px solid ${COLORS.border};
+  border-bottom: none;
 
   &:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 5px;
-    background-color: ${COLORS.primaryMint};
-    opacity: 0.9;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
+    display: none; // Remove top bar
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
-    padding: 14px 16px;
+    padding: 12px 16px;
   }
 `;
 
@@ -919,18 +884,18 @@ const ActionsContainer = styled.div`
 `;
 
 const Username = styled.span`
-  font-family: "Autography", cursive;
-  font-size: 2.2rem;
-  font-weight: 300;
-  letter-spacing: 0.6px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  font-size: 14px; // Instagram-like size
+  font-weight: 600; // Bolder
+  letter-spacing: 0;
   margin: 0;
   line-height: 1.1;
   color: ${COLORS.textPrimary};
-  transition: all 0.3s ease;
 
   &:hover {
-    color: ${COLORS.accentMint};
-    text-shadow: 0 2px 8px ${COLORS.accentMint}40;
+    color: ${COLORS.textPrimary}; // No color change on hover
+    text-shadow: none; // No text shadow
   }
 `;
 
@@ -938,14 +903,12 @@ const DateBadge = styled.div`
   display: flex;
   align-items: center;
   color: ${COLORS.textTertiary};
-  font-size: 0.4rem;
-  margin-top: 1px;
-  font-weight: 400;
+  font-size: 0.7rem; // Smaller
+  margin-top: 2px;
+  font-weight: normal;
 
   svg {
-    margin-right: 4px;
-    font-size: 0.7rem;
-    color: ${COLORS.accentMint};
+    display: none; // Hide icon
   }
 `;
 
@@ -1027,11 +990,12 @@ const MediaContainer = styled(Link)`
   aspect-ratio: 1/1;
   display: block;
   overflow: hidden;
-  background-color: #f3f3f3;
+  background-color: transparent;
   transition: opacity 0.2s ease;
   opacity: ${(props) => (props.isPressing ? 0.9 : 1)};
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: none;
 
+  // Keep loading animation
   &:before {
     content: "";
     position: absolute;
@@ -1048,15 +1012,6 @@ const MediaContainer = styled(Link)`
     transform: translateX(-100%);
     animation: ${(props) =>
       props.isLoading ? "loadingAnimation 1.5s infinite" : "none"};
-
-    @keyframes loadingAnimation {
-      from {
-        transform: translateX(-100%);
-      }
-      to {
-        transform: translateX(100%);
-      }
-    }
   }
 `;
 
@@ -1091,19 +1046,19 @@ const PostImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transition: opacity 0.5s ease;
   opacity: 0;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transform: scale(0.98);
+  border-radius: 0; // No border radius
+  box-shadow: none; // No shadow
+  transform: scale(1); // No scale effect
 
   &.loaded {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1); // No scale effect
   }
 
   ${MediaContainer}:hover & {
-    transform: scale(1.02);
+    transform: scale(1); // No hover effect
   }
 
   &.filter-warm {
@@ -1279,15 +1234,15 @@ const HeartAnimation = styled.div`
 `;
 
 const CardActions = styled.div`
-  padding: 14px 16px 6px;
-  background-color: ${COLORS.cardBackground};
-  border-bottom: 1px solid ${COLORS.divider};
+  padding: 8px 16px 4px;
+  background-color: transparent;
+  border-bottom: none;
 `;
 
 const ActionGroup = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px; // Added gap between like button and counter
 `;
 
 const LikeButton = styled.button`
@@ -1297,12 +1252,13 @@ const LikeButton = styled.button`
   font-size: 1.5rem;
   cursor: ${(props) =>
     props.disabled && !props.liked ? "default" : "pointer"};
-  padding: 6px;
-  margin-left: -6px;
+  padding: 0; // Reduced padding
+  margin: 0; // Removed margins
   display: flex;
   align-items: center;
   transition: all 0.2s ease;
 
+  // Keep hover effects for like button
   &:hover {
     transform: ${(props) =>
       !props.disabled || props.liked ? "scale(1.15)" : "none"};
@@ -1310,6 +1266,7 @@ const LikeButton = styled.button`
       !props.disabled && !props.liked ? COLORS.heartRed : ""};
   }
 
+  // Keep active effects for like button
   &:active {
     transform: ${(props) =>
       !props.disabled || props.liked ? "scale(0.9)" : "none"};
@@ -1318,108 +1275,68 @@ const LikeButton = styled.button`
   ${(props) =>
     props.liked &&
     css`
-      filter: drop-shadow(
-        0 0 10px rgba(230, 57, 70, 0.5)
-      ); // Red glow around heart
+      filter: none; // Removed glow
     `}
-
-  @media (max-width: 768px), screen and (display-mode: standalone) {
-    font-size: 1.6rem;
-
-    ${(props) =>
-      props.liked &&
-      css`
-        animation: ${pulse} 0.8s ease-in-out;
-      `}
-  }
 `;
 
 const LikesCounter = styled.div`
   display: flex;
   align-items: center;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: ${COLORS.textSecondary};
-  background-color: ${COLORS.elevatedBackground};
-  padding: 8px 14px;
-  border-radius: 20px;
-  transition: all 0.2s ease;
-  border: 1px solid ${COLORS.border};
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  color: ${COLORS.textPrimary};
+  background-color: transparent;
+  padding: 0;
+  transition: none;
+  border: none;
+  box-shadow: none;
+  margin: 0;
 
   span {
     position: relative;
 
     &:after {
-      content: "";
-      position: absolute;
-      left: 0;
-      bottom: -2px;
-      width: 100%;
-      height: 1px;
-      background-color: ${COLORS.accentMint};
-      transform-origin: left;
-      transform: scaleX(0);
-      transition: transform 0.3s ease;
-      opacity: 0.8;
-    }
-
-    &:hover:after {
-      transform: scaleX(1);
+      display: none; // Removed underline effect on hover
     }
   }
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transform: none; // No hover effect
+    box-shadow: none;
   }
 `;
 
 const CardContent = styled.div`
-  padding: 22px 16px 24px;
+  padding: 0 16px 8px;
   display: flex;
   flex-direction: column;
-  background-color: ${COLORS.cardBackground};
+  background-color: transparent;
 `;
 
 const PostTitle = styled.h2`
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: ${COLORS.textPrimary};
-  margin: 0 0 12px 0;
+  margin: 0 0 6px 0;
   line-height: 1.4;
   word-break: break-word;
-  transition: color 0.2s ease;
-  letter-spacing: -0.01em;
+  transition: none;
+  letter-spacing: 0;
 `;
 
 const Content = styled.p`
   color: ${COLORS.textSecondary};
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   line-height: 1.4;
-  margin: 8px 0;
+  margin: 0 0 8px 0;
   word-break: break-word;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 2; // Reduced from 4 to 2 lines
   -webkit-box-orient: vertical;
-  transition: color 0.2s ease;
-  letter-spacing: 0.01em;
-
-  a {
-    display: inline;
-    margin-left: 4px;
-    font-weight: 600;
-    font-size: 0.8rem;
-    color: ${COLORS.accentSalmon}; /* <- salmon accent for "read more" */
-    text-decoration: none;
-
-    &:hover {
-      text-decoration: underline;
-      color: ${COLORS.primarySalmon}; /* slightly darker salmon on hover */
-    }
-  }
+  transition: none;
+  letter-spacing: 0;
 `;
 
 const TagsContainer = styled.div`
@@ -1446,57 +1363,36 @@ const Tag = styled.span`
 `;
 
 const ViewPostLink = styled(Link)`
-  color: #ffffff;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-top: 16px;
+  display: none; // Hide the view post button entirely
+
+  /* Alternative: make it subtle and text-only */
+  /*
+  color: ${COLORS.textTertiary};
+  font-size: 0.8rem;
+  font-weight: normal;
+  margin-top: 8px;
   text-decoration: none;
-  align-self: center;
-  padding: 10px 18px;
-  border-radius: 4px;
-  transition: all 0.25s ease;
-  background-color: ${COLORS.primaryMint};
+  align-self: flex-start;
+  padding: 0;
+  background-color: transparent;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   position: relative;
-  box-shadow: 0 4px 12px ${COLORS.primaryMint}40;
+  box-shadow: none;
+  text-transform: uppercase;
 
   &:hover {
     text-decoration: none;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 14px ${COLORS.primaryMint}60;
-    background-color: ${COLORS.accentMint};
+    transform: none;
+    box-shadow: none;
+    background-color: transparent;
   }
 
   &:before {
-    content: "";
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    border: 1px solid ${COLORS.accentMint}40;
-    border-radius: 6px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    display: none;
   }
-
-  &:hover:before {
-    opacity: 1;
-  }
-
-  @media (max-width: 768px), screen and (display-mode: standalone) {
-    font-size: 0.85rem;
-    padding: 10px 18px;
-    border-radius: 4px;
-    align-self: center;
-
-    &:active {
-      transform: translateY(2px);
-      box-shadow: 0 2px 6px ${COLORS.primaryMint}40;
-    }
-  }
+  */
 `;
 
 const ViewPostArrow = styled.span`
@@ -1717,18 +1613,18 @@ const PostLink = styled(Link)`
 `;
 
 const UserAvatarImage = styled.img`
-  width: 44px;
-  height: 44px;
+  width: 32px; // Smaller Instagram-like size
+  height: 32px;
   border-radius: 50%;
   object-fit: cover;
-  margin-right: 14px;
-  border: 3px solid ${COLORS.primaryMint};
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
-  transition: all 0.3s ease;
+  margin-right: 12px;
+  border: none; // No border
+  box-shadow: none; // No shadow
+  transition: none; // No transition
 
   &:hover {
-    transform: scale(1.08);
-    box-shadow: 0 0 15px ${COLORS.primaryMint}80;
+    transform: none; // No hover effect
+    box-shadow: none;
   }
 `;
 

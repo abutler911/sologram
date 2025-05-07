@@ -373,9 +373,9 @@ const Home = forwardRef((props, ref) => {
 
 // Styled components (same as original but organized)
 const PageWrapper = styled.div`
-  background-color: ${COLORS.background};
+  background-color: #fafafa; // Instagram's background color
   min-height: 100vh;
-  padding: 0.5rem 0 5rem;
+  padding: 0; // No padding
 
   @supports (-webkit-touch-callout: none) {
     min-height: -webkit-fill-available;
@@ -383,27 +383,23 @@ const PageWrapper = styled.div`
 `;
 
 const HomeContainer = styled.div`
-  max-width: 1200px;
+  max-width: 470px; // Instagram feed width is narrower
   margin: 0 auto;
-  padding: 0.75rem 2rem;
+  padding: 0; // No padding
 
   @media (min-width: 768px) and (max-width: 1024px) {
-    max-width: 100%;
-    padding: 0.75rem 1.25rem;
+    max-width: 470px;
+    padding: 0;
   }
 
   @media (max-width: 768px) {
     max-width: 100%;
-    padding: ${(props) => (props.isPWA ? "0.5rem 0.25rem" : "0.5rem 0.5rem")};
+    padding: 0;
     box-sizing: border-box;
   }
 
-  @media (max-width: 480px) {
-    padding: ${(props) => (props.isPWA ? "0.25rem 0" : "0.5rem 0.25rem")};
-  }
-
   & > section {
-    margin-top: 1rem;
+    margin-top: 0; // Remove margin from sections
   }
 `;
 
@@ -590,38 +586,45 @@ const ClearSearchButton = styled.button`
 
 // Post grid styles
 const PostGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0; // No gap between posts
   padding: 0;
   margin: 0;
   width: 100%;
 
+  /* Add subtle dividers between posts */
+  & > div:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05); // Very subtle divider
+  }
+
   @media (min-width: 768px) and (max-width: 1024px) {
-    /* Tablet-specific styling */
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-    padding: 0 0.5rem;
+    /* Keep single column on tablet */
+    display: flex;
+    flex-direction: column;
+    padding: 0;
   }
 
   @media (min-width: 1025px) {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
   }
 
   @media (max-width: 768px) {
-    grid-template-columns: 1fr; /* Always one column on mobile/PWA */
-    gap: ${(props) => (props.isPWA ? "0.5rem" : "0.75rem")};
-    padding: ${(props) => (props.isPWA ? "0" : "0 0.25rem")};
+    display: flex;
+    flex-direction: column;
+    padding: 0;
     width: 100%;
-    border-radius: ${(props) => (props.isPWA ? "0" : "6px")};
+    border-radius: 0;
   }
 `;
 
 const GridItem = styled.div`
   display: flex;
-  justify-content: center; /* Center the card */
+  justify-content: center;
   height: 100%;
   max-width: 100%;
+  padding: 0; // No padding
 
   @media (max-width: 768px) {
     width: 100%;
