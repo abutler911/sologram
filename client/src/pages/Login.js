@@ -139,6 +139,10 @@ const LogoContainer = styled.div`
   flex-direction: column;
   align-items: center;
   margin-bottom: 2.5rem;
+
+  @media (max-width: 480px) {
+    margin-bottom: 2rem;
+  }
 `;
 
 const LogoIcon = styled.div`
@@ -268,6 +272,11 @@ const ActionButton = styled.button`
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
+  }
+
+  @media (max-width: 480px) {
+    padding: 1rem;
+    font-size: 1rem;
   }
 `;
 

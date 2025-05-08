@@ -342,6 +342,10 @@ const LogoContainer = styled.div`
   flex-direction: column;
   align-items: center;
   margin-bottom: 2.5rem;
+
+  @media (max-width: 480px) {
+    margin-bottom: 2rem;
+  }
 `;
 
 const LogoIcon = styled.div`
@@ -434,12 +438,19 @@ const Input = styled.input`
     border-color: ${COLORS.primaryMint};
     box-shadow: 0 0 0 2px rgba(134, 227, 206, 0.2);
   }
+
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    padding: ${(props) =>
+      props.hasIcon ? "0.85rem 0.75rem 0.85rem 2.5rem" : "0.85rem"};
+  }
 `;
 
 const FormRow = styled.div`
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
+  width: 100%;
 
   @media (max-width: 480px) {
     flex-direction: column;
@@ -467,6 +478,12 @@ const TextArea = styled.textarea`
     outline: none;
     border-color: ${COLORS.primaryMint};
     box-shadow: 0 0 0 2px rgba(134, 227, 206, 0.2);
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    padding: 0.85rem;
+    min-height: 100px;
   }
 `;
 
@@ -580,6 +597,11 @@ const BaseButton = styled.button`
     opacity: 0.7;
     cursor: not-allowed;
   }
+
+  @media (max-width: 480px) {
+    padding: 1rem;
+    font-size: 1rem;
+  }
 `;
 
 const ActionButton = styled(BaseButton)`
@@ -602,6 +624,11 @@ const ActionButton = styled(BaseButton)`
   &:active:not(:disabled) {
     transform: translateY(0);
     box-shadow: 0 2px 6px rgba(242, 120, 92, 0.2);
+  }
+
+  @media (max-width: 480px) {
+    padding: 1rem;
+    font-size: 1rem;
   }
 `;
 
