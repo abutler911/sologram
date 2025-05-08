@@ -8,10 +8,6 @@ import {
   FaSignInAlt,
   FaSearch,
   FaTimes,
-  FaCompass,
-  FaRegHeart,
-  FaPlus,
-  FaHome,
 } from "react-icons/fa";
 
 import { AuthContext } from "../../context/AuthContext";
@@ -167,35 +163,6 @@ const Header = ({ onSearch, onClearSearch }) => {
               </ActionButton>
             )}
 
-            {/* Icon Navigation (Visible when not searching) */}
-            {!searchExpanded && isAuthenticated && (
-              <IconNavigation>
-                <IconLink
-                  to="/"
-                  active={location.pathname === "/" ? "true" : undefined}
-                >
-                  <FaHome />
-                </IconLink>
-                <IconLink
-                  to="/explore"
-                  active={location.pathname === "/explore" ? "true" : undefined}
-                >
-                  <FaCompass />
-                </IconLink>
-                <CreateButton to="/create">
-                  <FaPlus />
-                </CreateButton>
-                <IconLink
-                  to="/notifications"
-                  active={
-                    location.pathname === "/notifications" ? "true" : undefined
-                  }
-                >
-                  <FaRegHeart />
-                </IconLink>
-              </IconNavigation>
-            )}
-
             {/* User Menu */}
             {isAuthenticated ? (
               <UserMenuContainer ref={userMenuRef}>
@@ -257,7 +224,7 @@ const HeaderContent = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  height: 70px;
+  height: 60px;
   position: relative;
 `;
 
@@ -409,59 +376,6 @@ const CloseSearchButton = styled.button`
 
   &:hover {
     color: ${COLORS.primarySalmon};
-  }
-`;
-
-const IconNavigation = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-
-  @media (max-width: 480px) {
-    gap: 0.75rem;
-  }
-`;
-
-const IconLink = styled(Link)`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${(props) =>
-    props.active ? COLORS.primarySalmon : COLORS.textPrimary};
-  font-size: 1.25rem;
-  transition: color 0.3s, transform 0.2s;
-
-  &:hover {
-    color: ${COLORS.primarySalmon};
-    transform: scale(1.1);
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1.1rem;
-  }
-`;
-
-const CreateButton = styled(Link)`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: ${COLORS.primarySalmon};
-  color: white;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  transition: background-color 0.3s, transform 0.2s;
-
-  &:hover {
-    background-color: ${COLORS.accentSalmon};
-    transform: scale(1.1);
-  }
-
-  @media (max-width: 480px) {
-    width: 1.75rem;
-    height: 1.75rem;
-    font-size: 0.75rem;
   }
 `;
 
