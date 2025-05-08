@@ -10,11 +10,10 @@ import {
 import { LikesContext } from "../../context/LikesContext";
 import { Link } from "react-router-dom";
 import styled, { keyframes, css } from "styled-components";
-import { FaHeart, FaRegHeart } from "react-icons/fa/index.js";
-import { FaEllipsisH } from "react-icons/fa/index.js";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa/index.js";
-import { FaEdit, FaTrash } from "react-icons/fa/index.js";
-import { FaCalendarAlt } from "react-icons/fa/index.js";
+import { FaHeart, FaRegHeart, FaComment } from "react-icons/fa";
+import { FaEllipsisH } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
@@ -363,20 +362,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     }
   }, [post._id, onDelete]);
 
-  const checkApiConfig = () => {
-    const config = {
-      token: localStorage.getItem("token") ? "Token exists" : "No token found",
-      baseUrl:
-        process.env.REACT_APP_API_URL || "Not defined (using relative URLs)",
-      browserUrl: window.location.href,
-      protocol: window.location.protocol,
-      host: window.location.host,
-    };
-
-    console.table(config);
-    return config;
-  };
-
   const handleNext = useCallback(
     (e) => {
       if (e) e.preventDefault();
@@ -582,9 +567,8 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         )}
 
         <CardActions>
-          {/* Only show like button if user is authenticated */}
-          {isAuthenticated && (
-            <ActionGroup>
+          <ActionButtons>
+            {isAuthenticated ? (
               <LikeButton
                 onClick={handleLike}
                 disabled={isProcessing || hasLiked}
@@ -600,20 +584,20 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                   <FaRegHeart />
                 )}
               </LikeButton>
-              <LikesCounter>
-                <span>
-                  {post.likes} {post.likes === 1 ? "like" : "likes"}
-                </span>
-              </LikesCounter>
-            </ActionGroup>
-          )}
+            ) : (
+              <LikeIcon>
+                <FaHeart />
+              </LikeIcon>
+            )}
 
-          {!isAuthenticated && (
-            <LikesDisplayStandalone>
-              <FaHeart className="heart-icon" />
-              <span>{post.likes}</span>
-            </LikesDisplayStandalone>
-          )}
+            <CommentButton to={`/post/${post._id}`}>
+              <FaComment />
+            </CommentButton>
+          </ActionButtons>
+
+          <LikesCount>
+            <strong>{post.likes}</strong> {post.likes === 1 ? "like" : "likes"}
+          </LikesCount>
         </CardActions>
 
         <CardContent>
@@ -764,49 +748,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 });
 
 // STYLED COMPONENTS
-const LikesCounterStandalone = styled.div`
-  display: flex;
-  align-items: center;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: ${COLORS.textSecondary};
-  background-color: ${COLORS.elevatedBackground};
-  padding: 8px 14px;
-  border-radius: 20px;
-  transition: all 0.2s ease;
-  border: 1px solid ${COLORS.border};
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  margin: 0 auto;
-
-  span {
-    position: relative;
-
-    &:after {
-      content: "";
-      position: absolute;
-      left: 0;
-      bottom: -2px;
-      width: 100%;
-      height: 1px;
-      background-color: ${COLORS.accentMint};
-      transform-origin: left;
-      transform: scaleX(0);
-      transition: transform 0.3s ease;
-      opacity: 0.8;
-    }
-
-    &:hover:after {
-      transform: scaleX(1);
-    }
-  }
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-  }
-`;
-
-// Include all other styled components from the original file
 const CardWrapper = styled.div`
   ${fontFaceStyles}
   background-color: transparent;
@@ -814,18 +755,18 @@ const CardWrapper = styled.div`
   max-width: 600px;
   display: flex;
   justify-content: center;
-  margin: 0 auto; // Removed vertical margins
-  padding-bottom: 16px; // Added padding at bottom instead
+  margin: 0 auto;
+  padding-bottom: 16px;
   transition: opacity 0.5s ease;
   animation: ${fadeIn} 0.6s ease-out;
-  filter: none; // Removed drop-shadow
+  filter: none;
   border-radius: 0;
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     width: 100%;
     margin: 0 auto;
     padding: 0 0 12px 0;
-    max-width: 100%; // Full width on mobile
+    max-width: 100%;
   }
 `;
 
@@ -833,7 +774,7 @@ const Card = styled.article`
   position: relative;
   background-color: transparent;
   border-radius: 0;
-  overflow: visible; // Changed from hidden to allow content to flow
+  overflow: visible;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -842,11 +783,11 @@ const Card = styled.article`
   border: none;
 
   &:before {
-    display: none; // Remove pseudo element
+    display: none;
   }
 
   &:hover {
-    transform: none; // Remove hover effects
+    transform: none;
     box-shadow: none;
   }
 `;
@@ -861,7 +802,7 @@ const CardHeader = styled.header`
   border-bottom: none;
 
   &:before {
-    display: none; // Remove top bar
+    display: none;
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -886,16 +827,16 @@ const ActionsContainer = styled.div`
 const Username = styled.span`
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif;
-  font-size: 18px; // Instagram-like size
-  font-weight: 600; // Bolder
+  font-size: 18px;
+  font-weight: 600;
   letter-spacing: 0;
   margin: 0;
   line-height: 1.1;
   color: ${COLORS.textPrimary};
 
   &:hover {
-    color: ${COLORS.textPrimary}; // No color change on hover
-    text-shadow: none; // No text shadow
+    color: ${COLORS.textPrimary};
+    text-shadow: none;
   }
 `;
 
@@ -903,12 +844,12 @@ const DateBadge = styled.div`
   display: flex;
   align-items: center;
   color: ${COLORS.textTertiary};
-  font-size: 0.7rem; // Smaller
+  font-size: 0.7rem;
   margin-top: 2px;
   font-weight: normal;
 
   svg {
-    display: none; // Hide icon
+    display: none;
   }
 `;
 
@@ -1048,17 +989,17 @@ const PostImage = styled.img`
   object-fit: cover;
   transition: opacity 0.5s ease;
   opacity: 0;
-  border-radius: 0; // No border radius
-  box-shadow: none; // No shadow
-  transform: scale(1); // No scale effect
+  border-radius: 0;
+  box-shadow: none;
+  transform: scale(1);
 
   &.loaded {
     opacity: 1;
-    transform: scale(1); // No scale effect
+    transform: scale(1);
   }
 
   ${MediaContainer}:hover & {
-    transform: scale(1); // No hover effect
+    transform: scale(1);
   }
 
   &.filter-warm {
@@ -1234,15 +1175,18 @@ const HeartAnimation = styled.div`
 `;
 
 const CardActions = styled.div`
-  padding: 8px 16px 4px;
+  padding: 12px 16px 4px;
   background-color: transparent;
   border-bottom: none;
+  display: flex;
+  flex-direction: column;
 `;
 
-const ActionGroup = styled.div`
+const ActionButtons = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px; // Added gap between like button and counter
+  gap: 16px;
+  margin-bottom: 8px;
 `;
 
 const LikeButton = styled.button`
@@ -1252,13 +1196,12 @@ const LikeButton = styled.button`
   font-size: 1.5rem;
   cursor: ${(props) =>
     props.disabled && !props.liked ? "default" : "pointer"};
-  padding: 0; // Reduced padding
-  margin: 0; // Removed margins
+  padding: 0;
+  margin: 0;
   display: flex;
   align-items: center;
   transition: all 0.2s ease;
 
-  // Keep hover effects for like button
   &:hover {
     transform: ${(props) =>
       !props.disabled || props.liked ? "scale(1.15)" : "none"};
@@ -1266,43 +1209,44 @@ const LikeButton = styled.button`
       !props.disabled && !props.liked ? COLORS.heartRed : ""};
   }
 
-  // Keep active effects for like button
   &:active {
     transform: ${(props) =>
       !props.disabled || props.liked ? "scale(0.9)" : "none"};
   }
-
-  ${(props) =>
-    props.liked &&
-    css`
-      filter: none; // Removed glow
-    `}
 `;
 
-const LikesCounter = styled.div`
+const LikeIcon = styled.div`
+  color: ${COLORS.heartRed};
+  font-size: 1.5rem;
   display: flex;
   align-items: center;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: ${COLORS.textPrimary};
-  background-color: transparent;
-  padding: 0;
-  transition: none;
+`;
+
+const CommentButton = styled(Link)`
+  color: ${COLORS.textTertiary};
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: none;
   border: none;
-  box-shadow: none;
-  margin: 0;
-
-  span {
-    position: relative;
-
-    &:after {
-      display: none; // Removed underline effect on hover
-    }
-  }
+  padding: 0;
+  text-decoration: none;
 
   &:hover {
-    transform: none; // No hover effect
-    box-shadow: none;
+    transform: scale(1.15);
+    color: ${COLORS.textSecondary};
+  }
+`;
+
+const LikesCount = styled.div`
+  font-size: 0.9rem;
+  color: ${COLORS.textPrimary};
+  margin-bottom: 8px;
+
+  strong {
+    font-weight: 600;
   }
 `;
 
@@ -1333,7 +1277,7 @@ const Content = styled.p`
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2; // Reduced from 4 to 2 lines
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   transition: none;
   letter-spacing: 0;
@@ -1363,36 +1307,7 @@ const Tag = styled.span`
 `;
 
 const ViewPostLink = styled(Link)`
-  display: none; // Hide the view post button entirely
-
-  /* Alternative: make it subtle and text-only */
-  /*
-  color: ${COLORS.textTertiary};
-  font-size: 0.8rem;
-  font-weight: normal;
-  margin-top: 8px;
-  text-decoration: none;
-  align-self: flex-start;
-  padding: 0;
-  background-color: transparent;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  position: relative;
-  box-shadow: none;
-  text-transform: uppercase;
-
-  &:hover {
-    text-decoration: none;
-    transform: none;
-    box-shadow: none;
-    background-color: transparent;
-  }
-
-  &:before {
-    display: none;
-  }
-  */
+  display: none;
 `;
 
 const ViewPostArrow = styled.span`
@@ -1613,17 +1528,17 @@ const PostLink = styled(Link)`
 `;
 
 const UserAvatarImage = styled.img`
-  width: 32px; // Smaller Instagram-like size
+  width: 32px;
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
   margin-right: 12px;
-  border: none; // No border
-  box-shadow: none; // No shadow
-  transition: none; // No transition
+  border: none;
+  box-shadow: none;
+  transition: none;
 
   &:hover {
-    transform: none; // No hover effect
+    transform: none;
     box-shadow: none;
   }
 `;
@@ -1663,39 +1578,6 @@ const burst = (index) => keyframes`
       Math.cos((index / 8) * 2 * Math.PI) * 50
     }px, ${Math.sin((index / 8) * 2 * Math.PI) * 50}px);
     opacity: 0;
-  }
-`;
-
-const LikesDisplayStandalone = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  font-weight: 600;
-  color: ${COLORS.heartRed};
-  background-color: ${COLORS.elevatedBackground};
-  padding: 10px 18px;
-  border-radius: 30px;
-  transition: all 0.2s ease;
-  border: 1px solid ${COLORS.border};
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  margin: 0 auto;
-  gap: 8px;
-
-  .heart-icon {
-    color: ${COLORS.heartRed};
-    font-size: 1.4rem;
-    animation: ${pulse} 1.2s infinite ease-in-out;
-  }
-
-  span {
-    color: ${COLORS.textPrimary};
-    font-size: 1rem;
-  }
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
   }
 `;
 
