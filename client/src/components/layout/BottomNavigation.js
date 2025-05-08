@@ -5,7 +5,6 @@ import {
   FaHome,
   FaSearch,
   FaPlus,
-  FaHeart,
   FaUser,
   FaCamera,
   FaImages,
@@ -41,8 +40,8 @@ const BottomNavigation = () => {
           <FaHome />
         </NavItem>
 
-        <NavItem to="/search" active={isActive("/search")}>
-          <FaSearch />
+        <NavItem to="/media-gallery" active={isActive("/media-gallery")}>
+          <FaImages />
         </NavItem>
 
         {isAuthenticated && (
