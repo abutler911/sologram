@@ -36,7 +36,7 @@ const Login = () => {
   return (
     <MainLayout noNav noFooter>
       <PageWrapper>
-        <LoginContainer>
+        <AuthContainer>
           <LogoContainer>
             <LogoIcon>
               <FaCamera />
@@ -45,30 +45,46 @@ const Login = () => {
             <Tagline>One Voice. Infinite Moments.</Tagline>
           </LogoContainer>
 
+          <FormTitle>Welcome back</FormTitle>
+
           <Form onSubmit={handleSubmit}>
             <FormGroup>
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              <InputWrapper>
+                <InputIcon>
+                  <FaEnvelope />
+                </InputIcon>
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </InputWrapper>
             </FormGroup>
 
             <FormGroup>
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <InputWrapper>
+                <InputIcon>
+                  <FaLock />
+                </InputIcon>
+                <Input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </InputWrapper>
             </FormGroup>
 
-            <SubmitButton type="submit" disabled={loading}>
+            <ForgotPassword>
+              <Link to="/forgot-password">Forgot password?</Link>
+            </ForgotPassword>
+
+            <ActionButton type="submit" disabled={loading}>
               {loading ? "Logging in..." : "Log In"}
-            </SubmitButton>
+            </ActionButton>
           </Form>
 
           <Divider>
@@ -77,10 +93,10 @@ const Login = () => {
             <Line />
           </Divider>
 
-          <RegisterLink>
+          <ToggleLink>
             Don't have an account? <Link to="/register">Sign up</Link>
-          </RegisterLink>
-        </LoginContainer>
+          </ToggleLink>
+        </AuthContainer>
       </PageWrapper>
     </MainLayout>
   );
@@ -88,21 +104,21 @@ const Login = () => {
 
 // Styled Components
 const PageWrapper = styled.div`
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: ${COLORS.background};
-  padding: 1rem;
+  padding: 2rem 1rem;
 `;
 
-const LoginContainer = styled.div`
+const AuthContainer = styled.div`
   width: 100%;
-  max-width: 350px;
+  max-width: 400px;
   background-color: ${COLORS.cardBackground};
-  border-radius: 1px;
-  padding: 2rem;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 2.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -119,6 +135,7 @@ const LogoIcon = styled.div`
   color: ${COLORS.primarySalmon};
   font-size: 3rem;
   margin-bottom: 0.5rem;
+  filter: drop-shadow(0 4px 6px rgba(242, 120, 92, 0.25));
 `;
 
 const LogoText = styled.h1`
@@ -134,6 +151,15 @@ const Tagline = styled.p`
   font-size: 0.9rem;
   margin-top: 0.25rem;
   text-align: center;
+  letter-spacing: 0.5px;
+`;
+
+const FormTitle = styled.h2`
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: ${COLORS.textPrimary};
+  margin-bottom: 1.75rem;
+  text-align: center;
 `;
 
 const Form = styled.form`
@@ -142,18 +168,32 @@ const Form = styled.form`
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
   width: 100%;
+`;
+
+const InputWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+`;
+
+const InputIcon = styled.div`
+  position: absolute;
+  left: 12px;
+  color: ${COLORS.textTertiary};
+  font-size: 0.9rem;
 `;
 
 const Input = styled.input`
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
   background-color: ${COLORS.inputBackground || COLORS.elevatedBackground};
   border: 1px solid ${COLORS.border};
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.9rem;
   color: ${COLORS.textPrimary};
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
   &::placeholder {
     color: ${COLORS.textTertiary};
@@ -162,24 +202,52 @@ const Input = styled.input`
   &:focus {
     outline: none;
     border-color: ${COLORS.primaryMint};
+    box-shadow: 0 0 0 2px rgba(134, 227, 206, 0.2);
   }
 `;
 
-const SubmitButton = styled.button`
+const ForgotPassword = styled.div`
+  text-align: right;
+  margin-bottom: 1.25rem;
+
+  a {
+    color: ${COLORS.textSecondary};
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover {
+      color: ${COLORS.primarySalmon};
+      text-decoration: underline;
+    }
+  }
+`;
+
+const ActionButton = styled.button`
   width: 100%;
   background-color: ${COLORS.primarySalmon};
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 0.75rem;
-  font-size: 0.9rem;
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
-  margin-top: 0.5rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(242, 120, 92, 0.25);
 
   &:hover:not(:disabled) {
     background-color: ${COLORS.accentSalmon};
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(242, 120, 92, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(242, 120, 92, 0.2);
   }
 
   &:disabled {
@@ -192,7 +260,7 @@ const Divider = styled.div`
   display: flex;
   align-items: center;
   width: 100%;
-  margin: 1.5rem 0;
+  margin: 2rem 0;
 `;
 
 const Line = styled.div`
@@ -206,18 +274,23 @@ const Or = styled.span`
   color: ${COLORS.textTertiary};
   font-size: 0.8rem;
   font-weight: 600;
+  text-transform: uppercase;
 `;
 
-const RegisterLink = styled.p`
-  font-size: 0.9rem;
+const ToggleLink = styled.p`
+  font-size: 0.95rem;
   color: ${COLORS.textSecondary};
+  margin: 0;
 
   a {
     color: ${COLORS.primarySalmon};
     font-weight: 600;
     text-decoration: none;
+    transition: color 0.2s;
+    margin-left: 0.25rem;
 
     &:hover {
+      color: ${COLORS.accentSalmon};
       text-decoration: underline;
     }
   }
