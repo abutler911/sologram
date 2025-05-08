@@ -109,12 +109,16 @@ const PageWrapper = styled.div`
   align-items: center;
   justify-content: center;
   background-color: ${COLORS.background};
-  padding: 2rem 1rem;
+  padding: 2rem 0.5rem;
+
+  @media (max-width: 480px) {
+    padding: 1rem 0.25rem;
+  }
 `;
 
 const AuthContainer = styled.div`
   width: 100%;
-  max-width: 400px;
+  max-width: 450px;
   background-color: ${COLORS.cardBackground};
   border-radius: 8px;
   padding: 2.5rem;
@@ -122,6 +126,12 @@ const AuthContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+
+  @media (max-width: 480px) {
+    padding: 1.5rem 1rem;
+    max-width: 100%;
+    border-radius: 4px;
+  }
 `;
 
 const LogoContainer = styled.div`
@@ -203,6 +213,11 @@ const Input = styled.input`
     outline: none;
     border-color: ${COLORS.primaryMint};
     box-shadow: 0 0 0 2px rgba(134, 227, 206, 0.2);
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    padding: 0.85rem 0.75rem 0.85rem 2.5rem;
   }
 `;
 
