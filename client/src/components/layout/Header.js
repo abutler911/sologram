@@ -257,7 +257,7 @@ const HeaderContent = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  height: 60px;
+  height: 70px;
   position: relative;
 `;
 
@@ -282,37 +282,37 @@ const Logo = styled(Link)`
 
     .logo-text {
       font-family: "Mystery Quest", cursive;
-      font-size: 1.5rem;
+      font-size: 1.8rem;
       color: ${COLORS.textPrimary};
     }
 
     svg {
-      font-size: 1.7rem;
-      margin-right: 0.5rem;
+      font-size: 2rem;
+      margin-right: 0.75rem;
       color: ${COLORS.primarySalmon};
     }
   }
 
   .tagline {
     font-family: "Inter", sans-serif;
-    font-size: 0.7rem;
+    font-size: 0.85rem;
     font-weight: 400;
     color: ${COLORS.primaryMint};
-    margin-top: 0.1rem;
+    margin-top: 0.2rem;
     opacity: 0.9;
   }
 
   @media (max-width: 640px) {
     .logo-main {
       .logo-text {
-        font-size: 1.3rem;
+        font-size: 1.5rem;
       }
       svg {
-        font-size: 1.5rem;
+        font-size: 1.7rem;
       }
     }
     .tagline {
-      font-size: 0.6rem;
+      font-size: 0.75rem;
     }
   }
 `;
