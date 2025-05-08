@@ -35,8 +35,8 @@ const Login = () => {
 
   return (
     <MainLayout noNav noFooter>
-      <PageWrapper>
-        <AuthContainer>
+      <PageContainer>
+        <AuthForm>
           <LogoContainer>
             <LogoIcon>
               <FaCamera />
@@ -48,89 +48,88 @@ const Login = () => {
           <FormTitle>Welcome back</FormTitle>
 
           <Form onSubmit={handleSubmit}>
-            <FormGroup>
-              <InputWrapper>
-                <InputIcon>
+            <FormField>
+              <InputWrap>
+                <IconContainer>
                   <FaEnvelope />
-                </InputIcon>
-                <Input
+                </IconContainer>
+                <StyledInput
                   type="email"
                   placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
-              </InputWrapper>
-            </FormGroup>
+              </InputWrap>
+            </FormField>
 
-            <FormGroup>
-              <InputWrapper>
-                <InputIcon>
+            <FormField>
+              <InputWrap>
+                <IconContainer>
                   <FaLock />
-                </InputIcon>
-                <Input
+                </IconContainer>
+                <StyledInput
                   type="password"
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-              </InputWrapper>
-            </FormGroup>
+              </InputWrap>
+            </FormField>
 
             <ForgotPassword>
               <Link to="/forgot-password">Forgot password?</Link>
             </ForgotPassword>
 
-            <ActionButton type="submit" disabled={loading}>
+            <SubmitButton type="submit" disabled={loading}>
               {loading ? "Logging in..." : "Log In"}
-            </ActionButton>
+            </SubmitButton>
           </Form>
 
           <Divider>
-            <Line />
-            <Or>OR</Or>
-            <Line />
+            <DividerLine />
+            <DividerText>OR</DividerText>
+            <DividerLine />
           </Divider>
 
-          <ToggleLink>
+          <AccountLink>
             Don't have an account? <Link to="/register">Sign up</Link>
-          </ToggleLink>
-        </AuthContainer>
-      </PageWrapper>
+          </AccountLink>
+        </AuthForm>
+      </PageContainer>
     </MainLayout>
   );
 };
 
 // Styled Components
-const PageWrapper = styled.div`
+const PageContainer = styled.div`
   min-height: 100vh;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
   background-color: ${COLORS.background};
-  padding: 2rem 0.5rem;
-
-  @media (max-width: 480px) {
-    padding: 1rem 0.25rem;
-  }
 `;
 
-const AuthContainer = styled.div`
+const AuthForm = styled.div`
   width: 100%;
-  max-width: 450px;
+  max-width: 480px;
+  margin: 0 16px;
   background-color: ${COLORS.cardBackground};
   border-radius: 8px;
-  padding: 2.5rem;
+  padding: 32px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 
-  @media (max-width: 480px) {
-    padding: 1.5rem 1rem;
+  @media (max-width: 600px) {
+    margin: 0;
     max-width: 100%;
-    border-radius: 4px;
+    min-height: 100vh;
+    border-radius: 0;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
   }
 `;
 
@@ -138,74 +137,72 @@ const LogoContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 2.5rem;
-
-  @media (max-width: 480px) {
-    margin-bottom: 2rem;
-  }
+  margin-bottom: 32px;
 `;
 
 const LogoIcon = styled.div`
   color: ${COLORS.primarySalmon};
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
+  font-size: 48px;
   filter: drop-shadow(0 4px 6px rgba(242, 120, 92, 0.25));
 `;
 
 const LogoText = styled.h1`
   font-family: "Mystery Quest", cursive;
-  font-size: 2.5rem;
+  font-size: 40px;
   font-weight: 500;
   color: ${COLORS.textPrimary};
-  margin: 0.5rem 0 0.25rem;
+  margin: 8px 0 4px;
 `;
 
 const Tagline = styled.p`
   color: ${COLORS.primaryMint};
-  font-size: 0.9rem;
-  margin-top: 0.25rem;
+  font-size: 14px;
+  margin: 4px 0 0;
   text-align: center;
   letter-spacing: 0.5px;
 `;
 
 const FormTitle = styled.h2`
-  font-size: 1.25rem;
+  font-size: 20px;
   font-weight: 600;
   color: ${COLORS.textPrimary};
-  margin-bottom: 1.75rem;
+  margin-bottom: 24px;
   text-align: center;
 `;
 
 const Form = styled.form`
   width: 100%;
-  margin-bottom: 1rem;
 `;
 
-const FormGroup = styled.div`
-  margin-bottom: 1rem;
+const FormField = styled.div`
+  margin-bottom: 16px;
   width: 100%;
 `;
 
-const InputWrapper = styled.div`
+const InputWrap = styled.div`
   position: relative;
-  display: flex;
-  align-items: center;
-`;
-
-const InputIcon = styled.div`
-  position: absolute;
-  left: 12px;
-  color: ${COLORS.textTertiary};
-  font-size: 0.9rem;
-`;
-
-const Input = styled.input`
   width: 100%;
-  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
-  background-color: ${COLORS.inputBackground || COLORS.elevatedBackground};
+`;
+
+const IconContainer = styled.div`
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: ${COLORS.textTertiary};
+  font-size: 16px;
+  z-index: 2;
+  pointer-events: none;
+`;
+
+const StyledInput = styled.input`
+  width: 100%;
+  height: 56px;
+  padding: 0 16px 0 48px;
+  background-color: ${COLORS.inputBackground || "#f8f9fa"};
   border: 1px solid ${COLORS.border};
-  border-radius: 6px;
-  font-size: 0.9rem;
+  border-radius: 8px;
+  font-size: 16px;
   color: ${COLORS.textPrimary};
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
@@ -216,22 +213,17 @@ const Input = styled.input`
   &:focus {
     outline: none;
     border-color: ${COLORS.primaryMint};
-    box-shadow: 0 0 0 2px rgba(134, 227, 206, 0.2);
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1rem;
-    padding: 0.85rem 0.75rem 0.85rem 2.5rem;
+    box-shadow: 0 0 0 2px rgba(134, 227, 206, 0.15);
   }
 `;
 
 const ForgotPassword = styled.div`
   text-align: right;
-  margin-bottom: 1.25rem;
+  margin-bottom: 24px;
 
   a {
     color: ${COLORS.textSecondary};
-    font-size: 0.85rem;
+    font-size: 14px;
     text-decoration: none;
     transition: color 0.2s;
 
@@ -242,14 +234,14 @@ const ForgotPassword = styled.div`
   }
 `;
 
-const ActionButton = styled.button`
+const SubmitButton = styled.button`
   width: 100%;
+  height: 56px;
   background-color: ${COLORS.primarySalmon};
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 0.85rem 1rem;
-  font-size: 0.95rem;
+  border-radius: 8px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -273,50 +265,51 @@ const ActionButton = styled.button`
     opacity: 0.7;
     cursor: not-allowed;
   }
-
-  @media (max-width: 480px) {
-    padding: 1rem;
-    font-size: 1rem;
-  }
 `;
 
 const Divider = styled.div`
   display: flex;
   align-items: center;
   width: 100%;
-  margin: 2rem 0;
+  margin: 32px 0;
 `;
 
-const Line = styled.div`
+const DividerLine = styled.div`
   flex: 1;
   height: 1px;
   background-color: ${COLORS.divider};
 `;
 
-const Or = styled.span`
-  padding: 0 1rem;
+const DividerText = styled.span`
+  padding: 0 16px;
   color: ${COLORS.textTertiary};
-  font-size: 0.8rem;
+  font-size: 14px;
   font-weight: 600;
   text-transform: uppercase;
 `;
 
-const ToggleLink = styled.p`
-  font-size: 0.95rem;
+const AccountLink = styled.p`
+  font-size: 16px;
   color: ${COLORS.textSecondary};
   margin: 0;
+  text-align: center;
 
   a {
     color: ${COLORS.primarySalmon};
     font-weight: 600;
     text-decoration: none;
     transition: color 0.2s;
-    margin-left: 0.25rem;
+    margin-left: 4px;
 
     &:hover {
       color: ${COLORS.accentSalmon};
       text-decoration: underline;
     }
+  }
+
+  @media (max-width: 600px) {
+    margin-top: auto;
+    padding-top: 32px;
   }
 `;
 
