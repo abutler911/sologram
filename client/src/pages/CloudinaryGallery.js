@@ -44,6 +44,7 @@ const CloudinaryGallery = () => {
   });
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
   const [stats, setStats] = useState({
     total: 0,
     images: 0,

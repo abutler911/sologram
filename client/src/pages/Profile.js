@@ -1,11 +1,18 @@
 import React, { useState, useEffect, useContext } from "react";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { useDropzone } from "react-dropzone";
 import { AuthContext } from "../context/AuthContext";
-import { FaUser, FaEnvelope, FaCamera, FaUpload } from "react-icons/fa";
+import {
+  FaUser,
+  FaEnvelope,
+  FaCamera,
+  FaUpload,
+  FaPencilAlt,
+  FaSave,
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { COLORS, THEME } from "../theme"; // Import the theme
+import { COLORS, THEME } from "../theme";
 
 const ProfilePage = () => {
   const { user, updateProfile } = useContext(AuthContext);
@@ -22,6 +29,7 @@ const ProfilePage = () => {
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [activeField, setActiveField] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -78,163 +86,556 @@ const ProfilePage = () => {
     }
 
     try {
+      // Add a fun toast notification style for pending
+      toast.loading("Updating your awesome profile...", {
+        style: {
+          background: COLORS.cardBackground,
+          color: COLORS.textPrimary,
+          border: `2px solid ${COLORS.primaryPurple}`,
+        },
+      });
+
       const success = await updateProfile(data);
       if (success) {
+        toast.success("Profile updated successfully! Looking good! 🔥", {
+          style: {
+            background: COLORS.cardBackground,
+            color: COLORS.primaryGreen,
+            border: `2px solid ${COLORS.primaryGreen}`,
+          },
+          icon: "🚀",
+          duration: 5000,
+        });
         navigate("/");
       } else {
-        toast.error("Profile update failed.");
+        toast.error("Profile update failed. Let's try again!", {
+          style: {
+            background: COLORS.cardBackground,
+            color: COLORS.danger,
+            border: `2px solid ${COLORS.danger}`,
+          },
+          icon: "💔",
+        });
       }
     } catch (err) {
-      toast.error("An unexpected error occurred.");
+      toast.error("An unexpected error occurred. Tech happens!", {
+        style: {
+          background: COLORS.cardBackground,
+          color: COLORS.danger,
+          border: `2px solid ${COLORS.danger}`,
+        },
+        icon: "🤯",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Wrapper>
+    <PageWrapper>
+      {/* Animated background elements */}
+      <BackgroundGradient />
+      <FloatingCircle
+        top="10%"
+        left="10%"
+        size="100px"
+        delay="0s"
+        color={COLORS.primaryPurple}
+        opacity="0.1"
+      />
+      <FloatingCircle
+        top="70%"
+        left="80%"
+        size="150px"
+        delay="2s"
+        color={COLORS.primaryBlue}
+        opacity="0.15"
+      />
+      <FloatingCircle
+        top="40%"
+        left="90%"
+        size="80px"
+        delay="1s"
+        color={COLORS.primaryGreen}
+        opacity="0.1"
+      />
+      <FloatingCircle
+        top="90%"
+        left="30%"
+        size="120px"
+        delay="3s"
+        color={COLORS.primaryPurple}
+        opacity="0.08"
+      />
+
       <Container>
-        <Title>Edit Profile</Title>
-        <Form onSubmit={handleSubmit}>
-          <Label htmlFor="firstName">First Name</Label>
-          <Field>
-            <Icon>
-              <FaUser />
-            </Icon>
-            <Input
-              type="text"
-              id="firstName"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-              required
-            />
-          </Field>
+        <ContentWrapper>
+          <GlassHeader>
+            <HeaderContent>
+              <Title>Customize Your Profile</Title>
+              <SubTitle>Make it uniquely yours</SubTitle>
+            </HeaderContent>
+          </GlassHeader>
 
-          <Label htmlFor="lastName">Last Name</Label>
-          <Field>
-            <Icon>
-              <FaUser />
-            </Icon>
-            <Input
-              type="text"
-              id="lastName"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-            />
-          </Field>
+          <CardBody>
+            <ProfileImageSection>
+              {imagePreview ? (
+                <ProfileImageContainer>
+                  <ProfileImage src={imagePreview} alt="Preview" />
+                  <ImageOverlay>
+                    <OverlayButton
+                      type="button"
+                      onClick={() => {
+                        setProfileImage(null);
+                        setImagePreview(null);
+                      }}
+                    >
+                      <FaPencilAlt /> Change
+                    </OverlayButton>
+                  </ImageOverlay>
+                </ProfileImageContainer>
+              ) : (
+                <DropAreaContainer {...getRootProps()} tabIndex={0}>
+                  <input {...getInputProps()} />
+                  <DropIcon>
+                    <FaCamera />
+                  </DropIcon>
+                  <DropText>Upload Profile Picture</DropText>
+                </DropAreaContainer>
+              )}
+            </ProfileImageSection>
 
-          <Label htmlFor="username">Username</Label>
-          <Field>
-            <Icon>
-              <FaUser />
-            </Icon>
-            <Input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-            />
-          </Field>
+            <Form onSubmit={handleSubmit}>
+              <FormRow>
+                <FormGroup
+                  className={activeField === "firstName" ? "active" : ""}
+                >
+                  <Label htmlFor="firstName">First Name</Label>
+                  <InputWrapper>
+                    <Icon>
+                      <FaUser />
+                    </Icon>
+                    <Input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      onFocus={() => setActiveField("firstName")}
+                      onBlur={() => setActiveField("")}
+                      required
+                    />
+                  </InputWrapper>
+                </FormGroup>
 
-          <Label htmlFor="email">Email</Label>
-          <Field>
-            <Icon>
-              <FaEnvelope />
-            </Icon>
-            <Input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </Field>
+                <FormGroup
+                  className={activeField === "lastName" ? "active" : ""}
+                >
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <InputWrapper>
+                    <Icon>
+                      <FaUser />
+                    </Icon>
+                    <Input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      onFocus={() => setActiveField("lastName")}
+                      onBlur={() => setActiveField("")}
+                    />
+                  </InputWrapper>
+                </FormGroup>
+              </FormRow>
 
-          <Label htmlFor="bio">Bio</Label>
-          <Textarea
-            id="bio"
-            name="bio"
-            placeholder="Tell us about yourself..."
-            value={formData.bio}
-            onChange={handleChange}
-            rows={4}
-          />
+              <FormGroup className={activeField === "username" ? "active" : ""}>
+                <Label htmlFor="username">Username</Label>
+                <InputWrapper>
+                  <Icon>
+                    <FaUser />
+                  </Icon>
+                  <Input
+                    type="text"
+                    id="username"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    onFocus={() => setActiveField("username")}
+                    onBlur={() => setActiveField("")}
+                    required
+                  />
+                </InputWrapper>
+              </FormGroup>
 
-          <Label>Profile Image</Label>
-          {imagePreview ? (
-            <Preview>
-              <img src={imagePreview} alt="Preview" />
-              <Remove
-                type="button"
-                onClick={() => {
-                  setProfileImage(null);
-                  setImagePreview(null);
-                }}
-              >
-                Remove
-              </Remove>
-            </Preview>
-          ) : (
-            <DropArea {...getRootProps()} tabIndex={0}>
-              <input {...getInputProps()} />
-              <FaUpload />
-              <p>Click or drag to upload</p>
-            </DropArea>
-          )}
+              <FormGroup className={activeField === "email" ? "active" : ""}>
+                <Label htmlFor="email">Email</Label>
+                <InputWrapper>
+                  <Icon>
+                    <FaEnvelope />
+                  </Icon>
+                  <Input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    onFocus={() => setActiveField("email")}
+                    onBlur={() => setActiveField("")}
+                    required
+                  />
+                </InputWrapper>
+              </FormGroup>
 
-          <Submit disabled={loading}>
-            {loading ? "Saving..." : "Save Changes"}
-          </Submit>
-        </Form>
+              <FormGroup className={activeField === "bio" ? "active" : ""}>
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  name="bio"
+                  placeholder="Tell the world about yourself..."
+                  value={formData.bio}
+                  onChange={handleChange}
+                  onFocus={() => setActiveField("bio")}
+                  onBlur={() => setActiveField("")}
+                  rows={4}
+                />
+              </FormGroup>
+
+              <SubmitButton disabled={loading} type="submit">
+                {loading ? (
+                  <>
+                    <Spinner />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <FaSave />
+                    <span>Save Changes</span>
+                  </>
+                )}
+              </SubmitButton>
+            </Form>
+          </CardBody>
+        </ContentWrapper>
       </Container>
-    </Wrapper>
+    </PageWrapper>
   );
 };
 
 export default ProfilePage;
 
-// Styled Components
-const Wrapper = styled.div`
-  background-color: ${COLORS.background};
+// Styled Components with animations and modern design
+const float = keyframes`
+  0% { transform: translateY(0px) }
+  50% { transform: translateY(-15px) }
+  100% { transform: translateY(0px) }
+`;
+
+const glow = keyframes`
+  0% { box-shadow: 0 0 15px rgba(124, 58, 237, 0.5) }
+  50% { box-shadow: 0 0 25px rgba(124, 58, 237, 0.8) }
+  100% { box-shadow: 0 0 15px rgba(124, 58, 237, 0.5) }
+`;
+
+const pulse = keyframes`
+  0% { transform: scale(1) }
+  50% { transform: scale(1.05) }
+  100% { transform: scale(1) }
+`;
+
+const spin = keyframes`
+  0% { transform: rotate(0deg) }
+  100% { transform: rotate(360deg) }
+`;
+
+const gradientMove = keyframes`
+  0% { background-position: 0% 50% }
+  50% { background-position: 100% 50% }
+  100% { background-position: 0% 50% }
+`;
+
+const FloatingCircle = styled.div`
+  position: absolute;
+  width: ${(props) => props.size};
+  height: ${(props) => props.size};
+  top: ${(props) => props.top};
+  left: ${(props) => props.left};
+  border-radius: 50%;
+  background-color: ${(props) => props.color};
+  opacity: ${(props) => props.opacity};
+  filter: blur(20px);
+  animation: ${float} 6s ease-in-out infinite;
+  animation-delay: ${(props) => props.delay};
+  pointer-events: none;
+  z-index: 1;
+`;
+
+const BackgroundGradient = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.background} 0%,
+    ${COLORS.backgroundDark || "#121212"} 100%
+  );
+  background-size: 400% 400%;
+  animation: ${gradientMove} 15s ease infinite;
+  z-index: 0;
+`;
+
+const PageWrapper = styled.div`
+  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 2rem 1rem;
+  overflow: hidden;
 `;
 
 const Container = styled.div`
-  background-color: ${COLORS.cardBackground};
-  padding: 2.5rem;
-  max-width: 500px;
+  max-width: 800px;
   width: 100%;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px ${COLORS.shadow};
-  border: 1px solid ${COLORS.border};
+  position: relative;
+  z-index: 2;
 `;
 
-const Title = styled.h2`
-  color: ${COLORS.textPrimary};
+const ContentWrapper = styled.div`
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  background: rgba(25, 25, 35, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+  }
+`;
+
+const GlassHeader = styled.div`
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primaryPurple}80 0%,
+    ${COLORS.primaryBlue}80 100%
+  );
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0) 80%
+    );
+    pointer-events: none;
+  }
+`;
+
+const HeaderContent = styled.div`
+  position: relative;
+  z-index: 1;
   text-align: center;
-  margin-bottom: 2rem;
+`;
+
+const Title = styled.h1`
+  color: white;
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+`;
+
+const SubTitle = styled.p`
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0.5rem 0 0;
+  font-size: 1.1rem;
+`;
+
+const CardBody = styled.div`
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+`;
+
+const ProfileImageSection = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+`;
+
+const ProfileImageContainer = styled.div`
+  position: relative;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border: 4px solid ${COLORS.primaryPurple};
+  animation: ${glow} 3s infinite;
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+`;
+
+const ProfileImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+
+  ${ProfileImageContainer}:hover & {
+    transform: scale(1.1);
+  }
+`;
+
+const ImageOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0) 50%
+  );
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 1rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+
+  ${ProfileImageContainer}:hover & {
+    opacity: 1;
+  }
+`;
+
+const OverlayButton = styled.button`
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+  }
+
+  svg {
+    font-size: 0.875rem;
+  }
+`;
+
+const DropAreaContainer = styled.div`
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: linear-gradient(
+    145deg,
+    ${COLORS.elevatedBackground} 0%,
+    ${COLORS.backgroundDark || "#1a1a1a"} 100%
+  );
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 3px dashed ${COLORS.border};
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: ${COLORS.primaryPurple};
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  }
+`;
+
+const DropIcon = styled.div`
+  font-size: 2.5rem;
+  color: ${COLORS.primaryPurple};
+  margin-bottom: 0.75rem;
+  transition: transform 0.3s ease;
+
+  ${DropAreaContainer}:hover & {
+    transform: scale(1.2);
+    animation: ${pulse} 2s infinite;
+  }
+`;
+
+const DropText = styled.p`
+  color: ${COLORS.textSecondary};
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
+`;
+
+const FormRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: transform 0.3s ease;
+
+  &.active {
+    transform: translateX(5px);
+
+    label {
+      color: ${COLORS.primaryPurple};
+    }
+  }
 `;
 
 const Label = styled.label`
   color: ${COLORS.textSecondary};
-  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+  transition: color 0.3s ease;
 `;
 
-const Field = styled.div`
+const InputWrapper = styled.div`
   position: relative;
 `;
 
@@ -244,6 +645,8 @@ const Icon = styled.div`
   left: 1rem;
   transform: translateY(-50%);
   color: ${COLORS.textTertiary};
+  transition: color 0.3s ease;
+  z-index: 1;
 `;
 
 const Input = styled.input`
@@ -252,13 +655,19 @@ const Input = styled.input`
   background: ${COLORS.elevatedBackground};
   color: ${COLORS.textPrimary};
   border: 1px solid ${COLORS.border};
-  border-radius: 4px;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 
   &:focus {
     border-color: ${COLORS.primaryPurple};
-    box-shadow: 0 0 0 2px ${COLORS.primaryPurple}30;
+    box-shadow: 0 0 0 3px ${COLORS.primaryPurple}30;
     outline: none;
+    background: ${COLORS.elevatedBackground}50;
+
+    & + ${Icon} {
+      color: ${COLORS.primaryPurple};
+    }
   }
 `;
 
@@ -268,94 +677,73 @@ const Textarea = styled.textarea`
   background: ${COLORS.elevatedBackground};
   color: ${COLORS.textPrimary};
   border: 1px solid ${COLORS.border};
-  border-radius: 4px;
+  border-radius: 8px;
+  font-size: 1rem;
   resize: vertical;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  min-height: 120px;
+  transition: all 0.3s ease;
 
   &:focus {
     border-color: ${COLORS.primaryPurple};
-    box-shadow: 0 0 0 2px ${COLORS.primaryPurple}30;
+    box-shadow: 0 0 0 3px ${COLORS.primaryPurple}30;
     outline: none;
+    background: ${COLORS.elevatedBackground}50;
   }
 `;
 
-const DropArea = styled.div`
-  border: 2px dashed ${COLORS.border};
-  padding: 2rem;
-  text-align: center;
-  background: ${COLORS.elevatedBackground};
-  cursor: pointer;
-  color: ${COLORS.textTertiary};
-  transition: border-color 0.3s, color 0.3s;
-
-  &:hover {
-    border-color: ${COLORS.primaryBlue};
-    color: ${COLORS.primaryBlue};
-  }
-
-  svg {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-  }
-`;
-
-const Preview = styled.div`
-  position: relative;
-  width: 150px;
-  height: 150px;
-  margin-bottom: 1rem;
+const Spinner = styled.div`
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  overflow: hidden;
-  border: 3px solid ${COLORS.primaryPurple};
-  box-shadow: 0 4px 12px ${COLORS.shadow};
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+  border-top-color: #fff;
+  animation: ${spin} 1s ease-in-out infinite;
 `;
 
-const Remove = styled.button`
-  background: rgba(0, 0, 0, 0.7);
-  color: ${COLORS.textPrimary};
+const SubmitButton = styled.button`
   width: 100%;
-  padding: 0.5rem;
+  padding: 1rem;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primaryGreen} 0%,
+    ${COLORS.accentGreen || "#0d9488"} 100%
+  );
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
   border: none;
+  border-radius: 8px;
   cursor: pointer;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  transition: background-color 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+  box-shadow: 0 4px 15px ${COLORS.primaryGreen}50;
 
-  &:hover {
-    background: rgba(0, 0, 0, 0.9);
-    color: ${COLORS.primaryPurple};
-  }
-`;
-
-const Submit = styled.button`
-  width: 100%;
-  padding: 0.875rem;
-  background: ${COLORS.primaryGreen};
-  color: ${COLORS.textPrimary};
-  font-weight: bold;
-  border: none;
-  border-radius: 4px;
-  transition: background-color 0.3s, transform 0.2s;
-
-  &:hover {
-    background: ${COLORS.accentGreen};
-    transform: translateY(-2px);
+  &:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px ${COLORS.primaryGreen}70;
+    background: linear-gradient(
+      135deg,
+      ${COLORS.accentGreen || "#0d9488"} 0%,
+      ${COLORS.primaryGreen} 100%
+    );
   }
 
-  &:active {
-    transform: translateY(0);
+  &:active:not(:disabled) {
+    transform: translateY(-1px);
   }
 
   &:disabled {
     background: ${COLORS.textTertiary};
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
+  }
+
+  svg {
+    font-size: 1.125rem;
   }
 `;
