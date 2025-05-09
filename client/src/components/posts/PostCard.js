@@ -825,11 +825,11 @@ const ActionsContainer = styled.div`
 `;
 
 const Username = styled.span`
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 0;
+  font-family: "Autography", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.2px;
   margin: 0;
   line-height: 1.1;
   color: ${COLORS.textPrimary};
