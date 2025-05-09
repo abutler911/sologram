@@ -397,7 +397,7 @@ const PageWrapper = styled.div`
 `;
 
 const Container = styled.div`
-  max-width: 800px;
+  max-width: 900px;
   width: 100%;
   position: relative;
   z-index: 2;
@@ -466,7 +466,7 @@ const SubTitle = styled.p`
 `;
 
 const CardBody = styled.div`
-  padding: 2.5rem;
+  padding: 3rem;
   display: flex;
   flex-direction: column;
   gap: 2rem;
@@ -599,13 +599,15 @@ const DropText = styled.p`
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.8rem;
+  width: 100%;
+  max-width: 100%;
 `;
 
 const FormRow = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 2rem;
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -651,12 +653,12 @@ const Icon = styled.div`
 
 const Input = styled.input`
   width: 100%;
-  padding: 1rem 1rem 1rem 3rem;
+  padding: 1.2rem 1.2rem 1.2rem 3.2rem;
   background: ${COLORS.elevatedBackground};
   color: ${COLORS.textPrimary};
   border: 1px solid ${COLORS.border};
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 1.05rem;
   transition: all 0.3s ease;
 
   &:focus {
@@ -673,14 +675,14 @@ const Input = styled.input`
 
 const Textarea = styled.textarea`
   width: 100%;
-  padding: 1rem;
+  padding: 1.2rem;
   background: ${COLORS.elevatedBackground};
   color: ${COLORS.textPrimary};
   border: 1px solid ${COLORS.border};
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 1.05rem;
   resize: vertical;
-  min-height: 120px;
+  min-height: 140px;
   transition: all 0.3s ease;
 
   &:focus {
@@ -702,7 +704,7 @@ const Spinner = styled.div`
 
 const SubmitButton = styled.button`
   width: 100%;
-  padding: 1rem;
+  padding: 1.2rem;
   background: linear-gradient(
     135deg,
     ${COLORS.primaryGreen} 0%,
@@ -710,7 +712,7 @@ const SubmitButton = styled.button`
   );
   color: white;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.1rem;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -719,7 +721,7 @@ const SubmitButton = styled.button`
   justify-content: center;
   gap: 0.75rem;
   transition: all 0.3s ease;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   box-shadow: 0 4px 15px ${COLORS.primaryGreen}50;
 
   &:hover:not(:disabled) {
@@ -744,6 +746,6 @@ const SubmitButton = styled.button`
   }
 
   svg {
-    font-size: 1.125rem;
+    font-size: 1.25rem;
   }
 `;
