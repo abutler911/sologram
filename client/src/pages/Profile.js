@@ -619,6 +619,7 @@ const FormGroup = styled.div`
   flex-direction: column;
   gap: 0.5rem;
   transition: transform 0.3s ease;
+  width: 100%;
 
   &.active {
     transform: translateX(5px);
@@ -639,6 +640,7 @@ const Label = styled.label`
 
 const InputWrapper = styled.div`
   position: relative;
+  width: 100%;
 `;
 
 const Icon = styled.div`
@@ -658,7 +660,9 @@ const Input = styled.input`
   color: ${COLORS.textPrimary};
   border: 1px solid ${COLORS.border};
   border-radius: 8px;
-  font-size: 1.05rem;
+  font-size: 1.15rem;
+  font-family: "Segoe UI", Roboto, -apple-system, sans-serif;
+  letter-spacing: 0.2px;
   transition: all 0.3s ease;
 
   &:focus {
@@ -680,7 +684,9 @@ const Textarea = styled.textarea`
   color: ${COLORS.textPrimary};
   border: 1px solid ${COLORS.border};
   border-radius: 8px;
-  font-size: 1.05rem;
+  font-size: 1.15rem;
+  font-family: "Segoe UI", Roboto, -apple-system, sans-serif;
+  letter-spacing: 0.2px;
   resize: vertical;
   min-height: 140px;
   transition: all 0.3s ease;
