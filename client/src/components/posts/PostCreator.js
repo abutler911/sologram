@@ -924,11 +924,18 @@ function PostCreator({ initialData = null, isEditing = false }) {
         const isVideo = file.type.startsWith("video/");
         const objectUrl = URL.createObjectURL(file);
 
+        console.log(
+          `Processing ${isVideo ? "video" : "image"}: ${file.name}, type: ${
+            file.type
+          }`
+        );
+
         return {
           id,
           file,
           previewUrl: objectUrl,
           type: isVideo ? "video" : "image",
+          mediaType: isVideo ? "video" : "image", // Ensure both properties are set
           filter: "none",
           filterClass: "",
           uploading: true,
@@ -941,7 +948,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
 
       // Then start uploads for each item
       newItems.forEach((item) => {
-        startUpload(item.file, item.id)
+        // Pass the explicit file type to startUpload
+        startUpload(item.file, item.id, item.type)
           .then((result) => {
             console.log(`Upload complete for ${item.id}:`, result);
           })
@@ -987,8 +995,12 @@ function PostCreator({ initialData = null, isEditing = false }) {
     const id = `camera_${Date.now()}_${Math.random()
       .toString(36)
       .substring(2, 8)}`;
+
     const isVideo = file.type.startsWith("video/");
     const objectUrl = URL.createObjectURL(file);
+    const mediaType = isVideo ? "video" : "image";
+
+    console.log(`Camera captured a ${mediaType}: ${file.name}`);
 
     // First add the file to the media list
     setMedia((current) => [
@@ -997,7 +1009,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
         id,
         file,
         previewUrl: objectUrl,
-        type: isVideo ? "video" : "image",
+        type: mediaType,
+        mediaType: mediaType, // Set both properties for consistency
         filter: "none",
         filterClass: "",
         uploading: true,
@@ -1006,9 +1019,9 @@ function PostCreator({ initialData = null, isEditing = false }) {
       },
     ]);
 
-    // Then start the upload
+    // Then start the upload with explicit file type
     try {
-      const result = await startUpload(file, id);
+      const result = await startUpload(file, id, mediaType);
       console.log(`Upload completed successfully:`, result);
     } catch (error) {
       console.error("Upload failed:", error);
@@ -1089,6 +1102,27 @@ function PostCreator({ initialData = null, isEditing = false }) {
       return;
     }
 
+    // Check for any failed uploads
+    const failedItems = media.filter((item) => item.error);
+    if (failedItems.length > 0) {
+      toast.error(
+        `Please remove ${failedItems.length} failed upload(s) before continuing`
+      );
+      return;
+    }
+
+    // Make sure all media items have the required properties
+    const incompleteItems = media.filter(
+      (item) => !item.mediaUrl || !item.cloudinaryId
+    );
+
+    if (incompleteItems.length > 0) {
+      toast.error(
+        `${incompleteItems.length} media item(s) failed to upload properly`
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -1098,17 +1132,19 @@ function PostCreator({ initialData = null, isEditing = false }) {
         .map((item) => ({
           mediaUrl: item.mediaUrl,
           cloudinaryId: item.cloudinaryId,
-          mediaType: item.type || item.mediaType,
-          filter: item.filter || "none", // Ensure filter is always set
+          mediaType: item.mediaType || item.type,
+          filter: item.filter || "none",
         }));
+
+      console.log("Submitting media items:", mediaItems);
 
       // Create the payload
       const payload = {
         caption,
-        content, // Add content field from state
-        tags: tags, // Send as string to let server handle splitting
+        content,
+        tags,
         media: mediaItems,
-        location: location, // Add location field
+        location,
       };
 
       let response;
@@ -1124,20 +1160,20 @@ function PostCreator({ initialData = null, isEditing = false }) {
           payload.keepMedia = existingMediaIds;
         }
 
-        // Update existing post
         response = await axios.put(`/api/posts/${initialData._id}`, payload);
         toast.success("Post updated successfully!");
       } else {
-        // Create new post
         response = await axios.post("/api/posts", payload);
         toast.success("Post created successfully!");
       }
 
+      console.log("Server response:", response.data);
       navigate(`/post/${response.data.data._id}`);
     } catch (error) {
       console.error("Error creating/updating post:", error);
+      const errorMessage = error.response?.data?.message || "Please try again";
       toast.error(
-        `Failed to ${isEditing ? "update" : "create"} post. Please try again.`
+        `Failed to ${isEditing ? "update" : "create"} post: ${errorMessage}`
       );
     } finally {
       setIsSubmitting(false);
@@ -1296,7 +1332,9 @@ function PostCreator({ initialData = null, isEditing = false }) {
                         ""
                       }
                       controls
+                      playsInline // Add this for better mobile compatibility
                       onError={(e) => {
+                        console.error("Video error:", e);
                         e.target.src = PLACEHOLDER_IMG;
                       }}
                     />
@@ -1314,11 +1352,28 @@ function PostCreator({ initialData = null, isEditing = false }) {
                       }
                       alt="Preview"
                       onError={(e) => {
+                        console.error("Image error:", e);
                         e.target.src = PLACEHOLDER_IMG;
                       }}
                     />
                   )}
-
+                  ) : (
+                  <ImagePreview
+                    src={
+                      media[currentIndex].mediaUrl ||
+                      media[currentIndex].previewUrl
+                    }
+                    className={
+                      media[currentIndex].filterClass ||
+                      filters.find((f) => f.id === media[currentIndex].filter)
+                        ?.className ||
+                      ""
+                    }
+                    alt="Preview"
+                    onError={(e) => {
+                      e.target.src = PLACEHOLDER_IMG;
+                    }}
+                  />
                   {media[currentIndex].uploading && (
                     <UploadOverlay>
                       <UploadProgress>
@@ -1329,20 +1384,22 @@ function PostCreator({ initialData = null, isEditing = false }) {
                       <p>Uploading... {media[currentIndex].progress}%</p>
                     </UploadOverlay>
                   )}
-
                   {media[currentIndex].error && (
                     <ErrorOverlay>
                       <p>Upload failed</p>
+                      {media[currentIndex].errorMessage && (
+                        <p style={{ fontSize: "12px", marginTop: "5px" }}>
+                          {media[currentIndex].errorMessage}
+                        </p>
+                      )}
                       <button onClick={() => removeMedia(currentIndex)}>
                         Remove
                       </button>
                     </ErrorOverlay>
                   )}
-
                   <RemoveButton onClick={() => removeMedia(currentIndex)}>
                     <FaTimes />
                   </RemoveButton>
-
                   {media.length > 1 && (
                     <NavigationButtons>
                       <NavButton
