@@ -30,10 +30,27 @@ const CreatePost = () => {
       <PageWrapper>
         <Container>
           <LoadingHeader>
-            <Skeleton circle={true} height={60} width={60} />
-            <Skeleton height={30} width="50%" style={{ marginTop: 15 }} />
+            <Skeleton
+              circle={true}
+              height={60}
+              width={60}
+              baseColor={COLORS.elevatedBackground}
+              highlightColor={COLORS.border}
+            />
+            <Skeleton
+              height={30}
+              width="50%"
+              style={{ marginTop: 15 }}
+              baseColor={COLORS.elevatedBackground}
+              highlightColor={COLORS.border}
+            />
           </LoadingHeader>
-          <Skeleton height="450px" width="100%" />
+          <Skeleton
+            height="450px"
+            width="100%"
+            baseColor={COLORS.elevatedBackground}
+            highlightColor={COLORS.border}
+          />
         </Container>
       </PageWrapper>
     );
@@ -61,10 +78,27 @@ const CreatePost = () => {
 const LoadingSkeleton = () => (
   <>
     <LoadingHeader>
-      <Skeleton circle={true} height={60} width={60} />
-      <Skeleton height={30} width="50%" style={{ marginTop: 15 }} />
+      <Skeleton
+        circle={true}
+        height={60}
+        width={60}
+        baseColor={COLORS.elevatedBackground}
+        highlightColor={COLORS.border}
+      />
+      <Skeleton
+        height={30}
+        width="50%"
+        style={{ marginTop: 15 }}
+        baseColor={COLORS.elevatedBackground}
+        highlightColor={COLORS.border}
+      />
     </LoadingHeader>
-    <Skeleton height="450px" width="100%" />
+    <Skeleton
+      height="450px"
+      width="100%"
+      baseColor={COLORS.elevatedBackground}
+      highlightColor={COLORS.border}
+    />
   </>
 );
 

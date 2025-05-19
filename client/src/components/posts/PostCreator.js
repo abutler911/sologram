@@ -20,9 +20,9 @@ import {
 import { COLORS, THEME } from "../../theme";
 import { useUploadManager } from "../../hooks/useUploadManager";
 
-// Default placeholder image
+// Default placeholder - using data URI instead of external service
 const PLACEHOLDER_IMG =
-  "https://via.placeholder.com/300x300?text=Image+Not+Available";
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='sans-serif' fill='%23999999'%3EImage Not Available%3C/text%3E%3C/svg%3E";
 
 // Styled components - Updated for more Instagram-like experience
 const Container = styled.div`
@@ -1440,10 +1440,11 @@ function PostCreator({ initialData = null, isEditing = false }) {
             <UserInfo>
               <UserAvatar>
                 <img
-                  src="https://via.placeholder.com/36"
+                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='18' fill='%23f0f0f0'/%3E%3Ccircle cx='18' cy='14' r='6' fill='%23cccccc'/%3E%3Cpath d='M8,30 C8,24 12,20 18,20 C24,20 28,24 28,30' fill='%23cccccc'/%3E%3C/svg%3E"
                   alt="Your profile"
                   onError={(e) => {
-                    e.target.src = "https://via.placeholder.com/36?text=You";
+                    e.target.src =
+                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='18' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='12' text-anchor='middle' alignment-baseline='middle' font-family='sans-serif' fill='%23999999'%3EYou%3C/text%3E%3C/svg%3E";
                   }}
                 />
               </UserAvatar>
