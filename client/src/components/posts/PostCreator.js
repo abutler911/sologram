@@ -1,4 +1,10 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useContext,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useDropzone } from "react-dropzone";
@@ -16,10 +22,11 @@ import {
   FaTag,
   FaPencilAlt,
   FaLocationArrow,
-  FaHeading,
+  FaCalendarDay,
 } from "react-icons/fa";
 import { COLORS, THEME } from "../../theme";
 import { useUploadManager } from "../../hooks/useUploadManager";
+import { AuthContext } from "../../context/AuthContext";
 
 // Default placeholder - using data URI instead of external service
 const PLACEHOLDER_IMG =
@@ -841,6 +848,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const cameraInputRef = useRef(null);
   const videoCameraInputRef = useRef(null);
   const { startUpload, mountedRef } = useUploadManager(setMedia);
+  const { user } = useContext(AuthContext);
 
   // Instagram-like filters
   const filters = [
@@ -1158,6 +1166,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
         media: mediaItems,
         location,
         date,
+        // Explicitly set createdAt for new posts to ensure the date is properly stored
+        ...(isEditing ? {} : { createdAt: new Date(date).toISOString() }),
       };
 
       let response;
@@ -1503,13 +1513,14 @@ function PostCreator({ initialData = null, isEditing = false }) {
                   }}
                 />
               </UserAvatar>
-              <UserName>Your Username</UserName>
+              {/* This shows the current user - can be updated with actual user data from context */}
+              <UserName>{user?.username || "Your Profile"}</UserName>
             </UserInfo>
 
             {/* Add title field */}
             <FormGroup>
               <InputGroup>
-                <FaHeading />
+                <FaPencilAlt />
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -1525,13 +1536,15 @@ function PostCreator({ initialData = null, isEditing = false }) {
 
             {/* Date field */}
             <FormGroup>
-              <Label>Date</Label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
+              <InputGroup>
+                <FaCalendarDay />
+                <Input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                />
+              </InputGroup>
             </FormGroup>
 
             <FormGroup>
