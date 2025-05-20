@@ -1291,6 +1291,15 @@ const Content = styled.p`
   letter-spacing: 0;
 `;
 
+const Caption = styled.p`
+  color: ${COLORS.textSecondary};
+  font-size: 0.9rem;
+  font-weight: normal;
+  line-height: 1.4;
+  margin: 0 0 8px 0;
+  word-break: break-word;
+`;
+
 const TagsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
