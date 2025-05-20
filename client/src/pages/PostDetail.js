@@ -25,6 +25,8 @@ import {
   FaCompressAlt,
   FaComments,
   FaRegComment,
+  FaLocationArrow,
+  FaMapMarkerAlt,
 } from "react-icons/fa";
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../context/AuthContext";
@@ -213,6 +215,16 @@ const PostDetail = () => {
     }
   };
 
+  // Open location in Google Maps
+  const openInMaps = (location) => {
+    if (!location) return;
+
+    const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(
+      location
+    )}`;
+    window.open(mapsUrl, "_blank", "noopener,noreferrer");
+  };
+
   // Key press handler for left/right navigation
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -354,6 +366,19 @@ const PostDetail = () => {
             </MediaSection>
           )}
 
+          {/* Location banner - displayed if location exists */}
+          {post.location && (
+            <LocationBanner onClick={() => openInMaps(post.location)}>
+              <LocationIcon>
+                <FaMapMarkerAlt />
+              </LocationIcon>
+              <LocationText>{post.location}</LocationText>
+              <LocationArrow>
+                <FaLocationArrow />
+              </LocationArrow>
+            </LocationBanner>
+          )}
+
           <ContentContainer>
             {/* Author Section with Andrew's avatar */}
             <AuthorSection>
@@ -368,7 +393,7 @@ const PostDetail = () => {
             </AuthorSection>
 
             <PostHeader>
-              <PostTitle>{post.caption}</PostTitle>
+              <PostTitle>{post.title || post.caption}</PostTitle>
 
               {isAuthenticated && (
                 <ActionsContainer>
@@ -396,6 +421,8 @@ const PostDetail = () => {
                 <span>{post.likes} likes</span>
               </LikesCount>
             </MetaData>
+
+            <PostCaption>{post.caption}</PostCaption>
 
             {post.content && (
               <PostContent id="post-content" ref={contentRef}>
@@ -616,6 +643,48 @@ const MediaSection = styled.div`
   position: relative;
   background-color: #f5f5f5;
   width: 100%;
+`;
+
+// New Location Banner component
+const LocationBanner = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: ${COLORS.primaryKhaki}20;
+  border-bottom: 1px solid ${COLORS.divider};
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${COLORS.primaryKhaki}30;
+  }
+`;
+
+const LocationIcon = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  color: ${COLORS.primarySalmon};
+  font-size: 16px;
+`;
+
+const LocationText = styled.div`
+  flex: 1;
+  font-size: 14px;
+  color: ${COLORS.textPrimary};
+  font-weight: 500;
+`;
+
+const LocationArrow = styled.div`
+  color: ${COLORS.primaryBlueGray};
+  font-size: 12px;
+  transition: transform 0.2s ease;
+
+  ${LocationBanner}:hover & {
+    transform: translateX(3px);
+    color: ${COLORS.primarySalmon};
+  }
 `;
 
 const MediaContainer = styled.div`
@@ -983,6 +1052,15 @@ const LikesCount = styled.div`
   svg {
     margin-right: 0.5rem;
   }
+`;
+
+// Post caption that appears before content
+const PostCaption = styled.div`
+  font-size: 1.25rem;
+  line-height: 1.6;
+  color: #000000;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
 `;
 
 // Updated post content with black text

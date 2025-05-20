@@ -13,6 +13,7 @@ import styled, { keyframes, css } from "styled-components";
 import { FaHeart, FaRegHeart, FaComment } from "react-icons/fa";
 import { FaEllipsisH } from "react-icons/fa";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaMapMarkerAlt } from "react-icons/fa";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
@@ -565,7 +566,14 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
             )}
           </MediaContainer>
         )}
-
+        {post.location && (
+          <LocationBar>
+            <LocationIcon>
+              <FaMapMarkerAlt />
+            </LocationIcon>
+            <LocationText>{post.location}</LocationText>
+          </LocationBar>
+        )}
         <CardActions>
           <ActionButtons>
             {isAuthenticated ? (
@@ -1682,6 +1690,38 @@ const FullscreenProgressDot = styled.button`
   &:active {
     transform: scale(0.9);
   }
+`;
+
+const LocationBar = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background-color: ${COLORS.primaryKhaki}15;
+  border-top: 1px solid ${COLORS.divider};
+  border-bottom: 1px solid ${COLORS.divider};
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${COLORS.primaryKhaki}25;
+  }
+`;
+
+const LocationIcon = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  color: ${COLORS.primarySalmon};
+  font-size: 14px;
+`;
+
+const LocationText = styled.div`
+  font-size: 13px;
+  color: ${COLORS.textSecondary};
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 PostCard.displayName = "PostCard";
