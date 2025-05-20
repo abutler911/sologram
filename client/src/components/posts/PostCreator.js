@@ -32,20 +32,38 @@ import { AuthContext } from "../../context/AuthContext";
 const PLACEHOLDER_IMG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='sans-serif' fill='%23999999'%3EImage Not Available%3C/text%3E%3C/svg%3E";
 
-// Styled components - Updated for more Instagram-like experience
+// Styled components - Updated for SoloGram theme
 const Container = styled.div`
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
   background-color: ${COLORS.cardBackground};
   border-radius: 12px;
-  box-shadow: 0 2px 10px ${COLORS.shadow};
+  box-shadow: 0 4px 15px ${COLORS.shadow};
   color: ${COLORS.textPrimary};
+  border: 1px solid ${COLORS.primaryMint}20;
 
   @media (max-width: 768px) {
     padding: 15px;
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px ${COLORS.shadow};
+  }
+`;
+
+const PageTitle = styled.div`
+  text-align: center;
+  margin-bottom: 20px;
+  color: ${COLORS.primaryBlueGray};
+
+  h1 {
+    font-size: 24px;
+    margin-bottom: 5px;
+    font-weight: 700;
+  }
+
+  p {
+    color: ${COLORS.textSecondary};
+    font-size: 14px;
   }
 `;
 
@@ -54,18 +72,20 @@ const Header = styled.div`
   align-items: center;
   margin-bottom: 20px;
   position: relative;
+  padding-bottom: 15px;
+  border-bottom: 2px solid ${COLORS.primarySalmon}20;
 
   h1 {
     flex-grow: 1;
     text-align: center;
     font-size: 20px;
-    color: ${COLORS.textPrimary};
+    color: ${COLORS.primaryBlueGray};
     margin: 0;
+    font-weight: 600;
   }
 
   @media (max-width: 768px) {
     padding-bottom: 10px;
-    border-bottom: 1px solid ${COLORS.divider};
   }
 `;
 
@@ -85,14 +105,15 @@ const StepIndicator = styled.div`
 const Step = styled.div`
   padding: 6px 12px;
   background-color: ${(props) =>
-    props.active ? COLORS.primaryPurple : COLORS.elevatedBackground};
+    props.active ? COLORS.primarySalmon : COLORS.primaryKhaki}40;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
   margin: 0 5px;
   cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
   opacity: ${(props) => (props.disabled ? 0.6 : 1)};
-  color: ${(props) => (props.active ? "#fff" : COLORS.textSecondary)};
+  color: ${(props) =>
+    props.active ? COLORS.primarySalmon : COLORS.textSecondary};
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
@@ -105,7 +126,7 @@ const MediaSection = styled.div`
 `;
 
 const DropArea = styled.div`
-  border: 2px dashed ${COLORS.border};
+  border: 2px dashed ${COLORS.primaryMint};
   border-radius: 12px;
   padding: 40px 20px;
   text-align: center;
@@ -116,11 +137,12 @@ const DropArea = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: ${COLORS.elevatedBackground}10;
+  background-color: ${COLORS.background}85;
 
   &:hover {
-    border-color: ${COLORS.primaryPurple};
-    background-color: rgba(94, 53, 177, 0.05);
+    border-color: ${COLORS.primarySalmon};
+    background-color: ${COLORS.primaryKhaki}15;
+    transform: translateY(-2px);
   }
 
   p {
@@ -135,19 +157,19 @@ const UploadIcon = styled.div`
   display: flex;
   gap: 20px;
   font-size: 40px;
-  color: ${COLORS.textTertiary};
+  color: ${COLORS.primaryBlueGray};
 
   svg {
     transition: transform 0.3s, color 0.3s;
   }
 
   ${DropArea}:hover & svg {
-    color: ${COLORS.primaryPurple};
+    color: ${COLORS.primarySalmon};
     transform: scale(1.1);
   }
 `;
 
-// Updated button styles for a more Instagram-like feel
+// Updated button styles for theme-aligned feel
 const ButtonGroup = styled.div`
   display: flex;
   gap: 10px;
@@ -165,7 +187,7 @@ const MediaButton = styled.button`
   gap: 10px;
   background-color: ${COLORS.cardBackground};
   color: ${COLORS.textPrimary};
-  border: 1px solid ${COLORS.border};
+  border: 1px solid ${COLORS.primaryMint}40;
   border-radius: 8px;
   padding: 12px 20px;
   cursor: pointer;
@@ -176,8 +198,9 @@ const MediaButton = styled.button`
 
   &:hover {
     transform: translateY(-2px);
-    border-color: ${COLORS.primaryPurple};
-    box-shadow: 0 4px 8px ${COLORS.primaryPurple}20;
+    border-color: ${COLORS.primarySalmon};
+    background-color: ${COLORS.primaryKhaki}10;
+    box-shadow: 0 4px 8px ${COLORS.primarySalmon}20;
   }
 
   &:active {
@@ -192,19 +215,19 @@ const MediaButton = styled.button`
 
 const CameraButton = styled(MediaButton)`
   svg {
-    color: ${COLORS.primaryGreen};
+    color: ${COLORS.primarySalmon};
   }
 `;
 
 const VideoCameraButton = styled(MediaButton)`
   svg {
-    color: ${COLORS.primaryRed || "#e53935"};
+    color: ${COLORS.primaryBlueGray};
   }
 `;
 
 const GalleryButton = styled(MediaButton)`
   svg {
-    color: ${COLORS.primaryBlue};
+    color: ${COLORS.primaryMint};
   }
 `;
 
@@ -217,20 +240,20 @@ const PreviewContainer = styled.div`
   width: 100%;
   aspect-ratio: 1 / 1;
   max-height: 600px;
-  background-color: ${COLORS.elevatedBackground};
+  background-color: ${COLORS.background};
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px ${COLORS.shadow}30;
+  box-shadow: 0 4px 12px ${COLORS.shadow};
+  border: 1px solid ${COLORS.primaryMint}20;
 
   @media (max-width: 768px) {
-    border-radius: 0;
-    margin-left: -15px;
-    margin-right: -15px;
-    width: calc(100% + 30px);
+    border-radius: 8px;
+    margin: 0 auto 15px;
+    width: 100%;
   }
 `;
 
@@ -326,9 +349,9 @@ const UploadOverlay = styled.div`
 
 const UploadProgress = styled.div`
   width: 80%;
-  height: 4px;
+  height: 6px;
   background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
+  border-radius: 3px;
   margin-bottom: 10px;
   overflow: hidden;
 `;
@@ -336,7 +359,7 @@ const UploadProgress = styled.div`
 const UploadProgressInner = styled.div`
   height: 100%;
   width: ${(props) => props.width}%;
-  background-color: ${COLORS.primaryPurple};
+  background-color: ${COLORS.primarySalmon};
   transition: width 0.3s;
 `;
 
@@ -373,7 +396,7 @@ const RemoveButton = styled.button`
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
+  background: ${COLORS.primarySalmon};
   color: white;
   border: none;
   display: flex;
@@ -382,10 +405,11 @@ const RemoveButton = styled.button`
   cursor: pointer;
   font-size: 14px;
   z-index: 3;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, transform 0.2s;
 
   &:hover {
     background: ${COLORS.error};
+    transform: scale(1.05);
   }
 `;
 
@@ -405,7 +429,7 @@ const NavButton = styled.button`
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
+  background: ${COLORS.primaryBlueGray};
   color: white;
   border: none;
   display: flex;
@@ -421,20 +445,21 @@ const NavButton = styled.button`
   }
 
   &:hover:not(:disabled) {
-    background: ${COLORS.primaryPurple};
+    background: ${COLORS.primarySalmon};
     transform: scale(1.05);
   }
 `;
 
 const MediaCounter = styled.div`
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
+  background: ${COLORS.primaryMint};
+  color: ${COLORS.textPrimary};
   border-radius: 12px;
   padding: 5px 10px;
   font-size: 12px;
+  font-weight: 600;
 `;
 
-// Instagram-like filter options
+// Filter options with updated colors
 const FilterOptions = styled.div`
   margin-top: 20px;
 `;
@@ -443,9 +468,11 @@ const FiltersGrid = styled.div`
   display: flex;
   overflow-x: auto;
   gap: 15px;
-  padding: 10px 0;
+  padding: 15px 10px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  background-color: ${COLORS.background}50;
+  border-radius: 8px;
 
   &::-webkit-scrollbar {
     display: none;
@@ -469,7 +496,7 @@ const FilterItem = styled.div`
     margin-top: 8px;
     font-size: 12px;
     color: ${(props) =>
-      props.active ? COLORS.primaryPurple : COLORS.textTertiary};
+      props.active ? COLORS.primarySalmon : COLORS.textSecondary};
     font-weight: ${(props) => (props.active ? "600" : "normal")};
   }
 
@@ -484,6 +511,8 @@ const FilterPreview = styled.div`
   border-radius: 4px;
   overflow: hidden;
   position: relative;
+  border: 2px solid
+    ${(props) => (props.active ? COLORS.primarySalmon : "transparent")};
 
   img {
     width: 100%;
@@ -524,18 +553,20 @@ const FilterPreview = styled.div`
   }
 `;
 
-// Instagram-style action bar
+// Action bar with theme colors
 const ActionBar = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-around;
   background-color: ${COLORS.cardBackground};
-  border-top: 1px solid ${COLORS.divider};
+  border-top: 1px solid ${COLORS.primarySalmon}20;
+  border-bottom: 1px solid ${COLORS.primarySalmon}20;
   padding: 12px 0;
-  margin: 0 -10px;
+  margin: 15px -10px;
   position: sticky;
   bottom: 0;
   z-index: 10;
+  border-radius: 8px;
 `;
 
 const ActionButton = styled.button`
@@ -544,10 +575,10 @@ const ActionButton = styled.button`
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px;
+  padding: 8px 16px;
   cursor: pointer;
   color: ${(props) =>
-    props.active ? COLORS.primaryPurple : COLORS.textSecondary};
+    props.active ? COLORS.primarySalmon : COLORS.primaryBlueGray};
 
   svg {
     font-size: 20px;
@@ -560,32 +591,7 @@ const ActionButton = styled.button`
   }
 
   &:hover {
-    color: ${COLORS.primaryPurple};
-  }
-`;
-
-const AddMoreButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background-color: transparent;
-  color: ${COLORS.primaryPurple};
-  border: 1px solid ${COLORS.primaryPurple};
-  border-radius: 20px;
-  padding: 10px 15px;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  font-weight: 600;
-  font-size: 14px;
-  margin: 15px auto;
-
-  &:hover {
-    background-color: ${COLORS.primaryPurple}10;
-  }
-
-  svg {
-    font-size: 16px;
+    color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -594,7 +600,7 @@ const NextButton = styled.button`
   right: 0;
   top: 0;
   background: transparent;
-  color: ${COLORS.primaryPurple};
+  color: ${COLORS.primarySalmon};
   border: none;
   padding: 0 10px;
   font-weight: 600;
@@ -613,7 +619,7 @@ const BackButton = styled.button`
   left: 0;
   top: 0;
   background: transparent;
-  color: ${COLORS.textSecondary};
+  color: ${COLORS.primaryBlueGray};
   border: none;
   padding: 0 10px;
   font-weight: 600;
@@ -627,7 +633,7 @@ const BackButton = styled.button`
   }
 `;
 
-// Details Section Styles (Improved Instagram-like)
+// Details Section Styles
 const DetailsSection = styled.div`
   margin-top: 20px;
 `;
@@ -637,7 +643,7 @@ const FormGroup = styled.div`
   position: relative;
 
   &:first-of-type {
-    border-top: 1px solid ${COLORS.divider};
+    border-top: 1px solid ${COLORS.primaryMint}20;
     padding-top: 15px;
   }
 `;
@@ -647,22 +653,23 @@ const Label = styled.label`
   margin-bottom: 8px;
   font-weight: 600;
   font-size: 14px;
-  color: ${COLORS.textSecondary};
+  color: ${COLORS.primaryBlueGray};
 `;
 
 const Input = styled.input`
   width: 100%;
   padding: 12px;
   background-color: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
+  border: 1px solid ${COLORS.primaryMint}30;
   border-radius: 4px;
   color: ${COLORS.textPrimary};
   font-size: 16px;
+  transition: all 0.2s;
 
   &:focus {
     outline: none;
-    border-color: ${COLORS.primaryPurple};
-    box-shadow: 0 0 0 2px ${COLORS.primaryPurple}20;
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 2px ${COLORS.primarySalmon}20;
   }
 
   &::placeholder {
@@ -674,16 +681,17 @@ const Textarea = styled.textarea`
   width: 100%;
   padding: 12px;
   background-color: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
+  border: 1px solid ${COLORS.primaryMint}30;
   border-radius: 4px;
   color: ${COLORS.textPrimary};
   font-size: 16px;
   resize: vertical;
+  transition: all 0.2s;
 
   &:focus {
     outline: none;
-    border-color: ${COLORS.primaryPurple};
-    box-shadow: 0 0 0 2px ${COLORS.primaryPurple}20;
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 2px ${COLORS.primarySalmon}20;
   }
 
   &::placeholder {
@@ -702,13 +710,19 @@ const CharCount = styled.div`
 const InputGroup = styled.div`
   display: flex;
   align-items: center;
-  border: 1px solid ${COLORS.border};
+  border: 1px solid ${COLORS.primaryMint}30;
   border-radius: 4px;
   background-color: ${COLORS.elevatedBackground};
   overflow: hidden;
+  transition: all 0.2s;
+
+  &:focus-within {
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 2px ${COLORS.primarySalmon}20;
+  }
 
   svg {
-    color: ${COLORS.textTertiary};
+    color: ${COLORS.primarySalmon};
     margin: 0 12px;
     font-size: 18px;
   }
@@ -727,16 +741,17 @@ const InputGroup = styled.div`
 `;
 
 const PublishButton = styled.button`
-  background-color: ${THEME.button.action.background};
-  color: ${THEME.button.action.text};
+  background-color: ${COLORS.primarySalmon};
+  color: white;
   border: none;
   border-radius: 4px;
   padding: 12px 25px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s;
   width: 100%;
   margin-top: 20px;
+  box-shadow: 0 2px 8px ${COLORS.primarySalmon}30;
 
   &:disabled {
     background-color: ${COLORS.elevatedBackground};
@@ -744,7 +759,8 @@ const PublishButton = styled.button`
   }
 
   &:hover:not(:disabled) {
-    background-color: ${THEME.button.action.hoverBackground};
+    background-color: ${COLORS.accentSalmon};
+    transform: translateY(-1px);
   }
 
   @media (max-width: 768px) {
@@ -759,16 +775,17 @@ const UserInfo = styled.div`
   align-items: center;
   margin-bottom: 15px;
   padding-bottom: 15px;
-  border-bottom: 1px solid ${COLORS.divider};
+  border-bottom: 1px solid ${COLORS.primaryMint}30;
 `;
 
 const UserAvatar = styled.div`
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background-color: ${COLORS.elevatedBackground};
   overflow: hidden;
   margin-right: 10px;
+  border: 2px solid ${COLORS.primaryMint};
 
   img {
     width: 100%;
@@ -780,7 +797,15 @@ const UserAvatar = styled.div`
 const UserName = styled.div`
   font-weight: 600;
   font-size: 14px;
-  color: ${COLORS.textPrimary};
+  color: ${COLORS.primaryBlueGray};
+
+  span {
+    display: block;
+    font-size: 12px;
+    color: ${COLORS.textSecondary};
+    margin-top: 2px;
+    font-weight: normal;
+  }
 `;
 
 const MainContent = styled.div`
@@ -793,7 +818,7 @@ const MainContent = styled.div`
   }
 
   &::-webkit-scrollbar-thumb {
-    background-color: ${COLORS.divider};
+    background-color: ${COLORS.primarySalmon}30;
     border-radius: 2px;
   }
 
@@ -802,33 +827,28 @@ const MainContent = styled.div`
   }
 `;
 
-// New components for Instagram-like details UI
-const LocationPicker = styled.div`
-  margin-top: 20px;
+// Custom progress indicator
+const ProgressBar = styled.div`
+  height: 6px;
+  background-color: ${COLORS.elevatedBackground};
+  border-radius: 3px;
+  margin: 10px 0;
+  overflow: hidden;
 `;
 
-const LocationButton = styled.button`
-  display: flex;
-  align-items: center;
-  width: 100%;
-  background: transparent;
-  border: none;
-  padding: 8px 0;
-  color: ${COLORS.primaryBlue};
-  font-size: 14px;
-  cursor: pointer;
-
-  svg {
-    margin-right: 8px;
-  }
+const ProgressFill = styled.div`
+  height: 100%;
+  width: ${(props) => props.percent || 0}%;
+  background-color: ${COLORS.primarySalmon};
+  transition: width 0.3s ease;
 `;
 
-// Main component (Updated with Instagram-like flow)
+// Main component (Updated with SoloGram theme)
 function PostCreator({ initialData = null, isEditing = false }) {
   // Component state
   const [media, setMedia] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [title, setTitle] = useState(initialData?.title || ""); // New title state
+  const [title, setTitle] = useState(initialData?.title || "");
   const [caption, setCaption] = useState(initialData?.caption || "");
   const [content, setContent] = useState(initialData?.content || "");
   const [tags, setTags] = useState(
@@ -841,7 +861,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const [step, setStep] = useState(1);
   const [date, setDate] = useState(
     initialData?.date || new Date().toISOString().split("T")[0]
-  ); // New date state with current date as default
+  );
 
   const navigate = useNavigate();
   const inputFileRef = useRef(null);
@@ -984,7 +1004,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
     maxSize: 25 * 1024 * 1024, // 25MB
   });
 
-  // Handle camera capture
   // Handle camera capture
   const handleCameraCapture = async (event) => {
     const file = event.target.files?.[0];
@@ -1157,7 +1176,10 @@ function PostCreator({ initialData = null, isEditing = false }) {
 
       console.log("Submitting media items:", mediaItems);
 
-      // Create the payload with title and date
+      // Format the date properly for consistent storage in database
+      const submissionDate = new Date(date);
+
+      // Create the payload with title and formatted date
       const payload = {
         title,
         caption,
@@ -1165,10 +1187,11 @@ function PostCreator({ initialData = null, isEditing = false }) {
         tags,
         media: mediaItems,
         location,
-        date,
-        // Explicitly set createdAt for new posts to ensure the date is properly stored
-        ...(isEditing ? {} : { createdAt: new Date(date).toISOString() }),
+        date: submissionDate.toISOString(),
+        createdAt: submissionDate.toISOString(), // Always set createdAt for consistent date storage
       };
+
+      console.log("Submitting post payload:", payload);
 
       let response;
 
@@ -1203,13 +1226,18 @@ function PostCreator({ initialData = null, isEditing = false }) {
     }
   };
 
-  // Render the Instagram-like UI
+  // Render the SoloGram-themed UI
   return (
     <Container>
+      <PageTitle>
+        <h1>{isEditing ? "Edit Post" : "Create New Post"}</h1>
+        <p>Share your moments with SoloGram</p>
+      </PageTitle>
+
       <Header>
         {step === 1 ? (
           <>
-            <h1>{isEditing ? "Edit Post" : "New Post"}</h1>
+            <h1>Select Media</h1>
             {media.length > 0 && (
               <NextButton
                 onClick={() => setStep(2)}
@@ -1224,7 +1252,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
         ) : (
           <>
             <BackButton onClick={() => setStep(1)}>Back</BackButton>
-            <h1>New Post</h1>
+            <h1>Post Details</h1>
             <NextButton
               onClick={handleSubmit}
               disabled={
@@ -1235,7 +1263,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 media.some((item) => item.uploading)
               }
             >
-              Share
+              {isSubmitting ? "Sharing..." : "Share"}
             </NextButton>
           </>
         )}
@@ -1329,15 +1357,20 @@ function PostCreator({ initialData = null, isEditing = false }) {
             <>
               <MediaPreview>
                 {media.some((item) => item.uploading) && (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      margin: "10px 0",
-                      color: COLORS.textSecondary,
-                      fontSize: "14px",
-                    }}
-                  >
-                    Uploading... {totalProgress}%
+                  <div style={{ margin: "15px 0" }}>
+                    <ProgressBar>
+                      <ProgressFill percent={totalProgress} />
+                    </ProgressBar>
+                    <div
+                      style={{
+                        textAlign: "center",
+                        color: COLORS.primaryBlueGray,
+                        fontSize: "14px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Uploading... {totalProgress}%
+                    </div>
                   </div>
                 )}
 
@@ -1430,7 +1463,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 </PreviewContainer>
               </MediaPreview>
 
-              {/* Instagram-like Action Bar */}
+              {/* Themed Action Bar */}
               <ActionBar>
                 <ActionButton
                   active={activeAction === "filter"}
@@ -1477,7 +1510,10 @@ function PostCreator({ initialData = null, isEditing = false }) {
                         active={media[currentIndex].filter === filter.id}
                         onClick={() => applyFilter(filter.id)}
                       >
-                        <FilterPreview className={filter.className}>
+                        <FilterPreview
+                          className={filter.className}
+                          active={media[currentIndex].filter === filter.id}
+                        >
                           <img
                             src={
                               media[currentIndex].mediaUrl ||
@@ -1501,23 +1537,27 @@ function PostCreator({ initialData = null, isEditing = false }) {
       ) : (
         <DetailsSection>
           <MainContent>
-            {/* User info header - Instagram style */}
+            {/* Enhanced User info header */}
             <UserInfo>
               <UserAvatar>
                 <img
-                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='18' fill='%23f0f0f0'/%3E%3Ccircle cx='18' cy='14' r='6' fill='%23cccccc'/%3E%3Cpath d='M8,30 C8,24 12,20 18,20 C24,20 28,24 28,30' fill='%23cccccc'/%3E%3C/svg%3E"
+                  src={
+                    user?.avatar ||
+                    `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Ccircle cx='25' cy='25' r='25' fill='%23e7d4c0'/%3E%3Ccircle cx='25' cy='20' r='8' fill='%23658ea9'/%3E%3Cpath d='M11,40 C11,30 17,25 25,25 C33,25 39,30 39,40' fill='%23658ea9'/%3E%3C/svg%3E`
+                  }
                   alt="Your profile"
                   onError={(e) => {
-                    e.target.src =
-                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='18' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='12' text-anchor='middle' alignment-baseline='middle' font-family='sans-serif' fill='%23999999'%3EYou%3C/text%3E%3C/svg%3E";
+                    e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Ccircle cx='25' cy='25' r='25' fill='%23e7d4c0'/%3E%3Ccircle cx='25' cy='20' r='8' fill='%23658ea9'/%3E%3Cpath d='M11,40 C11,30 17,25 25,25 C33,25 39,30 39,40' fill='%23658ea9'/%3E%3C/svg%3E`;
                   }}
                 />
               </UserAvatar>
-              {/* This shows the current user - can be updated with actual user data from context */}
-              <UserName>{user?.username || "Your Profile"}</UserName>
+              <UserName>
+                {user?.name || user?.username || "Your Profile"}
+                <span>{user?.role || "Creator"}</span>
+              </UserName>
             </UserInfo>
 
-            {/* Add title field */}
+            {/* Title field */}
             <FormGroup>
               <InputGroup>
                 <FaPencilAlt />
@@ -1534,7 +1574,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
               </CharCount>
             </FormGroup>
 
-            {/* Date field */}
+            {/* Date field with calendar icon */}
             <FormGroup>
               <InputGroup>
                 <FaCalendarDay />
@@ -1547,6 +1587,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
               </InputGroup>
             </FormGroup>
 
+            {/* Caption field */}
             <FormGroup>
               <Textarea
                 value={caption}
@@ -1561,6 +1602,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
               </CharCount>
             </FormGroup>
 
+            {/* Location field */}
             <FormGroup>
               <InputGroup>
                 <FaLocationArrow />
@@ -1572,6 +1614,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
               </InputGroup>
             </FormGroup>
 
+            {/* Tags field */}
             <FormGroup>
               <InputGroup>
                 <FaTag />
@@ -1583,6 +1626,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
               </InputGroup>
             </FormGroup>
 
+            {/* Additional content field */}
             <FormGroup>
               <InputGroup>
                 <FaPencilAlt />
@@ -1595,6 +1639,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
             </FormGroup>
           </MainContent>
 
+          {/* Enhanced Publish Button */}
           <PublishButton
             onClick={handleSubmit}
             disabled={
@@ -1610,8 +1655,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 ? "Updating..."
                 : "Sharing..."
               : isEditing
-              ? "Update"
-              : "Share"}
+              ? "Update Post"
+              : "Share Post"}
           </PublishButton>
         </DetailsSection>
       )}
