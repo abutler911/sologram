@@ -89,7 +89,15 @@ exports.getPost = async (req, res) => {
 
 exports.createPost = async (req, res) => {
   try {
-    let { caption, content, tags, media = [] } = req.body;
+    let {
+      title,
+      caption,
+      content,
+      tags,
+      location,
+      date,
+      media = [],
+    } = req.body;
 
     if (typeof media === "string") {
       try {
@@ -102,10 +110,10 @@ exports.createPost = async (req, res) => {
       }
     }
 
-    if (!caption || !Array.isArray(media)) {
+    if (!title || !caption || !Array.isArray(media)) {
       return res.status(400).json({
         success: false,
-        message: "Caption and media are required",
+        message: "Title, caption, and media are required",
       });
     }
 
@@ -125,12 +133,26 @@ exports.createPost = async (req, res) => {
       };
     });
 
-    const newPost = await Post.create({
+    // Create post with all fields
+    const postData = {
+      title,
       caption,
       content,
       tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
       media: formattedMedia,
-    });
+      location,
+    };
+
+    // Add custom date if provided
+    if (date) {
+      // Convert string date to Date object
+      postData.date = new Date(date);
+
+      // Optionally set createdAt to match the custom date
+      postData.createdAt = new Date(date);
+    }
+
+    const newPost = await Post.create(postData);
 
     res.status(201).json({ success: true, data: newPost });
   } catch (err) {
@@ -148,7 +170,16 @@ exports.updatePost = async (req, res) => {
         .json({ success: false, message: "Post not found" });
     }
 
-    let { caption, content, tags, media = [], keepMedia = [] } = req.body;
+    let {
+      title,
+      caption,
+      content,
+      tags,
+      location,
+      date,
+      media = [],
+      keepMedia = [],
+    } = req.body;
 
     // Handle possible stringified media
     if (typeof media === "string") {
@@ -217,11 +248,18 @@ exports.updatePost = async (req, res) => {
       : [];
 
     // Update post fields
+    post.title = title || post.title;
     post.caption = caption || post.caption;
     post.content = content || post.content;
+    post.location = location || post.location;
     post.tags = tags ? tags.split(",").map((tag) => tag.trim()) : post.tags;
     post.media = [...keptMedia, ...newMedia];
     post.updatedAt = Date.now();
+
+    // Update date if provided
+    if (date) {
+      post.date = new Date(date);
+    }
 
     await post.save();
 

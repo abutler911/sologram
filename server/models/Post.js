@@ -3,6 +3,11 @@ const mongoose = require("mongoose");
 
 const PostSchema = new mongoose.Schema(
   {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     caption: {
       type: String,
       required: true,
@@ -28,7 +33,10 @@ const PostSchema = new mongoose.Schema(
         filter: { type: String, default: "" },
       },
     ],
-
+    location: {
+      type: String,
+      trim: true,
+    },
     tags: [
       {
         type: String,
@@ -49,12 +57,22 @@ const PostSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // Optional explicit date field if you want to store a custom date
+    date: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-PostSchema.index({ caption: "text", content: "text", tags: "text" });
+PostSchema.index({
+  title: "text",
+  caption: "text",
+  content: "text",
+  tags: "text",
+});
 
 module.exports = mongoose.model("Post", PostSchema);
