@@ -610,13 +610,28 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
         <CardContent>
           <PostLink to={`/post/${post._id}`}>
-            {/* Display the title in bold */}
+            {/* Display the title in larger bold font */}
             {post.title && <PostTitle>{post.title}</PostTitle>}
 
-            {/* Display the caption in normal font */}
-            {post.caption && <Caption>{post.caption}</Caption>}
+            {/* Display the caption with truncation and "read more" link */}
+            {post.caption && (
+              <>
+                <Caption>
+                  {post.caption.length > 280 ? (
+                    <>
+                      {post.caption.slice(0, 280)}...
+                      <ReadMoreLink to={`/post/${post._id}`}>
+                        read more
+                      </ReadMoreLink>
+                    </>
+                  ) : (
+                    post.caption
+                  )}
+                </Caption>
+              </>
+            )}
 
-            {/* Display the content if it exists */}
+            {/* Display the content if it exists and we want to show it */}
             {post.content && (
               <Content>
                 {post.content.length > 220 ? (
@@ -1272,11 +1287,11 @@ const CardContent = styled.div`
 `;
 
 const PostTitle = styled.h2`
-  font-size: 0.9rem;
-  font-weight: 600; // Bold
+  font-size: 1.1rem;
+  font-weight: 600;
   color: ${COLORS.textPrimary};
-  margin: 0 0 6px 0;
-  line-height: 1.4;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
   word-break: break-word;
   transition: none;
   letter-spacing: 0;
@@ -1305,6 +1320,11 @@ const Caption = styled.p`
   line-height: 1.4;
   margin: 0 0 8px 0;
   word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
 `;
 
 const TagsContainer = styled.div`
