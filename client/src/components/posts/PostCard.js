@@ -211,6 +211,21 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     [isLongPressing]
   );
 
+  const TruncatedText = ({ text, maxLength, linkTo }) => {
+    if (!text) return null;
+
+    if (text.length <= maxLength) {
+      return <span>{text}</span>;
+    }
+
+    return (
+      <>
+        <span>{text.substring(0, maxLength)}...</span>
+        <ReadMoreLink to={linkTo}>read more</ReadMoreLink>
+      </>
+    );
+  };
+
   const handleTouchMove = useCallback((e) => {
     // If user moves finger, cancel the long press
     if (longPressTimeoutRef.current) {
@@ -613,37 +628,25 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
             {/* Display the title in larger bold font */}
             {post.title && <PostTitle>{post.title}</PostTitle>}
 
-            {/* Display the caption with truncation and "read more" link */}
+            {/* Display the caption with truncation */}
             {post.caption && (
-              <>
-                <Caption>
-                  {post.caption.length > 280 ? (
-                    <>
-                      {post.caption.slice(0, 280)}...
-                      <ReadMoreLink to={`/post/${post._id}`}>
-                        read more
-                      </ReadMoreLink>
-                    </>
-                  ) : (
-                    post.caption
-                  )}
-                </Caption>
-              </>
+              <Caption>
+                <TruncatedText
+                  text={post.caption}
+                  maxLength={280}
+                  linkTo={`/post/${post._id}`}
+                />
+              </Caption>
             )}
 
-            {/* Display the content if it exists and we want to show it */}
+            {/* Display the content if it exists */}
             {post.content && (
               <Content>
-                {post.content.length > 220 ? (
-                  <>
-                    {post.content.slice(0, 220)}...
-                    <ReadMoreLink to={`/post/${post._id}`}>
-                      read more
-                    </ReadMoreLink>
-                  </>
-                ) : (
-                  post.content
-                )}
+                <TruncatedText
+                  text={post.content}
+                  maxLength={220}
+                  linkTo={`/post/${post._id}`}
+                />
               </Content>
             )}
           </PostLink>
@@ -1287,44 +1290,30 @@ const CardContent = styled.div`
 `;
 
 const PostTitle = styled.h2`
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   font-weight: 600;
   color: ${COLORS.textPrimary};
   margin: 0 0 8px 0;
   line-height: 1.3;
   word-break: break-word;
-  transition: none;
-  letter-spacing: 0;
 `;
 
-const Content = styled.p`
-  color: ${COLORS.textSecondary};
-  font-size: 0.9rem;
-  font-weight: normal; // Normal weight
-  line-height: 1.4;
-  margin: 0 0 8px 0;
-  word-break: break-word;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  transition: none;
-  letter-spacing: 0;
-`;
-
-const Caption = styled.p`
+const Content = styled.div`
   color: ${COLORS.textSecondary};
   font-size: 0.9rem;
   font-weight: normal;
   line-height: 1.4;
   margin: 0 0 8px 0;
   word-break: break-word;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
+`;
+
+const Caption = styled.div`
+  color: ${COLORS.textSecondary};
+  font-size: 0.9rem;
+  font-weight: normal;
+  line-height: 1.4;
+  margin: 0 0 8px 0;
+  word-break: break-word;
 `;
 
 const TagsContainer = styled.div`
