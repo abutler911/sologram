@@ -16,6 +16,7 @@ import {
   FaTag,
   FaPencilAlt,
   FaLocationArrow,
+  FaHeading,
 } from "react-icons/fa";
 import { COLORS, THEME } from "../../theme";
 import { useUploadManager } from "../../hooks/useUploadManager";
@@ -820,6 +821,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   // Component state
   const [media, setMedia] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [title, setTitle] = useState(initialData?.title || ""); // New title state
   const [caption, setCaption] = useState(initialData?.caption || "");
   const [content, setContent] = useState(initialData?.content || "");
   const [tags, setTags] = useState(
@@ -830,6 +832,9 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const [activeAction, setActiveAction] = useState("filter");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
+  const [date, setDate] = useState(
+    initialData?.date || new Date().toISOString().split("T")[0]
+  ); // New date state with current date as default
 
   const navigate = useNavigate();
   const inputFileRef = useRef(null);
@@ -972,6 +977,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   });
 
   // Handle camera capture
+  // Handle camera capture
   const handleCameraCapture = async (event) => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -1091,6 +1097,11 @@ function PostCreator({ initialData = null, isEditing = false }) {
       return;
     }
 
+    if (!title.trim()) {
+      toast.error("Please add a title");
+      return;
+    }
+
     if (!caption.trim()) {
       toast.error("Please add a caption");
       return;
@@ -1138,13 +1149,15 @@ function PostCreator({ initialData = null, isEditing = false }) {
 
       console.log("Submitting media items:", mediaItems);
 
-      // Create the payload
+      // Create the payload with title and date
       const payload = {
+        title,
         caption,
         content,
         tags,
         media: mediaItems,
         location,
+        date,
       };
 
       let response;
@@ -1206,6 +1219,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
               onClick={handleSubmit}
               disabled={
                 isSubmitting ||
+                !title.trim() ||
                 !caption.trim() ||
                 media.length === 0 ||
                 media.some((item) => item.uploading)
@@ -1357,23 +1371,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
                       }}
                     />
                   )}
-                  ) : (
-                  <ImagePreview
-                    src={
-                      media[currentIndex].mediaUrl ||
-                      media[currentIndex].previewUrl
-                    }
-                    className={
-                      media[currentIndex].filterClass ||
-                      filters.find((f) => f.id === media[currentIndex].filter)
-                        ?.className ||
-                      ""
-                    }
-                    alt="Preview"
-                    onError={(e) => {
-                      e.target.src = PLACEHOLDER_IMG;
-                    }}
-                  />
+
                   {media[currentIndex].uploading && (
                     <UploadOverlay>
                       <UploadProgress>
@@ -1508,6 +1506,34 @@ function PostCreator({ initialData = null, isEditing = false }) {
               <UserName>Your Username</UserName>
             </UserInfo>
 
+            {/* Add title field */}
+            <FormGroup>
+              <InputGroup>
+                <FaHeading />
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Add a title for your post"
+                  maxLength={100}
+                  required
+                />
+              </InputGroup>
+              <CharCount overLimit={title.length > 80}>
+                {title.length}/100
+              </CharCount>
+            </FormGroup>
+
+            {/* Date field */}
+            <FormGroup>
+              <Label>Date</Label>
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
+            </FormGroup>
+
             <FormGroup>
               <Textarea
                 value={caption}
@@ -1560,6 +1586,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
             onClick={handleSubmit}
             disabled={
               isSubmitting ||
+              !title.trim() ||
               !caption.trim() ||
               media.length === 0 ||
               media.some((item) => item.uploading)
