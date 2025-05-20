@@ -610,7 +610,13 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
         <CardContent>
           <PostLink to={`/post/${post._id}`}>
-            <PostTitle>{post.caption}</PostTitle>
+            {/* Display the title in bold */}
+            {post.title && <PostTitle>{post.title}</PostTitle>}
+
+            {/* Display the caption in normal font */}
+            {post.caption && <Caption>{post.caption}</Caption>}
+
+            {/* Display the content if it exists */}
             {post.content && (
               <Content>
                 {post.content.length > 220 ? (
@@ -1267,7 +1273,7 @@ const CardContent = styled.div`
 
 const PostTitle = styled.h2`
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 600; // Bold
   color: ${COLORS.textPrimary};
   margin: 0 0 6px 0;
   line-height: 1.4;
@@ -1279,6 +1285,7 @@ const PostTitle = styled.h2`
 const Content = styled.p`
   color: ${COLORS.textSecondary};
   font-size: 0.9rem;
+  font-weight: normal; // Normal weight
   line-height: 1.4;
   margin: 0 0 8px 0;
   word-break: break-word;
