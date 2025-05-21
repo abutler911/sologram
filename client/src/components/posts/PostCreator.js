@@ -18,13 +18,12 @@ import {
   FaArrowRight,
   FaArrowLeft,
   FaFilter,
-  FaCheck,
   FaTag,
   FaPencilAlt,
   FaLocationArrow,
   FaCalendarDay,
 } from "react-icons/fa";
-import { COLORS, THEME } from "../../theme";
+import { COLORS } from "../../theme";
 import { useUploadManager } from "../../hooks/useUploadManager";
 import { AuthContext } from "../../context/AuthContext";
 
@@ -86,38 +85,6 @@ const Header = styled.div`
 
   @media (max-width: 768px) {
     padding-bottom: 10px;
-  }
-`;
-
-const StepIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  width: 100%;
-  top: 40px;
-
-  @media (max-width: 768px) {
-    top: 30px;
-  }
-`;
-
-const Step = styled.div`
-  padding: 6px 12px;
-  background-color: ${(props) =>
-    props.active ? COLORS.primarySalmon : COLORS.primaryKhaki}40;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  margin: 0 5px;
-  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
-  opacity: ${(props) => (props.disabled ? 0.6 : 1)};
-  color: ${(props) =>
-    props.active ? COLORS.primarySalmon : COLORS.textSecondary};
-  transition: all 0.2s ease;
-
-  &:hover:not(:disabled) {
-    transform: ${(props) => (props.active ? "none" : "translateY(-2px)")};
   }
 `;
 
@@ -648,14 +615,6 @@ const FormGroup = styled.div`
   }
 `;
 
-const Label = styled.label`
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  color: ${COLORS.primaryBlueGray};
-`;
-
 const Input = styled.input`
   width: 100%;
   padding: 12px;
@@ -855,12 +814,12 @@ function PostCreator({ initialData = null, isEditing = false }) {
     initialData?.tags ? initialData.tags.join(", ") : ""
   );
   const [location, setLocation] = useState(initialData?.location || "");
-  const [activeFilter, setActiveFilter] = useState("none");
+  const [setActiveFilter] = useState("none");
   const [activeAction, setActiveAction] = useState("filter");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
-  const [date, setDate] = useState(
-    initialData?.date || new Date().toISOString().split("T")[0]
+  const [eventDate, setEventDate] = useState(
+    initialData?.eventDate || new Date().toISOString().split("T")[0]
   );
 
   const navigate = useNavigate();
@@ -1185,7 +1144,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
         tags,
         media: mediaItems,
         location: location ?? "",
-        date,
+        date: eventDate,
       };
 
       console.log("Submitting post payload:", payload);
@@ -1577,8 +1536,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 <FaCalendarDay />
                 <Input
                   type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
                   required
                 />
               </InputGroup>

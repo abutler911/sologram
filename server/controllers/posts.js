@@ -133,24 +133,20 @@ exports.createPost = async (req, res) => {
       };
     });
 
-    // Create post with all fields
+    const eventDate = date ? new Date(date) : new Date();
+
     const postData = {
       title,
       caption,
       content,
-      tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
-      media: formattedMedia,
       location,
+      media: formattedMedia,
+      tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
+      eventDate,
+      createdAt: eventDate,
+      postedAt: new Date(), // when it was actually posted
+      updatedAt: new Date(), // same as posted initially
     };
-
-    // Add custom date if provided
-    if (date) {
-      // Convert string date to Date object
-      postData.date = new Date(date);
-
-      // Optionally set createdAt to match the custom date
-      postData.createdAt = new Date(date);
-    }
 
     const newPost = await Post.create(postData);
 
@@ -192,7 +188,6 @@ exports.updatePost = async (req, res) => {
       }
     }
 
-    // Handle possible stringified keepMedia
     const keepMediaIds = Array.isArray(keepMedia)
       ? keepMedia.map((id) => id.toString().trim())
       : keepMedia.split(",").map((id) => id.trim());
@@ -205,7 +200,6 @@ exports.updatePost = async (req, res) => {
       (m) => !keepMediaIds.includes(m._id.toString())
     );
 
-    // Delete media from Cloudinary
     for (const media of removedMedia) {
       if (media.cloudinaryId) {
         try {
@@ -224,12 +218,11 @@ exports.updatePost = async (req, res) => {
 
     const newMedia = Array.isArray(media)
       ? media
-          .filter((item) => {
-            return (
+          .filter(
+            (item) =>
               item.cloudinaryId &&
               !keptMediaCloudinaryIds.includes(item.cloudinaryId)
-            );
-          })
+          )
           .map((item) => {
             if (!item.mediaUrl || !item.cloudinaryId) {
               throw new Error(
@@ -248,19 +241,21 @@ exports.updatePost = async (req, res) => {
       : [];
 
     // Update post fields
-    post.title = typeof title !== "undefined" ? title : post.title;
-    post.caption = typeof caption !== "undefined" ? caption : post.caption;
-    post.content = typeof content !== "undefined" ? content : post.content;
-    post.location = typeof location !== "undefined" ? location : post.location;
+    if (typeof title !== "undefined") post.title = title;
+    if (typeof caption !== "undefined") post.caption = caption;
+    if (typeof content !== "undefined") post.content = content;
+    if (typeof location !== "undefined") post.location = location;
     if (typeof tags !== "undefined") {
       post.tags = tags ? tags.split(",").map((tag) => tag.trim()) : [];
     }
-    post.media = [...keptMedia, ...newMedia];
-    post.updatedAt = Date.now();
 
-    // Update date if provided
+    post.media = [...keptMedia, ...newMedia];
+    post.updatedAt = new Date();
+
     if (date) {
-      post.date = new Date(date);
+      const eventDate = new Date(date);
+      post.eventDate = eventDate;
+      post.createdAt = eventDate; // for feed sorting
     }
 
     await post.save();

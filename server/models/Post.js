@@ -1,4 +1,3 @@
-// models/Post.js
 const mongoose = require("mongoose");
 
 const PostSchema = new mongoose.Schema(
@@ -49,25 +48,40 @@ const PostSchema = new mongoose.Schema(
         ref: "Collection",
       },
     ],
-    createdAt: {
+
+    // When the event actually happened (e.g. trip date)
+    eventDate: {
       type: Date,
+      required: true,
+    },
+
+    // When the post was first published (never changes)
+    postedAt: {
+      type: Date,
+      required: true,
       default: Date.now,
     },
+
+    // When the post is edited (updated every save)
     updatedAt: {
       type: Date,
+      required: true,
       default: Date.now,
     },
-    // Optional explicit date field if you want to store a custom date
-    date: {
+
+    // Used for feed sorting (duplicate of eventDate)
+    createdAt: {
       type: Date,
+      required: true,
       default: Date.now,
     },
   },
   {
-    timestamps: true,
+    timestamps: false,
   }
 );
 
+// Full-text index
 PostSchema.index({
   title: "text",
   caption: "text",
