@@ -11,7 +11,7 @@ exports.getPosts = async (req, res) => {
     const totalPosts = await Post.countDocuments();
 
     const posts = await Post.find()
-      .sort({ createdAt: -1 })
+      .sort({ eventDate: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
@@ -144,8 +144,8 @@ exports.createPost = async (req, res) => {
       tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
       eventDate,
       createdAt: eventDate,
-      postedAt: new Date(), // when it was actually posted
-      updatedAt: new Date(), // same as posted initially
+      postedAt: new Date(),
+      updatedAt: new Date(),
     };
 
     const newPost = await Post.create(postData);

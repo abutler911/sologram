@@ -814,13 +814,14 @@ function PostCreator({ initialData = null, isEditing = false }) {
     initialData?.tags ? initialData.tags.join(", ") : ""
   );
   const [location, setLocation] = useState(initialData?.location || "");
-  const [setActiveFilter] = useState("none");
+  const [activeFilter, setActiveFilter] = useState("none");
   const [activeAction, setActiveAction] = useState("filter");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
-  const [eventDate, setEventDate] = useState(
-    initialData?.eventDate || new Date().toISOString().split("T")[0]
-  );
+  const [eventDate, setEventDate] = useState(() => {
+    const rawDate = initialData?.date || new Date().toISOString();
+    return rawDate.split("T")[0];
+  });
 
   const navigate = useNavigate();
   const inputFileRef = useRef(null);
