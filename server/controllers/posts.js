@@ -1,6 +1,8 @@
 const Post = require("../models/Post");
 const Like = require("../models/Like");
 const { cloudinary } = require("../config/cloudinary");
+const { sendEmail } = require("../utils/sendEmail");
+const User = require("../models/User");
 
 exports.getPosts = async (req, res) => {
   try {
@@ -149,6 +151,30 @@ exports.createPost = async (req, res) => {
     };
 
     const newPost = await Post.create(postData);
+
+    try {
+      const users = await User.find({});
+
+      for (const user of users) {
+        await sendEmail({
+          to: user.email,
+          subject: `📸 New Post on SoloGram: ${newPost.title}`,
+          html: `
+        <h2>${newPost.title}</h2>
+        <p>${newPost.caption}</p>
+        <p>${newPost.content}</p>
+        <p><a href="https://www.thesologram.com/posts/${newPost._id}">View Post</a></p>
+      `,
+        });
+      }
+
+      console.log(`✅ Sent notifications to ${users.length} users.`);
+    } catch (emailErr) {
+      console.error(
+        "❌ Email notification error:",
+        emailErr.message || emailErr
+      );
+    }
 
     res.status(201).json({ success: true, data: newPost });
   } catch (err) {
