@@ -897,6 +897,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
             `existing_${Date.now()}_${Math.random()
               .toString(36)
               .substring(2, 8)}`,
+          _id: item._id,
           mediaUrl: item.mediaUrl,
           cloudinaryId: item.cloudinaryId,
           mediaType: item.mediaType,
@@ -1197,8 +1198,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
       if (isEditing) {
         // Add existing media IDs to keep
         const existingMediaIds = media
-          .filter((item) => item.isExisting)
-          .map((item) => item.id)
+          .filter((item) => item.isExisting && item._id)
+          .map((item) => item._id)
           .join(",");
 
         if (existingMediaIds) {
