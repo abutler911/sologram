@@ -18,7 +18,6 @@ const sender = new Sender("admin@thesologram.com", "SoloGram Admin");
  */
 export const sendEmail = async ({ to, subject, html }) => {
   const recipients = [new Recipient(to, to)];
-
   const emailParams = new EmailParams()
     .setFrom(sender)
     .setTo(recipients)
@@ -26,12 +25,10 @@ export const sendEmail = async ({ to, subject, html }) => {
     .setHtml(html);
 
   try {
+    console.log("📤 Sending email to:", to);
     await mailerSend.email.send(emailParams);
-    console.log(`✅ Email sent to ${to}`);
+    console.log("✅ Email sent to:", to);
   } catch (error) {
-    console.error(
-      "❌ Error sending email:",
-      error.response?.body || error.message
-    );
+    console.error("❌ MailerSend error:", JSON.stringify(error, null, 2));
   }
 };

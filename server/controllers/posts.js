@@ -172,7 +172,7 @@ exports.createPost = async (req, res) => {
     } catch (emailErr) {
       console.error(
         "❌ Email notification error:",
-        emailErr.message || emailErr
+        JSON.stringify(emailErr, null, 2)
       );
     }
 
