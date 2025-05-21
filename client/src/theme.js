@@ -1,20 +1,20 @@
-// theme.js - SoloGram Updated Color Theme: Vintage Soft Palette
+// theme.js - SoloGram New Color Theme: Salmon, Khaki, Mint Blue, Blue Gray
 
 export const COLORS = {
-  primaryPeach: "#EAB8A1",
-  primaryTaupe: "#D6C6B8",
-  primaryWarmGray: "#B8A99D",
-  primaryCoolGray: "#A4A6B0",
-  primarySlate: "#7D7F8D",
-  accentPeach: "#f3cbb5", // lighter peach
-  accentTaupe: "#e2d8cd", // lighter taupe
-  background: "#f9f7f6", // very light background
-  cardBackground: "#ffffff", // bright white cards
-  elevatedBackground: "#f1efed", // elevated section
-  textPrimary: "#1a1a1a", // near-black
-  textSecondary: "#555555",
-  textTertiary: "#888888",
-  error: "#c94c4c",
+  primarySalmon: "#e98973",
+  primaryKhaki: "#e7d4c0",
+  primaryMint: "#88b2cc",
+  primaryBlueGray: "#658ea9",
+  accentSalmon: "#ffad9e", // softer version
+  accentMint: "#a8cfd8", // softer version
+  accentBlueGray: "#90aac3", // lighter blue-gray
+  background: "#f8f5f0", // light khaki/neutral
+  cardBackground: "#ffffff", // bright white for card contrast
+  elevatedBackground: "#f0f0f0", // slightly elevated sections
+  textPrimary: "#1a1a1a", // near-black text
+  textSecondary: "#555555", // dark gray text
+  textTertiary: "#888888", // lighter gray text
+  error: "#d9534f",
   success: "#5cb85c",
   warning: "#f0ad4e",
   info: "#5bc0de",
@@ -23,26 +23,26 @@ export const COLORS = {
   buttonHover: "#e2e2e2",
   shadow: "rgba(0, 0, 0, 0.1)",
   heartRed: "#e63946",
-  darkAccent: "#5a5c6b", // adjusted for this palette
+  darkAccent: "#40535c",
 };
 
 export const THEME = {
   header: {
-    background: COLORS.primarySlate,
+    background: COLORS.primaryBlueGray,
     text: "#FFFFFF",
     icon: "#FFFFFF",
   },
   banner: {
-    background: COLORS.accentTaupe,
+    background: COLORS.accentMint,
     text: COLORS.textPrimary,
-    title: COLORS.primaryPeach,
-    icon: COLORS.primarySlate,
+    title: COLORS.accentSalmon,
+    icon: COLORS.primaryBlueGray,
   },
   button: {
     primary: {
-      background: COLORS.primaryCoolGray,
+      background: COLORS.primaryBlueGray,
       text: "#FFFFFF",
-      hoverBackground: COLORS.primarySlate,
+      hoverBackground: COLORS.accentMint,
     },
     secondary: {
       background: COLORS.elevatedBackground,
@@ -50,9 +50,9 @@ export const THEME = {
       hoverBackground: COLORS.buttonHover,
     },
     action: {
-      background: COLORS.primaryPeach,
+      background: COLORS.primarySalmon,
       text: "#FFFFFF",
-      hoverBackground: "#d89b83", // slightly darker peach
+      hoverBackground: "#cc6e5f", // Darker salmon on hover
     },
   },
   post: {
@@ -61,13 +61,13 @@ export const THEME = {
     footer: COLORS.elevatedBackground,
     border: COLORS.border,
     icon: {
-      active: COLORS.primaryPeach,
+      active: COLORS.accentSalmon,
       inactive: COLORS.textTertiary,
     },
   },
   story: {
     border: {
-      active: COLORS.primaryCoolGray,
+      active: COLORS.primaryBlueGray,
       inactive: COLORS.border,
     },
     background: COLORS.cardBackground,
