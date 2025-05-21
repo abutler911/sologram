@@ -3,6 +3,9 @@ const Like = require("../models/Like");
 const { cloudinary } = require("../config/cloudinary");
 const { sendEmail } = require("../utils/sendEmail");
 const User = require("../models/User");
+const {
+  buildNewPostEmail,
+} = require("../utils/emailTemplates/newPostTemplate");
 
 exports.getPosts = async (req, res) => {
   try {
@@ -158,13 +161,13 @@ exports.createPost = async (req, res) => {
       for (const user of users) {
         await sendEmail({
           to: "admin@thesologram.com",
-          subject: `📸 New Post on SoloGram: ${newPost.title}`,
-          html: `
-        <h2>${newPost.title}</h2>
-        <p>${newPost.caption}</p>
-        <p>${newPost.content}</p>
-        <p><a href="https://www.thesologram.com/posts/${newPost._id}">View Post</a></p>
-      `,
+          subject: `📸 New SoloGram Post: ${newPost.title}`,
+          html: buildNewPostEmail({
+            title: newPost.title,
+            caption: newPost.caption,
+            content: newPost.content,
+            postId: newPost._id.toString(),
+          }),
         });
       }
 
