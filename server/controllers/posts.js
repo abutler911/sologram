@@ -157,7 +157,7 @@ exports.createPost = async (req, res) => {
 
       for (const user of users) {
         await sendEmail({
-          to: user.email,
+          to: "admin@thesologram.com",
           subject: `📸 New Post on SoloGram: ${newPost.title}`,
           html: `
         <h2>${newPost.title}</h2>
