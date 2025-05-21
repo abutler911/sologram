@@ -15,7 +15,7 @@ export const buildNewPostEmail = ({ title, caption, content, postId }) => {
           <h2 style="margin: 12px 0 8px 0; font-size: 20px; color: #1a1a1a;">${title}</h2>
           <p style="margin: 8px 0; font-size: 16px; color: #555;">${caption}</p>
           <p style="margin: 16px 0; font-size: 15px; color: #444; line-height: 1.6;">${content}</p>
-          <a href="https://www.thesologram.com/posts/${postId}" 
+          <a href="https://www.thesologram.com/post/${postId}" 
              style="display: inline-block; margin-top: 20px; padding: 12px 20px; background-color: #88b2cc; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold;">
             View Post →
           </a>
