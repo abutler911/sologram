@@ -248,11 +248,13 @@ exports.updatePost = async (req, res) => {
       : [];
 
     // Update post fields
-    post.title = title || post.title;
-    post.caption = caption || post.caption;
-    post.content = content || post.content;
-    post.location = location || post.location;
-    post.tags = tags ? tags.split(",").map((tag) => tag.trim()) : post.tags;
+    post.title = typeof title !== "undefined" ? title : post.title;
+    post.caption = typeof caption !== "undefined" ? caption : post.caption;
+    post.content = typeof content !== "undefined" ? content : post.content;
+    post.location = typeof location !== "undefined" ? location : post.location;
+    if (typeof tags !== "undefined") {
+      post.tags = tags ? tags.split(",").map((tag) => tag.trim()) : [];
+    }
     post.media = [...keptMedia, ...newMedia];
     post.updatedAt = Date.now();
 

@@ -1177,18 +1177,15 @@ function PostCreator({ initialData = null, isEditing = false }) {
 
       console.log("Submitting media items:", mediaItems);
 
-      // Format the date properly
-      const submissionDate = new Date(date);
-
       // Create the payload with all required fields
       const payload = {
-        title, // Add title field
-        caption,
-        content,
+        title: title ?? "",
+        caption: caption ?? "",
+        content: content ?? "",
         tags,
         media: mediaItems,
-        location,
-        date: date, // Send date as string - backend will convert it
+        location: location ?? "",
+        date,
       };
 
       console.log("Submitting post payload:", payload);
