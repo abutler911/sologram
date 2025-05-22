@@ -58,10 +58,11 @@ const MoodDecoration = styled.div`
   font-size: 3rem;
   opacity: 0.12;
   transform: rotate(10deg);
-  z-index: 0;
+  z-index: -1;
   animation: ${animations.float} 6s ease infinite;
   transition: all 0.5s ease;
   text-shadow: 0 0 15px ${colors.secondaryAccent};
+  pointer-events: none;
 
   ${Card}:hover & {
     transform: rotate(15deg) scale(1.1);
@@ -81,6 +82,8 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 2;
 `;
 
 const UserInfo = styled.div`
@@ -184,12 +187,13 @@ const AdminActionsRow = styled.div`
   }
 `;
 
-// Updated action buttons with twilight color scheme
 const AdminActions = styled.div`
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
   max-width: 100%;
+  z-index: 2;
+  position: relative;
 `;
 
 // Content with improved text styling
