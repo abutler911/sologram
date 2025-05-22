@@ -50,7 +50,6 @@ const Card = styled.div`
     `}
 `;
 
-// Mood decoration with twilight glow
 const MoodDecoration = styled.div`
   position: absolute;
   right: 1.5rem;
@@ -58,11 +57,11 @@ const MoodDecoration = styled.div`
   font-size: 3rem;
   opacity: 0.12;
   transform: rotate(10deg);
-  z-index: -1;
+  z-index: 1; /* <- changed from -1 */
+  pointer-events: none;
   animation: ${animations.float} 6s ease infinite;
   transition: all 0.5s ease;
   text-shadow: 0 0 15px ${colors.secondaryAccent};
-  pointer-events: none;
 
   ${Card}:hover & {
     transform: rotate(15deg) scale(1.1);
