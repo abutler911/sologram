@@ -1,9 +1,7 @@
-// utils/logger.js
 const { Logtail } = require("@logtail/node");
 const { LogtailTransport } = require("@logtail/winston");
 const winston = require("winston");
 
-// Initialize Logtail with error handling
 let logtail = null;
 let logtailTransport = null;
 
@@ -12,14 +10,8 @@ if (process.env.LOGTAIL_TOKEN) {
     logtail = new Logtail(process.env.LOGTAIL_TOKEN);
     logtailTransport = new LogtailTransport(logtail);
 
-    // Handle Logtail errors
     logtailTransport.on("error", (error) => {
       console.error("Logtail transport error:", error.message);
-      // Don't crash the app, just log to console
-    });
-
-    logtail.on("error", (error) => {
-      console.error("Logtail error:", error.message);
     });
   } catch (error) {
     console.error("Failed to initialize Logtail:", error.message);
@@ -30,10 +22,8 @@ if (process.env.LOGTAIL_TOKEN) {
   console.warn("LOGTAIL_TOKEN not found - logging only to console");
 }
 
-// Set log level based on environment
 const level = () => (process.env.NODE_ENV === "production" ? "info" : "debug");
 
-// Console format for dev
 const consoleFormat = winston.format.combine(
   winston.format.colorize({ all: true }),
   winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
@@ -45,10 +35,8 @@ const consoleFormat = winston.format.combine(
   )
 );
 
-// Define transports - always include console
 const transports = [new winston.transports.Console({ format: consoleFormat })];
 
-// Only add Logtail transport if it was successfully initialized
 if (process.env.NODE_ENV === "production" && logtailTransport) {
   transports.push(logtailTransport);
 }
@@ -57,7 +45,6 @@ const logger = winston.createLogger({
   level: level(),
   format: winston.format.json(),
   transports,
-  // Handle logger errors gracefully
   exceptionHandlers: [
     new winston.transports.Console({ format: consoleFormat }),
   ],
@@ -66,7 +53,6 @@ const logger = winston.createLogger({
   ],
 });
 
-// Safe flush function
 const safeFlush = async () => {
   if (logtail) {
     try {
@@ -80,6 +66,6 @@ const safeFlush = async () => {
 
 module.exports = {
   logger,
-  logtail: logtail || { flush: () => Promise.resolve() }, // Provide fallback
+  logtail: logtail || { flush: () => Promise.resolve() },
   safeFlush,
 };
