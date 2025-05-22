@@ -256,11 +256,8 @@ logger.info("✅ Logtail is working and flushing enabled.");
 // Start the server
 startServer();
 
+// Replace this section at the bottom of server.js
 process.on("beforeExit", async () => {
-  try {
-    await logtail.flush();
-    console.log("🧹 Logtail flushed before exit.");
-  } catch (err) {
-    console.error("❌ Error flushing Logtail:", err);
-  }
+  const { safeFlush } = require("./utils/logger");
+  await safeFlush();
 });
