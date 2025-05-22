@@ -90,6 +90,7 @@ exports.createThought = async (req, res) => {
     }
 
     const thought = await Thought.create(thoughtData);
+
     const users = await User.find({});
 
     for (const user of users) {
@@ -97,8 +98,8 @@ exports.createThought = async (req, res) => {
         to: user.email,
         subject: `[SoloGram] Andy shared a new thought ${randomEmoji()}`,
         html: buildThoughtEmail({
-          content: newThought.content,
-          thoughtId: newThought._id.toString(),
+          content: thought.content,
+          thoughtId: thought._id.toString(),
         }),
       });
     }

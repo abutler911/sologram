@@ -149,11 +149,11 @@ exports.createStory = async (req, res) => {
     for (const user of users) {
       await sendEmail({
         to: user.email,
-        subject: `[SoloGram] 📖 New Story: ${newStory.title}`,
+        subject: `[SoloGram] 📖 New Story: ${story.title}`,
         html: buildStoryEmail({
-          title: newStory.title,
-          description: newStory.description,
-          storyId: newStory._id.toString(),
+          title: story.title,
+          description: story.description || "",
+          storyId: story._id.toString(),
         }),
       });
     }
