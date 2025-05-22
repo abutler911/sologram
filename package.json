@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "@logtail/node": "^0.5.5",
+    "@logtail/winston": "^0.5.5",
     "react-ga4": "^2.1.0"
   },
   "scripts": {
