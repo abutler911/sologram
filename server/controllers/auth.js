@@ -13,6 +13,16 @@ const generateToken = (id) => {
     expiresIn: "30d",
   });
 };
+const { sendEmail } = require("../utils/sendEmail");
+const {
+  buildWelcomeEmail,
+} = require("../utils/emailTemplates/welcomeTemplate");
+const {
+  buildPromotionEmail,
+} = require("../utils/emailTemplates/promotionTemplate");
+const {
+  buildProfileUpdateEmail,
+} = require("../utils/emailTemplates/profileUpdateTemplate");
 
 exports.register = async (req, res, next) => {
   try {
@@ -44,6 +54,13 @@ exports.register = async (req, res, next) => {
     user.refreshToken = refreshToken;
     user.refreshTokenExpiresAt = refreshTokenExpiresAt;
     await user.save({ validateBeforeSave: false });
+    await sendEmail({
+      to: user.email,
+      subject: `🎉 Welcome to SoloGram, ${user.firstName || user.username}!`,
+      html: buildWelcomeEmail({
+        name: user.firstName || user.username,
+      }),
+    });
 
     // Set cookie for refresh token
     res.cookie("refreshToken", refreshToken, {
@@ -312,6 +329,14 @@ exports.updateProfile = async (req, res) => {
     user.bio = bio === undefined ? user.bio : bio;
 
     await user.save();
+    await sendEmail({
+      to: user.email,
+      subject: `✅ Your profile has been updated`,
+      html: buildProfileUpdateEmail({
+        name: user.firstName || user.username,
+        action: "profile",
+      }),
+    });
 
     res.status(200).json({
       success: true,
@@ -404,6 +429,13 @@ exports.promoteToCreator = async (req, res) => {
 
     user.role = "creator";
     await user.save();
+    await sendEmail({
+      to: user.email,
+      subject: `🌟 You're now a Creator on SoloGram!`,
+      html: buildPromotionEmail({
+        name: user.firstName || user.username,
+      }),
+    });
 
     res.status(200).json({
       success: true,
