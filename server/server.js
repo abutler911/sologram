@@ -5,7 +5,8 @@ const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const path = require("path");
-const winston = require("winston");
+const logger = require("./utils/logger");
+
 const mongoSanitize = require("express-mongo-sanitize");
 const {
   setupAgenda,
@@ -74,16 +75,6 @@ process.on("SIGTERM", () => {
   setTimeout(() => process.exit(0), 2000);
 });
 
-// Logger setup
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.json(),
-  transports: [
-    new winston.transports.File({ filename: "error.log", level: "error" }),
-    new winston.transports.File({ filename: "combined.log" }),
-  ],
-});
-
 if (process.env.NODE_ENV !== "production") {
   logger.add(
     new winston.transports.Console({
@@ -130,7 +121,13 @@ app.use(express.json({ limit: "300mb" }));
 app.use(express.urlencoded({ extended: true, limit: "300mb" }));
 app.use(mongoSanitize());
 app.use(helmet());
-app.use(morgan("dev"));
+app.use(
+  morgan("combined", {
+    stream: {
+      write: (message) => logger.http(message.trim()),
+    },
+  })
+);
 
 // Routes
 const postRoutes = require("./routes/posts");

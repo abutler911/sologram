@@ -19,17 +19,29 @@ const logger = winston.createLogger({
   ],
 });
 
+const redactSensitiveFields = (body) => {
+  if (!body || typeof body !== "object") return body;
+  const clone = { ...body };
+
+  if (clone.password) clone.password = "[REDACTED]";
+  if (clone.token) clone.token = "[REDACTED]";
+  if (clone.refreshToken) clone.refreshToken = "[REDACTED]";
+  if (clone.email && clone.email.includes("@example.com"))
+    clone.email = "[TEST_EMAIL]";
+
+  return clone;
+};
+
 const errorHandler = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || "error";
 
-  // Log error details
   logger.error({
     message: err.message,
     stack: err.stack,
     url: req.originalUrl,
     method: req.method,
-    body: req.body,
+    body: redactSensitiveFields(req.body),
     ip: req.ip,
     userId: req.user ? req.user._id : "unauthenticated",
   });
