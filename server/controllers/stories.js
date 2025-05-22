@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 const Story = require("../models/Story");
 const cloudinary = require("../config/cloudinary").cloudinary;
+const {
+  buildStoryEmail,
+} = require("../utils/emailTemplates/storyPostedTemplate");
+const { sendEmail } = require("../utils/sendEmail");
+const User = require("../models/User");
 
 const handleServerError = (res, err, customMessage = "Server Error") => {
   console.error(`Error in ${customMessage}:`, {
@@ -139,7 +144,19 @@ exports.createStory = async (req, res) => {
       media,
       expiresAt,
     });
+    const users = await User.find({});
 
+    for (const user of users) {
+      await sendEmail({
+        to: user.email,
+        subject: `[SoloGram] 📖 New Story: ${newStory.title}`,
+        html: buildStoryEmail({
+          title: newStory.title,
+          description: newStory.description,
+          storyId: newStory._id.toString(),
+        }),
+      });
+    }
     res.status(201).json({
       success: true,
       data: story,

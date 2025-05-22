@@ -1,5 +1,15 @@
 const Thought = require("../models/Thought");
 const { cloudinary } = require("../config/cloudinary");
+const {
+  buildThoughtEmail,
+} = require("../utils/emailTemplates/thoughtPostedTemplate");
+const { sendEmail } = require("../utils/sendEmail");
+const User = require("../models/User");
+
+const randomEmoji = () => {
+  const emojis = ["💭", "🧠", "🔥", "🤔", "✨"];
+  return emojis[Math.floor(Math.random() * emojis.length)];
+};
 
 exports.getThoughts = async (req, res) => {
   try {
@@ -80,7 +90,18 @@ exports.createThought = async (req, res) => {
     }
 
     const thought = await Thought.create(thoughtData);
+    const users = await User.find({});
 
+    for (const user of users) {
+      await sendEmail({
+        to: user.email,
+        subject: `[SoloGram] Andy shared a new thought ${randomEmoji()}`,
+        html: buildThoughtEmail({
+          content: newThought.content,
+          thoughtId: newThought._id.toString(),
+        }),
+      });
+    }
     res.status(201).json({
       success: true,
       data: thought,
