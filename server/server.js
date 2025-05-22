@@ -5,8 +5,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const path = require("path");
-const logger = require("./utils/logger");
-const { logtail } = require("./utils/logger");
+const { logger, logtail } = require("./utils/logger");
 
 const mongoSanitize = require("express-mongo-sanitize");
 const {
@@ -251,6 +250,8 @@ async function startServer() {
   }
 }
 logger.info("🔥 Hello from SoloGram in production!");
+logger.info(`🚀 LOGTAIL_TOKEN present: ${!!process.env.LOGTAIL_TOKEN}`);
+logger.info("✅ Logtail is working and flushing enabled.");
 
 // Start the server
 startServer();
