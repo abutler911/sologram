@@ -348,6 +348,19 @@ const IconContainer = styled.div`
   transition: color 0.2s ease;
 `;
 
+const FloatingLabel = styled.label`
+  position: absolute;
+  left: 48px;
+  top: ${(props) => (props.hasValue ? "8px" : "50%")};
+  transform: translateY(${(props) => (props.hasValue ? "0" : "-50%")});
+  font-size: ${(props) => (props.hasValue ? "12px" : "16px")};
+  color: ${(props) =>
+    props.hasValue ? COLORS.primaryMint : COLORS.textTertiary};
+  transition: all 0.2s ease;
+  pointer-events: none;
+  background-color: transparent;
+`;
+
 const StyledInput = styled.input`
   width: 100%;
   height: 56px;
@@ -371,9 +384,8 @@ const StyledInput = styled.input`
     background-color: white;
   }
 
-  &:focus
-    + ${FloatingLabel},
-    ${(props) => props.hasValue && `+ ${FloatingLabel}`} {
+  &:focus + label,
+  ${(props) => props.hasValue && "+ label"} {
     top: 8px;
     font-size: 12px;
     color: ${COLORS.primaryMint};
@@ -382,19 +394,6 @@ const StyledInput = styled.input`
   &:focus ~ ${IconContainer} {
     color: ${COLORS.primaryMint};
   }
-`;
-
-const FloatingLabel = styled.label`
-  position: absolute;
-  left: 48px;
-  top: ${(props) => (props.hasValue ? "8px" : "50%")};
-  transform: translateY(${(props) => (props.hasValue ? "0" : "-50%")});
-  font-size: ${(props) => (props.hasValue ? "12px" : "16px")};
-  color: ${(props) =>
-    props.hasValue ? COLORS.primaryMint : COLORS.textTertiary};
-  transition: all 0.2s ease;
-  pointer-events: none;
-  background-color: transparent;
 `;
 
 const TogglePasswordButton = styled.button`
