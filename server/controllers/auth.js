@@ -2,6 +2,8 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const { cloudinary } = require("../config/cloudinary");
 const AppError = require("../utils/AppError");
+const { logger } = require("../utils/logger");
+
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -44,6 +46,15 @@ exports.register = async (req, res, next) => {
     }
 
     const user = await User.create(userData);
+    logger.info("New user registered", {
+      context: {
+        event: "user_register",
+        userId: user._id.toString(),
+        email: user.email,
+        ip: req.ip,
+        userAgent: req.get("User-Agent"),
+      },
+    });
 
     // Generate tokens
     const accessToken = generateAccessToken(user._id);
@@ -112,6 +123,13 @@ exports.login = async (req, res) => {
 
     // Check if user exists and password is correct
     if (!user || !(await user.matchPassword(password))) {
+      logger.warn("Login attempt failed", {
+        context: {
+          event: "login_failed",
+          email: email,
+          ip: req.ip,
+        },
+      });
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
@@ -132,6 +150,15 @@ exports.login = async (req, res) => {
         process.env.JWT_REFRESH_SECRET || "temp_refresh_secret",
         { expiresIn: "7d" }
       );
+      logger.info("User login successful", {
+        context: {
+          event: "user_login",
+          userId: user._id.toString(),
+          email: user.email,
+          ip: req.ip,
+          userAgent: req.get("User-Agent"),
+        },
+      });
     } catch (err) {
       console.error("Token generation error:", err);
       return res.status(500).json({
@@ -329,6 +356,15 @@ exports.updateProfile = async (req, res) => {
     user.bio = bio === undefined ? user.bio : bio;
 
     await user.save();
+    logger.info("User profile updated", {
+      context: {
+        event: "profile_update",
+        userId: user._id.toString(),
+        email: user.email,
+        ip: req.ip,
+      },
+    });
+
     await sendEmail({
       to: user.email,
       subject: `✅ Your profile has been updated`,
@@ -429,6 +465,16 @@ exports.promoteToCreator = async (req, res) => {
 
     user.role = "creator";
     await user.save();
+    logger.info("User promoted to creator", {
+      context: {
+        event: "role_change",
+        userId: user._id.toString(),
+        newRole: "creator",
+        email: user.email,
+        ip: req.ip,
+      },
+    });
+
     await sendEmail({
       to: user.email,
       subject: `🌟 You're now a Creator on SoloGram!`,

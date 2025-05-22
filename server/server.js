@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const helmet = require("helmet");
 const path = require("path");
 const logger = require("./utils/logger");
+const { logtail } = require("./utils/logger");
 
 const mongoSanitize = require("express-mongo-sanitize");
 const {
@@ -74,17 +75,6 @@ process.on("SIGTERM", () => {
   console.log("👋 SIGTERM RECEIVED. Shutting down gracefully");
   setTimeout(() => process.exit(0), 2000);
 });
-
-if (process.env.NODE_ENV !== "production") {
-  logger.add(
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
-    })
-  );
-}
 
 // CORS options
 const corsOptions = {
@@ -260,6 +250,16 @@ async function startServer() {
     setTimeout(() => process.exit(1), 2000);
   }
 }
+logger.info("🔥 Hello from SoloGram in production!");
 
 // Start the server
 startServer();
+
+process.on("beforeExit", async () => {
+  try {
+    await logtail.flush();
+    console.log("🧹 Logtail flushed before exit.");
+  } catch (err) {
+    console.error("❌ Error flushing Logtail:", err);
+  }
+});

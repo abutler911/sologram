@@ -1,64 +1,37 @@
-// server/utils/logger.js
+// utils/logger.js
+const { Logtail } = require("@logtail/node");
+const { LogtailTransport } = require("@logtail/winston");
 const winston = require("winston");
-const path = require("path");
 
-// Custom log levels
-const levels = {
-  error: 0,
-  warn: 1,
-  info: 2,
-  http: 3,
-  debug: 4,
-};
+// Instantiate Logtail with your source token
+const logtail = new Logtail(process.env.LOGTAIL_TOKEN);
 
-// Level logic based on environment
+// Set log level based on environment
 const level = () => (process.env.NODE_ENV === "production" ? "info" : "debug");
 
-// Console format (pretty + colorized for dev)
+// Console format for dev
 const consoleFormat = winston.format.combine(
   winston.format.colorize({ all: true }),
   winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
   winston.format.printf(
-    ({ level, message, timestamp }) =>
+    ({ timestamp, level, message }) =>
       `[${timestamp}] ${level}: ${
         typeof message === "object" ? JSON.stringify(message) : message
       }`
   )
 );
 
-// File format (structured JSON)
-const fileFormat = winston.format.combine(
-  winston.format.timestamp(),
-  winston.format.errors({ stack: true }),
-  winston.format.json()
-);
+// Define transports
+const transports = [new winston.transports.Console({ format: consoleFormat })];
 
-// Transport definitions
-const transports = [
-  new winston.transports.Console({
-    format: consoleFormat,
-  }),
-  new winston.transports.File({
-    filename: path.join(__dirname, "../logs/error.log"),
-    level: "error",
-    format: fileFormat,
-  }),
-  new winston.transports.File({
-    filename: path.join(__dirname, "../logs/combined.log"),
-    format: fileFormat,
-  }),
-  new winston.transports.File({
-    filename: path.join(__dirname, "../logs/notifications.log"),
-    level: "info",
-    format: fileFormat,
-  }),
-];
+// Only push to Logtail in production
+if (process.env.NODE_ENV === "production") {
+  transports.push(new LogtailTransport(logtail));
+}
 
-// Main logger instance
 const logger = winston.createLogger({
   level: level(),
-  levels,
-  defaultMeta: { service: "sologram-backend" },
+  format: winston.format.json(),
   transports,
 });
 
