@@ -1,5 +1,5 @@
 import React from "react";
-import { useDeleteModal } from "../contexts/DeleteModalContext";
+import { useDeleteModal } from "../context/DeleteModalContext";
 import { COLORS, THEME } from "../theme";
 
 const DeleteConfirmationModal = () => {
