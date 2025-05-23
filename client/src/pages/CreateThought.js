@@ -4,13 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import {
-  FaArrowLeft,
-  FaTimes,
-  FaImage,
-  FaPaperPlane,
-  FaHashtag,
-} from "react-icons/fa";
+import { FaArrowLeft, FaTimes, FaImage, FaPaperPlane } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
 import MainLayout from "../components/layout/MainLayout";
 import { COLORS } from "../theme";
@@ -220,34 +214,21 @@ const CreateThought = () => {
           </MoodSelector>
 
           <FormGroup style={{ paddingTop: "0.5rem" }}>
-            <Label>Tags (optional) - Press space or enter to add tags</Label>
-            <TagForm
-              onSubmit={(e) => {
-                e.preventDefault();
-                addTag();
-              }}
-            >
-              <TagInput
+            <Label>Tags (optional)</Label>
+            <TagInputWrapper>
+              <TagInputField
                 value={currentTag}
                 onChange={handleTagInputChange}
                 onKeyDown={handleTagInputKeyDown}
-                placeholder="Type tags and press space..."
+                placeholder="Type tags and press space to add..."
                 maxLength={30}
               />
-              <AddTagButton type="submit">
-                <FaHashtag />
-              </AddTagButton>
-            </TagForm>
-
-            {/* Show current input preview */}
-            {currentTag.trim() && (
-              <TagPreview>
-                Preview:{" "}
-                <PreviewTag moodColor={moodColors[mood]}>
+              {currentTag.trim() && (
+                <TagInputPreview moodColor={moodColors[mood]}>
                   #{currentTag.trim()}
-                </PreviewTag>
-              </TagPreview>
-            )}
+                </TagInputPreview>
+              )}
+            </TagInputWrapper>
 
             {tags.length > 0 && (
               <TagsContainer>
@@ -416,27 +397,26 @@ const MoodOption = styled.button`
   }
 `;
 
-const TagForm = styled.form`
-  display: flex;
-  align-items: center;
+const TagInputWrapper = styled.div`
+  position: relative;
   width: 100%;
   margin-bottom: 1rem;
 `;
 
-const TagInput = styled.input`
-  flex-grow: 1;
-  min-width: 0;
+const TagInputField = styled.input`
+  width: 100%;
   background-color: ${COLORS.cardBackground};
   border: 1px solid ${COLORS.border};
-  border-right: none;
-  border-radius: 8px 0 0 8px;
+  border-radius: 8px;
   color: ${COLORS.textPrimary};
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
+  transition: border-color 0.3s ease;
 
   &:focus {
     outline: none;
     border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 3px rgba(211, 119, 106, 0.1);
   }
 
   &::placeholder {
@@ -444,19 +424,47 @@ const TagInput = styled.input`
   }
 `;
 
-const AddTagButton = styled.button`
-  flex-shrink: 0;
-  background-color: ${COLORS.cardBackground};
-  border: 1px solid ${COLORS.border};
-  border-left: none;
-  border-radius: 0 8px 8px 0;
-  color: ${COLORS.textTertiary};
-  padding: 0 1rem;
-  cursor: pointer;
-  transition: color 0.3s;
+const TagInputPreview = styled.div`
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  background-color: rgba(
+    ${(props) => {
+      const hexColor = props.moodColor || COLORS.primarySalmon;
+      const r = parseInt(hexColor.slice(1, 3), 16);
+      const g = parseInt(hexColor.slice(3, 5), 16);
+      const b = parseInt(hexColor.slice(5, 7), 16);
+      return `${r}, ${g}, ${b}, 0.15`;
+    }}
+  );
+  color: ${(props) => props.moodColor || COLORS.primarySalmon};
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid
+    rgba(
+      ${(props) => {
+        const hexColor = props.moodColor || COLORS.primarySalmon;
+        const r = parseInt(hexColor.slice(1, 3), 16);
+        const g = parseInt(hexColor.slice(3, 5), 16);
+        const b = parseInt(hexColor.slice(5, 7), 16);
+        return `${r}, ${g}, ${b}, 0.3`;
+      }}
+    );
+  pointer-events: none;
+  animation: fadeIn 0.2s ease-in;
 
-  &:hover {
-    color: ${COLORS.primarySalmon};
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-50%) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(-50%) scale(1);
+    }
   }
 `;
 
@@ -464,7 +472,25 @@ const TagsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background-color: ${COLORS.elevatedBackground};
+  border-radius: 8px;
+  border: 1px dashed ${COLORS.border};
+  min-height: 2.5rem;
+  align-items: flex-start;
+  align-content: flex-start;
+
+  &:empty::before {
+    content: "Your tags will appear here...";
+    color: ${COLORS.textTertiary};
+    font-size: 0.875rem;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    min-height: 1rem;
+  }
 `;
 
 const Tag = styled.div`
@@ -474,7 +500,6 @@ const Tag = styled.div`
   background-color: rgba(
     ${(props) => {
       const hexColor = props.moodColor || COLORS.primarySalmon;
-      // Convert hex to RGB with opacity
       const r = parseInt(hexColor.slice(1, 3), 16);
       const g = parseInt(hexColor.slice(3, 5), 16);
       const b = parseInt(hexColor.slice(5, 7), 16);
@@ -485,6 +510,21 @@ const Tag = styled.div`
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
   font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: rgba(
+      ${(props) => {
+        const hexColor = props.moodColor || COLORS.primarySalmon;
+        const r = parseInt(hexColor.slice(1, 3), 16);
+        const g = parseInt(hexColor.slice(3, 5), 16);
+        const b = parseInt(hexColor.slice(5, 7), 16);
+        return `${r}, ${g}, ${b}, 0.3`;
+      }}
+    );
+    transform: translateY(-1px);
+  }
 `;
 
 const RemoveTagButton = styled.button`
@@ -497,8 +537,16 @@ const RemoveTagButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-`;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
 
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+  }
+`;
 const ImageUpload = styled.div`
   display: flex;
   justify-content: center;
@@ -665,33 +713,6 @@ const CharWarning = styled.div`
   margin-top: -0.5rem;
   margin-bottom: 1rem;
   text-align: right;
-`;
-
-const TagPreview = styled.div`
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-  color: ${COLORS.textSecondary};
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const PreviewTag = styled.span`
-  background-color: rgba(
-    ${(props) => {
-      const hexColor = props.moodColor || COLORS.primarySalmon;
-      const r = parseInt(hexColor.slice(1, 3), 16);
-      const g = parseInt(hexColor.slice(3, 5), 16);
-      const b = parseInt(hexColor.slice(5, 7), 16);
-      return `${r}, ${g}, ${b}, 0.15`;
-    }}
-  );
-  color: ${(props) => props.moodColor || COLORS.primarySalmon};
-  padding: 0.125rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  border: 1px dashed ${(props) => props.moodColor || COLORS.primarySalmon};
 `;
 
 export default CreateThought;
