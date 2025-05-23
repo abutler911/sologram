@@ -191,7 +191,7 @@ const CreateThought = () => {
             </MoodOptions>
           </MoodSelector>
 
-          <FormGroup>
+          <FormGroup style={{ paddingTop: "0.5rem" }}>
             <Label>Tags (optional)</Label>
             <TagForm onSubmit={addTag}>
               <TagInput
@@ -384,11 +384,14 @@ const MoodOption = styled.button`
 
 const TagForm = styled.form`
   display: flex;
-  margin-bottom: 0.75rem;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 1rem;
 `;
 
 const TagInput = styled.input`
-  flex: 1;
+  flex-grow: 1;
+  min-width: 0;
   background-color: ${COLORS.cardBackground};
   border: 1px solid ${COLORS.border};
   border-right: none;
@@ -408,6 +411,7 @@ const TagInput = styled.input`
 `;
 
 const AddTagButton = styled.button`
+  flex-shrink: 0;
   background-color: ${COLORS.cardBackground};
   border: 1px solid ${COLORS.border};
   border-left: none;
@@ -426,6 +430,7 @@ const TagsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  margin-bottom: 0.5rem;
 `;
 
 const Tag = styled.div`
