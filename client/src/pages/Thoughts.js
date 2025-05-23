@@ -112,14 +112,14 @@ const PageTitle = styled.h1`
   overflow: hidden;
 
   @media (max-width: 768px) {
-    font-size: 9rem;
+    font-size: 1.8rem;
     margin-left: 0;
-    transform: rotate(-5deg);
+    transform: rotate(-7deg);
     white-space: normal;
   }
 
   @media (max-width: 480px) {
-    font-size: 1.5rem;
+    font-size: 3rem;
   }
 `;
 
