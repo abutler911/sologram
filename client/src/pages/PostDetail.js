@@ -1057,8 +1057,8 @@ const LikesCount = styled.div`
 
 // Post caption that appears before content
 const PostCaption = styled.div`
-  font-size: 1.25rem;
-  line-height: 1.6;
+  font-size: 1rem;
+  line-height: 1.1;
   color: #000000;
   margin-bottom: 1.5rem;
   font-weight: 500;
@@ -1066,15 +1066,15 @@ const PostCaption = styled.div`
 
 // Updated post content with black text
 const PostContent = styled.div`
-  font-size: 1.125rem;
-  line-height: 1.8;
+  font-size: 0.9rem;
+  line-height: 1.1;
   color: #000000;
   margin-bottom: 2rem;
   white-space: pre-line;
 
   @media (max-width: 640px) {
-    font-size: 1rem;
-    line-height: 1.6;
+    font-size: 0.9rem;
+    line-height: 1.1;
   }
 `;
 
