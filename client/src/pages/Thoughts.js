@@ -41,18 +41,17 @@ const pulseGlow = keyframes`
   100% { box-shadow: 0 0 15px rgba(233, 137, 115, 0.4); }
 `;
 
-// Styled components for the page layout
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
   min-height: 100vh;
-  padding: 1rem 0.5rem;
-
-  @media (min-width: 769px) {
-    padding: 1rem 0;
-  }
+  padding: 1rem 0;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
 
   @media (max-width: 768px) {
-    padding: 1rem 0;
+    padding: 0.5rem 0;
   }
 `;
 
@@ -60,14 +59,18 @@ const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 2rem;
+  padding: 0 1rem;
   margin-bottom: 2rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 
   @media (max-width: 768px) {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 1rem;
-    padding: 0;
+    padding: 0 0.5rem;
+    margin-bottom: 1rem;
   }
 `;
 
@@ -75,10 +78,12 @@ const HeaderLeft = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  flex: 1;
+  min-width: 0;
 
   @media (max-width: 768px) {
     width: 100%;
-    padding: 0 16px;
+    padding: 0 0.5rem;
   }
 `;
 
@@ -86,11 +91,12 @@ const HeaderRight = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex-shrink: 0;
 
   @media (max-width: 768px) {
     width: 100%;
-    justify-content: space-between;
-    padding: 0 16px;
+    justify-content: flex-end;
+    padding: 0 0.5rem;
   }
 `;
 
@@ -102,9 +108,18 @@ const PageTitle = styled.h1`
   transform: rotate(-2deg);
   letter-spacing: 0.5px;
   text-shadow: 1px 1px 2px rgba(233, 137, 115, 0.3);
+  white-space: nowrap;
+  overflow: hidden;
 
   @media (max-width: 768px) {
-    margin-left: 8px;
+    font-size: 1.8rem;
+    margin-left: 0;
+    transform: rotate(0deg);
+    white-space: normal;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
   }
 `;
 
@@ -113,11 +128,20 @@ const MoodFilter = styled.div`
   flex-wrap: wrap;
   gap: 0.5rem;
   padding-bottom: 0.5rem;
+  width: 100%;
   max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   @media (max-width: 768px) {
-    width: calc(100% - 16px);
-    margin: 0 8px;
+    padding: 0 0.5rem 0.5rem 0.5rem;
+    gap: 0.4rem;
   }
 `;
 
@@ -139,6 +163,7 @@ const MoodButton = styled.button`
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  flex-shrink: 0; /* Prevent buttons from shrinking */
   box-shadow: ${(props) =>
     props.active ? "0 3px 8px rgba(0, 0, 0, 0.3)" : "none"};
 
@@ -151,16 +176,20 @@ const MoodButton = styled.button`
     transform: scale(1.05);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
   }
-  transition: all 0.2s ease-in-out;
+
+  @media (max-width: 768px) {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
 `;
 
 const SearchContainer = styled.div`
   ${(props) =>
     props.expanded &&
     `
-    position: absolute;
-    left: 1rem;
-    right: 1rem;
+    position: fixed;
+    left: 0.5rem;
+    right: 0.5rem;
     top: 0.5rem;
     z-index: 100;
     
@@ -170,11 +199,16 @@ const SearchContainer = styled.div`
       right: auto;
       top: auto;
       width: 300px;
+      max-width: 300px;
     }
   `}
 
   @media (max-width: 768px) {
-    margin-right: 8px;
+    ${(props) =>
+      !props.expanded &&
+      `
+      margin-right: 0;
+    `}
   }
 `;
 
@@ -205,6 +239,8 @@ const SearchForm = styled.form`
   border: 1px solid ${COLORS.border};
   transition: all 0.3s;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 100%;
 
   &:focus-within {
     border-color: ${COLORS.primarySalmon};
@@ -221,9 +257,15 @@ const SearchInput = styled.input`
   padding: 0.6rem 1.2rem;
   font-size: 0.875rem;
   outline: none;
+  min-width: 0; /* Allow input to shrink */
 
   &::placeholder {
     color: ${COLORS.textTertiary};
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
   }
 `;
 
@@ -287,11 +329,16 @@ const ThoughtsContainer = styled.div`
   max-width: 640px;
   margin: 0 auto;
   padding: 0 1rem;
+  box-sizing: border-box;
 
   @media (max-width: 768px) {
-    width: 95%; // shrink a little inside viewport
-    max-width: 95%; // prevent hitting full width
-    padding: 0; // avoid double-padding
+    width: 100%;
+    max-width: 100%;
+    padding: 0 0.5rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0 0.25rem;
   }
 `;
 
@@ -328,7 +375,8 @@ const RetweetModal = styled.div`
   background-color: ${COLORS.cardBackground};
   border-radius: 8px;
   max-width: 380px;
-  width: 100%;
+  width: calc(100% - 2rem); /* Ensure margins on small screens */
+  max-width: calc(100vw - 2rem); /* Prevent viewport overflow */
   z-index: 1001;
   padding: 2.5rem 2rem;
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
@@ -336,6 +384,7 @@ const RetweetModal = styled.div`
   animation: ${fadeIn} 0.4s ease-out;
   border: 1px solid ${COLORS.border};
   overflow: hidden;
+  box-sizing: border-box;
 
   &:before {
     content: "";
@@ -353,6 +402,12 @@ const RetweetModal = styled.div`
     animation: ${shine} 3s infinite;
     z-index: 10;
   }
+
+  @media (max-width: 480px) {
+    padding: 2rem 1.5rem;
+    width: calc(100% - 1rem);
+    max-width: calc(100vw - 1rem);
+  }
 `;
 
 const ModalOverlay = styled.div`
@@ -369,6 +424,11 @@ const ModalOverlay = styled.div`
   z-index: 2000;
   padding: 1rem;
   animation: ${fadeIn} 0.3s ease-out;
+  overflow-y: auto; /* Allow vertical scrolling if content is too tall */
+
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+  }
 `;
 
 const ModalIcon = styled.div`
