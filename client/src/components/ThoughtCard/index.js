@@ -1,7 +1,7 @@
-// ThoughtCard with Twilight Theme
+// Amazing ThoughtCard Redesign with Modern Glass Morphism & Dynamic Elements
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import styled, { css } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 import {
   FaHeart,
   FaTrash,
@@ -12,292 +12,455 @@ import {
   FaRegHeart,
   FaRegComment,
   FaStar,
+  FaBookmark,
+  FaRegBookmark,
 } from "react-icons/fa";
 import { moodEmojis } from "../../utils/themeConstants";
 import twilightTheme from "../../twilightTheme";
 import { toast } from "react-hot-toast";
 
-// Destructure theme components for easier access
 const { colors, animations, mixins } = twilightTheme;
 
-// Updated Card component with twilight theme
+// Advanced animations
+const shimmer = keyframes`
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+`;
+
+const glow = keyframes`
+  0%, 100% { box-shadow: 0 0 20px rgba(148, 111, 246, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(148, 111, 246, 0.6); }
+`;
+
+const float = keyframes`
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-3px) rotate(1deg); }
+  66% { transform: translateY(1px) rotate(-1deg); }
+`;
+
+const ripple = keyframes`
+  0% { transform: scale(0); opacity: 1; }
+  100% { transform: scale(4); opacity: 0; }
+`;
+
+// Main card with glassmorphism effect
 const Card = styled.div`
   position: relative;
-  background-color: ${colors.cardBackground};
-  border-radius: 12px;
-  padding: 1rem;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 1.5rem;
   width: 95%;
-  margin: 1rem auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: transform 0.2s ease;
-  animation: ${animations.fadeIn} 0.5s ease-out;
+  max-width: 600px;
+  margin: 1.5rem auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: ${animations.fadeIn} 0.6s ease-out;
+  overflow: hidden;
 
-  ${mixins.hoverLift}
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    animation: ${shimmer} 3s infinite;
+    pointer-events: none;
+  }
+
+  &:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
+      0 0 40px rgba(148, 111, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    border-color: rgba(148, 111, 246, 0.3);
+  }
 
   ${(props) =>
     props.pinned &&
     css`
+      background: linear-gradient(
+        135deg,
+        rgba(148, 111, 246, 0.15) 0%,
+        rgba(42, 250, 223, 0.1) 100%
+      );
       border: 2px solid ${colors.secondaryAccent};
-      background: linear-gradient(145deg, ${colors.cardBackground}, #222244);
-
-      &:after {
-        content: "📌";
-        position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-        font-size: 0.9rem;
-      }
+      animation: ${glow} 2s ease-in-out infinite;
     `}
 `;
 
+// Floating mood decoration with enhanced animation
 const MoodDecoration = styled.div`
   position: absolute;
   right: 1.5rem;
   top: 1.5rem;
-  font-size: 3rem;
-  opacity: 0.12;
-  transform: rotate(10deg);
-  z-index: 1; /* <- changed from -1 */
+  font-size: 4rem;
+  opacity: 0.15;
+  z-index: 1;
   pointer-events: none;
-  animation: ${animations.float} 6s ease infinite;
+  animation: ${float} 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px ${colors.secondaryAccent});
   transition: all 0.5s ease;
-  text-shadow: 0 0 15px ${colors.secondaryAccent};
 
   ${Card}:hover & {
-    transform: rotate(15deg) scale(1.1);
-    opacity: 0.18;
-    text-shadow: 0 0 25px ${colors.secondaryAccent};
+    opacity: 0.25;
+    transform: scale(1.2) rotate(15deg);
+    filter: drop-shadow(0 0 30px ${colors.primaryAccent});
   }
 
   @media (max-width: 768px) {
-    font-size: 2.5rem;
+    font-size: 3rem;
     right: 1rem;
     top: 1rem;
   }
 `;
 
+// Enhanced header with better spacing
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
   position: relative;
-  z-index: 2;
+  z-index: 3;
 `;
 
 const UserInfo = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
 `;
 
-// Avatar with twilight glow
+// Premium avatar with gradient ring
 const Avatar = styled.div`
-  width: 45px;
-  height: 45px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   overflow: hidden;
-  border: 2px solid ${colors.secondaryAccent};
-  box-shadow: 0 0 10px rgba(148, 111, 246, 0.3);
+  background: linear-gradient(
+    45deg,
+    ${colors.primaryAccent},
+    ${colors.secondaryAccent}
+  );
+  padding: 3px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 25px rgba(148, 111, 246, 0.5);
+  }
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 50%;
   }
 `;
 
-// Default avatar with twilight gradients
 const DefaultAvatar = styled.div`
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  ${mixins.accentGradient}
+  background: linear-gradient(
+    135deg,
+    ${colors.primaryAccent},
+    ${colors.secondaryAccent}
+  );
   color: #ffffff;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: bold;
+  border-radius: 50%;
 `;
 
 const UserDetails = styled.div`
   display: flex;
   flex-direction: column;
+  gap: 0.25rem;
 `;
 
 const UsernameRow = styled.div`
   display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.75rem;
   margin-bottom: 0.25rem;
 `;
 
 const Username = styled.div`
-  font-weight: 600;
-  font-size: 1.1rem;
+  font-weight: 700;
+  font-size: 1.2rem;
   color: ${colors.textPrimary};
-  ${mixins.textGlow}
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(
+    45deg,
+    ${colors.textPrimary},
+    ${colors.primaryAccent}
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 `;
 
 const UserHandle = styled.div`
   color: ${colors.textSecondary};
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
 `;
 
+// Enhanced action buttons with ripple effect
 const ActionButton = styled.button`
-  background: none;
-  border: none;
+  position: relative;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: ${colors.textTertiary};
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
+  font-size: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+    transform: translate(-50%, -50%);
+  }
 
   &:hover {
     color: ${colors.primaryAccent};
-    background-color: ${colors.elevatedBackground};
+    background: rgba(148, 111, 246, 0.2);
+    border-color: ${colors.primaryAccent};
     transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(148, 111, 246, 0.3);
+
+    &::before {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  &:active {
+    transform: translateY(0px);
   }
 
   &.delete:hover {
     color: ${colors.error};
+    background: rgba(255, 77, 77, 0.2);
+    border-color: ${colors.error};
   }
 
   &.pinned {
     color: ${colors.secondaryAccent};
+    background: rgba(42, 250, 223, 0.2);
+    border-color: ${colors.secondaryAccent};
   }
 `;
 
 const AdminActions = styled.div`
   display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  max-width: 100%;
-  z-index: 2;
+  gap: 0.75rem;
+  z-index: 3;
   position: relative;
 `;
 
+// Enhanced content with better typography
 const Content = styled.p`
   color: ${colors.textPrimary};
-  font-size: 0.8rem;
-  line-height: 1.1;
+  font-size: 1rem;
+  line-height: 1.6;
   white-space: pre-wrap;
-  margin: 0.85rem 0;
+  margin: 1.25rem 0;
   position: relative;
-  z-index: 1;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  font-weight: 400;
+  letter-spacing: 0.3px;
+
+  &::first-letter {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: ${colors.primaryAccent};
+  }
 `;
 
-// Media with improved styling
+// Premium media container
 const Media = styled.div`
-  margin: 0.85rem 0;
-  border-radius: 12px;
+  margin: 1.5rem 0;
+  border-radius: 16px;
   overflow: hidden;
   width: 100%;
-  box-shadow: 0 4px 12px ${colors.shadow};
-  border: 1px solid ${colors.border};
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  background: rgba(0, 0, 0, 0.1);
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      45deg,
+      transparent,
+      rgba(255, 255, 255, 0.05),
+      transparent
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
 
   img {
     width: 100%;
-    max-height: 350px;
+    max-height: 400px;
     object-fit: cover;
     vertical-align: middle;
-    transition: transform 0.5s ease;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 
     &:hover {
-      transform: scale(1.02);
+      transform: scale(1.05);
     }
   }
 `;
 
-// Tags with twilight styling
+// Redesigned tags with gradient backgrounds
 const Tags = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
+  gap: 0.75rem;
   margin: 1.5rem 0;
   position: relative;
   z-index: 2;
-  padding: 0.5rem 0; // Add some padding to make sure they're visible
-
-  @media (max-width: 768px) {
-    gap: 0.5rem;
-    margin: 1.25rem 0;
-  }
 `;
 
 const Tag = styled.span`
-  background-color: ${colors.elevatedBackground};
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    rgba(148, 111, 246, 0.2),
+    rgba(42, 250, 223, 0.1)
+  );
   color: ${colors.primaryAccent};
-  padding: 0.4rem 0.8rem; // Slightly more padding
-  border-radius: 8px; // More rounded
-  font-size: 0.8rem; // Slightly larger
-  font-weight: 600; // More weight
-  transition: all 0.3s ease;
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
-  border: 1px solid ${colors.border};
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); // Add subtle shadow
+  border: 1px solid rgba(148, 111, 246, 0.3);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
 
-  &:hover {
-    background-color: ${colors.buttonHover};
-    color: ${colors.highlightAccent};
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(42, 250, 223, 0.3);
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+    transition: left 0.5s ease;
   }
 
-  @media (max-width: 768px) {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.75rem;
+  &:hover {
+    background: linear-gradient(
+      135deg,
+      rgba(148, 111, 246, 0.4),
+      rgba(42, 250, 223, 0.2)
+    );
+    color: ${colors.highlightAccent};
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(148, 111, 246, 0.4);
+    border-color: ${colors.primaryAccent};
+
+    &::before {
+      left: 100%;
+    }
   }
 `;
 
-// Mood indicator with twilight styling
+// Enhanced mood indicator
 const MoodIndicator = styled.div`
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   color: ${colors.secondaryAccent};
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   text-transform: capitalize;
-  padding: 0.3rem 0.8rem;
-  border-radius: 6px;
-  background-color: ${colors.elevatedBackground};
-  border: 1px solid ${colors.border};
-  position: relative;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  background: linear-gradient(
+    135deg,
+    rgba(42, 250, 223, 0.15),
+    rgba(148, 111, 246, 0.1)
+  );
+  border: 1px solid rgba(42, 250, 223, 0.3);
+  backdrop-filter: blur(10px);
   transition: all 0.3s ease;
-  ${mixins.subtleInteractive}
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(42, 250, 223, 0.3);
+  }
 `;
 
-// Stylized time display
+// Enhanced time display
 const TimeDisplay = styled.div`
   color: ${colors.textSecondary};
-  font-size: 0.7rem;
-  margin: 0.5rem 0;
+  font-size: 0.8rem;
+  margin: 1rem 0;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
+  opacity: 0.8;
 
   svg {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     opacity: 0.7;
   }
 `;
 
-// Action bar with twilight styling
+// Premium action bar
 const ActionBar = styled.div`
   display: flex;
   justify-content: space-between;
-  flex-wrap: nowrap;
   gap: 1rem;
-  border-top: 1px solid ${colors.divider};
-  padding-top: 0.5rem;
-  margin-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 1rem;
+  margin-top: 1rem;
+  backdrop-filter: blur(10px);
 
   @media (max-width: 480px) {
     justify-content: space-around;
@@ -305,81 +468,126 @@ const ActionBar = styled.div`
   }
 `;
 
-// Action Icon styling with twilight animation
+// Enhanced action icons with better animations
 const ActionIcon = styled.div`
   color: ${(props) =>
     props.active ? colors.primaryAccent : colors.textTertiary};
-  transition: all 0.2s ease;
-  font-size: 1.05rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 1.1rem;
+  position: relative;
 
   ${(props) =>
     props.animating &&
     css`
-      animation: ${animations.pulse} 0.5s ease;
+      animation: ${ripple} 0.6s ease-out;
       color: ${colors.primaryAccent};
     `}
 
   ${(props) =>
     props.active &&
     css`
-      filter: drop-shadow(0 0 5px ${colors.primaryAccent});
+      color: ${colors.primaryAccent};
+      filter: drop-shadow(0 0 8px ${colors.primaryAccent});
+      animation: ${float} 2s ease-in-out infinite;
     `}
 `;
 
 const ActionCount = styled.span`
   color: ${colors.textTertiary};
-  font-size: 0.85rem;
-  font-weight: 500;
-  transition: color 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: color 0.3s ease;
 `;
 
-// Action items with improved hover effect
+// Premium action items with hover effects
 const ActionItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  min-width: 60px;
-  padding: 0.4rem 0.6rem;
-  border-radius: 6px;
-  ${mixins.subtleInteractive}
+  gap: 0.5rem;
+  min-width: 70px;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(148, 111, 246, 0.1),
+      rgba(42, 250, 223, 0.05)
+    );
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
 
   &:hover {
+    background: rgba(148, 111, 246, 0.1);
+    border-color: rgba(148, 111, 246, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(148, 111, 246, 0.2);
+
+    &::before {
+      opacity: 1;
+    }
+
     ${ActionIcon} {
       color: ${colors.primaryAccent};
+      transform: scale(1.1);
     }
 
     ${ActionCount} {
       color: ${colors.textPrimary};
     }
   }
+
+  &:active {
+    transform: translateY(0px);
+  }
 `;
 
-// Pinned badge with twilight styling
+// Enhanced pinned badge
 const PinnedBadge = styled.div`
   position: absolute;
-  top: 0;
-  right: 1.5rem;
-  ${mixins.accentGradient}
+  top: -2px;
+  right: 2rem;
+  background: linear-gradient(
+    135deg,
+    ${colors.primaryAccent},
+    ${colors.secondaryAccent}
+  );
   color: #ffffff;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.4rem 1rem;
-  border-radius: 0 0 6px 6px;
-  box-shadow: 0 4px 12px ${colors.shadow};
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 8px 25px rgba(148, 111, 246, 0.4);
   z-index: 10;
+  animation: ${glow} 3s ease-in-out infinite;
 
   &:before {
     content: "📌";
-    margin-right: 5px;
+    margin-right: 0.5rem;
+    font-size: 1rem;
   }
 
   @media (max-width: 768px) {
     right: 1rem;
-    padding: 0.3rem 0.8rem;
-    font-size: 0.7rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
   }
 `;
 
+// Enhanced share function
 const handleShare = (thought) => {
   const shareText = `"${thought.content}" - via SoloThoughts`;
   const shareUrl = window.location.origin + `/thoughts/${thought._id}`;
@@ -392,7 +600,7 @@ const handleShare = (thought) => {
         url: shareUrl,
       })
       .then(() => {
-        toast.success("Shared successfully!");
+        toast.success("Shared successfully! ✨");
       })
       .catch((err) => {
         console.error("Error sharing:", err);
@@ -402,7 +610,7 @@ const handleShare = (thought) => {
     navigator.clipboard
       .writeText(shareUrl)
       .then(() => {
-        toast.success("Link copied to clipboard!");
+        toast.success("Link copied to clipboard! 📋");
       })
       .catch(() => {
         toast.error("Failed to copy link");
@@ -410,7 +618,7 @@ const handleShare = (thought) => {
   }
 };
 
-// ThoughtCard component with twilight theme
+// Main component with enhanced interactions
 const ThoughtCard = ({
   thought,
   defaultUser,
@@ -422,11 +630,19 @@ const ThoughtCard = ({
   onDelete,
 }) => {
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   const onLikeClick = (id) => {
     setIsLikeAnimating(true);
-    setTimeout(() => setIsLikeAnimating(false), 800);
+    setTimeout(() => setIsLikeAnimating(false), 600);
     handleLike(id);
+  };
+
+  const onBookmarkClick = () => {
+    setIsBookmarked(!isBookmarked);
+    toast.success(
+      isBookmarked ? "Removed from bookmarks" : "Added to bookmarks"
+    );
   };
 
   return (
@@ -487,12 +703,10 @@ const ThoughtCard = ({
         )}
       </Header>
 
-      {/* Show mood decoration in background if present */}
       {thought.mood && (
         <MoodDecoration>{moodEmojis[thought.mood]}</MoodDecoration>
       )}
 
-      {/* Content with quotes */}
       <Content>{thought.content}</Content>
 
       {thought.media?.mediaUrl && (
@@ -509,12 +723,10 @@ const ThoughtCard = ({
         </Tags>
       )}
 
-      {/* Timestamp */}
       <TimeDisplay>
         <FaClock /> {formatDate(thought.createdAt)}
       </TimeDisplay>
 
-      {/* Action bar */}
       <ActionBar>
         <ActionItem onClick={() => onLikeClick(thought._id)}>
           <ActionIcon active={thought.userHasLiked} animating={isLikeAnimating}>
@@ -535,6 +747,12 @@ const ThoughtCard = ({
             <FaRetweet />
           </ActionIcon>
           <ActionCount>{thought.shares || 0}</ActionCount>
+        </ActionItem>
+
+        <ActionItem onClick={onBookmarkClick}>
+          <ActionIcon active={isBookmarked}>
+            {isBookmarked ? <FaBookmark /> : <FaRegBookmark />}
+          </ActionIcon>
         </ActionItem>
 
         <ActionItem onClick={() => handleShare(thought)}>
