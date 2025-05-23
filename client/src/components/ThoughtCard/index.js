@@ -129,6 +129,11 @@ const Header = styled.div`
   margin-bottom: 1rem;
   position: relative;
   z-index: 3;
+  gap: 0.5rem;
+
+  @media (max-width: 768px) {
+    gap: 0.25rem;
+  }
 `;
 
 const UserInfo = styled.div`
@@ -206,15 +211,16 @@ const ActionButton = styled.button`
   background: ${COLORS.elevatedBackground};
   border: 1px solid ${COLORS.border};
   color: ${COLORS.textSecondary};
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   transition: all 0.3s ease;
+  flex-shrink: 0;
 
   &:hover {
     color: ${COLORS.textPrimary};
@@ -234,13 +240,24 @@ const ActionButton = styled.button`
     background: rgba(101, 142, 169, 0.1);
     border-color: ${COLORS.primaryBlueGray};
   }
+
+  @media (max-width: 768px) {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
 `;
 
 const AdminActions = styled.div`
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   z-index: 3;
   position: relative;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    gap: 0.25rem;
+  }
 `;
 
 // Highly readable content with proper contrast
@@ -552,9 +569,20 @@ const ThoughtCard = ({
               <FaEdit />
             </ActionButton>
             <ActionButton
-              onClick={() => onDelete(thought._id)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (
+                  window.confirm(
+                    "Are you sure you want to delete this thought?"
+                  )
+                ) {
+                  onDelete(thought._id);
+                }
+              }}
               title="Delete"
               className="delete"
+              type="button"
             >
               <FaTrash />
             </ActionButton>
