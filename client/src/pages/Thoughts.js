@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 import { keyframes } from "styled-components";
 import { FaSearch, FaTimes, FaRetweet } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
-import { useDeleteModal } from "../context/DeleteModalContext"; // Add this import
+import { useDeleteModal } from "../context/DeleteModalContext";
 import MainLayout from "../components/layout/MainLayout";
 import { format } from "date-fns";
 
@@ -15,8 +15,6 @@ import ThoughtCard from "../components/posts/ThoughtCard";
 
 // Import LoadingSpinner component
 import LoadingSpinner from "../components/common/LoadingSpinner";
-// Remove this import - we'll use the global modal instead
-// import DeleteConfirmationModal from "../components/common/DeleteConfirmationModal";
 
 // Import theme constants
 import { COLORS } from "../theme";
