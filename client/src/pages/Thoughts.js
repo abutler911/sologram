@@ -4,32 +4,26 @@ import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { keyframes } from "styled-components";
-import { FaSearch, FaTimes, FaPlusCircle, FaRetweet } from "react-icons/fa";
+import { FaSearch, FaTimes, FaRetweet } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
 import MainLayout from "../components/layout/MainLayout";
 import { format } from "date-fns";
 
 // Import ThoughtCard component
-import ThoughtCard from "../components/ThoughtCard";
+import ThoughtCard from "../components/posts/ThoughtCard";
 
 // Import LoadingSpinner and DeleteConfirmationModal components
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import DeleteConfirmationModal from "../components/common/DeleteConfirmationModal";
 
 // Import theme constants
-import { COLORS, THEME } from "../theme";
+import { COLORS } from "../theme";
 import { moodColors, moodEmojis } from "../utils/themeConstants";
 
 // Define animations
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
-`;
-
-const float = keyframes`
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-  100% { transform: translateY(0px); }
 `;
 
 const shine = keyframes`
@@ -158,30 +152,6 @@ const MoodButton = styled.button`
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
   }
   transition: all 0.2s ease-in-out;
-`;
-
-const CreateButton = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: ${COLORS.primarySalmon};
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-weight: 500;
-  transition: all 0.3s;
-  box-shadow: 0 3px 8px rgba(233, 137, 115, 0.3);
-
-  &:hover {
-    background-color: ${COLORS.accentSalmon};
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(233, 137, 115, 0.4);
-  }
-
-  svg {
-    font-size: 1rem;
-  }
 `;
 
 const SearchContainer = styled.div`
@@ -351,16 +321,6 @@ const LoadingMore = styled.div`
   display: flex;
   justify-content: center;
   animation: ${fadeIn} 0.4s ease-out;
-`;
-
-const Backdrop = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 999;
 `;
 
 const RetweetModal = styled.div`

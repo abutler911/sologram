@@ -18,7 +18,7 @@ import {
 import { moodEmojis } from "../../utils/themeConstants";
 import { COLORS } from "../../theme";
 import { toast } from "react-hot-toast";
-import { useDeleteModal } from "../../context/DeleteModalContext"; // Add this import
+import { useDeleteModal } from "../../context/DeleteModalContext";
 
 // Gentle animations that complement your theme
 const gentleFloat = keyframes`
