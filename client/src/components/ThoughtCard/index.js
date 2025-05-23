@@ -223,6 +223,7 @@ const Tags = styled.div`
   margin: 1.5rem 0;
   position: relative;
   z-index: 2;
+  padding: 0.5rem 0; // Add some padding to make sure they're visible
 
   @media (max-width: 768px) {
     gap: 0.5rem;
@@ -233,24 +234,25 @@ const Tags = styled.div`
 const Tag = styled.span`
   background-color: ${colors.elevatedBackground};
   color: ${colors.primaryAccent};
-  padding: 0.3rem 0.8rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  padding: 0.4rem 0.8rem; // Slightly more padding
+  border-radius: 8px; // More rounded
+  font-size: 0.8rem; // Slightly larger
+  font-weight: 600; // More weight
   transition: all 0.3s ease;
   cursor: pointer;
   border: 1px solid ${colors.border};
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); // Add subtle shadow
 
   &:hover {
     background-color: ${colors.buttonHover};
     color: ${colors.highlightAccent};
     transform: translateY(-2px);
-    box-shadow: 0 2px 6px rgba(42, 250, 223, 0.2);
+    box-shadow: 0 4px 8px rgba(42, 250, 223, 0.3);
   }
 
   @media (max-width: 768px) {
-    padding: 0.2rem 0.6rem;
-    font-size: 0.7rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
   }
 `;
 
@@ -499,7 +501,6 @@ const ThoughtCard = ({
         </Media>
       )}
 
-      {/* Tags if present */}
       {thought.tags && thought.tags.length > 0 && (
         <Tags>
           {thought.tags.map((tag, index) => (
@@ -507,7 +508,27 @@ const ThoughtCard = ({
           ))}
         </Tags>
       )}
-
+      {process.env.NODE_ENV === "development" && (
+        <div
+          style={{
+            backgroundColor: "#333",
+            color: "#fff",
+            padding: "8px",
+            margin: "8px 0",
+            borderRadius: "4px",
+            fontSize: "12px",
+            fontFamily: "monospace",
+          }}
+        >
+          <strong>Debug - Tags data:</strong>
+          <br />
+          Tags: {JSON.stringify(thought.tags)}
+          <br />
+          Tags type: {typeof thought.tags}
+          <br />
+          Tags length: {thought.tags ? thought.tags.length : "undefined"}
+        </div>
+      )}
       {/* Timestamp */}
       <TimeDisplay>
         <FaClock /> {formatDate(thought.createdAt)}
