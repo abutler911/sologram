@@ -13,7 +13,7 @@ import {
 } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
 import MainLayout from "../components/layout/MainLayout";
-import { COLORS, THEME } from "../theme"; // Import the theme
+import { COLORS } from "../theme";
 
 const CreateThought = () => {
   const [content, setContent] = useState("");
@@ -77,15 +77,43 @@ const CreateThought = () => {
     }
   };
 
-  const addTag = (e) => {
-    e.preventDefault();
-    if (!currentTag.trim() || tags.includes(currentTag.trim())) return;
+  const addTag = (tagText = null) => {
+    const tagToAdd = tagText || currentTag.trim();
+
+    if (!tagToAdd || tags.includes(tagToAdd)) return;
     if (tags.length >= 5) {
       toast.error("Maximum 5 tags allowed");
       return;
     }
-    setTags([...tags, currentTag.trim()]);
+
+    setTags([...tags, tagToAdd]);
     setCurrentTag("");
+  };
+
+  const handleTagInputKeyDown = (e) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      if (currentTag.trim()) {
+        addTag();
+      }
+    } else if (e.key === "Backspace" && !currentTag && tags.length > 0) {
+      // Optional: Remove last tag when backspacing on empty input
+      setTags(tags.slice(0, -1));
+    }
+  };
+
+  const handleTagInputChange = (e) => {
+    const value = e.target.value;
+    // Prevent spaces from being typed (since space creates tags)
+    if (value.includes(" ")) {
+      // Extract the tag before the space and create it
+      const tagText = value.split(" ")[0].trim();
+      if (tagText) {
+        addTag(tagText);
+      }
+    } else {
+      setCurrentTag(value);
+    }
   };
 
   const removeTag = (tagToRemove) => {
@@ -192,17 +220,35 @@ const CreateThought = () => {
           </MoodSelector>
 
           <FormGroup style={{ paddingTop: "0.5rem" }}>
-            <Label>Tags (optional)</Label>
-            <TagForm onSubmit={addTag}>
+            <Label>Tags (optional) - Press space or enter to add tags</Label>
+            <TagForm
+              onSubmit={(e) => {
+                e.preventDefault();
+                addTag();
+              }}
+            >
               <TagInput
                 value={currentTag}
-                onChange={(e) => setCurrentTag(e.target.value)}
-                placeholder="Add a tag..."
+                onChange={handleTagInputChange}
+                onKeyDown={handleTagInputKeyDown}
+                placeholder="Type tags and press space..."
+                maxLength={30}
               />
               <AddTagButton type="submit">
                 <FaHashtag />
               </AddTagButton>
             </TagForm>
+
+            {/* Show current input preview */}
+            {currentTag.trim() && (
+              <TagPreview>
+                Preview:{" "}
+                <PreviewTag moodColor={moodColors[mood]}>
+                  #{currentTag.trim()}
+                </PreviewTag>
+              </TagPreview>
+            )}
+
             {tags.length > 0 && (
               <TagsContainer>
                 {tags.map((tag, index) => (
@@ -328,17 +374,6 @@ const ContentTextarea = styled.textarea`
 
   &::placeholder {
     color: ${COLORS.textTertiary};
-  }
-`;
-
-const CharCount = styled.div`
-  text-align: right;
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  color: ${COLORS.textTertiary};
-
-  &.warning {
-    color: ${COLORS.warning};
   }
 `;
 
@@ -630,6 +665,33 @@ const CharWarning = styled.div`
   margin-top: -0.5rem;
   margin-bottom: 1rem;
   text-align: right;
+`;
+
+const TagPreview = styled.div`
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: ${COLORS.textSecondary};
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const PreviewTag = styled.span`
+  background-color: rgba(
+    ${(props) => {
+      const hexColor = props.moodColor || COLORS.primarySalmon;
+      const r = parseInt(hexColor.slice(1, 3), 16);
+      const g = parseInt(hexColor.slice(3, 5), 16);
+      const b = parseInt(hexColor.slice(5, 7), 16);
+      return `${r}, ${g}, ${b}, 0.15`;
+    }}
+  );
+  color: ${(props) => props.moodColor || COLORS.primarySalmon};
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  border: 1px dashed ${(props) => props.moodColor || COLORS.primarySalmon};
 `;
 
 export default CreateThought;
