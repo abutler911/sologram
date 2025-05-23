@@ -10,21 +10,18 @@ import {
   FaExclamationTriangle,
   FaRedoAlt,
 } from "react-icons/fa";
-import { COLORS, THEME } from "../theme"; // Import the theme
+import { COLORS, THEME } from "../theme";
+import { useDeleteModal } from "../context/DeleteModalContext";
 
 // Import LoadingSpinner component
 import LoadingSpinner from "../components/common/LoadingSpinner";
-// Import DeleteConfirmationModal component
-import DeleteConfirmationModal from "../components/common/DeleteConfirmationModal";
 
 const StoryArchive = () => {
   const [archivedStories, setArchivedStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
-  // State for delete confirmation modal
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [storyToDelete, setStoryToDelete] = useState(null);
+  const { showDeleteModal } = useDeleteModal();
 
   useEffect(() => {
     const fetchArchivedStories = async () => {
@@ -62,42 +59,52 @@ const StoryArchive = () => {
     fetchArchivedStories();
   }, [retryCount]);
 
-  const openDeleteModal = (id) => {
-    setStoryToDelete(id);
-    setShowDeleteModal(true);
-  };
+  // Replace the old delete functions with this new handler
+  const handleDeleteStory = (storyId) => {
+    const story = archivedStories.find((s) => s._id === storyId);
+    const storyTitle = story?.title || "this archived story";
 
-  const handleDelete = async () => {
-    if (!storyToDelete) return;
+    showDeleteModal({
+      title: "Delete Archived Story",
+      message:
+        "Are you sure you want to permanently delete this archived story? This action cannot be undone and the story will be lost forever.",
+      confirmText: "Delete Permanently",
+      cancelText: "Keep Story",
+      itemName: storyTitle,
+      onConfirm: async () => {
+        try {
+          const token = localStorage.getItem("token");
+          // Use the original endpoint that's already implemented on the server
+          const response = await axios.delete(
+            `/api/archived-stories/${storyId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
 
-    try {
-      const token = localStorage.getItem("token");
-      // Use the original endpoint that's already implemented on the server
-      const response = await axios.delete(
-        `/api/archived-stories/${storyToDelete}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          if (response.data.success) {
+            setArchivedStories((prevStories) =>
+              prevStories.filter((story) => story._id !== storyId)
+            );
+            toast.success("Story deleted permanently");
+          } else {
+            throw new Error(response.data.message || "Failed to delete story");
+          }
+        } catch (err) {
+          console.error("Error deleting story:", err);
+          toast.error("Failed to delete story");
         }
-      );
-
-      if (response.data.success) {
-        setArchivedStories((prevStories) =>
-          prevStories.filter((story) => story._id !== storyToDelete)
-        );
-        toast.success("Story deleted permanently");
-      } else {
-        throw new Error(response.data.message || "Failed to delete story");
-      }
-    } catch (err) {
-      console.error("Error deleting story:", err);
-      toast.error("Failed to delete story");
-    } finally {
-      setShowDeleteModal(false);
-      setStoryToDelete(null);
-    }
+      },
+      onCancel: () => {
+        console.log("Archived story deletion cancelled");
+      },
+      destructive: true,
+    });
   };
+
+  // Remove the old openDeleteModal and handleDelete functions
 
   const handleRetry = () => {
     setRetryCount((prev) => prev + 1);
@@ -183,7 +190,9 @@ const StoryArchive = () => {
                     >
                       View
                     </ViewButton>
-                    <DeleteButton onClick={() => openDeleteModal(story._id)}>
+                    <DeleteButton onClick={() => handleDeleteStory(story._id)}>
+                      {" "}
+                      {/* Use new handler */}
                       <FaTrash />
                     </DeleteButton>
                   </ActionButtons>
@@ -197,21 +206,13 @@ const StoryArchive = () => {
           </EmptyMessage>
         )}
 
-        {/* Delete Confirmation Modal */}
-        {showDeleteModal && (
-          <DeleteConfirmationModal
-            isOpen={showDeleteModal}
-            onClose={() => setShowDeleteModal(false)}
-            onConfirm={handleDelete}
-            title="Delete Archived Story"
-            message="Are you sure you want to permanently delete this archived story? This action cannot be undone."
-            confirmButtonText="Delete Permanently"
-          />
-        )}
+        {/* Remove the old Delete Confirmation Modal - it's now handled globally */}
       </Container>
     </PageWrapper>
   );
 };
+
+// Keep all your existing styled components - they remain unchanged
 
 // Styled components updated with Modern Twilight theme
 const PageWrapper = styled.div`

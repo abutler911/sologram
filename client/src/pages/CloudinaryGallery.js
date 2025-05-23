@@ -20,14 +20,16 @@ import {
 import { getTransformedImageUrl } from "../utils/cloudinary";
 import { COLORS } from "../theme";
 import { AuthContext } from "../context/AuthContext";
+import { useDeleteModal } from "../context/DeleteModalContext";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import DeleteConfirmationModal from "../components/common/DeleteConfirmationModal";
+
 import LoadingSpinner from "../components/common/LoadingSpinner";
 
 const CloudinaryGallery = () => {
   // Use the existing auth context
   const { user } = useContext(AuthContext);
+  const { showDeleteModal } = useDeleteModal();
   const navigate = useNavigate();
 
   const [assets, setAssets] = useState([]);
@@ -54,13 +56,14 @@ const CloudinaryGallery = () => {
   const [selectedAssets, setSelectedAssets] = useState([]);
   const [selectMode, setSelectMode] = useState(false);
   const [bulkActionOpen, setBulkActionOpen] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState({
-    show: false,
-    assetId: null,
-    assetName: null,
-    isBulk: false,
-    count: 0,
-  });
+  // Remove deleteConfirmation state - we don't need it anymore
+  // const [deleteConfirmation, setDeleteConfirmation] = useState({
+  //   show: false,
+  //   assetId: null,
+  //   assetName: null,
+  //   isBulk: false,
+  //   count: 0,
+  // });
   const [loadingMore, setLoadingMore] = useState(false);
 
   // Verify admin status using the existing auth context
@@ -108,17 +111,65 @@ const CloudinaryGallery = () => {
     setSelectedAssets([]);
   };
 
-  // Perform bulk delete
+  // Perform bulk delete - updated to use global modal
   const bulkDeleteAssets = async () => {
     if (selectedAssets.length === 0) return;
 
-    // Show the delete confirmation modal
-    setDeleteConfirmation({
-      show: true,
-      assetId: null,
-      assetName: null,
-      isBulk: true,
-      count: selectedAssets.length,
+    const assetNames = selectedAssets.slice(0, 3).map((publicId) => {
+      const asset = assets.find((a) => a.public_id === publicId);
+      return asset?.public_id.split("/").pop() || publicId;
+    });
+
+    const previewText =
+      selectedAssets.length <= 3
+        ? assetNames.join(", ")
+        : `${assetNames.join(", ")} and ${selectedAssets.length - 3} more`;
+
+    showDeleteModal({
+      title: `Delete ${selectedAssets.length} Assets`,
+      message: `Are you sure you want to delete ${selectedAssets.length} selected assets? This action cannot be undone and will permanently remove these files from Cloudinary.`,
+      confirmText: `Delete ${selectedAssets.length} Assets`,
+      cancelText: "Cancel",
+      itemName: previewText,
+      onConfirm: async () => {
+        const loadingToast = toast.loading(
+          `Deleting ${selectedAssets.length} assets...`
+        );
+
+        let successCount = 0;
+        let failureCount = 0;
+
+        for (const publicId of selectedAssets) {
+          try {
+            await axios.delete(`/api/admin/cloudinary/${publicId}`);
+            successCount++;
+          } catch (error) {
+            console.error(`Error deleting asset ${publicId}:`, error);
+            failureCount++;
+          }
+        }
+
+        // Update toast based on results
+        toast.dismiss(loadingToast);
+        if (failureCount === 0) {
+          toast.success(`Successfully deleted ${successCount} assets`);
+        } else {
+          toast.error(
+            `Deleted ${successCount} assets, but failed to delete ${failureCount} assets`
+          );
+        }
+
+        // Refresh assets
+        fetchAssets();
+
+        // Clear selection
+        setSelectedAssets([]);
+        setBulkActionOpen(false);
+      },
+      onCancel: () => {
+        console.log("Bulk delete cancelled");
+      },
+      destructive: true,
     });
   };
 
@@ -162,106 +213,7 @@ const CloudinaryGallery = () => {
     // Keep selection mode active for further operations
   };
 
-  const confirmDelete = async () => {
-    try {
-      if (deleteConfirmation.isBulk) {
-        // Bulk delete process
-        const loadingToast = toast.loading(
-          `Deleting ${deleteConfirmation.count} assets...`
-        );
-
-        let successCount = 0;
-        let failureCount = 0;
-
-        for (const publicId of selectedAssets) {
-          try {
-            await axios.delete(`/api/admin/cloudinary/${publicId}`);
-            successCount++;
-          } catch (error) {
-            console.error(`Error deleting asset ${publicId}:`, error);
-            failureCount++;
-          }
-        }
-
-        // Update toast based on results
-        toast.dismiss(loadingToast);
-        if (failureCount === 0) {
-          toast.success(`Successfully deleted ${successCount} assets`);
-        } else {
-          toast.error(
-            `Deleted ${successCount} assets, but failed to delete ${failureCount} assets`
-          );
-        }
-
-        // Refresh assets
-        fetchAssets();
-
-        // Clear selection
-        setSelectedAssets([]);
-        setBulkActionOpen(false);
-      } else {
-        // Single asset delete
-        const publicId = deleteConfirmation.assetId;
-
-        await axios.delete(`/api/admin/cloudinary/${publicId}`);
-        toast.success("Asset deleted successfully");
-
-        // Update local state
-        setAssets((prev) =>
-          prev.filter((asset) => asset.public_id !== publicId)
-        );
-        if (selectedAsset?.public_id === publicId) {
-          setSelectedAsset(null);
-        }
-
-        // Update stats
-        setStats((prev) => ({
-          ...prev,
-          total: prev.total - 1,
-          images:
-            selectedAsset?.resource_type === "image"
-              ? prev.images - 1
-              : prev.images,
-          videos:
-            selectedAsset?.resource_type === "video"
-              ? prev.videos - 1
-              : prev.videos,
-        }));
-      }
-    } catch (error) {
-      console.error("Error deleting asset:", error);
-
-      // More descriptive error message based on error status
-      if (error.response) {
-        if (error.response.status === 404) {
-          toast.error(
-            "API endpoint not found. Check your API routes configuration."
-          );
-        } else if (error.response.status === 403) {
-          toast.error("Cannot delete assets outside the SoloGram folder.");
-        } else if (error.response.status === 400) {
-          toast.error(error.response.data?.message || "Invalid request.");
-        } else {
-          toast.error(
-            `Server error: ${error.response.data?.message || error.message}`
-          );
-        }
-      } else {
-        toast.error(
-          "Failed to connect to the server. Please check your network connection."
-        );
-      }
-    } finally {
-      // Hide the confirmation modal
-      setDeleteConfirmation({
-        show: false,
-        assetId: null,
-        assetName: null,
-        isBulk: false,
-        count: 0,
-      });
-    }
-  };
+  // Remove the old confirmDelete function - logic is now in the modal callbacks
 
   const fetchAssets = async () => {
     try {
@@ -360,17 +312,72 @@ const CloudinaryGallery = () => {
     [loading, loadingMore, hasMore]
   );
 
+  // Updated handleDeleteAsset to use global modal
   const handleDeleteAsset = async (publicId) => {
     // Find the asset to get its name or title for the confirmation modal
     const asset = assets.find((a) => a.public_id === publicId);
+    const assetName = asset?.public_id.split("/").pop() || "this asset";
+    const assetType = asset?.resource_type === "video" ? "video" : "image";
 
-    // Show the delete confirmation modal instead of using window.confirm
-    setDeleteConfirmation({
-      show: true,
-      assetId: publicId,
-      assetName: asset?.public_id.split("/").pop() || "this asset",
-      isBulk: false,
-      count: 0,
+    showDeleteModal({
+      title: `Delete ${assetType.charAt(0).toUpperCase() + assetType.slice(1)}`,
+      message: `Are you sure you want to delete this ${assetType}? This action cannot be undone and will permanently remove the file from Cloudinary.`,
+      confirmText: `Delete ${
+        assetType.charAt(0).toUpperCase() + assetType.slice(1)
+      }`,
+      cancelText: "Keep Asset",
+      itemName: assetName,
+      onConfirm: async () => {
+        try {
+          await axios.delete(`/api/admin/cloudinary/${publicId}`);
+          toast.success("Asset deleted successfully");
+
+          // Update local state
+          setAssets((prev) =>
+            prev.filter((asset) => asset.public_id !== publicId)
+          );
+          if (selectedAsset?.public_id === publicId) {
+            setSelectedAsset(null);
+          }
+
+          // Update stats
+          setStats((prev) => ({
+            ...prev,
+            total: prev.total - 1,
+            images:
+              asset?.resource_type === "image" ? prev.images - 1 : prev.images,
+            videos:
+              asset?.resource_type === "video" ? prev.videos - 1 : prev.videos,
+          }));
+        } catch (error) {
+          console.error("Error deleting asset:", error);
+
+          // More descriptive error message based on error status
+          if (error.response) {
+            if (error.response.status === 404) {
+              toast.error(
+                "API endpoint not found. Check your API routes configuration."
+              );
+            } else if (error.response.status === 403) {
+              toast.error("Cannot delete assets outside the SoloGram folder.");
+            } else if (error.response.status === 400) {
+              toast.error(error.response.data?.message || "Invalid request.");
+            } else {
+              toast.error(
+                `Server error: ${error.response.data?.message || error.message}`
+              );
+            }
+          } else {
+            toast.error(
+              "Failed to connect to the server. Please check your network connection."
+            );
+          }
+        }
+      },
+      onCancel: () => {
+        console.log("Asset deletion cancelled");
+      },
+      destructive: true,
     });
   };
 
@@ -898,26 +905,12 @@ const CloudinaryGallery = () => {
         </BulkActionBar>
       )}
 
-      {/* Using the new DeleteConfirmationModal component */}
-      <DeleteConfirmationModal
-        show={deleteConfirmation.show}
-        onCancel={() =>
-          setDeleteConfirmation({
-            show: false,
-            assetId: null,
-            assetName: null,
-            isBulk: false,
-            count: 0,
-          })
-        }
-        onConfirm={confirmDelete}
-        assetName={deleteConfirmation.assetName}
-        isBulk={deleteConfirmation.isBulk}
-        count={deleteConfirmation.count}
-      />
+      {/* Remove the old DeleteConfirmationModal component - it's now handled globally */}
     </GalleryContainer>
   );
 };
+
+// Keep all your existing styled components - they remain unchanged
 
 // Styled Components
 const GalleryContainer = styled.div`

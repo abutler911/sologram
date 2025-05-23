@@ -6,15 +6,17 @@ import { toast } from "react-hot-toast";
 import { keyframes } from "styled-components";
 import { FaSearch, FaTimes, FaRetweet } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
+import { useDeleteModal } from "../context/DeleteModalContext"; // Add this import
 import MainLayout from "../components/layout/MainLayout";
 import { format } from "date-fns";
 
 // Import ThoughtCard component
 import ThoughtCard from "../components/posts/ThoughtCard";
 
-// Import LoadingSpinner and DeleteConfirmationModal components
+// Import LoadingSpinner component
 import LoadingSpinner from "../components/common/LoadingSpinner";
-import DeleteConfirmationModal from "../components/common/DeleteConfirmationModal";
+// Remove this import - we'll use the global modal instead
+// import DeleteConfirmationModal from "../components/common/DeleteConfirmationModal";
 
 // Import theme constants
 import { COLORS } from "../theme";
@@ -458,13 +460,15 @@ const Thoughts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchExpanded, setSearchExpanded] = useState(false);
   const { isAuthenticated, user } = useContext(AuthContext);
+  const { showDeleteModal } = useDeleteModal(); // Add this hook
   // Updated to check for both admin and creator roles
   const isAdmin = isAuthenticated && user?.role === "admin";
   const canCreateThought =
     isAuthenticated && (user?.role === "admin" || user?.role === "creator");
   const [selectedMood, setSelectedMood] = useState("all");
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [thoughtToDelete, setThoughtToDelete] = useState(null);
+  // Remove these state variables - we don't need them anymore
+  // const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // const [thoughtToDelete, setThoughtToDelete] = useState(null);
 
   // State for retweet modal
   const [showRetweetModal, setShowRetweetModal] = useState(false);
@@ -583,23 +587,42 @@ const Thoughts = () => {
     }
   };
 
-  // Delete modal functions
-  const handleDeleteConfirm = async () => {
-    if (!thoughtToDelete) return;
-    try {
-      await axios.delete(`/api/thoughts/${thoughtToDelete}`);
-      setThoughts((prev) =>
-        prev.filter((thought) => thought._id !== thoughtToDelete)
-      );
-      toast.success("Thought deleted");
-    } catch (err) {
-      console.error("Error deleting thought:", err);
-      toast.error("Failed to delete thought");
-    } finally {
-      setShowDeleteModal(false);
-      setThoughtToDelete(null);
-    }
+  // Replace the old delete confirmation function with this new handler
+  const handleDeleteThought = (thoughtId) => {
+    const thought = thoughts.find((t) => t._id === thoughtId);
+    const thoughtPreview =
+      thought?.content?.length > 50
+        ? thought.content.substring(0, 50) + "..."
+        : thought?.content || "this thought";
+
+    showDeleteModal({
+      title: "Delete Thought",
+      message: thought?.pinned
+        ? "This is a pinned thought. Deleting it will remove it from your pinned collection. This action cannot be undone."
+        : "Are you sure you want to delete this thought? This action cannot be undone and all interactions will be lost.",
+      confirmText: "Delete Thought",
+      cancelText: "Keep Thought",
+      itemName: thoughtPreview,
+      onConfirm: async () => {
+        try {
+          await axios.delete(`/api/thoughts/${thoughtId}`);
+          setThoughts((prev) =>
+            prev.filter((thought) => thought._id !== thoughtId)
+          );
+          toast.success("Thought deleted successfully");
+        } catch (err) {
+          console.error("Error deleting thought:", err);
+          toast.error("Failed to delete thought");
+        }
+      },
+      onCancel: () => {
+        console.log("Thought deletion cancelled");
+      },
+      destructive: true,
+    });
   };
+
+  // Remove the old handleDeleteConfirm function
 
   // Infinite scroll functionality
   const handleScroll = () => {
@@ -712,10 +735,7 @@ const Thoughts = () => {
                   handleRetweet={handleRetweet}
                   handlePin={handlePin}
                   canCreateThought={canCreateThought}
-                  onDelete={(id) => {
-                    setThoughtToDelete(id);
-                    setShowDeleteModal(true);
-                  }}
+                  onDelete={handleDeleteThought} // Use new handler
                 />
               ))}
 
@@ -740,21 +760,7 @@ const Thoughts = () => {
         </ThoughtsContainer>
       </PageWrapper>
 
-      {/* Only show modals and floating button if user has admin or creator role */}
-      {canCreateThought && (
-        <>
-          {showDeleteModal && (
-            <DeleteConfirmationModal
-              isOpen={showDeleteModal}
-              onClose={() => setShowDeleteModal(false)}
-              onConfirm={handleDeleteConfirm}
-              title="Delete Thought"
-              message="This cannot be undone. Are you sure?"
-              confirmButtonText="Delete"
-            />
-          )}
-        </>
-      )}
+      {/* Remove the old DeleteConfirmationModal - it's now handled globally */}
 
       {/* Retweet Modal - shown to all users */}
       {showRetweetModal && (
