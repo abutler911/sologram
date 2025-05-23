@@ -112,7 +112,7 @@ const PageTitle = styled.h1`
   overflow: hidden;
 
   @media (max-width: 768px) {
-    font-size: 4rem;
+    font-size: 9rem;
     margin-left: 0;
     transform: rotate(-5deg);
     white-space: normal;
