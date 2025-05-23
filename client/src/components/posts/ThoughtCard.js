@@ -43,13 +43,14 @@ const Card = styled.div`
   background-color: ${COLORS.cardBackground};
   border-radius: 16px;
   padding: 1.5rem;
-  width: 95%;
+  width: 100%;
   max-width: 600px;
   margin: 1.25rem auto;
   box-shadow: 0 4px 20px ${COLORS.shadow};
   border: 1px solid ${COLORS.border};
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  box-sizing: border-box; /* Ensure padding doesn't cause overflow */
 
   &::before {
     content: "";
@@ -95,6 +96,12 @@ const Card = styled.div`
         height: 4px;
       }
     `}
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin: 1rem auto;
+    width: calc(100% - 1rem); /* Account for container margins */
+  }
 `;
 
 // Mood decoration with theme colors
@@ -103,7 +110,7 @@ const MoodDecoration = styled.div`
   right: 1.5rem;
   top: 1.5rem;
   font-size: 3.5rem;
-  opacity: 0.08;
+  opacity: 0.06; /* Reduced opacity so it doesn't interfere */
   z-index: 1;
   pointer-events: none;
   animation: ${gentleFloat} 6s ease-in-out infinite;
@@ -111,18 +118,20 @@ const MoodDecoration = styled.div`
   color: ${COLORS.primaryBlueGray};
 
   ${Card}:hover & {
-    opacity: 0.12;
-    transform: scale(1.1) rotate(10deg);
+    opacity: 0.08;
+    transform: scale(1.05) rotate(5deg); /* Reduced rotation */
     color: ${COLORS.primarySalmon};
   }
 
   @media (max-width: 768px) {
-    font-size: 2.5rem;
+    font-size: 2rem; /* Smaller on mobile */
     right: 1rem;
     top: 1rem;
+    opacity: 0.04; /* Even more subtle on mobile */
   }
 `;
 
+// FIXED: Better header layout that properly contains action buttons
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
@@ -130,17 +139,26 @@ const Header = styled.div`
   margin-bottom: 1rem;
   position: relative;
   z-index: 3;
-  gap: 0.5rem;
+  gap: 1rem;
+  width: 100%; /* Ensure full width */
 
   @media (max-width: 768px) {
-    gap: 0.25rem;
+    gap: 0.5rem;
+    align-items: center; /* Better alignment on mobile */
   }
 `;
 
+// FIXED: UserInfo now has proper flex properties
 const UserInfo = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex: 1; /* Take available space but allow actions to have their space */
+  min-width: 0; /* Allow text to truncate if needed */
+
+  @media (max-width: 768px) {
+    gap: 0.75rem;
+  }
 `;
 
 // Avatar with your theme's accent colors
@@ -152,6 +170,7 @@ const Avatar = styled.div`
   border: 2px solid ${COLORS.primaryMint};
   background: ${COLORS.elevatedBackground};
   transition: all 0.3s ease;
+  flex-shrink: 0; /* Prevent avatar from shrinking */
 
   &:hover {
     transform: scale(1.05);
@@ -163,6 +182,11 @@ const Avatar = styled.div`
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  @media (max-width: 768px) {
+    width: 40px;
+    height: 40px;
   }
 `;
 
@@ -180,12 +204,18 @@ const DefaultAvatar = styled.div`
   color: #ffffff;
   font-size: 1.2rem;
   font-weight: bold;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
 `;
 
 const UserDetails = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  flex: 1;
+  min-width: 0; /* Allow text to truncate */
 `;
 
 const UsernameRow = styled.div`
@@ -193,6 +223,13 @@ const UsernameRow = styled.div`
   align-items: center;
   gap: 0.75rem;
   margin-bottom: 0.25rem;
+  flex-wrap: wrap; /* Allow wrapping on very small screens */
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
 `;
 
 // Clean, readable username with your text colors
@@ -200,34 +237,44 @@ const Username = styled.div`
   font-weight: 700;
   font-size: 1.1rem;
   color: ${COLORS.textPrimary};
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
 `;
 
 const UserHandle = styled.div`
   color: ${COLORS.textSecondary};
   font-size: 0.85rem;
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
 `;
 
-// Action buttons with your theme colors
+// FIXED: Action buttons with proper sizing and spacing
 const ActionButton = styled.button`
   background: ${COLORS.elevatedBackground};
   border: 1px solid ${COLORS.border};
   color: ${COLORS.textSecondary};
-  width: 32px;
-  height: 32px;
+  min-width: 36px; /* Ensure minimum touch target */
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   transition: all 0.3s ease;
-  flex-shrink: 0;
+  flex-shrink: 0; /* Prevent buttons from shrinking */
+  text-decoration: none; /* For Link components */
 
   &:hover {
     color: ${COLORS.textPrimary};
     background: ${COLORS.buttonHover};
     border-color: ${COLORS.primaryMint};
     transform: translateY(-2px);
+    box-shadow: 0 4px 8px ${COLORS.shadow};
   }
 
   &.delete:hover {
@@ -243,35 +290,43 @@ const ActionButton = styled.button`
   }
 
   @media (max-width: 768px) {
-    width: 28px;
-    height: 28px;
-    font-size: 0.75rem;
+    min-width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
   }
 `;
 
+// FIXED: AdminActions with proper flex properties
 const AdminActions = styled.div`
   display: flex;
-  gap: 0.4rem;
+  gap: 0.5rem;
   z-index: 3;
   position: relative;
-  flex-shrink: 0;
+  flex-shrink: 0; /* Prevent actions from shrinking */
+  align-items: flex-start; /* Align to top */
 
   @media (max-width: 768px) {
-    gap: 0.25rem;
+    gap: 0.375rem;
   }
 `;
 
 // Highly readable content with proper contrast
 const Content = styled.p`
   color: ${COLORS.textPrimary};
-  font-size: 1rem;
+  font-size: 0.95rem;
   line-height: 1.6;
   white-space: pre-wrap;
-  margin: 1.25rem 0;
+  margin: 1rem 0;
   position: relative;
   z-index: 2;
   font-weight: 400;
   letter-spacing: 0.2px;
+  word-wrap: break-word; /* Ensure long words don't break layout */
+
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
 `;
 
 // Media container with theme styling
@@ -508,7 +563,7 @@ const ThoughtCard = ({
 }) => {
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const { showDeleteModal } = useDeleteModal(); // Add this hook
+  const { showDeleteModal } = useDeleteModal();
 
   const onLikeClick = (id) => {
     setIsLikeAnimating(true);
@@ -523,7 +578,6 @@ const ThoughtCard = ({
     );
   };
 
-  // Replace the old delete handler with this beautiful modal
   const handleDeleteThought = () => {
     const thoughtPreview =
       thought.content.length > 50
@@ -548,7 +602,6 @@ const ThoughtCard = ({
         }
       },
       onCancel: () => {
-        // Optional: track cancellation for analytics
         console.log("Thought deletion cancelled");
       },
       destructive: true,
@@ -603,7 +656,7 @@ const ThoughtCard = ({
               <FaEdit />
             </ActionButton>
             <ActionButton
-              onClick={handleDeleteThought} // Use the new delete handler
+              onClick={handleDeleteThought}
               title="Delete"
               className="delete"
               type="button"
