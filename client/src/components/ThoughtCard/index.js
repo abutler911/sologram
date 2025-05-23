@@ -173,19 +173,6 @@ const ActionButton = styled.button`
   }
 `;
 
-const AdminActionsRow = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
-  align-items: center;
-  flex-wrap: nowrap;
-
-  ${ActionButton} {
-    font-size: 1rem;
-    padding: 0.3rem;
-  }
-`;
-
 const AdminActions = styled.div`
   display: flex;
   gap: 0.5rem;
@@ -195,22 +182,15 @@ const AdminActions = styled.div`
   position: relative;
 `;
 
-// Content with improved text styling
 const Content = styled.p`
   color: ${colors.textPrimary};
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 0.8rem;
+  line-height: 1.1;
   white-space: pre-wrap;
   margin: 0.85rem 0;
   position: relative;
   z-index: 1;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-
-  &::first-letter {
-    font-size: 1.5rem;
-    font-weight: 500;
-    color: ${colors.highlightAccent};
-  }
 `;
 
 // Media with improved styling
@@ -295,7 +275,7 @@ const MoodIndicator = styled.div`
 // Stylized time display
 const TimeDisplay = styled.div`
   color: ${colors.textSecondary};
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   margin: 0.5rem 0;
   display: flex;
   align-items: center;
