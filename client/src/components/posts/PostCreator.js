@@ -802,6 +802,125 @@ const ProgressFill = styled.div`
   transition: width 0.3s ease;
 `;
 
+const TagInputWrapper = styled.div`
+  position: relative;
+  width: 100%;
+  flex: 1;
+`;
+
+const TagInputField = styled.input`
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: ${COLORS.textPrimary};
+  padding: 12px 0;
+  font-size: 16px;
+
+  &:focus {
+    outline: none;
+  }
+
+  &::placeholder {
+    color: ${COLORS.textTertiary};
+  }
+`;
+
+const TagInputPreview = styled.div`
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  background-color: ${COLORS.primarySalmon}15;
+  color: ${COLORS.primarySalmon};
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid ${COLORS.primarySalmon}30;
+  pointer-events: none;
+  animation: fadeIn 0.2s ease-in;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-50%) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(-50%) scale(1);
+    }
+  }
+`;
+
+const TagsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 12px;
+  background-color: ${COLORS.elevatedBackground};
+  border-radius: 8px;
+  border: 1px dashed ${COLORS.primaryMint}30;
+  min-height: 48px;
+  align-items: flex-start;
+  align-content: flex-start;
+
+  ${(props) =>
+    props.isEmpty &&
+    `
+    &::before {
+      content: "Your tags will appear here...";
+      color: ${COLORS.textTertiary};
+      font-size: 14px;
+      font-style: italic;
+      display: flex;
+      align-items: center;
+      height: 100%;
+      min-height: 24px;
+    }
+  `}
+`;
+
+const Tag = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: ${COLORS.primarySalmon}20;
+  color: ${COLORS.primarySalmon};
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid ${COLORS.primarySalmon}30;
+
+  &:hover {
+    background-color: ${COLORS.primarySalmon}30;
+    transform: translateY(-1px);
+  }
+`;
+
+const RemoveTagButton = styled.button`
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+  }
+`;
+
 // Main component (Updated with SoloGram theme)
 function PostCreator({ initialData = null, isEditing = false }) {
   // Component state
@@ -810,9 +929,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const [title, setTitle] = useState(initialData?.title || "");
   const [caption, setCaption] = useState(initialData?.caption || "");
   const [content, setContent] = useState(initialData?.content || "");
-  const [tags, setTags] = useState(
-    initialData?.tags ? initialData.tags.join(", ") : ""
-  );
+  const [tags, setTags] = useState(initialData?.tags || []);
+  const [currentTag, setCurrentTag] = useState("");
   const [location, setLocation] = useState(initialData?.location || "");
   const [activeFilter, setActiveFilter] = useState("none");
   const [activeAction, setActiveAction] = useState("filter");
@@ -842,7 +960,48 @@ function PostCreator({ initialData = null, isEditing = false }) {
     { id: "bw", name: "B&W", className: "filter-grayscale" },
     { id: "vintage", name: "Vintage", className: "filter-vintage" },
   ];
+  const addTag = (tagText = null) => {
+    const tagToAdd = tagText || currentTag.trim();
 
+    if (!tagToAdd || tags.includes(tagToAdd)) return;
+    if (tags.length >= 5) {
+      toast.error("Maximum 5 tags allowed");
+      return;
+    }
+
+    setTags([...tags, tagToAdd]);
+    setCurrentTag("");
+  };
+
+  const handleTagInputKeyDown = (e) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      if (currentTag.trim()) {
+        addTag();
+      }
+    } else if (e.key === "Backspace" && !currentTag && tags.length > 0) {
+      // Remove last tag when backspacing on empty input
+      setTags(tags.slice(0, -1));
+    }
+  };
+
+  const handleTagInputChange = (e) => {
+    const value = e.target.value;
+    // Prevent spaces from being typed (since space creates tags)
+    if (value.includes(" ")) {
+      // Extract the tag before the space and create it
+      const tagText = value.split(" ")[0].trim();
+      if (tagText) {
+        addTag(tagText);
+      }
+    } else {
+      setCurrentTag(value);
+    }
+  };
+
+  const removeTag = (tagToRemove) => {
+    setTags(tags.filter((tag) => tag !== tagToRemove));
+  };
   // Load existing media when editing
   useEffect(() => {
     if (isEditing && initialData?.media?.length > 0) {
@@ -1142,7 +1301,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
         title: title ?? "",
         caption: caption ?? "",
         content: content ?? "",
-        tags,
+        tags: tags.join(","),
         media: mediaItems,
         location: location ?? "",
         date: eventDate,
@@ -1575,12 +1734,32 @@ function PostCreator({ initialData = null, isEditing = false }) {
             <FormGroup>
               <InputGroup>
                 <FaTag />
-                <Input
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
-                  placeholder="Add tags (comma separated)"
-                />
+                <TagInputWrapper>
+                  <TagInputField
+                    value={currentTag}
+                    onChange={handleTagInputChange}
+                    onKeyDown={handleTagInputKeyDown}
+                    placeholder="Type tags and press space to add..."
+                    maxLength={30}
+                  />
+                  {currentTag.trim() && (
+                    <TagInputPreview>#{currentTag.trim()}</TagInputPreview>
+                  )}
+                </TagInputWrapper>
               </InputGroup>
+
+              {tags.length > 0 && (
+                <TagsContainer isEmpty={tags.length === 0}>
+                  {tags.map((tag, index) => (
+                    <Tag key={index}>
+                      #{tag}
+                      <RemoveTagButton onClick={() => removeTag(tag)}>
+                        <FaTimes />
+                      </RemoveTagButton>
+                    </Tag>
+                  ))}
+                </TagsContainer>
+              )}
             </FormGroup>
 
             {/* Additional content field */}
