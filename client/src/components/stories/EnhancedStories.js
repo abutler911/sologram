@@ -6,16 +6,12 @@ import React, {
   useContext,
 } from "react";
 import styled, { keyframes, css } from "styled-components";
-import {
-  FaTimes,
-  FaTrash,
-  FaExclamationTriangle,
-  FaPlus,
-} from "react-icons/fa";
+import { FaTimes, FaTrash, FaPlus } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
+import { useDeleteModal } from "../../context/DeleteModalContext";
 import { COLORS } from "../../theme";
 
 const EnhancedStories = ({ isPWA = false }) => {
@@ -27,8 +23,6 @@ const EnhancedStories = ({ isPWA = false }) => {
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(10);
   const [deleting, setDeleting] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [storyToDelete, setStoryToDelete] = useState(null);
   const [localIsPWA, setLocalIsPWA] = useState(
     window.matchMedia("(display-mode: standalone)").matches
   );
@@ -36,6 +30,7 @@ const EnhancedStories = ({ isPWA = false }) => {
   // References and hooks
   const storiesRef = useRef(null);
   const { user, isAuthenticated } = useContext(AuthContext);
+  const { showDeleteModal } = useDeleteModal(); // Add this hook
   const isAdmin = isAuthenticated && user && user.role === "admin";
   const navigate = useNavigate();
 
@@ -53,7 +48,6 @@ const EnhancedStories = ({ isPWA = false }) => {
       setActiveStoryIndex((prev) => prev + 1);
       setTimeLeft(10);
     } else {
-      // End of story items, close the story
       setActiveStory(null);
       setActiveStoryIndex(0);
     }
@@ -212,54 +206,63 @@ const EnhancedStories = ({ isPWA = false }) => {
     }
   };
 
-  // Handle opening the delete confirmation modal
-  const openDeleteModal = () => {
+  // Replace the old delete modal functions with this new one
+  const handleDeleteStory = () => {
     if (!activeStory || !isAdmin) return;
-    setStoryToDelete(activeStory);
-    setShowDeleteModal(true);
+
+    const storyTitle = activeStory.title || "this story";
+    const expirationTime = getExpirationTime(activeStory);
+
+    showDeleteModal({
+      title: "Delete Story",
+      message:
+        "Are you sure you want to delete this story? This action cannot be undone and the story will be permanently removed from all viewers.",
+      confirmText: "Delete Story",
+      cancelText: "Keep Story",
+      itemName: `${storyTitle} (expires in ${expirationTime})`,
+      onConfirm: async () => {
+        setDeleting(true);
+        try {
+          const token = localStorage.getItem("token");
+          const response = await axios.delete(
+            `/api/stories/${activeStory._id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (response.data.success) {
+            // Update the UI by removing the deleted story
+            setStories((prevStories) =>
+              prevStories.filter((story) => story._id !== activeStory._id)
+            );
+
+            // Close the story view
+            closeStory();
+            toast.success("Story deleted successfully");
+          } else {
+            throw new Error(response.data.message || "Failed to delete story");
+          }
+        } catch (error) {
+          console.error("Error deleting story:", error);
+          toast.error("Failed to delete story. Please try again.");
+        } finally {
+          setDeleting(false);
+        }
+      },
+      onCancel: () => {
+        console.log("Story deletion cancelled");
+      },
+      destructive: true,
+    });
   };
 
-  // Handle closing the delete confirmation modal
-  const closeDeleteModal = () => {
-    setShowDeleteModal(false);
-    setStoryToDelete(null);
-  };
-
-  // Handle story deletion
-  const handleDeleteStory = async () => {
-    if (!storyToDelete || !isAdmin) return;
-
-    setDeleting(true);
-
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.delete(`/api/stories/${storyToDelete._id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.data.success) {
-        // Update the UI by removing the deleted story
-        setStories((prevStories) =>
-          prevStories.filter((story) => story._id !== storyToDelete._id)
-        );
-
-        // Close the story view and delete modal
-        closeStory();
-        closeDeleteModal();
-
-        toast.success("Story deleted successfully");
-      } else {
-        throw new Error(response.data.message || "Failed to delete story");
-      }
-    } catch (error) {
-      console.error("Error deleting story:", error);
-      toast.error("Failed to delete story. Please try again.");
-    } finally {
-      setDeleting(false);
-    }
-  };
+  // Remove the old delete modal functions - we don't need these anymore
+  // const openDeleteModal = () => { ... }
+  // const closeDeleteModal = () => { ... }
+  // const handleDeleteStory = async () => { ... }
 
   // Calculate the expiration time for a story
   const getExpirationTime = (story) => {
@@ -465,10 +468,9 @@ const EnhancedStories = ({ isPWA = false }) => {
               <FaTimes />
             </CloseButton>
 
-            {/* Admin Delete Button */}
             {isAdmin && (
               <DeleteButton
-                onClick={openDeleteModal}
+                onClick={handleDeleteStory}
                 disabled={deleting}
                 title="Delete this story"
               >
@@ -494,59 +496,15 @@ const EnhancedStories = ({ isPWA = false }) => {
             )}
           </StoryContent>
 
-          {/* Navigation overlay for left/right swipe */}
           <StoryNavigation>
             <NavArea onClick={handlePrev} side="left" />
             <NavArea onClick={handleNext} side="right" />
           </StoryNavigation>
         </StoryModal>
       )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <ModalOverlay>
-          <DeleteModal>
-            <DeleteModalHeader>
-              <FaExclamationTriangle />
-              <DeleteModalTitle>Delete Story?</DeleteModalTitle>
-            </DeleteModalHeader>
-
-            <DeleteModalContent>
-              Are you sure you want to delete the story "{storyToDelete?.title}
-              "?
-              <br />
-              This action cannot be undone.
-            </DeleteModalContent>
-
-            <DeleteModalButtons>
-              <CancelButton onClick={closeDeleteModal} disabled={deleting}>
-                Cancel
-              </CancelButton>
-              <ConfirmDeleteButton
-                onClick={handleDeleteStory}
-                disabled={deleting}
-              >
-                {deleting ? "Deleting..." : "Delete Story"}
-              </ConfirmDeleteButton>
-            </DeleteModalButtons>
-          </DeleteModal>
-        </ModalOverlay>
-      )}
     </>
   );
 };
-
-// Animations
-const fadeIn = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-`;
 
 const shimmer = keyframes`
   0% {
@@ -1053,123 +1011,6 @@ const NavArea = styled.div`
 
   &:focus {
     outline: none;
-  }
-`;
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-  padding: 1rem;
-`;
-
-const DeleteModal = styled.div`
-  background-color: white;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 400px;
-  overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
-`;
-
-const DeleteModalHeader = styled.div`
-  background-color: #ed4956; // Instagram-red
-  color: white;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  svg {
-    font-size: 20px;
-    margin-right: 8px;
-  }
-`;
-
-const DeleteModalTitle = styled.h3`
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-`;
-
-const DeleteModalContent = styled.div`
-  padding: 20px 16px;
-  color: #262626;
-  line-height: 1.5;
-  text-align: center;
-  font-size: 14px;
-`;
-
-const DeleteModalButtons = styled.div`
-  display: flex;
-  padding: 8px 16px 16px;
-  justify-content: center;
-  gap: 16px;
-
-  @media (max-width: 480px) {
-    flex-direction: column;
-    gap: 8px;
-  }
-`;
-
-const ConfirmDeleteButton = styled.button`
-  background-color: #ed4956; // Instagram red
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 16px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 14px;
-  flex: 1;
-  min-width: 120px;
-
-  &:hover {
-    background-color: #c62330;
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-
-  @media (max-width: 480px) {
-    order: 1;
-  }
-`;
-
-const CancelButton = styled.button`
-  background-color: transparent;
-  color: #262626;
-  border: 1px solid #dbdbdb;
-  border-radius: 4px;
-  padding: 8px 16px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 14px;
-  flex: 1;
-  min-width: 120px;
-
-  &:hover {
-    background-color: #fafafa;
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-
-  @media (max-width: 480px) {
-    order: 2;
   }
 `;
 
