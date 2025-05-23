@@ -8,6 +8,10 @@ import {
   FaSignInAlt,
   FaSearch,
   FaTimes,
+  FaLightbulb,
+  FaImages,
+  FaFolder,
+  FaHome,
 } from "react-icons/fa";
 
 import { AuthContext } from "../../context/AuthContext";
@@ -111,6 +115,14 @@ const Header = ({ onSearch, onClearSearch }) => {
     searchInputRef.current.focus();
   };
 
+  // Helper to check if a path is active
+  const isActivePath = (path) => {
+    if (path === "/") {
+      return location.pathname === "/" && !location.search.includes("search");
+    }
+    return location.pathname.startsWith(path);
+  };
+
   return (
     <HeaderWrapper>
       <HeaderContainer>
@@ -126,6 +138,29 @@ const Header = ({ onSearch, onClearSearch }) => {
             </Logo>
           </LogoContainer>
 
+          {/* Desktop Navigation */}
+          <DesktopNavigation>
+            <NavItem to="/" active={isActivePath("/")}>
+              <FaHome />
+              <span>Home</span>
+            </NavItem>
+            <NavItem to="/thoughts" active={isActivePath("/thoughts")}>
+              <FaLightbulb />
+              <span>Thoughts</span>
+            </NavItem>
+            <NavItem
+              to="/media-gallery"
+              active={isActivePath("/media-gallery")}
+            >
+              <FaImages />
+              <span>Gallery</span>
+            </NavItem>
+            <NavItem to="/collections" active={isActivePath("/collections")}>
+              <FaFolder />
+              <span>Collections</span>
+            </NavItem>
+          </DesktopNavigation>
+
           {/* Right Side Actions */}
           <HeaderActions>
             {/* Search */}
@@ -135,7 +170,7 @@ const Header = ({ onSearch, onClearSearch }) => {
                   <SearchInput
                     ref={searchInputRef}
                     type="text"
-                    placeholder="Search..."
+                    placeholder="Search posts and thoughts..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -211,6 +246,8 @@ const HeaderWrapper = styled.div`
   z-index: 1000;
   background-color: ${THEME.header.background};
   border-bottom: 1px solid ${COLORS.border};
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 `;
 
 const HeaderContainer = styled.header`
@@ -226,10 +263,18 @@ const HeaderContent = styled.div`
   padding: 0.75rem 1rem;
   height: 60px;
   position: relative;
+
+  @media (max-width: 768px) {
+    padding: 0.5rem 1rem;
+  }
 `;
 
 const LogoContainer = styled.div`
   flex: 0 0 auto;
+
+  @media (max-width: 768px) {
+    flex: 1;
+  }
 `;
 
 const Logo = styled(Link)`
@@ -284,10 +329,71 @@ const Logo = styled(Link)`
   }
 `;
 
+const DesktopNavigation = styled.nav`
+  display: none;
+
+  @media (min-width: 769px) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    justify-content: center;
+    margin: 0 2rem;
+  }
+`;
+
+const NavItem = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  color: ${(props) =>
+    props.active ? COLORS.primarySalmon : COLORS.textSecondary};
+  background-color: ${(props) =>
+    props.active ? `${COLORS.primarySalmon}15` : "transparent"};
+  text-decoration: none;
+  font-weight: ${(props) => (props.active ? "600" : "500")};
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  position: relative;
+
+  &:hover {
+    color: ${COLORS.primarySalmon};
+    background-color: ${COLORS.primarySalmon}15;
+    transform: translateY(-1px);
+  }
+
+  svg {
+    font-size: 1.1rem;
+  }
+
+  span {
+    font-family: "Inter", sans-serif;
+  }
+
+  ${(props) =>
+    props.active &&
+    `
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 2px;
+      background-color: ${COLORS.primarySalmon};
+      border-radius: 1px;
+    }
+  `}
+`;
+
 const HeaderActions = styled.div`
   display: flex;
   align-items: center;
   gap: 1.25rem;
+  flex: 0 0 auto;
 `;
 
 const SearchContainer = styled.div`
@@ -313,10 +419,13 @@ const ActionButton = styled.button`
   font-size: 1.25rem;
   padding: 0.5rem;
   cursor: pointer;
-  transition: color 0.3s;
+  transition: all 0.2s ease;
+  border-radius: 6px;
 
   &:hover {
     color: ${COLORS.primarySalmon};
+    background-color: ${COLORS.primarySalmon}15;
+    transform: scale(1.1);
   }
 `;
 
@@ -324,23 +433,30 @@ const SearchForm = styled.form`
   display: flex;
   align-items: center;
   background-color: ${COLORS.inputBackground};
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid ${COLORS.border};
+  border: 2px solid ${COLORS.border};
   width: 100%;
-  max-width: 300px;
+  max-width: 400px;
   margin: 0 auto;
+  transition: border-color 0.2s ease;
+
+  &:focus-within {
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}15;
+  }
 `;
 
 const SearchInput = styled.input`
   background: transparent;
   border: none;
   color: ${COLORS.textPrimary};
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
   width: 100%;
   outline: none;
   flex: 1;
+  font-family: "Inter", sans-serif;
 
   &::placeholder {
     color: ${COLORS.textTertiary};
@@ -356,7 +472,8 @@ const ClearButton = styled.button`
   justify-content: center;
   padding: 0.5rem;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
+  transition: color 0.2s ease;
 
   &:hover {
     color: ${COLORS.primarySalmon};
@@ -370,12 +487,14 @@ const CloseSearchButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem;
   cursor: pointer;
-  transition: color 0.3s;
+  transition: all 0.2s ease;
+  border-radius: 0 12px 12px 0;
 
   &:hover {
     color: ${COLORS.primarySalmon};
+    background-color: ${COLORS.primarySalmon}15;
   }
 `;
 
@@ -392,12 +511,15 @@ const UserButton = styled.button`
   cursor: pointer;
   padding: 0;
   border: ${(props) =>
-    props.active ? `2px solid ${COLORS.primarySalmon}` : "none"};
+    props.active
+      ? `2px solid ${COLORS.primarySalmon}`
+      : "2px solid transparent"};
   border-radius: 50%;
-  transition: transform 0.2s;
+  transition: all 0.2s ease;
 
   &:hover {
     transform: scale(1.1);
+    border-color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -405,16 +527,21 @@ const UserAvatar = styled.div`
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background-color: ${COLORS.buttonHover};
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
+  );
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${COLORS.textPrimary};
-  transition: background-color 0.3s;
+  color: white;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px ${COLORS.primarySalmon}30;
 
   &:hover {
-    background-color: ${COLORS.primaryBlueGray};
-    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px ${COLORS.primarySalmon}40;
   }
 
   @media (max-width: 480px) {
@@ -429,62 +556,84 @@ const UserMenuDropdown = styled.div`
   top: calc(100% + 0.5rem);
   right: 0;
   background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
-  box-shadow: 0 4px 12px ${COLORS.shadow};
+  border-radius: 12px;
+  box-shadow: 0 8px 32px ${COLORS.shadow};
   width: 200px;
   overflow: hidden;
   z-index: 100;
   border: 1px solid ${COLORS.border};
   animation: fadeIn 0.2s ease-out;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 
   @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: translateY(-0.5rem);
+      transform: translateY(-0.5rem) scale(0.95);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
   }
 `;
 
 const UserInfo = styled.div`
-  padding: 0.75rem 1rem;
+  padding: 1rem;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon}10,
+    ${COLORS.primaryMint}10
+  );
 
   strong {
     display: block;
     color: ${COLORS.textPrimary};
+    font-weight: 600;
+    margin-bottom: 0.25rem;
   }
 
   small {
     color: ${COLORS.textSecondary};
     font-size: 0.75rem;
+    font-weight: 500;
   }
 `;
 
 const MenuDivider = styled.div`
   height: 1px;
-  background-color: ${COLORS.divider};
+  background: linear-gradient(
+    90deg,
+    transparent,
+    ${COLORS.divider},
+    transparent
+  );
 `;
 
 const UserMenuItem = styled(Link)`
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1rem;
   color: ${COLORS.textSecondary};
   text-decoration: none;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  font-weight: 500;
 
   &:hover {
-    background-color: ${COLORS.buttonHover};
+    background: linear-gradient(
+      135deg,
+      ${COLORS.primarySalmon}10,
+      ${COLORS.primaryMint}05
+    );
     color: ${COLORS.primarySalmon};
+    transform: translateX(4px);
   }
 
   svg {
     font-size: 1rem;
     color: ${COLORS.textTertiary};
+    transition: color 0.2s ease;
   }
 
   &:hover svg {
@@ -500,19 +649,26 @@ const UserMenuButton = styled.button`
   text-align: left;
   background: none;
   border: none;
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1rem;
   color: ${COLORS.textSecondary};
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  font-weight: 500;
 
   &:hover {
-    background-color: ${COLORS.buttonHover};
+    background: linear-gradient(
+      135deg,
+      ${COLORS.primarySalmon}10,
+      ${COLORS.primaryMint}05
+    );
     color: ${COLORS.primarySalmon};
+    transform: translateX(4px);
   }
 
   svg {
     font-size: 1rem;
     color: ${COLORS.textTertiary};
+    transition: color 0.2s ease;
   }
 
   &:hover svg {
@@ -524,22 +680,27 @@ const AuthButton = styled(Link)`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  background-color: ${COLORS.primarySalmon};
+  width: 2.5rem;
+  height: 2.5rem;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
+  );
   color: white;
-  border-radius: 4px;
-  transition: background-color 0.3s, transform 0.2s;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px ${COLORS.primarySalmon}30;
 
   &:hover {
-    background-color: ${COLORS.accentSalmon};
-    transform: scale(1.1);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 16px ${COLORS.primarySalmon}40;
   }
 
   @media (max-width: 480px) {
-    width: 1.75rem;
-    height: 1.75rem;
-    font-size: 0.75rem;
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.875rem;
   }
 `;
 
