@@ -198,7 +198,6 @@ const CreateThought = () => {
                 value={currentTag}
                 onChange={(e) => setCurrentTag(e.target.value)}
                 placeholder="Add a tag..."
-                maxLength={20}
               />
               <AddTagButton type="submit">
                 <FaHashtag />
