@@ -8,6 +8,7 @@ import {
   Suspense,
 } from "react";
 import { LikesContext } from "../../context/LikesContext";
+import { useDeleteModal } from "../../context/DeleteModalContext"; // Add this import
 import { Link } from "react-router-dom";
 import styled, { keyframes, css } from "styled-components";
 import { FaHeart, FaRegHeart, FaComment } from "react-icons/fa";
@@ -74,23 +75,7 @@ const FullscreenModalComponent = ({ onClick, children }) => (
   <FullscreenModal onClick={onClick}>{children}</FullscreenModal>
 );
 
-const DeleteModalComponent = memo(({ onCancel, onDelete, post }) => (
-  <DeleteModal>
-    <DeleteModalContent>
-      <h3>Delete Post</h3>
-      <p>
-        Are you sure you want to delete this post? This action cannot be undone.
-      </p>
-      <DeleteModalButtons>
-        <CancelButton onClick={onCancel}>Cancel</CancelButton>
-        <ConfirmDeleteButton onClick={onDelete}>
-          Delete Post
-        </ConfirmDeleteButton>
-      </DeleteModalButtons>
-    </DeleteModalContent>
-    <Backdrop onClick={onCancel} />
-  </DeleteModal>
-));
+// Remove the old DeleteModalComponent - we don't need it anymore
 
 const isMobile =
   typeof window !== "undefined" &&
@@ -102,8 +87,10 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [post, setPost] = useState(initialPost);
   const { isAuthenticated } = useContext(AuthContext);
+  const { showDeleteModal } = useDeleteModal(); // Add this hook
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // Remove showDeleteModal state - we don't need it anymore
+  // const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -290,93 +277,111 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     setTimeout(() => setIsDoubleTapLiking(false), 700);
   }, [hasLiked, isLiking, handleLike, isAuthenticated]);
 
-  const confirmDelete = useCallback(() => {
-    setShowDeleteModal(true);
-    setShowActions(false);
-  }, []);
+  // Replace the old confirmDelete and cancelDelete with this new handler
+  const handleDeletePost = useCallback(() => {
+    const postPreview =
+      post.title || post.caption || post.content || "this post";
+    const truncatedPreview =
+      postPreview.length > 50
+        ? postPreview.substring(0, 50) + "..."
+        : postPreview;
 
-  const cancelDelete = useCallback(() => {
-    setShowDeleteModal(false);
-  }, []);
-
-  const handleDelete = useCallback(async () => {
-    try {
-      // Get the token
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        toast.error("Authentication required. Please log in again.");
-        return;
-      }
-
-      // Get the API base URL from the environment or use the default
-      const baseURL = process.env.REACT_APP_API_URL || "";
-
-      // Construct the proper URL - if baseURL is empty, it'll use a relative path
-      const url = baseURL
-        ? `${baseURL}/api/posts/${post._id}`
-        : `/api/posts/${post._id}`;
-
-      console.log(`Attempting to delete post with ID: ${post._id}`);
-      console.log(`Using URL: ${url}`);
-
-      const response = await fetch(url, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        // Add credentials to ensure cookies are sent with the request
-        credentials: "include",
-      });
-
-      console.log(`Delete response status: ${response.status}`);
-
-      if (response.ok) {
-        // Call parent's onDelete if it exists
-        if (typeof onDelete === "function") {
-          onDelete(post._id);
-        } else {
-          console.warn("onDelete is not a function. Check parent component.");
-        }
-
-        // Close modal and show success message
-        setShowDeleteModal(false);
-        toast.success("Post deleted successfully");
-
-        // Refresh the window
-        window.location.reload();
-      } else {
-        // Try to parse error response
-        let errorMessage = "Delete failed";
+    showDeleteModal({
+      title: "Delete Post",
+      message:
+        "Are you sure you want to delete this post? This action cannot be undone and all likes, comments, and interactions will be permanently lost.",
+      confirmText: "Delete Post",
+      cancelText: "Keep Post",
+      itemName: truncatedPreview,
+      onConfirm: async () => {
         try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch (e) {
-          // If response isn't JSON, try to get text
-          try {
-            const errorText = await response.text();
-            if (errorText) errorMessage = errorText;
-          } catch (e2) {
-            // If we can't get text either, just use status
-            errorMessage = `Delete failed: ${response.status}`;
+          // Get the token
+          const token = localStorage.getItem("token");
+
+          if (!token) {
+            toast.error("Authentication required. Please log in again.");
+            return;
           }
+
+          // Get the API base URL from the environment or use the default
+          const baseURL = process.env.REACT_APP_API_URL || "";
+
+          // Construct the proper URL - if baseURL is empty, it'll use a relative path
+          const url = baseURL
+            ? `${baseURL}/api/posts/${post._id}`
+            : `/api/posts/${post._id}`;
+
+          console.log(`Attempting to delete post with ID: ${post._id}`);
+          console.log(`Using URL: ${url}`);
+
+          const response = await fetch(url, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            // Add credentials to ensure cookies are sent with the request
+            credentials: "include",
+          });
+
+          console.log(`Delete response status: ${response.status}`);
+
+          if (response.ok) {
+            // Call parent's onDelete if it exists
+            if (typeof onDelete === "function") {
+              onDelete(post._id);
+            } else {
+              console.warn(
+                "onDelete is not a function. Check parent component."
+              );
+            }
+
+            // Show success message
+            toast.success("Post deleted successfully");
+
+            // Refresh the window
+            window.location.reload();
+          } else {
+            // Try to parse error response
+            let errorMessage = "Delete failed";
+            try {
+              const errorData = await response.json();
+              errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+              // If response isn't JSON, try to get text
+              try {
+                const errorText = await response.text();
+                if (errorText) errorMessage = errorText;
+              } catch (e2) {
+                // If we can't get text either, just use status
+                errorMessage = `Delete failed: ${response.status}`;
+              }
+            }
+
+            console.error("Error response:", {
+              status: response.status,
+              statusText: response.statusText,
+              message: errorMessage,
+            });
+
+            throw new Error(errorMessage);
+          }
+        } catch (err) {
+          console.error("Error deleting post:", err);
+          toast.error(err.message || "Failed to delete post");
         }
+      },
+      onCancel: () => {
+        console.log("Post deletion cancelled");
+        setShowActions(false); // Close the actions menu
+      },
+      destructive: true,
+    });
 
-        console.error("Error response:", {
-          status: response.status,
-          statusText: response.statusText,
-          message: errorMessage,
-        });
+    setShowActions(false); // Close the actions menu immediately
+  }, [post, onDelete, showDeleteModal]);
 
-        throw new Error(errorMessage);
-      }
-    } catch (err) {
-      console.error("Error deleting post:", err);
-      toast.error(err.message || "Failed to delete post");
-      setShowDeleteModal(false);
-    }
-  }, [post._id, onDelete]);
+  // Remove the old handleDelete function since it's now in the modal callback
 
   const handleNext = useCallback(
     (e) => {
@@ -459,7 +464,9 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                   <ActionItem as={Link} to={`/edit/${post._id}`}>
                     <FaEdit /> Edit Post
                   </ActionItem>
-                  <ActionItem onClick={confirmDelete}>
+                  <ActionItem onClick={handleDeletePost}>
+                    {" "}
+                    {/* Use new handler */}
                     <FaTrash /> Delete Post
                   </ActionItem>
                 </ActionsMenu>
@@ -768,13 +775,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         </Suspense>
       )}
 
-      {showDeleteModal && (
-        <DeleteModalComponent
-          onCancel={cancelDelete}
-          onDelete={handleDelete}
-          post={post}
-        />
-      )}
+      {/* Remove the old DeleteModalComponent - it's now handled globally */}
     </CardWrapper>
   );
 });
@@ -1352,123 +1353,6 @@ const ViewPostArrow = styled.span`
   ${ViewPostLink}:hover & {
     transform: translateX(4px);
   }
-`;
-
-const DeleteModal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-const DeleteModalContent = styled.div`
-  background-color: ${COLORS.elevatedBackground};
-  border-radius: 8px;
-  padding: 28px;
-  width: 90%;
-  max-width: 380px;
-  z-index: 1001;
-  text-align: center;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.2);
-  animation: ${fadeIn} 0.3s ease-out;
-  border: 2px solid ${COLORS.border};
-
-  h3 {
-    color: ${COLORS.textPrimary};
-    margin-top: 0;
-    margin-bottom: 16px;
-    font-weight: 600;
-    font-size: 1.3rem;
-  }
-
-  p {
-    color: ${COLORS.textSecondary};
-    margin-bottom: 24px;
-    font-size: 1rem;
-    line-height: 1.5;
-  }
-
-  @media (max-width: 768px), screen and (display-mode: standalone) {
-    border-radius: 8px;
-    padding: 24px 20px;
-
-    h3 {
-      font-size: 1.4rem;
-      margin-bottom: 20px;
-    }
-
-    p {
-      font-size: 1rem;
-      margin-bottom: 30px;
-    }
-
-    animation: ${slideIn} 0.3s ease-out forwards;
-  }
-`;
-
-const DeleteModalButtons = styled.div`
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-
-  @media (max-width: 480px) {
-    flex-direction: column-reverse;
-    gap: 10px;
-  }
-`;
-
-const CancelButton = styled.button`
-  background: none;
-  color: ${COLORS.textSecondary};
-  border: 1px solid ${COLORS.border};
-  border-radius: 4px;
-  padding: 12px 16px;
-  font-weight: 500;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex: 1;
-
-  &:hover {
-    background-color: ${COLORS.buttonHover};
-    color: ${COLORS.textPrimary};
-  }
-`;
-
-const ConfirmDeleteButton = styled.button`
-  background-color: ${COLORS.error};
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 12px 16px;
-  font-weight: 500;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex: 1;
-
-  &:hover {
-    background-color: ${COLORS.error}ee;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(207, 102, 121, 0.3);
-  }
-`;
-
-const Backdrop = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(4px);
-  z-index: 1000;
-  animation: ${fadeIn} 0.2s ease-out;
 `;
 
 const FullscreenModal = styled.div`
