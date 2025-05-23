@@ -14,23 +14,21 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaTag,
-  FaEye,
   FaShare,
   FaBookmark,
   FaRegBookmark,
   FaClock,
-  FaSearch,
   FaTimes,
   FaExpandAlt,
   FaCompressAlt,
-  FaComments,
   FaRegComment,
   FaLocationArrow,
   FaMapMarkerAlt,
 } from "react-icons/fa";
 import { useSwipeable } from "react-swipeable";
 import { AuthContext } from "../context/AuthContext";
-import { COLORS, THEME } from "../theme";
+import { useDeleteModal } from "../context/DeleteModalContext";
+import { COLORS } from "../theme";
 import ReactGA from "react-ga4";
 
 const PostDetail = () => {
@@ -39,7 +37,8 @@ const PostDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // Remove showDeleteModal state - we don't need it anymore
+  // const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -50,6 +49,7 @@ const PostDetail = () => {
   const contentRef = useRef(null);
 
   const { isAuthenticated } = useContext(AuthContext);
+  const { showDeleteModal } = useDeleteModal(); // Add this hook
   const navigate = useNavigate();
 
   // Add scroll progress tracking
@@ -135,27 +135,45 @@ const PostDetail = () => {
     fetchPost();
   }, [id]);
 
-  // Open delete confirmation modal
-  const openDeleteModal = () => {
-    setShowDeleteModal(true);
+  // Replace the old delete modal functions with this new handler
+  const handleDeletePost = () => {
+    if (!post) return;
+
+    const postPreview =
+      post.title || post.caption || post.content || "this post";
+    const truncatedPreview =
+      postPreview.length > 50
+        ? postPreview.substring(0, 50) + "..."
+        : postPreview;
+
+    showDeleteModal({
+      title: "Delete Post",
+      message:
+        "Are you sure you want to delete this post? This action cannot be undone and all likes, comments, and interactions will be permanently lost.",
+      confirmText: "Delete Post",
+      cancelText: "Keep Post",
+      itemName: truncatedPreview,
+      onConfirm: async () => {
+        try {
+          await axios.delete(`/api/posts/${id}`);
+          toast.success("Post deleted successfully");
+          navigate("/");
+        } catch (err) {
+          console.error("Error deleting post:", err);
+          toast.error("Failed to delete post");
+        }
+      },
+      onCancel: () => {
+        console.log("Post deletion cancelled");
+      },
+      destructive: true,
+    });
   };
 
-  // Close delete confirmation modal
-  const closeDeleteModal = () => {
-    setShowDeleteModal(false);
-  };
-
-  // Handle post deletion
-  const handleDeletePost = async () => {
-    try {
-      await axios.delete(`/api/posts/${id}`);
-      toast.success("Post deleted successfully");
-      navigate("/");
-    } catch (err) {
-      console.error("Error deleting post:", err);
-      toast.error("Failed to delete post");
-    }
-  };
+  // Remove the old delete modal functions:
+  // const openDeleteModal = () => { ... }
+  // const closeDeleteModal = () => { ... }
+  // const handleDeletePost = async () => { ... }
 
   const handleLike = async () => {
     if (!isAuthenticated || !post) {
@@ -402,7 +420,9 @@ const PostDetail = () => {
                     <span>Edit</span>
                   </EditLink>
 
-                  <DeleteButton onClick={openDeleteModal}>
+                  <DeleteButton onClick={handleDeletePost}>
+                    {" "}
+                    {/* Use new handler */}
                     <FaTrash />
                     <span>Delete</span>
                   </DeleteButton>
@@ -479,25 +499,7 @@ const PostDetail = () => {
           <FaShare />
         </FloatingShareButton>
 
-        {/* Delete confirmation modal */}
-        {showDeleteModal && (
-          <DeleteModal>
-            <DeleteModalContent>
-              <h3>Delete Post</h3>
-              <p>
-                Are you sure you want to delete this post? This action cannot be
-                undone.
-              </p>
-              <DeleteModalButtons>
-                <CancelButton onClick={closeDeleteModal}>Cancel</CancelButton>
-                <ConfirmDeleteButton onClick={handleDeletePost}>
-                  Delete Post
-                </ConfirmDeleteButton>
-              </DeleteModalButtons>
-            </DeleteModalContent>
-            <Backdrop onClick={closeDeleteModal} />
-          </DeleteModal>
-        )}
+        {/* Remove the old Delete confirmation modal - it's now handled globally */}
 
         {/* Fullscreen Media Modal */}
         {showFullscreenMedia && (
@@ -541,7 +543,6 @@ const PostDetail = () => {
     </PageWrapper>
   );
 };
-
 // Dark theme wrapper with deep blue background
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
@@ -1205,92 +1206,6 @@ const FloatingShareButton = styled.button`
     right: 1.5rem;
     width: 3rem;
     height: 3rem;
-  }
-`;
-
-// Modal Components
-const DeleteModal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-const DeleteModalContent = styled.div`
-  background-color: white;
-  border-radius: 12px;
-  padding: 2rem;
-  width: 90%;
-  max-width: 500px;
-  z-index: 1001;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-
-  h3 {
-    color: ${COLORS.primarySalmon};
-    margin-top: 0;
-    margin-bottom: 1rem;
-    font-size: 1.5rem;
-  }
-
-  p {
-    color: #333333;
-    margin-bottom: 1.5rem;
-  }
-`;
-
-const DeleteModalButtons = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-
-  @media (max-width: 480px) {
-    flex-direction: column;
-  }
-`;
-
-const CancelButton = styled.button`
-  background-color: ${COLORS.elevatedBackground};
-  color: #333333;
-  border: none;
-  border-radius: 4px;
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
-  font-weight: 500;
-
-  &:hover {
-    background-color: ${COLORS.buttonHover};
-    transform: translateY(-2px);
-  }
-
-  @media (max-width: 480px) {
-    order: 2;
-  }
-`;
-
-const ConfirmDeleteButton = styled.button`
-  background-color: ${COLORS.error};
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
-  font-weight: 500;
-
-  &:hover {
-    background-color: #b71c1c;
-    transform: translateY(-2px);
-  }
-
-  @media (max-width: 480px) {
-    order: 1;
-    margin-bottom: 0.5rem;
   }
 `;
 
