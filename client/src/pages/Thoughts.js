@@ -42,7 +42,7 @@ const pulseGlow = keyframes`
 `;
 
 const PageWrapper = styled.div`
-  background-color: #000;
+  background-color: ${COLORS.background};
   min-height: 100vh;
   padding: 1rem 0;
   width: 100%;
@@ -112,9 +112,9 @@ const PageTitle = styled.h1`
   overflow: hidden;
 
   @media (max-width: 768px) {
-    font-size: 1.8rem;
+    font-size: 4rem;
     margin-left: 0;
-    transform: rotate(0deg);
+    transform: rotate(-5deg);
     white-space: normal;
   }
 
