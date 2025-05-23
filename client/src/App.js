@@ -6,23 +6,22 @@ import ReactGA from "react-ga4";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthContext } from "./context/AuthContext";
 import { LikesProvider } from "./context/LikesContext";
-
+import { DeleteModalProvider } from "./context/DeleteModalContext"; // Add this import
 import ScrollToTop from "./components/ScrollToTop";
 import InstallPrompt from "./components/pwa/InstallPrompt";
 import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButtonAdjuster";
+import DeleteConfirmationModal from "./components/DeleteConfirmationModal"; // Add this import
 import AppRoutes from "./AppRoutes";
 
 // Separate components for better organization
 const PageTracker = () => {
   const location = useLocation();
-
   useEffect(() => {
     ReactGA.send({
       hitType: "pageview",
       page: location.pathname + location.search,
     });
   }, [location]);
-
   return null;
 };
 
@@ -80,20 +79,26 @@ function App() {
         <PageTracker />
         <div className="app">
           <LikesProvider>
-            <Toaster position="top-right" />
-            {!networkStatus && (
-              <OfflineIndicator>
-                You are currently offline. Some features may be limited.
-              </OfflineIndicator>
-            )}
-            <AppRoutes
-              user={user}
-              homeRef={homeRef}
-              handleSearch={handleSearch}
-              handleClearSearch={handleClearSearch}
-            />
-            <InstallPrompt />
-            <FloatingActionButtonAdjuster />
+            <DeleteModalProvider>
+              {" "}
+              {/* Wrap with DeleteModalProvider */}
+              <Toaster position="top-right" />
+              {!networkStatus && (
+                <OfflineIndicator>
+                  You are currently offline. Some features may be limited.
+                </OfflineIndicator>
+              )}
+              <AppRoutes
+                user={user}
+                homeRef={homeRef}
+                handleSearch={handleSearch}
+                handleClearSearch={handleClearSearch}
+              />
+              <InstallPrompt />
+              <FloatingActionButtonAdjuster />
+              {/* Add the global delete modal */}
+              <DeleteConfirmationModal />
+            </DeleteModalProvider>
           </LikesProvider>
         </div>
       </Router>
