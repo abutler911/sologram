@@ -508,27 +508,7 @@ const ThoughtCard = ({
           ))}
         </Tags>
       )}
-      {process.env.NODE_ENV === "development" && (
-        <div
-          style={{
-            backgroundColor: "#333",
-            color: "#fff",
-            padding: "8px",
-            margin: "8px 0",
-            borderRadius: "4px",
-            fontSize: "12px",
-            fontFamily: "monospace",
-          }}
-        >
-          <strong>Debug - Tags data:</strong>
-          <br />
-          Tags: {JSON.stringify(thought.tags)}
-          <br />
-          Tags type: {typeof thought.tags}
-          <br />
-          Tags length: {thought.tags ? thought.tags.length : "undefined"}
-        </div>
-      )}
+
       {/* Timestamp */}
       <TimeDisplay>
         <FaClock /> {formatDate(thought.createdAt)}
