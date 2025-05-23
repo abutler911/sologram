@@ -42,7 +42,7 @@ const pulseGlow = keyframes`
 `;
 
 const PageWrapper = styled.div`
-  background-color: ${COLORS.background};
+  background-color: #000;
   min-height: 100vh;
   padding: 1rem 0;
   width: 100%;
