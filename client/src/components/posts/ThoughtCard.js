@@ -110,7 +110,7 @@ const MoodDecoration = styled.div`
   right: 1.5rem;
   top: 1.5rem;
   font-size: 3.5rem;
-  opacity: 0.06; /* Reduced opacity so it doesn't interfere */
+  opacity: 0.1;
   z-index: 1;
   pointer-events: none;
   animation: ${gentleFloat} 6s ease-in-out infinite;
@@ -127,7 +127,7 @@ const MoodDecoration = styled.div`
     font-size: 2rem; /* Smaller on mobile */
     right: 1rem;
     top: 1rem;
-    opacity: 0.04; /* Even more subtle on mobile */
+    opacity: 0.1; /* Even more subtle on mobile */
   }
 `;
 
