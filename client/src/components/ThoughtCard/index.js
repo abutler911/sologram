@@ -491,7 +491,7 @@ const ThoughtCard = ({
       )}
 
       {/* Content with quotes */}
-      <Content>"{thought.content}"</Content>
+      <Content>{thought.content}</Content>
 
       {thought.media?.mediaUrl && (
         <Media>
