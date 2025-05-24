@@ -8,7 +8,7 @@ import {
   Suspense,
 } from "react";
 import { LikesContext } from "../../context/LikesContext";
-import { useDeleteModal } from "../../context/DeleteModalContext"; // Add this import
+import { useDeleteModal } from "../../context/DeleteModalContext";
 import { Link } from "react-router-dom";
 import styled, { keyframes, css } from "styled-components";
 import { FaHeart, FaRegHeart, FaComment } from "react-icons/fa";
@@ -16,6 +16,7 @@ import { FaEllipsisH } from "react-icons/fa";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaExternalLinkAlt } from "react-icons/fa";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
@@ -157,6 +158,58 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
+  }, []);
+  const handleLocationClick = useCallback((location) => {
+    const encodedLocation = encodeURIComponent(location);
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+    // Detect iOS devices
+    if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+      // Use Apple Maps for iOS devices
+      window.open(
+        `https://maps.apple.com/?q=${encodedLocation}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    }
+    // Detect Android devices
+    else if (/android/i.test(userAgent)) {
+      // Try to open in Google Maps app first, with fallback to web
+      const intent = `intent://maps.google.com/maps?q=${encodedLocation}#Intent;scheme=https;package=com.google.android.apps.maps;end`;
+      const fallback = `https://maps.google.com/maps?q=${encodedLocation}`;
+
+      try {
+        // Try to open the app
+        window.location.href = intent;
+
+        // Fallback after a short delay if app doesn't open
+        setTimeout(() => {
+          window.open(fallback, "_blank", "noopener,noreferrer");
+        }, 500);
+      } catch (e) {
+        // If intent fails, open web version
+        window.open(fallback, "_blank", "noopener,noreferrer");
+      }
+    }
+    // Default to Google Maps web for desktop and other devices
+    else {
+      window.open(
+        `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    }
+
+    // Optional: Add analytics or feedback
+    console.log(
+      `Opening location: ${location} on ${
+        userAgent.includes("iPhone")
+          ? "iOS"
+          : userAgent.includes("Android")
+          ? "Android"
+          : "Desktop"
+      }`
+    );
   }, []);
 
   const handleTouchStart = useCallback(
@@ -589,11 +642,25 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
           </MediaContainer>
         )}
         {post.location && (
-          <LocationBar>
+          <LocationBar
+            onClick={() => handleLocationClick(post.location)}
+            title={`Open "${post.location}" in maps`}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleLocationClick(post.location);
+              }
+            }}
+          >
             <LocationIcon>
               <FaMapMarkerAlt />
             </LocationIcon>
             <LocationText>{post.location}</LocationText>
+            <LocationIndicator>
+              <FaExternalLinkAlt />
+            </LocationIndicator>
           </LocationBar>
         )}
         <CardActions>
@@ -1609,9 +1676,18 @@ const LocationBar = styled.div`
   border-top: 1px solid ${COLORS.divider};
   border-bottom: 1px solid ${COLORS.divider};
   transition: all 0.2s ease;
+  cursor: pointer;
+  user-select: none;
 
   &:hover {
     background-color: ${COLORS.primaryKhaki}25;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+    background-color: ${COLORS.primaryKhaki}35;
   }
 `;
 
@@ -1622,6 +1698,12 @@ const LocationIcon = styled.div`
   margin-right: 8px;
   color: ${COLORS.primarySalmon};
   font-size: 14px;
+  transition: all 0.2s ease;
+
+  ${LocationBar}:hover & {
+    color: ${COLORS.accentSalmon};
+    transform: scale(1.1);
+  }
 `;
 
 const LocationText = styled.div`
@@ -1631,6 +1713,28 @@ const LocationText = styled.div`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.2s ease;
+
+  ${LocationBar}:hover & {
+    color: ${COLORS.textPrimary};
+  }
+`;
+
+const LocationIndicator = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  color: ${COLORS.textTertiary};
+  font-size: 10px;
+  opacity: 0;
+  transition: all 0.2s ease;
+  transform: translateX(-4px);
+
+  ${LocationBar}:hover & {
+    opacity: 0.7;
+    transform: translateX(0);
+  }
 `;
 
 PostCard.displayName = "PostCard";
