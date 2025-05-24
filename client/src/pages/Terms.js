@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { PortableText } from "@portabletext/react";
+
 import { Link } from "react-router-dom";
 import { FaArrowLeft, FaGavel } from "react-icons/fa";
 import MainLayout from "../components/layout/MainLayout";
 import { sanity } from "../lib/sanityClient";
-import { COLORS, THEME } from "../theme"; // Import the theme
+import PortableTextComponent from "../components/PortableTextComponent";
+import { COLORS } from "../theme";
 
 const Terms = () => {
   const [policy, setPolicy] = useState(null);
@@ -59,9 +60,9 @@ const Terms = () => {
                 {section.content?.map((block, i) => {
                   if (block._type === "block") {
                     return (
-                      <Paragraph key={i}>
-                        <PortableText value={[block]} />
-                      </Paragraph>
+                      <div key={i}>
+                        <PortableTextComponent value={[block]} />
+                      </div>
                     );
                   }
                   if (block._type === "list") {
@@ -233,29 +234,6 @@ const SectionTitle = styled.h2`
   font-size: 1.25rem;
   color: ${COLORS.primarySalmon};
   margin: 0 0 1rem 0;
-`;
-
-const Paragraph = styled.div`
-  color: ${COLORS.textSecondary};
-  margin-bottom: 1rem;
-  line-height: 1.6;
-
-  a {
-    color: ${COLORS.primaryBlueGray};
-    text-decoration: none;
-    transition: color 0.2s;
-
-    &:hover {
-      color: ${COLORS.accentBlueGray};
-      text-decoration: underline;
-    }
-  }
-
-  strong,
-  b {
-    color: ${COLORS.textPrimary};
-    font-weight: 600;
-  }
 `;
 
 const List = styled.ul`

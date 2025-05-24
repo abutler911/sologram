@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { PortableText } from "@portabletext/react";
 import { Link } from "react-router-dom";
 import { FaArrowLeft, FaShieldAlt } from "react-icons/fa";
 import { sanity } from "../lib/sanityClient";
 import MainLayout from "../components/layout/MainLayout";
-import { COLORS } from "../theme"; // Import the theme colors
+import { COLORS } from "../theme";
+import PortableTextComponent from "../components/PortableTextComponent";
 
 const Privacy = () => {
   const [policy, setPolicy] = useState(null);
@@ -59,9 +59,9 @@ const Privacy = () => {
                 {section.content?.map((block, i) => {
                   if (block._type === "block") {
                     return (
-                      <Paragraph key={i}>
-                        <PortableText value={[block]} />
-                      </Paragraph>
+                      <div key={i}>
+                        <PortableTextComponent value={[block]} />
+                      </div>
                     );
                   }
                   if (block._type === "list") {
@@ -216,12 +216,6 @@ const SectionTitle = styled.h2`
   font-size: 1.25rem;
   color: ${COLORS.primarySalmon};
   margin: 0 0 1rem 0;
-`;
-
-const Paragraph = styled.p`
-  color: ${COLORS.textSecondary};
-  margin-bottom: 1rem;
-  line-height: 1.6;
 `;
 
 const List = styled.ul`

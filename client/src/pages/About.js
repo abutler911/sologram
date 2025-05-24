@@ -3,7 +3,7 @@ import { sanity } from "../lib/sanityClient";
 import PortableTextComponent from "../components/PortableTextComponent";
 import styled from "styled-components";
 import MainLayout from "../components/layout/MainLayout";
-import { COLORS, THEME } from "../theme"; // Import the theme
+import { COLORS } from "../theme";
 
 const query = `*[_type == "aboutPage"][0]{
   title,
