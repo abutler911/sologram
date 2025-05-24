@@ -15,51 +15,51 @@ const buildPrompt = (
   additionalContext = ""
 ) => {
   const basePrompts = {
-    general: "Create engaging social media content for a general post",
+    general: "Write a clever and engaging social media post",
     product:
-      "Create compelling product showcase content that highlights features and benefits",
+      "Create a witty, engaging product showcase caption that highlights the product's uniqueness and appeal",
     "behind-scenes":
-      "Create authentic behind-the-scenes content that shows the creative process",
+      "Write an authentic and personal behind-the-scenes caption that tells a fun or insightful story",
     educational:
-      "Create informative educational content that teaches or explains something valuable",
+      "Write a smart and digestible educational caption that teaches something interesting or useful",
     lifestyle:
-      "Create aspirational lifestyle content that resonates with the audience",
+      "Write a stylish, relatable lifestyle caption that paints a vibe or sets a mood",
     announcement:
-      "Create exciting announcement content that builds anticipation",
+      "Write a bold and exciting caption that makes an announcement feel fun and fresh",
   };
 
   const toneModifiers = {
-    casual: "Keep the tone conversational, friendly, and approachable",
-    professional: "Maintain a professional, polished, and authoritative tone",
-    playful: "Use a fun, energetic, and playful tone with appropriate emojis",
+    casual:
+      "Use a friendly, confident tone like you're talking to a smart friend. Avoid clichés.",
+    professional:
+      "Keep it polished and articulate, but still personal and engaging. No buzzwords.",
+    playful: "Inject humor, sarcasm, or witty metaphors. No emojis.",
     inspirational:
-      "Create uplifting, motivational content that inspires action",
-    minimalist: "Keep it clean, simple, and to the point",
+      "Be poetic and thought-provoking, not cheesy or preachy. Avoid overused motivational lines.",
+    minimalist:
+      "Keep it ultra short, cool, and clever. Every word should matter.",
   };
 
   return `
-${basePrompts[contentType] || basePrompts.general}.
+You are an expert solo content creator writing for a visual-first social media platform called SoloGram. You are the only user, and the content reflects your personality: smart, fun, and free of fluff. Never use emojis.
 
-Content Description: ${description}
-${additionalContext ? `Additional Context: ${additionalContext}` : ""}
+Write content with the following constraints:
+- Title (max 60 characters): A sharp, clever title that hooks attention
+- Caption (max 500 characters): Witty, playful, or introspective tone based on input. No emojis. Avoid clichés and generic influencer speak.
+- Tags: Up to 5 relevant, lowercase single-word hashtags without the # symbol
+
+Description: ${description}
+${additionalContext ? `Context: ${additionalContext}` : ""}
 
 Tone: ${toneModifiers[tone] || toneModifiers.casual}
 
-Please provide the response in the following JSON format:
+Respond in JSON format:
 {
-  "title": "An engaging title (max 60 characters)",
-  "caption": "A compelling caption (2-3 sentences, include 1-2 relevant emojis)",
-  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
-  "altText": "Brief description for accessibility (if image-related)"
+  "title": "Title here",
+  "caption": "Caption here (max 500 characters)",
+  "tags": ["tag1", "tag2", "tag3"]
 }
-
-Guidelines:
-- Keep titles punchy and attention-grabbing
-- Make captions authentic and engaging
-- Include 5 relevant hashtags without the # symbol
-- Ensure all content aligns with the specified tone
-- Make it suitable for Instagram/social media platforms
-  `.trim();
+`.trim();
 };
 
 // Parse OpenAI response and ensure proper format
