@@ -557,11 +557,14 @@ const AIContentGenerator = () => {
 
   const fetchContentHistory = async () => {
     try {
-      const response = await fetch("/api/admin/ai-content/history", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await fetch(
+        "https://sologram-api.onrender.com/api/admin/ai-content/history",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         console.warn("History API not available");
@@ -593,14 +596,17 @@ const AIContentGenerator = () => {
     setError("");
 
     try {
-      const response = await fetch("/api/admin/ai-content/generate", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        "https://sologram-api.onrender.com/api/admin/ai-content/generate",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       const data = await response.json();
 
@@ -637,17 +643,20 @@ const AIContentGenerator = () => {
 
     setIsSaving(true);
     try {
-      const response = await fetch("/api/admin/ai-content/save", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...generatedContent,
-          originalDescription: formData.description,
-        }),
-      });
+      const response = await fetch(
+        "https://sologram-api.onrender.com/api/admin/ai-content/save",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...generatedContent,
+            originalDescription: formData.description,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to save content");
