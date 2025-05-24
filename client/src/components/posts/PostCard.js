@@ -7,25 +7,31 @@ import {
   useRef,
   Suspense,
 } from "react";
-import { LikesContext } from "../../context/LikesContext";
-import { useDeleteModal } from "../../context/DeleteModalContext";
 import { Link } from "react-router-dom";
 import styled, { keyframes, css } from "styled-components";
-import { FaHeart, FaRegHeart, FaComment } from "react-icons/fa";
-import { FaEllipsisH } from "react-icons/fa";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import { FaMapMarkerAlt } from "react-icons/fa";
-import { FaEdit, FaTrash } from "react-icons/fa";
-import { FaExternalLinkAlt } from "react-icons/fa";
+import {
+  FaHeart,
+  FaRegHeart,
+  FaComment,
+  FaEllipsisH,
+  FaChevronLeft,
+  FaChevronRight,
+  FaMapMarkerAlt,
+  FaEdit,
+  FaTrash,
+  FaExternalLinkAlt,
+} from "react-icons/fa";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 import { useSwipeable } from "react-swipeable";
+import { LikesContext } from "../../context/LikesContext";
+import { useDeleteModal } from "../../context/DeleteModalContext";
 import { AuthContext } from "../../context/AuthContext";
-import pandaImg from "../../assets/andy.jpg";
+import authorImg from "../../assets/andy.jpg";
 import { getTransformedImageUrl } from "../../utils/cloudinary";
 import { COLORS } from "../../theme";
 
-const AUTHOR_IMAGE = pandaImg;
+const AUTHOR_IMAGE = authorImg;
 const AUTHOR_NAME = "Andrew";
 
 const fadeIn = keyframes`
@@ -45,11 +51,6 @@ const pulse = keyframes`
   0% { transform: scale(1); }
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
-`;
-
-const slideIn = keyframes`
-  0% { opacity: 0; transform: translateY(20px); }
-  100% { opacity: 1; transform: translateY(0); }
 `;
 
 const fontFaceStyles = css`
@@ -76,13 +77,6 @@ const FullscreenModalComponent = ({ onClick, children }) => (
   <FullscreenModal onClick={onClick}>{children}</FullscreenModal>
 );
 
-// Remove the old DeleteModalComponent - we don't need it anymore
-
-const isMobile =
-  typeof window !== "undefined" &&
-  (window.innerWidth <= 768 ||
-    window.matchMedia("(display-mode: standalone)").matches);
-
 const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const cardRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -90,10 +84,9 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const { isAuthenticated } = useContext(AuthContext);
   const { showDeleteModal } = useDeleteModal(); // Add this hook
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
-  // Remove showDeleteModal state - we don't need it anymore
-  // const [showDeleteModal, setShowDeleteModal] = useState(false);
+
   const [showActions, setShowActions] = useState(false);
-  const [isLiking, setIsLiking] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isDoubleTapLiking, setIsDoubleTapLiking] = useState(false);
   const actionsRef = useRef(null);
@@ -159,6 +152,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
   const handleLocationClick = useCallback((location) => {
     const encodedLocation = encodeURIComponent(location);
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -304,13 +298,10 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     if (!isAuthenticated || isProcessing || hasLiked) return;
 
     likePost(post._id, () => {
-      // Update local post state
       setPost((prevPost) => ({
         ...prevPost,
         likes: (prevPost.likes || 0) + 1,
       }));
-
-      // Also inform the parent if provided
       if (typeof onLike === "function") {
         onLike(post._id);
       }
@@ -322,15 +313,14 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const handleDoubleTapLike = useCallback(() => {
     if (!isAuthenticated) return;
 
-    if (!hasLiked && !isLiking) {
+    if (!hasLiked) {
       handleLike();
     }
 
     setIsDoubleTapLiking(true);
     setTimeout(() => setIsDoubleTapLiking(false), 700);
-  }, [hasLiked, isLiking, handleLike, isAuthenticated]);
+  }, [hasLiked, handleLike, isAuthenticated]);
 
-  // Replace the old confirmDelete and cancelDelete with this new handler
   const handleDeletePost = useCallback(() => {
     const postPreview =
       post.title || post.caption || post.content || "this post";
@@ -356,10 +346,8 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
             return;
           }
 
-          // Get the API base URL from the environment or use the default
           const baseURL = process.env.REACT_APP_API_URL || "";
 
-          // Construct the proper URL - if baseURL is empty, it'll use a relative path
           const url = baseURL
             ? `${baseURL}/api/posts/${post._id}`
             : `/api/posts/${post._id}`;
@@ -373,14 +361,13 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
-            // Add credentials to ensure cookies are sent with the request
+
             credentials: "include",
           });
 
           console.log(`Delete response status: ${response.status}`);
 
           if (response.ok) {
-            // Call parent's onDelete if it exists
             if (typeof onDelete === "function") {
               onDelete(post._id);
             } else {
