@@ -419,8 +419,8 @@ const HistoryItem = styled.div`
 
 const HistoryHeader = styled.div`
   display: flex;
-  justify-content: between;
-  align-items: start;
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 8px;
 `;
 
@@ -557,13 +557,6 @@ const AIContentGenerator = () => {
 
   const fetchContentHistory = async () => {
     try {
-      // Demo mode - return empty for now
-      if (process.env.NODE_ENV === "development" || true) {
-        setContentHistory([]);
-        return;
-      }
-
-      // Real API call
       const response = await fetch("/api/admin/ai-content/history", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -600,58 +593,6 @@ const AIContentGenerator = () => {
     setError("");
 
     try {
-      // Temporary demo mode - remove this when backend is ready
-      if (process.env.NODE_ENV === "development" || true) {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        // Generate demo content based on input
-        const demoContent = {
-          title: `${
-            formData.contentType === "product"
-              ? "New Product:"
-              : formData.contentType === "announcement"
-              ? "Exciting News:"
-              : ""
-          } ${formData.description.substring(0, 40)}${
-            formData.description.length > 40 ? "..." : ""
-          }`,
-          caption: `${
-            formData.tone === "professional"
-              ? "We are pleased to announce"
-              : formData.tone === "playful"
-              ? "Hey everyone! 🎉"
-              : "Check this out!"
-          } ${formData.description}. ${
-            formData.tone === "inspirational"
-              ? "This is just the beginning of something amazing!"
-              : formData.tone === "minimalist"
-              ? "Simple. Effective."
-              : "What do you think?"
-          } ${formData.tone === "playful" ? "✨" : ""}`,
-          tags:
-            formData.contentType === "product"
-              ? ["product", "launch", "innovation", "design", "tech"]
-              : formData.contentType === "lifestyle"
-              ? ["lifestyle", "inspiration", "daily", "motivation", "life"]
-              : formData.contentType === "educational"
-              ? ["education", "learn", "tips", "knowledge", "howto"]
-              : ["content", "social", "community", "share", "update"],
-          altText: `Image showing ${formData.description.substring(0, 50)}`,
-        };
-
-        setGeneratedContent(demoContent);
-        toast.success("Demo content generated! (Backend not connected yet)", {
-          style: {
-            background: COLORS.cardBackground,
-            color: COLORS.textPrimary,
-            border: `1px solid ${COLORS.border}`,
-          },
-        });
-        return;
-      }
-
-      // Real API call (when backend is ready)
       const response = await fetch("/api/admin/ai-content/generate", {
         method: "POST",
         headers: {
@@ -696,20 +637,6 @@ const AIContentGenerator = () => {
 
     setIsSaving(true);
     try {
-      // Demo mode - simulate save
-      if (process.env.NODE_ENV === "development" || true) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        toast.success("Demo: Content would be saved! (Backend not connected)", {
-          style: {
-            background: COLORS.cardBackground,
-            color: COLORS.textPrimary,
-            border: `1px solid ${COLORS.border}`,
-          },
-        });
-        return;
-      }
-
-      // Real API call
       const response = await fetch("/api/admin/ai-content/save", {
         method: "POST",
         headers: {
