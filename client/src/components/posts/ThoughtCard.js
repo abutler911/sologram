@@ -18,7 +18,6 @@ import {
 import { moodEmojis } from "../../utils/themeConstants";
 import { COLORS } from "../../theme";
 import { toast } from "react-hot-toast";
-import { useDeleteModal } from "../../context/DeleteModalContext";
 
 // Gentle animations that complement your theme
 const gentleFloat = keyframes`
@@ -563,7 +562,6 @@ const ThoughtCard = ({
 }) => {
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const { showDeleteModal } = useDeleteModal();
 
   const onLikeClick = (id) => {
     setIsLikeAnimating(true);
@@ -576,30 +574,6 @@ const ThoughtCard = ({
     toast.success(
       isBookmarked ? "Removed from bookmarks" : "Added to bookmarks"
     );
-  };
-
-  const handleDeleteThought = () => {
-    const thoughtPreview =
-      thought.content.length > 50
-        ? thought.content.substring(0, 50) + "..."
-        : thought.content;
-
-    showDeleteModal({
-      title: "Delete Thought",
-      message: thought.pinned
-        ? "This is a pinned thought. Deleting it will also remove it from your pinned collection. This action cannot be undone."
-        : "Are you sure you want to delete this thought? This action cannot be undone and all likes and interactions will be lost.",
-      confirmText: "Delete Thought",
-      cancelText: "Keep Thought",
-      itemName: thoughtPreview,
-      onConfirm: () => {
-        onDelete(thought._id);
-      },
-      onCancel: () => {
-        console.log("Thought deletion cancelled");
-      },
-      destructive: true,
-    });
   };
 
   return (
@@ -650,7 +624,7 @@ const ThoughtCard = ({
               <FaEdit />
             </ActionButton>
             <ActionButton
-              onClick={handleDeleteThought}
+              onClick={() => onDelete(thought._id)}
               title="Delete"
               className="delete"
               type="button"
