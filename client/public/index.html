@@ -92,7 +92,23 @@
         );
       });
     </script>
-
+    <script>
+      // Gracefully handle GA blocking
+      window.addEventListener(
+        "error",
+        function (e) {
+          if (
+            e.target &&
+            e.target.src &&
+            e.target.src.includes("googletagmanager")
+          ) {
+            console.log("Google Analytics blocked (likely by ad blocker)");
+            // Optional: Send to your own analytics
+          }
+        },
+        true
+      );
+    </script>
     <!-- Google Tag Manager -->
     <script
       async
