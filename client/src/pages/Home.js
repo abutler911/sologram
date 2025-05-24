@@ -13,7 +13,7 @@ import styled from "styled-components";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { FaCamera } from "react-icons/fa";
-import PreloadImage from "../components/PreLoadImage";
+
 import { COLORS, THEME } from "../theme";
 import { LikesContext } from "../context/LikesContext";
 import { AuthContext } from "../context/AuthContext";
@@ -313,22 +313,8 @@ const Home = forwardRef((props, ref) => {
     );
   };
 
-  // Preload first image for performance
-  const firstPostImage =
-    posts.length > 0 &&
-    posts[0].media?.length > 0 &&
-    posts[0].media[0].mediaType === "image"
-      ? posts[0].media[0].mediaUrl.replace(
-          "/upload/",
-          "/upload/w_614,h_614,f_auto,q_auto/"
-        )
-      : null;
-
   return (
     <>
-      {firstPostImage && (
-        <PreloadImage src={firstPostImage} type="image/webp" />
-      )}
       <PageWrapper>
         <HomeContainer isPWA={isPWA}>
           {showAboutBanner && <AboutBanner onClose={closeBanner} />}
