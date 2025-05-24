@@ -10,7 +10,7 @@ import {
   FaHistory,
   FaCopy,
   FaSave,
-  FaSparkles,
+  FaMagic,
   FaTimes,
   FaCheck,
 } from "react-icons/fa";
@@ -809,7 +809,7 @@ const AIContentGenerator = () => {
                 </>
               ) : (
                 <>
-                  <FaSparkles />
+                  <FaMagic />
                   Generate Content
                 </>
               )}
