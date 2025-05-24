@@ -9,7 +9,17 @@ const {
   deleteContentHistory,
 } = require("../../controllers/aiContent");
 
-// All routes require admin role
+// Test route (no auth required for testing)
+router.get("/test", (req, res) => {
+  res.json({
+    message: "AI Content routes are working!",
+    timestamp: new Date().toISOString(),
+    path: req.path,
+    method: req.method,
+  });
+});
+
+// All other routes require admin role
 router.use(protect, authorize("admin"));
 
 // Generate content using OpenAI
