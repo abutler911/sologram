@@ -141,6 +141,7 @@ app.use("/api/thoughts", thoughtsRoutes);
 app.use("/api/admin/cloudinary", cloudinaryRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/admin/ai-content", aiContentRoutes);
+console.log("✅ AI Content route mounted at /api/admin/ai-content");
 
 // Logging all requests except health
 app.use((req, res, next) => {

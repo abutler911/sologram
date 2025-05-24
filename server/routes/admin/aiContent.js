@@ -33,5 +33,6 @@ router.post("/save", saveGeneratedContent);
 
 // Delete content from history
 router.delete("/history/:id", deleteContentHistory);
+console.log("✅ aiContent.js routes loaded");
 
 module.exports = router;

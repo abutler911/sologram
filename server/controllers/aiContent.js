@@ -97,6 +97,11 @@ const parseResponse = (content) => {
 };
 
 exports.generateContent = async (req, res, next) => {
+  console.log("🔥 Hitting /generate", {
+    user: req.user,
+    body: req.body,
+  });
+
   try {
     const {
       description,
