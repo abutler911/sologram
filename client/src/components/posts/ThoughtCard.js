@@ -592,14 +592,8 @@ const ThoughtCard = ({
       confirmText: "Delete Thought",
       cancelText: "Keep Thought",
       itemName: thoughtPreview,
-      onConfirm: async () => {
-        try {
-          await onDelete(thought._id);
-          toast.success("Thought deleted successfully");
-        } catch (error) {
-          toast.error("Failed to delete thought");
-          console.error("Delete thought error:", error);
-        }
+      onConfirm: () => {
+        onDelete(thought._id);
       },
       onCancel: () => {
         console.log("Thought deletion cancelled");
