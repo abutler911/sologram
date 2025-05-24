@@ -128,6 +128,7 @@ const analyticsRoutes = require("./routes/analytics");
 const thoughtsRoutes = require("./routes/thoughts");
 const cloudinaryRoutes = require("./routes/cloudinaryRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const aiContentRoutes = require("./routes/admin/aiContent");
 
 // Apply routes
 app.use("/api/posts", postRoutes);
@@ -139,6 +140,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/thoughts", thoughtsRoutes);
 app.use("/api/admin/cloudinary", cloudinaryRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/admin/ai-content", aiContentRoutes);
 
 // Logging all requests except health
 app.use((req, res, next) => {
