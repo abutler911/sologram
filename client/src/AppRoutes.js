@@ -58,11 +58,13 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
       EditThought: React.lazy(() => import("./pages/EditThought")),
 
       // Admin/Profile pages
-
       ProfilePage: React.lazy(() => import("./pages/Profile")),
 
-      // New Cloudinary Gallery page
+      // Admin-only pages
       CloudinaryGallery: React.lazy(() => import("./pages/CloudinaryGallery")),
+      AIContentGenerator: React.lazy(() =>
+        import("./components/admin/AIContentGenerator")
+      ),
     }),
     []
   );
@@ -128,12 +130,22 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
 
     { path: "/thoughts/:id/edit", element: <lazyComponents.EditThought /> },
     { path: "/thoughts/create", element: <lazyComponents.CreateThought /> },
-    // Add new Cloudinary Gallery route - Admin only
+
+    // Admin-only routes
     {
       path: "/media-gallery",
       element: (
         <StandardLayout>
           <lazyComponents.CloudinaryGallery />
+        </StandardLayout>
+      ),
+      roles: ["admin"],
+    },
+    {
+      path: "/admin/ai-content",
+      element: (
+        <StandardLayout>
+          <lazyComponents.AIContentGenerator />
         </StandardLayout>
       ),
       roles: ["admin"],

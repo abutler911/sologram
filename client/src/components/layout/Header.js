@@ -12,6 +12,7 @@ import {
   FaImages,
   FaFolder,
   FaHome,
+  FaRobot, // Add this for AI icon
 } from "react-icons/fa";
 
 import { AuthContext } from "../../context/AuthContext";
@@ -123,6 +124,9 @@ const Header = ({ onSearch, onClearSearch }) => {
     return location.pathname.startsWith(path);
   };
 
+  // Check if user is admin
+  const isAdmin = user?.role === "admin";
+
   return (
     <HeaderWrapper>
       <HeaderContainer>
@@ -159,6 +163,16 @@ const Header = ({ onSearch, onClearSearch }) => {
               <FaFolder />
               <span>Collections</span>
             </NavItem>
+            {/* Admin-only AI Content Generator link */}
+            {isAdmin && (
+              <NavItem
+                to="/admin/ai-content"
+                active={isActivePath("/admin/ai-content")}
+              >
+                <FaRobot />
+                <span>AI Content</span>
+              </NavItem>
+            )}
           </DesktopNavigation>
 
           {/* Right Side Actions */}
@@ -220,6 +234,12 @@ const Header = ({ onSearch, onClearSearch }) => {
                     <UserMenuItem to="/profile">
                       <FaUser /> <span>Profile</span>
                     </UserMenuItem>
+                    {/* Admin-only menu item */}
+                    {isAdmin && (
+                      <UserMenuItem to="/admin/ai-content">
+                        <FaRobot /> <span>AI Content Generator</span>
+                      </UserMenuItem>
+                    )}
                     <MenuDivider />
                     <UserMenuButton onClick={handleLogout}>
                       <FaSignOutAlt /> <span>Logout</span>
@@ -239,7 +259,7 @@ const Header = ({ onSearch, onClearSearch }) => {
   );
 };
 
-// Styled Components
+// Styled Components (same as before, no changes needed)
 const HeaderWrapper = styled.div`
   position: sticky;
   top: 0;
