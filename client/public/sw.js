@@ -1,5 +1,5 @@
 // public/sw.js - REPLACE YOUR ENTIRE FILE WITH THIS
-const CACHE_VERSION = "v1.2.5"; // Change this with each deployment
+const CACHE_VERSION = "v1.2.6"; // Change this with each deployment
 const STATIC_CACHE = `static-cache-${CACHE_VERSION}`;
 
 self.addEventListener("install", (event) => {
@@ -37,39 +37,45 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // SKIP ALL EXTERNAL IMAGES (Cloudinary, etc.) - Let browser handle them
+  // Skip external requests
   if (
     event.request.destination === "image" &&
     !url.hostname.includes("thesologram.com")
-  ) {
-    console.log("SW: Skipping external image:", event.request.url);
-    return; // Don't intercept - let browser handle normally
-  }
+  )
+    return;
 
-  // SKIP ALL CLOUDINARY REQUESTS
-  if (url.hostname.includes("cloudinary.com")) {
-    console.log("SW: Skipping Cloudinary request:", event.request.url);
+  if (url.hostname.includes("cloudinary.com")) return;
+
+  // NETWORK-FIRST for JS chunks
+  if (event.request.url.endsWith(".js")) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const cloned = response.clone();
+          caches.open(STATIC_CACHE).then((cache) => {
+            cache.put(event.request, cloned);
+          });
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
     return;
   }
 
-  // Handle everything else with cache-first for your domain
+  // CACHE-FIRST for everything else
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      if (response) {
-        console.log("SW: Serving from cache:", event.request.url);
-        return response;
-      }
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) return cachedResponse;
 
-      console.log("SW: Fetching from network:", event.request.url);
-      return fetch(event.request).then((fetchResponse) => {
-        // Only cache successful responses from your domain
-        if (fetchResponse.ok && url.hostname.includes("thesologram.com")) {
-          const responseClone = fetchResponse.clone();
+      return fetch(event.request).then((networkResponse) => {
+        if (networkResponse.ok && url.hostname.includes("thesologram.com")) {
           caches.open(STATIC_CACHE).then((cache) => {
-            cache.put(event.request, responseClone);
+            cache.put(event.request, networkResponse.clone());
           });
         }
-        return fetchResponse;
+        return networkResponse;
       });
     })
   );
