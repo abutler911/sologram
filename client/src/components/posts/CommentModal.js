@@ -883,5 +883,3 @@ const CommentCount = styled.span`
   color: ${COLORS.textSecondary};
   font-weight: 500;
 `;
-
-export default CommentModal;
