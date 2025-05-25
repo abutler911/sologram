@@ -188,116 +188,119 @@ export const CommentModal = ({
             <FaTimes />
           </CloseButton>
         </ModalHeader>
-
-        {/* Post Preview */}
-        <PostPreview>
-          <PostAuthor>
-            <AuthorAvatar src={AUTHOR_IMAGE} alt={AUTHOR_NAME} />
-            <PostInfo>
-              <AuthorName>{AUTHOR_NAME}</AuthorName>
-              <PostDate>
-                {format(new Date(post.createdAt), "MMM d, yyyy")}
-              </PostDate>
-            </PostInfo>
-          </PostAuthor>
-          {post.title && <PostTitle>{post.title}</PostTitle>}
-          {post.caption && <PostCaption>{post.caption}</PostCaption>}
-        </PostPreview>
-
-        {/* Comments List */}
-        <CommentsContainer>
-          {isLoading ? (
-            <LoadingState>
-              <LoadingSpinner />
-              <LoadingText>Loading comments...</LoadingText>
-            </LoadingState>
-          ) : comments.length === 0 ? (
-            <EmptyState>
-              <EmptyIcon>💬</EmptyIcon>
-              <EmptyTitle>No comments yet</EmptyTitle>
-              <EmptySubtitle>
-                Be the first to share your thoughts!
-              </EmptySubtitle>
-            </EmptyState>
-          ) : (
-            <CommentsList>
-              {comments.map((comment) => (
-                <CommentItem key={comment._id}>
-                  <CommentAvatar
-                    src={comment.author.avatar || AUTHOR_IMAGE}
-                    alt={comment.author.name}
-                  />
-                  <CommentContent>
-                    <CommentHeader>
-                      <CommentAuthorInfo>
-                        <CommentAuthor>{comment.author.name}</CommentAuthor>
-                        {comment.author.username && (
-                          <CommentUsername>
-                            @{comment.author.username}
-                          </CommentUsername>
-                        )}
-                      </CommentAuthorInfo>
-                      <CommentTime>
-                        {formatDistanceToNow(new Date(comment.createdAt), {
-                          addSuffix: true,
-                        })}
-                      </CommentTime>
-                      {isAuthenticated && (
-                        <CommentActions ref={actionsRef}>
-                          <ActionsButton
-                            onClick={() =>
-                              setShowActions(
-                                showActions === comment._id ? null : comment._id
-                              )
-                            }
-                          >
-                            <FaEllipsisH />
-                          </ActionsButton>
-                          {showActions === comment._id && (
-                            <ActionsMenu>
-                              <ActionItem onClick={() => handleReply(comment)}>
-                                <FaReply /> Reply
-                              </ActionItem>
-                              {(user?.id === comment.author._id ||
-                                user?.id === post.authorId) && (
-                                <ActionItem
-                                  onClick={() => onDeleteComment(comment._id)}
-                                  destructive
-                                >
-                                  <FaTrash /> Delete
-                                </ActionItem>
-                              )}
-                              <ActionItem>
-                                <FaFlag /> Report
-                              </ActionItem>
-                            </ActionsMenu>
+        <ModalContent>
+          {/* Post Preview */}
+          <PostPreview>
+            <PostAuthor>
+              <AuthorAvatar src={AUTHOR_IMAGE} alt={AUTHOR_NAME} />
+              <PostInfo>
+                <AuthorName>{AUTHOR_NAME}</AuthorName>
+                <PostDate>
+                  {format(new Date(post.createdAt), "MMM d, yyyy")}
+                </PostDate>
+              </PostInfo>
+            </PostAuthor>
+            {post.title && <PostTitle>{post.title}</PostTitle>}
+            {post.caption && <PostCaption>{post.caption}</PostCaption>}
+          </PostPreview>
+          {/* Comments List */}
+          <CommentsContainer>
+            {isLoading ? (
+              <LoadingState>
+                <LoadingSpinner />
+                <LoadingText>Loading comments...</LoadingText>
+              </LoadingState>
+            ) : comments.length === 0 ? (
+              <EmptyState>
+                <EmptyIcon>💬</EmptyIcon>
+                <EmptyTitle>No comments yet</EmptyTitle>
+                <EmptySubtitle>
+                  Be the first to share your thoughts!
+                </EmptySubtitle>
+              </EmptyState>
+            ) : (
+              <CommentsList>
+                {comments.map((comment) => (
+                  <CommentItem key={comment._id}>
+                    <CommentAvatar
+                      src={comment.author.avatar || AUTHOR_IMAGE}
+                      alt={comment.author.name}
+                    />
+                    <CommentContent>
+                      <CommentHeader>
+                        <CommentAuthorInfo>
+                          <CommentAuthor>{comment.author.name}</CommentAuthor>
+                          {comment.author.username && (
+                            <CommentUsername>
+                              @{comment.author.username}
+                            </CommentUsername>
                           )}
-                        </CommentActions>
-                      )}
-                    </CommentHeader>
-                    <CommentText>{comment.text}</CommentText>
-                    <CommentFooter>
-                      <LikeButton
-                        onClick={() => onLikeComment(comment._id)}
-                        liked={comment.hasLiked}
-                        disabled={!isAuthenticated}
-                      >
-                        {comment.hasLiked ? <FaHeart /> : <FaRegHeart />}
-                        {comment.likes > 0 && (
-                          <LikeCount>{comment.likes}</LikeCount>
+                        </CommentAuthorInfo>
+                        <CommentTime>
+                          {formatDistanceToNow(new Date(comment.createdAt), {
+                            addSuffix: true,
+                          })}
+                        </CommentTime>
+                        {isAuthenticated && (
+                          <CommentActions ref={actionsRef}>
+                            <ActionsButton
+                              onClick={() =>
+                                setShowActions(
+                                  showActions === comment._id
+                                    ? null
+                                    : comment._id
+                                )
+                              }
+                            >
+                              <FaEllipsisH />
+                            </ActionsButton>
+                            {showActions === comment._id && (
+                              <ActionsMenu>
+                                <ActionItem
+                                  onClick={() => handleReply(comment)}
+                                >
+                                  <FaReply /> Reply
+                                </ActionItem>
+                                {(user?.id === comment.author._id ||
+                                  user?.id === post.authorId) && (
+                                  <ActionItem
+                                    onClick={() => onDeleteComment(comment._id)}
+                                    destructive
+                                  >
+                                    <FaTrash /> Delete
+                                  </ActionItem>
+                                )}
+                                <ActionItem>
+                                  <FaFlag /> Report
+                                </ActionItem>
+                              </ActionsMenu>
+                            )}
+                          </CommentActions>
                         )}
-                      </LikeButton>
-                      <ReplyButton onClick={() => handleReply(comment)}>
-                        Reply
-                      </ReplyButton>
-                    </CommentFooter>
-                  </CommentContent>
-                </CommentItem>
-              ))}
-            </CommentsList>
-          )}
-        </CommentsContainer>
-
+                      </CommentHeader>
+                      <CommentText>{comment.text}</CommentText>
+                      <CommentFooter>
+                        <LikeButton
+                          onClick={() => onLikeComment(comment._id)}
+                          liked={comment.hasLiked}
+                          disabled={!isAuthenticated}
+                        >
+                          {comment.hasLiked ? <FaHeart /> : <FaRegHeart />}
+                          {comment.likes > 0 && (
+                            <LikeCount>{comment.likes}</LikeCount>
+                          )}
+                        </LikeButton>
+                        <ReplyButton onClick={() => handleReply(comment)}>
+                          Reply
+                        </ReplyButton>
+                      </CommentFooter>
+                    </CommentContent>
+                  </CommentItem>
+                ))}
+              </CommentsList>
+            )}
+          </CommentsContainer>
+        </ModalContent>
         {/* Comment Input */}
         {isAuthenticated ? (
           <CommentInputContainer>
@@ -345,6 +348,9 @@ export const CommentModal = ({
           </AuthPrompt>
         )}
       </ModalContainer>
+      <FallbackCloseButton onClick={onClose}>
+        <FaTimes />
+      </FallbackCloseButton>
     </ModalOverlay>
   );
 };
@@ -364,38 +370,33 @@ const ModalOverlay = styled.div`
   position: fixed;
   inset: 0;
   display: flex;
-
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.8);
-  display: flex;
   align-items: center;
   justify-content: center;
+  background-color: rgba(0, 0, 0, 0.8);
   z-index: 9999;
-  animation: ${fadeIn} 0.3s ease-out;
+  padding: 16px;
   backdrop-filter: blur(4px);
-  padding: 20px;
+
+  @supports (-webkit-touch-callout: none) {
+    min-height: -webkit-fill-available;
+  }
 `;
 
 const ModalContainer = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background-color: ${COLORS.cardBackground};
   border-radius: 16px;
   width: 100%;
   max-width: 500px;
-  max-height: 85vh;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
-  animation: ${scaleIn} 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  position: relative;
   overflow: hidden;
-  margin: auto;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  z-index: 10000;
 
   @media (max-width: 768px) {
     width: calc(100% - 40px);
@@ -679,6 +680,26 @@ const ActionsButton = styled.button`
   }
 `;
 
+const FallbackCloseButton = styled.button`
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10001;
+  background-color: ${COLORS.accentMint};
+  color: white;
+  border: none;
+  border-radius: 50%;
+  padding: 12px;
+  font-size: 18px;
+  display: none;
+
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+`;
+
 const ActionsMenu = styled.div`
   position: absolute;
   right: 0;
@@ -836,6 +857,11 @@ const InputWrapper = styled.div`
   display: flex;
   align-items: flex-end;
   gap: 12px;
+`;
+
+const ModalContent = styled.div`
+  overflow-y: auto;
+  flex: 1;
 `;
 
 const CommentTextarea = styled.textarea`
