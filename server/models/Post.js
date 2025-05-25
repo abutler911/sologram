@@ -75,7 +75,12 @@ const PostSchema = new mongoose.Schema(
       required: true,
       default: Date.now,
     },
+    commentCount: {
+      type: Number,
+      default: 0,
+    },
   },
+
   {
     timestamps: false,
   }
@@ -88,5 +93,7 @@ PostSchema.index({
   content: "text",
   tags: "text",
 });
+
+PostSchema.index({ commentCount: -1 });
 
 module.exports = mongoose.model("Post", PostSchema);

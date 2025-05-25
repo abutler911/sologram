@@ -29,6 +29,7 @@ import { useDeleteModal } from "../../context/DeleteModalContext";
 import { AuthContext } from "../../context/AuthContext";
 import authorImg from "../../assets/andy.jpg";
 import { getTransformedImageUrl } from "../../utils/cloudinary";
+import { CommentModal } from "./CommentModal";
 import { COLORS } from "../../theme";
 
 const AUTHOR_IMAGE = authorImg;
@@ -82,11 +83,9 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [post, setPost] = useState(initialPost);
   const { isAuthenticated } = useContext(AuthContext);
-  const { showDeleteModal } = useDeleteModal(); // Add this hook
+  const { showDeleteModal } = useDeleteModal();
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
-
   const [showActions, setShowActions] = useState(false);
-
   const [isLoading, setIsLoading] = useState(true);
   const [isDoubleTapLiking, setIsDoubleTapLiking] = useState(false);
   const actionsRef = useRef(null);
@@ -99,6 +98,12 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const { checkLikeStatus, likePost, likedPosts, isProcessing } =
     useContext(LikesContext);
   const hasLiked = likedPosts[post?._id] || false;
+
+  // Comment-related state
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [commentCount, setCommentCount] = useState(post.commentCount || 0);
 
   const hasMultipleMedia = post.media && post.media.length > 1;
   const formattedDate = format(new Date(post.createdAt), "MMM d, yyyy");
@@ -153,13 +158,144 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     };
   }, []);
 
+  // Comment handling functions
+  const fetchComments = useCallback(async () => {
+    if (!post._id) return;
+
+    setIsLoadingComments(true);
+    try {
+      const baseURL = process.env.REACT_APP_API_URL || "";
+      const url = baseURL
+        ? `${baseURL}/api/posts/${post._id}/comments`
+        : `/api/posts/${post._id}/comments`;
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setComments(data.comments || []);
+      }
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      toast.error("Failed to load comments");
+    } finally {
+      setIsLoadingComments(false);
+    }
+  }, [post._id]);
+
+  const handleOpenComments = useCallback(() => {
+    setShowCommentModal(true);
+    fetchComments();
+  }, [fetchComments]);
+
+  const handleAddComment = useCallback(
+    async (commentData) => {
+      try {
+        const baseURL = process.env.REACT_APP_API_URL || "";
+        const url = baseURL
+          ? `${baseURL}/api/posts/${post._id}/comments`
+          : `/api/posts/${post._id}/comments`;
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(commentData),
+        });
+
+        if (response.ok) {
+          const newComment = await response.json();
+          setComments((prev) => [newComment, ...prev]);
+          setCommentCount((prev) => prev + 1);
+          return newComment;
+        } else {
+          throw new Error("Failed to add comment");
+        }
+      } catch (error) {
+        console.error("Error adding comment:", error);
+        throw error;
+      }
+    },
+    [post._id]
+  );
+
+  const handleLikeComment = useCallback(
+    async (commentId) => {
+      if (!isAuthenticated) return;
+
+      try {
+        const baseURL = process.env.REACT_APP_API_URL || "";
+        const url = baseURL
+          ? `${baseURL}/api/comments/${commentId}/like`
+          : `/api/comments/${commentId}/like`;
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const updatedComment = await response.json();
+          setComments((prev) =>
+            prev.map((comment) =>
+              comment._id === commentId ? updatedComment : comment
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Error liking comment:", error);
+        toast.error("Failed to like comment");
+      }
+    },
+    [isAuthenticated]
+  );
+
+  const handleDeleteComment = useCallback(async (commentId) => {
+    try {
+      const baseURL = process.env.REACT_APP_API_URL || "";
+      const url = baseURL
+        ? `${baseURL}/api/comments/${commentId}`
+        : `/api/comments/${commentId}`;
+
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        setComments((prev) =>
+          prev.filter((comment) => comment._id !== commentId)
+        );
+        setCommentCount((prev) => Math.max(0, prev - 1));
+        toast.success("Comment deleted");
+      } else {
+        throw new Error("Failed to delete comment");
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      toast.error("Failed to delete comment");
+    }
+  }, []);
+
   const handleLocationClick = useCallback((location) => {
     const encodedLocation = encodeURIComponent(location);
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
 
     // Detect iOS devices
     if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-      // Use Apple Maps for iOS devices
       window.open(
         `https://maps.apple.com/?q=${encodedLocation}`,
         "_blank",
@@ -168,20 +304,15 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     }
     // Detect Android devices
     else if (/android/i.test(userAgent)) {
-      // Try to open in Google Maps app first, with fallback to web
       const intent = `intent://maps.google.com/maps?q=${encodedLocation}#Intent;scheme=https;package=com.google.android.apps.maps;end`;
       const fallback = `https://maps.google.com/maps?q=${encodedLocation}`;
 
       try {
-        // Try to open the app
         window.location.href = intent;
-
-        // Fallback after a short delay if app doesn't open
         setTimeout(() => {
           window.open(fallback, "_blank", "noopener,noreferrer");
         }, 500);
       } catch (e) {
-        // If intent fails, open web version
         window.open(fallback, "_blank", "noopener,noreferrer");
       }
     }
@@ -193,48 +324,33 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         "noopener,noreferrer"
       );
     }
-
-    // Optional: Add analytics or feedback
-    console.log(
-      `Opening location: ${location} on ${
-        userAgent.includes("iPhone")
-          ? "iOS"
-          : userAgent.includes("Android")
-          ? "Android"
-          : "Desktop"
-      }`
-    );
   }, []);
 
   const handleTouchStart = useCallback(
     (e) => {
-      // Clear any previous timeout to prevent multiple handlers
       if (longPressTimeoutRef.current) {
         clearTimeout(longPressTimeoutRef.current);
       }
 
       setIsPressing(true);
 
-      // Set a shorter timeout for the long press detection
       longPressTimeoutRef.current = setTimeout(() => {
         setIsLongPressing(true);
         setShowFullscreen(true);
         setFullscreenIndex(currentMediaIndex);
-      }, 300); // Reduced from 500ms to 300ms for quicker response
+      }, 300);
     },
     [currentMediaIndex]
   );
 
   const handleTouchEnd = useCallback(
     (e) => {
-      // Prevent default to stop any potential click events if we detected a long press
       if (isLongPressing) {
         e.preventDefault();
       }
 
       setIsPressing(false);
 
-      // Clear the timeout to prevent it from firing after touch has ended
       if (longPressTimeoutRef.current) {
         clearTimeout(longPressTimeoutRef.current);
         longPressTimeoutRef.current = null;
@@ -261,7 +377,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   };
 
   const handleTouchMove = useCallback((e) => {
-    // If user moves finger, cancel the long press
     if (longPressTimeoutRef.current) {
       clearTimeout(longPressTimeoutRef.current);
       longPressTimeoutRef.current = null;
@@ -305,8 +420,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
       if (typeof onLike === "function") {
         onLike(post._id);
       }
-
-      console.log("[LIKE] Like registered and like count updated.");
     });
   }, [post._id, isProcessing, hasLiked, isAuthenticated, likePost, onLike]);
 
@@ -338,7 +451,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
       itemName: truncatedPreview,
       onConfirm: async () => {
         try {
-          // Get the token
           const token = localStorage.getItem("token");
 
           if (!token) {
@@ -347,13 +459,9 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
           }
 
           const baseURL = process.env.REACT_APP_API_URL || "";
-
           const url = baseURL
             ? `${baseURL}/api/posts/${post._id}`
             : `/api/posts/${post._id}`;
-
-          console.log(`Attempting to delete post with ID: ${post._id}`);
-          console.log(`Using URL: ${url}`);
 
           const response = await fetch(url, {
             method: "DELETE",
@@ -361,49 +469,28 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
-
             credentials: "include",
           });
-
-          console.log(`Delete response status: ${response.status}`);
 
           if (response.ok) {
             if (typeof onDelete === "function") {
               onDelete(post._id);
-            } else {
-              console.warn(
-                "onDelete is not a function. Check parent component."
-              );
             }
-
-            // Show success message
             toast.success("Post deleted successfully");
-
-            // Refresh the window
             window.location.reload();
           } else {
-            // Try to parse error response
             let errorMessage = "Delete failed";
             try {
               const errorData = await response.json();
               errorMessage = errorData.message || errorMessage;
             } catch (e) {
-              // If response isn't JSON, try to get text
               try {
                 const errorText = await response.text();
                 if (errorText) errorMessage = errorText;
               } catch (e2) {
-                // If we can't get text either, just use status
                 errorMessage = `Delete failed: ${response.status}`;
               }
             }
-
-            console.error("Error response:", {
-              status: response.status,
-              statusText: response.statusText,
-              message: errorMessage,
-            });
-
             throw new Error(errorMessage);
           }
         } catch (err) {
@@ -412,16 +499,13 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         }
       },
       onCancel: () => {
-        console.log("Post deletion cancelled");
-        setShowActions(false); // Close the actions menu
+        setShowActions(false);
       },
       destructive: true,
     });
 
-    setShowActions(false); // Close the actions menu immediately
+    setShowActions(false);
   }, [post, onDelete, showDeleteModal]);
-
-  // Remove the old handleDelete function since it's now in the modal callback
 
   const handleNext = useCallback(
     (e) => {
@@ -505,8 +589,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                     <FaEdit /> Edit Post
                   </ActionItem>
                   <ActionItem onClick={handleDeletePost}>
-                    {" "}
-                    {/* Use new handler */}
                     <FaTrash /> Delete Post
                   </ActionItem>
                 </ActionsMenu>
@@ -628,6 +710,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
             )}
           </MediaContainer>
         )}
+
         {post.location && (
           <LocationBar
             onClick={() => handleLocationClick(post.location)}
@@ -650,6 +733,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
             </LocationIndicator>
           </LocationBar>
         )}
+
         <CardActions>
           <ActionButtons>
             {isAuthenticated ? (
@@ -674,8 +758,12 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
               </LikeIcon>
             )}
 
-            <CommentButton to={`/post/${post._id}`}>
+            <CommentButton
+              onClick={handleOpenComments}
+              aria-label="View comments"
+            >
               <FaComment />
+              {commentCount > 0 && <CommentCount>{commentCount}</CommentCount>}
             </CommentButton>
           </ActionButtons>
 
@@ -686,10 +774,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
         <CardContent>
           <PostLink to={`/post/${post._id}`}>
-            {/* Display the title in larger bold font */}
             {post.title && <PostTitle>{post.title}</PostTitle>}
-
-            {/* Display the caption with truncation */}
             {post.caption && (
               <Caption>
                 <TruncatedText
@@ -699,8 +784,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                 />
               </Caption>
             )}
-
-            {/* Display the content if it exists */}
             {post.content && (
               <Content>
                 <TruncatedText
@@ -759,13 +842,12 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                 }}
               />
 
-              {/* Add navigation buttons if there are multiple media items */}
               {post.media.length > 1 && (
                 <>
                   <FullscreenNavButton
                     className="prev"
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent modal from closing
+                      e.stopPropagation();
                       if (fullscreenIndex > 0) {
                         setFullscreenIndex((prev) => prev - 1);
                       }
@@ -779,7 +861,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                   <FullscreenNavButton
                     className="next"
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent modal from closing
+                      e.stopPropagation();
                       if (fullscreenIndex < post.media.length - 1) {
                         setFullscreenIndex((prev) => prev + 1);
                       }
@@ -798,7 +880,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                 </FullscreenIndicator>
               )}
 
-              {/* Add dots indicator for multiple images */}
               {post.media.length > 1 && (
                 <FullscreenProgressIndicator>
                   {post.media.map((_, index) => (
@@ -829,7 +910,16 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         </Suspense>
       )}
 
-      {/* Remove the old DeleteModalComponent - it's now handled globally */}
+      <CommentModal
+        isOpen={showCommentModal}
+        onClose={() => setShowCommentModal(false)}
+        post={post}
+        comments={comments}
+        onAddComment={handleAddComment}
+        onLikeComment={handleLikeComment}
+        onDeleteComment={handleDeleteComment}
+        isLoading={isLoadingComments}
+      />
     </CardWrapper>
   );
 });
@@ -1023,7 +1113,6 @@ const MediaContainer = styled(Link)`
   opacity: ${(props) => (props.isPressing ? 0.9 : 1)};
   border: none;
 
-  // Keep loading animation
   &:before {
     content: "";
     position: absolute;
@@ -1309,22 +1398,28 @@ const LikeIcon = styled.div`
   align-items: center;
 `;
 
-const CommentButton = styled(Link)`
+const CommentButton = styled.button`
   color: ${COLORS.textTertiary};
   font-size: 1.5rem;
   display: flex;
   align-items: center;
+  gap: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   background: none;
   border: none;
   padding: 0;
-  text-decoration: none;
 
   &:hover {
     transform: scale(1.15);
     color: ${COLORS.textSecondary};
   }
+`;
+
+const CommentCount = styled.span`
+  font-size: 0.8rem;
+  color: ${COLORS.textSecondary};
+  font-weight: 500;
 `;
 
 const LikesCount = styled.div`
@@ -1472,11 +1567,9 @@ const CloseFullscreenButton = styled.button`
   justify-content: center;
   transition: all 0.2s ease;
 
-  /* Remove default tap highlight on mobile devices */
   -webkit-tap-highlight-color: transparent;
   outline: none;
 
-  /* Provide custom active state styling instead */
   &:active {
     background-color: ${COLORS.primaryMint}80;
     transform: scale(0.95);
@@ -1583,11 +1676,9 @@ const FullscreenNavButton = styled.button`
   transition: all 0.2s ease;
   z-index: 10;
 
-  /* Remove default tap highlight on mobile devices */
   -webkit-tap-highlight-color: transparent;
   outline: none;
 
-  /* Provide custom active state styling instead */
   &:active {
     background-color: ${COLORS.primaryMint}80;
     transform: translateY(-50%) scale(0.95);
@@ -1617,6 +1708,7 @@ const FullscreenNavButton = styled.button`
     height: 40px;
   }
 `;
+
 const FullscreenProgressIndicator = styled.div`
   position: absolute;
   bottom: 60px;
@@ -1640,7 +1732,6 @@ const FullscreenProgressDot = styled.button`
   transition: all 0.2s ease;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
 
-  /* Remove default tap highlight on mobile devices */
   -webkit-tap-highlight-color: transparent;
   outline: none;
 

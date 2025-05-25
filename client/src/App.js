@@ -6,11 +6,12 @@ import ReactGA from "react-ga4";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthContext } from "./context/AuthContext";
 import { LikesProvider } from "./context/LikesContext";
-import { DeleteModalProvider } from "./context/DeleteModalContext"; // Add this import
+import { CommentsProvider } from "./context/CommentsContext";
+import { DeleteModalProvider } from "./context/DeleteModalContext";
 import ScrollToTop from "./components/ScrollToTop";
 import InstallPrompt from "./components/pwa/InstallPrompt";
 import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButtonAdjuster";
-import DeleteConfirmationModal from "./components/DeleteConfirmationModal"; // Add this import
+import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
 import AppRoutes from "./AppRoutes";
 
 // Separate components for better organization
@@ -79,26 +80,29 @@ function App() {
         <PageTracker />
         <div className="app">
           <LikesProvider>
-            <DeleteModalProvider>
+            <CommentsProvider>
               {" "}
-              {/* Wrap with DeleteModalProvider */}
-              <Toaster position="top-right" />
-              {!networkStatus && (
-                <OfflineIndicator>
-                  You are currently offline. Some features may be limited.
-                </OfflineIndicator>
-              )}
-              <AppRoutes
-                user={user}
-                homeRef={homeRef}
-                handleSearch={handleSearch}
-                handleClearSearch={handleClearSearch}
-              />
-              <InstallPrompt />
-              <FloatingActionButtonAdjuster />
-              {/* Add the global delete modal */}
-              <DeleteConfirmationModal />
-            </DeleteModalProvider>
+              {/* Add CommentsProvider here */}
+              <DeleteModalProvider>
+                <Toaster position="top-right" />
+                {!networkStatus && (
+                  <OfflineIndicator>
+                    You are currently offline. Some features may be limited.
+                  </OfflineIndicator>
+                )}
+                <AppRoutes
+                  user={user}
+                  homeRef={homeRef}
+                  handleSearch={handleSearch}
+                  handleClearSearch={handleClearSearch}
+                />
+                <InstallPrompt />
+                <FloatingActionButtonAdjuster />
+                {/* Add the global delete modal */}
+                <DeleteConfirmationModal />
+              </DeleteModalProvider>
+            </CommentsProvider>{" "}
+            {/* Close CommentsProvider here */}
           </LikesProvider>
         </div>
       </Router>
