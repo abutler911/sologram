@@ -448,9 +448,12 @@ const ModalContainer = styled.div`
       animation: ${slideDown} 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     `}
 
+  /* Ensure proper flex behavior for scrolling */
+  min-height: 0;
+
   @media (max-width: 768px) {
     height: 65vh;
-    max-height: none;
+    max-height: 80vh;
   }
 
   @media (max-height: 600px) {
@@ -565,17 +568,20 @@ const PostCaption = styled.p`
 `;
 
 const ModalContent = styled.div`
-  overflow: hidden;
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 `;
 
 const CommentsContainer = styled.div`
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 0;
   min-height: 0;
+  max-height: 100%;
 
   /* Smooth scrolling */
   scroll-behavior: smooth;
@@ -583,20 +589,21 @@ const CommentsContainer = styled.div`
 
   /* Custom scrollbar */
   &::-webkit-scrollbar {
-    width: 4px;
+    width: 6px;
   }
 
   &::-webkit-scrollbar-track {
-    background: transparent;
+    background: ${COLORS.background}30;
+    border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: ${COLORS.textTertiary}40;
-    border-radius: 2px;
+    background: ${COLORS.textTertiary}60;
+    border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: ${COLORS.textSecondary}60;
+    background: ${COLORS.textSecondary}80;
   }
 `;
 
@@ -654,6 +661,7 @@ const EmptySubtitle = styled.p`
 
 const CommentsList = styled.div`
   padding: 0;
+  height: 100%;
 `;
 
 const CommentItem = styled.div`
@@ -661,6 +669,7 @@ const CommentItem = styled.div`
   padding: 16px 20px;
   border-bottom: 1px solid ${COLORS.divider}20;
   transition: background-color 0.2s ease;
+  flex-shrink: 0;
 
   &:hover {
     background-color: ${COLORS.background}20;
@@ -669,6 +678,7 @@ const CommentItem = styled.div`
   &:last-child {
     border-bottom: none;
     padding-bottom: 20px;
+    margin-bottom: 20px;
   }
 `;
 
