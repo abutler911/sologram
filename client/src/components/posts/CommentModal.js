@@ -22,6 +22,7 @@ import { toast } from "react-hot-toast";
 import { AuthContext } from "../../context/AuthContext";
 import { COLORS } from "../../theme";
 import authorImg from "../../assets/andy.jpg";
+import { createPortal } from "react-dom";
 
 const AUTHOR_IMAGE = authorImg;
 const AUTHOR_NAME = "Andrew";
@@ -210,7 +211,7 @@ export const CommentModal = ({
 
   if (!isOpen && !isClosing) return null;
 
-  return (
+  return createPortal(
     <ModalOverlay onClick={handleBackdropClick} isClosing={isClosing}>
       <ModalContainer
         ref={modalRef}
@@ -390,7 +391,8 @@ export const CommentModal = ({
           </AuthPrompt>
         )}
       </ModalContainer>
-    </ModalOverlay>
+    </ModalOverlay>,
+    document.body
   );
 };
 
@@ -431,44 +433,24 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContainer = styled.div`
-  position: absolute;
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   width: 100%;
+  max-height: 100vh;
+  height: calc(100vh - env(safe-area-inset-top));
   background-color: ${COLORS.cardBackground};
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
-  height: 60vh;
-  max-height: 600px;
-  min-height: 400px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
   z-index: 10000;
-  animation: ${slideUp} 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  transform-origin: bottom;
+  animation: ${slideUp} 0.3s ease-out;
 
-  ${(props) =>
-    props.isClosing &&
-    css`
-      animation: ${slideDown} 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    `}
-
-  @media (max-width: 768px) {
-    height: 65vh;
-    max-height: 85vh;
-    min-height: 50vh;
-  }
-
-  @media (max-height: 600px) {
-    height: 70vh;
-    max-height: 90vh;
-  }
-
-  @media (max-height: 500px) {
-    height: 80vh;
-    max-height: 95vh;
+  @supports (-webkit-touch-callout: none) {
+    height: -webkit-fill-available;
+    max-height: -webkit-fill-available;
   }
 `;
 
@@ -486,13 +468,12 @@ const ModalHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px 16px;
+  padding: env(safe-area-inset-top, 16px) 20px 16px;
   border-bottom: 1px solid ${COLORS.divider}40;
   position: sticky;
   top: 0;
   background-color: ${COLORS.cardBackground};
-  z-index: 1;
-  flex-shrink: 0;
+  z-index: 2;
 `;
 
 const HeaderTitle = styled.h2`
@@ -579,44 +560,14 @@ const ModalContent = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  height: 0; /* Force flex child to use available space */
 `;
 
 const CommentsContainer = styled.div`
   flex: 1;
-  overflow-y: scroll;
-  overflow-x: hidden;
+  overflow-y: auto;
   padding: 0;
-  height: 100%;
-
-  /* Force hardware acceleration for smooth scrolling */
   -webkit-overflow-scrolling: touch;
   will-change: scroll-position;
-
-  /* Enhanced scrollbar */
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: ${COLORS.background || "#f8f9fa"};
-    border-radius: 4px;
-    margin: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: ${COLORS.textSecondary || "#6c757d"};
-    border-radius: 4px;
-    border: 1px solid ${COLORS.background || "#f8f9fa"};
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: ${COLORS.textPrimary || "#495057"};
-  }
-
-  &::-webkit-scrollbar-thumb:active {
-    background: ${COLORS.textPrimary || "#495057"};
-  }
 `;
 
 const LoadingState = styled.div`
