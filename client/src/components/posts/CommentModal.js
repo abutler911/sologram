@@ -362,48 +362,53 @@ export const CommentButton = ({ postId, commentCount = 0, onClick }) => {
 // Styled Components - FIXED FOR PERFECT CENTERING
 const ModalOverlay = styled.div`
   position: fixed;
+  inset: 0;
+  display: flex;
+
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.8);
   display: flex;
-  align-items: center; /* ALWAYS CENTER VERTICALLY */
-  justify-content: center; /* ALWAYS CENTER HORIZONTALLY */
+  align-items: center;
+  justify-content: center;
   z-index: 9999;
   animation: ${fadeIn} 0.3s ease-out;
   backdrop-filter: blur(4px);
-  padding: 20px; /* ADD PADDING TO PREVENT EDGE TOUCHING */
+  padding: 20px;
 `;
 
 const ModalContainer = styled.div`
   background-color: ${COLORS.cardBackground};
-  border-radius: 16px; /* CONSISTENT BORDER RADIUS */
+  border-radius: 16px;
   width: 100%;
-  max-width: 500px; /* CONSISTENT MAX WIDTH */
+  max-width: 500px;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  animation: ${scaleIn} 0.3s cubic-bezier(0.16, 1, 0.3, 1); /* CONSISTENT ANIMATION */
+  animation: ${scaleIn} 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
-
-  /* ENSURE CENTERING ON ALL DEVICES */
   margin: auto;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 
   @media (max-width: 768px) {
-    width: calc(100% - 40px); /* ACCOUNT FOR PADDING */
+    width: calc(100% - 40px);
     max-width: none;
-    max-height: 80vh; /* SLIGHTLY SMALLER ON MOBILE */
+    max-height: 80vh;
   }
 
   @media (max-height: 600px) {
-    max-height: 90vh; /* ADJUST FOR SHORT SCREENS */
+    max-height: 90vh;
   }
 
   @media (max-height: 500px) {
-    max-height: 95vh; /* VERY SHORT SCREENS */
+    max-height: 95vh;
   }
 `;
 
@@ -417,7 +422,7 @@ const ModalHeader = styled.div`
   top: 0;
   background-color: ${COLORS.cardBackground};
   z-index: 1;
-  flex-shrink: 0; /* PREVENT HEADER FROM SHRINKING */
+  flex-shrink: 0;
 `;
 
 const HeaderTitle = styled.h2`
@@ -450,7 +455,7 @@ const PostPreview = styled.div`
   padding: 16px 20px;
   border-bottom: 1px solid ${COLORS.divider};
   background-color: ${COLORS.background}50;
-  flex-shrink: 0; /* PREVENT PREVIEW FROM SHRINKING */
+  flex-shrink: 0;
 `;
 
 const PostAuthor = styled.div`
