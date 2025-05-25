@@ -9,7 +9,7 @@ import {
   FaUpload,
   FaPencilAlt,
   FaSave,
-  FaSparkles,
+  FaStar,
   FaHeart,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -175,7 +175,7 @@ const ProfilePage = () => {
             <HeaderBackground />
             <HeaderContent>
               <SparkleIcon>
-                <FaSparkles />
+                <FaStar />
               </SparkleIcon>
               <HeaderTitle>Create Your Perfect Profile</HeaderTitle>
               <HeaderSubtitle>Show the world who you are ✨</HeaderSubtitle>
