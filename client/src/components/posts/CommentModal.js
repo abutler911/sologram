@@ -235,7 +235,14 @@ export const CommentModal = ({
                   />
                   <CommentContent>
                     <CommentHeader>
-                      <CommentAuthor>{comment.author.name}</CommentAuthor>
+                      <CommentAuthorInfo>
+                        <CommentAuthor>{comment.author.name}</CommentAuthor>
+                        {comment.author.username && (
+                          <CommentUsername>
+                            @{comment.author.username}
+                          </CommentUsername>
+                        )}
+                      </CommentAuthorInfo>
                       <CommentTime>
                         {formatDistanceToNow(new Date(comment.createdAt), {
                           addSuffix: true,
@@ -302,7 +309,10 @@ export const CommentModal = ({
           <CommentInputContainer>
             {replyingTo && (
               <ReplyIndicator>
-                <ReplyText>Replying to @{replyingTo.author.name}</ReplyText>
+                <ReplyText>
+                  Replying to @
+                  {replyingTo.author.username || replyingTo.author.name}
+                </ReplyText>
                 <CancelReply onClick={cancelReply}>
                   <FaTimes />
                 </CancelReply>
@@ -610,19 +620,37 @@ const CommentHeader = styled.div`
   align-items: center;
   margin-bottom: 4px;
   position: relative;
+  gap: 8px;
+`;
+
+const CommentAuthorInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0; /* Allow text truncation if needed */
 `;
 
 const CommentAuthor = styled.span`
   font-weight: 600;
   color: ${COLORS.textPrimary};
   font-size: 14px;
-  margin-right: 8px;
+  white-space: nowrap;
+`;
+
+const CommentUsername = styled.span`
+  color: ${COLORS.textTertiary};
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+  opacity: 0.8;
 `;
 
 const CommentTime = styled.span`
   color: ${COLORS.textTertiary};
   font-size: 12px;
-  flex: 1;
+  white-space: nowrap;
+  margin-left: auto; /* Push to the right */
 `;
 
 const CommentActions = styled.div`
