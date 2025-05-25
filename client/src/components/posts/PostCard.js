@@ -166,8 +166,8 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     try {
       const baseURL = process.env.REACT_APP_API_URL || "";
       const url = baseURL
-        ? `${baseURL}/api/posts/${post._id}/comments`
-        : `/api/posts/${post._id}/comments`;
+        ? `${baseURL}/api/comments/posts/${post._id}`
+        : `/api/comments/posts/${post._id}`;
 
       const response = await fetch(url, {
         headers: {

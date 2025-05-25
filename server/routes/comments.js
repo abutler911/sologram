@@ -7,8 +7,8 @@ const Comment = require("../models/Comment"); // Comment model
 const Post = require("../models/Post"); // Post model
 const User = require("../models/User"); // User model
 
-// GET /api/posts/:postId/comments - Get all comments for a post
-router.get("/posts/:postId/comments", async (req, res) => {
+// GET /api/comments/posts/:postId - Get all comments for a post
+router.get("/posts/:postId", async (req, res) => {
   try {
     const { postId } = req.params;
     const { page = 1, limit = 50 } = req.query;
@@ -47,8 +47,8 @@ router.get("/posts/:postId/comments", async (req, res) => {
   }
 });
 
-// POST /api/posts/:postId/comments - Add a new comment
-router.post("/posts/:postId/comments", protect, async (req, res) => {
+// POST /api/comments/posts/:postId - Add a new comment
+router.post("/posts/:postId", protect, async (req, res) => {
   try {
     const { postId } = req.params;
     const { text, parentId } = req.body;
@@ -121,7 +121,7 @@ router.post("/posts/:postId/comments", protect, async (req, res) => {
   }
 });
 
-// POST /api/:commentId/like - Like/unlike a comment
+// POST /api/comments/:commentId/like - Like/unlike a comment
 router.post("/:commentId/like", protect, async (req, res) => {
   try {
     const { commentId } = req.params;
@@ -161,7 +161,7 @@ router.post("/:commentId/like", protect, async (req, res) => {
   }
 });
 
-// DELETE /api/:commentId - Delete a comment
+// DELETE /api/comments/:commentId - Delete a comment
 router.delete("/:commentId", protect, async (req, res) => {
   try {
     const { commentId } = req.params;
@@ -212,7 +212,7 @@ router.delete("/:commentId", protect, async (req, res) => {
   }
 });
 
-// GET /api/:commentId/replies - Get replies for a comment
+// GET /api/comments/:commentId/replies - Get replies for a comment
 router.get("/:commentId/replies", async (req, res) => {
   try {
     const { commentId } = req.params;
