@@ -407,11 +407,17 @@ export const CommentButton = ({ postId, commentCount = 0, onClick }) => {
 // Styled Components - TikTok Style Bottom Sheet
 const ModalOverlay = styled.div`
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
   background-color: rgba(0, 0, 0, 0.6);
   z-index: 9999;
   backdrop-filter: blur(4px);
   animation: ${fadeIn} 0.3s ease-out;
+  pointer-events: auto;
 
   ${(props) =>
     props.isClosing &&
@@ -420,15 +426,16 @@ const ModalOverlay = styled.div`
     `}
 
   @supports (-webkit-touch-callout: none) {
-    min-height: -webkit-fill-available;
+    height: -webkit-fill-available;
   }
 `;
 
 const ModalContainer = styled.div`
-  position: fixed;
+  position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
+  width: 100%;
   background-color: ${COLORS.cardBackground};
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
@@ -438,9 +445,9 @@ const ModalContainer = styled.div`
   display: flex;
   flex-direction: column;
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
   z-index: 10000;
   animation: ${slideUp} 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform-origin: bottom;
 
   ${(props) =>
     props.isClosing &&
@@ -448,20 +455,20 @@ const ModalContainer = styled.div`
       animation: ${slideDown} 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     `}
 
-  /* Ensure proper flex behavior for scrolling */
-  min-height: 0;
-
   @media (max-width: 768px) {
     height: 65vh;
-    max-height: 80vh;
+    max-height: 85vh;
+    min-height: 50vh;
   }
 
   @media (max-height: 600px) {
     height: 70vh;
+    max-height: 90vh;
   }
 
   @media (max-height: 500px) {
     height: 80vh;
+    max-height: 95vh;
   }
 `;
 
@@ -571,39 +578,44 @@ const ModalContent = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
   overflow: hidden;
+  height: 0; /* Force flex child to use available space */
 `;
 
 const CommentsContainer = styled.div`
   flex: 1;
-  overflow-y: auto;
+  overflow-y: scroll;
   overflow-x: hidden;
   padding: 0;
-  min-height: 0;
-  max-height: 100%;
+  height: 100%;
 
-  /* Smooth scrolling */
-  scroll-behavior: smooth;
+  /* Force hardware acceleration for smooth scrolling */
   -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
 
-  /* Custom scrollbar */
+  /* Enhanced scrollbar */
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
   }
 
   &::-webkit-scrollbar-track {
-    background: ${COLORS.background}30;
-    border-radius: 3px;
+    background: ${COLORS.background || "#f8f9fa"};
+    border-radius: 4px;
+    margin: 4px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: ${COLORS.textTertiary}60;
-    border-radius: 3px;
+    background: ${COLORS.textSecondary || "#6c757d"};
+    border-radius: 4px;
+    border: 1px solid ${COLORS.background || "#f8f9fa"};
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: ${COLORS.textSecondary}80;
+    background: ${COLORS.textPrimary || "#495057"};
+  }
+
+  &::-webkit-scrollbar-thumb:active {
+    background: ${COLORS.textPrimary || "#495057"};
   }
 `;
 
@@ -660,8 +672,8 @@ const EmptySubtitle = styled.p`
 `;
 
 const CommentsList = styled.div`
-  padding: 0;
-  height: 100%;
+  min-height: min-content;
+  padding-bottom: 20px;
 `;
 
 const CommentItem = styled.div`
@@ -669,7 +681,6 @@ const CommentItem = styled.div`
   padding: 16px 20px;
   border-bottom: 1px solid ${COLORS.divider}20;
   transition: background-color 0.2s ease;
-  flex-shrink: 0;
 
   &:hover {
     background-color: ${COLORS.background}20;
@@ -677,8 +688,6 @@ const CommentItem = styled.div`
 
   &:last-child {
     border-bottom: none;
-    padding-bottom: 20px;
-    margin-bottom: 20px;
   }
 `;
 
