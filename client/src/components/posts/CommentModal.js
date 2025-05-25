@@ -27,38 +27,20 @@ const AUTHOR_IMAGE = authorImg;
 const AUTHOR_NAME = "Andrew";
 
 // Animation keyframes
-const slideUp = keyframes`
-  0% { 
-    opacity: 0; 
-    transform: translateY(100vh);
-  }
-  100% { 
-    opacity: 1; 
-    transform: translateY(0);
-  }
-`;
-
-const slideDown = keyframes`
-  0% { 
-    opacity: 1; 
-    transform: translateY(0);
-  }
-  100% { 
-    opacity: 0; 
-    transform: translateY(100vh);
-  }
-`;
-
 const fadeIn = keyframes`
   0% { opacity: 0; }
   100% { opacity: 1; }
 `;
 
 const scaleIn = keyframes`
-  0% { transform: scale(0); opacity: 0; }
-  15% { transform: scale(1.2); opacity: 1; }
-  30% { transform: scale(0.95); }
-  100% { transform: scale(1); opacity: 1; }
+  0% { 
+    transform: scale(0.8) translateY(20px); 
+    opacity: 0; 
+  }
+  100% { 
+    transform: scale(1) translateY(0); 
+    opacity: 1; 
+  }
 `;
 
 const pulse = keyframes`
@@ -204,11 +186,7 @@ export const CommentModal = ({
 
   return (
     <ModalOverlay onClick={handleBackdropClick}>
-      <ModalContainer
-        ref={modalRef}
-        onClick={(e) => e.stopPropagation()}
-        isOpen={isOpen}
-      >
+      <ModalContainer ref={modalRef} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <ModalHeader>
           <HeaderTitle>Comments</HeaderTitle>
@@ -377,7 +355,7 @@ export const CommentButton = ({ postId, commentCount = 0, onClick }) => {
   );
 };
 
-// Styled Components - UPDATED WITH CRITICAL FIXES
+// Styled Components - FIXED FOR PERFECT CENTERING
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -386,41 +364,42 @@ const ModalOverlay = styled.div`
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.8);
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 9999; /* INCREASED Z-INDEX */
+  align-items: center; /* ALWAYS CENTER VERTICALLY */
+  justify-content: center; /* ALWAYS CENTER HORIZONTALLY */
+  z-index: 9999;
   animation: ${fadeIn} 0.3s ease-out;
   backdrop-filter: blur(4px);
-
-  @media (min-width: 768px) {
-    align-items: center;
-  }
+  padding: 20px; /* ADD PADDING TO PREVENT EDGE TOUCHING */
 `;
 
 const ModalContainer = styled.div`
   background-color: ${COLORS.cardBackground};
-  border-radius: 16px 16px 0 0;
+  border-radius: 16px; /* CONSISTENT BORDER RADIUS */
   width: 100%;
-  max-width: 100vw;
-  max-height: 85vh; /* REDUCED FROM 90vh FOR BETTER FIT */
+  max-width: 500px; /* CONSISTENT MAX WIDTH */
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
-  animation: ${(props) => (props.isOpen ? slideUp : slideDown)} 0.4s
-    cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.3);
-  /* CRITICAL: Ensure modal doesn't exceed viewport */
+  animation: ${scaleIn} 0.3s cubic-bezier(0.16, 1, 0.3, 1); /* CONSISTENT ANIMATION */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
 
-  @media (min-width: 768px) {
-    border-radius: 16px;
-    max-width: 500px;
-    max-height: 80vh;
-    animation: ${fadeIn} 0.3s ease-out;
+  /* ENSURE CENTERING ON ALL DEVICES */
+  margin: auto;
+
+  @media (max-width: 768px) {
+    width: calc(100% - 40px); /* ACCOUNT FOR PADDING */
+    max-width: none;
+    max-height: 80vh; /* SLIGHTLY SMALLER ON MOBILE */
   }
 
   @media (max-height: 600px) {
-    max-height: 95vh; /* Adjust for shorter screens */
+    max-height: 90vh; /* ADJUST FOR SHORT SCREENS */
+  }
+
+  @media (max-height: 500px) {
+    max-height: 95vh; /* VERY SHORT SCREENS */
   }
 `;
 
