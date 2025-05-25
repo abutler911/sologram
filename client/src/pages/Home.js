@@ -359,7 +359,7 @@ const Home = forwardRef((props, ref) => {
 
 // Styled components (same as original but organized)
 const PageWrapper = styled.div`
-  background-color: #fafafa; // Instagram's background color
+  background-color: #000000; // Black background
   min-height: 100vh;
   padding: 0; // No padding
 
