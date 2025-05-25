@@ -67,6 +67,11 @@ const pulse = keyframes`
   100% { transform: scale(1); }
 `;
 
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
 // Comment Modal Component
 export const CommentModal = ({
   isOpen,
@@ -112,20 +117,40 @@ export const CommentModal = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Prevent body scroll when modal is open
+  // CRITICAL FIX: Prevent body scroll and handle escape key
   useEffect(() => {
     if (isOpen) {
+      // Store current scroll position
+      const scrollY = window.scrollY;
+
+      // Prevent body scroll with proper restoration
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
       document.body.style.overflow = "hidden";
+
       // Focus on textarea when modal opens
       setTimeout(() => textareaRef.current?.focus(), 300);
-    } else {
-      document.body.style.overflow = "unset";
-    }
 
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
+      // Handle escape key
+      const handleEscape = (e) => {
+        if (e.key === "Escape") {
+          onClose();
+        }
+      };
+      document.addEventListener("keydown", handleEscape);
+
+      return () => {
+        // Restore body scroll to exact position
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        document.body.style.overflow = "";
+        window.scrollTo(0, scrollY);
+        document.removeEventListener("keydown", handleEscape);
+      };
+    }
+  }, [isOpen, onClose]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -168,10 +193,17 @@ export const CommentModal = ({
     }
   };
 
+  // Handle backdrop click
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <ModalOverlay onClick={onClose}>
+    <ModalOverlay onClick={handleBackdropClick}>
       <ModalContainer
         ref={modalRef}
         onClick={(e) => e.stopPropagation()}
@@ -345,7 +377,7 @@ export const CommentButton = ({ postId, commentCount = 0, onClick }) => {
   );
 };
 
-// Styled Components
+// Styled Components - UPDATED WITH CRITICAL FIXES
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -356,7 +388,7 @@ const ModalOverlay = styled.div`
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  z-index: 3000;
+  z-index: 9999; /* INCREASED Z-INDEX */
   animation: ${fadeIn} 0.3s ease-out;
   backdrop-filter: blur(4px);
 
@@ -370,18 +402,25 @@ const ModalContainer = styled.div`
   border-radius: 16px 16px 0 0;
   width: 100%;
   max-width: 100vw;
-  max-height: 90vh;
+  max-height: 85vh; /* REDUCED FROM 90vh FOR BETTER FIT */
   display: flex;
   flex-direction: column;
   animation: ${(props) => (props.isOpen ? slideUp : slideDown)} 0.4s
     cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.3);
+  /* CRITICAL: Ensure modal doesn't exceed viewport */
+  position: relative;
+  overflow: hidden;
 
   @media (min-width: 768px) {
     border-radius: 16px;
     max-width: 500px;
     max-height: 80vh;
     animation: ${fadeIn} 0.3s ease-out;
+  }
+
+  @media (max-height: 600px) {
+    max-height: 95vh; /* Adjust for shorter screens */
   }
 `;
 
@@ -395,6 +434,7 @@ const ModalHeader = styled.div`
   top: 0;
   background-color: ${COLORS.cardBackground};
   z-index: 1;
+  flex-shrink: 0; /* PREVENT HEADER FROM SHRINKING */
 `;
 
 const HeaderTitle = styled.h2`
@@ -427,6 +467,7 @@ const PostPreview = styled.div`
   padding: 16px 20px;
   border-bottom: 1px solid ${COLORS.divider};
   background-color: ${COLORS.background}50;
+  flex-shrink: 0; /* PREVENT PREVIEW FROM SHRINKING */
 `;
 
 const PostAuthor = styled.div`
@@ -478,6 +519,26 @@ const CommentsContainer = styled.div`
   flex: 1;
   overflow-y: auto;
   padding: 0;
+  min-height: 0; /* CRITICAL FOR PROPER FLEX SCROLLING */
+
+  /* IMPROVED SCROLLBAR STYLING */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${COLORS.background || "#f8f9fa"};
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${COLORS.textTertiary || "#dee2e6"};
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${COLORS.textSecondary || "#adb5bd"};
+  }
 `;
 
 const LoadingState = styled.div`
@@ -495,7 +556,7 @@ const LoadingSpinner = styled.div`
   border: 2px solid ${COLORS.divider};
   border-top: 2px solid ${COLORS.accentMint};
   border-radius: 50%;
-  animation: ${pulse} 1s linear infinite;
+  animation: ${spin} 1s linear infinite; /* FIXED ANIMATION */
   margin-bottom: 12px;
 `;
 
@@ -716,6 +777,7 @@ const CommentInputContainer = styled.div`
   background-color: ${COLORS.cardBackground};
   position: sticky;
   bottom: 0;
+  flex-shrink: 0; /* PREVENT INPUT FROM SHRINKING */
 `;
 
 const ReplyIndicator = styled.div`
@@ -831,7 +893,7 @@ const SubmittingSpinner = styled.div`
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top: 2px solid white;
   border-radius: 50%;
-  animation: ${pulse} 1s linear infinite;
+  animation: ${spin} 1s linear infinite; /* FIXED ANIMATION */
 `;
 
 const AuthPrompt = styled.div`
@@ -839,6 +901,7 @@ const AuthPrompt = styled.div`
   text-align: center;
   border-top: 1px solid ${COLORS.divider};
   background-color: ${COLORS.background}30;
+  flex-shrink: 0; /* PREVENT AUTH PROMPT FROM SHRINKING */
 `;
 
 const AuthPromptText = styled.p`
