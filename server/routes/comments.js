@@ -2,7 +2,7 @@
 
 const express = require("express");
 const router = express.Router();
-const auth = require("../middleware/auth"); // Your auth middleware
+const { protect } = require("../middleware/auth"); // Your auth middleware
 const Comment = require("../models/Comment"); // Comment model
 const Post = require("../models/Post"); // Post model
 const User = require("../models/User"); // User model
@@ -48,7 +48,7 @@ router.get("/posts/:postId/comments", async (req, res) => {
 });
 
 // POST /api/posts/:postId/comments - Add a new comment
-router.post("/posts/:postId/comments", auth, async (req, res) => {
+router.post("/posts/:postId/comments", protect, async (req, res) => {
   try {
     const { postId } = req.params;
     const { text, parentId } = req.body;
@@ -122,7 +122,7 @@ router.post("/posts/:postId/comments", auth, async (req, res) => {
 });
 
 // POST /api/:commentId/like - Like/unlike a comment
-router.post("/:commentId/like", auth, async (req, res) => {
+router.post("/:commentId/like", protect, async (req, res) => {
   try {
     const { commentId } = req.params;
     const userId = req.user.id;
@@ -162,7 +162,7 @@ router.post("/:commentId/like", auth, async (req, res) => {
 });
 
 // DELETE /api/:commentId - Delete a comment
-router.delete("/:commentId", auth, async (req, res) => {
+router.delete("/:commentId", protect, async (req, res) => {
   try {
     const { commentId } = req.params;
     const userId = req.user.id;
