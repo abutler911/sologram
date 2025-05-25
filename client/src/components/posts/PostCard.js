@@ -927,7 +927,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 // STYLED COMPONENTS
 const CardWrapper = styled.div`
   ${fontFaceStyles}
-  background-color: transparent;
+  background-color: #1a1a1a;
   width: 100%;
   max-width: 600px;
   display: flex;
@@ -949,7 +949,7 @@ const CardWrapper = styled.div`
 
 const Card = styled.article`
   position: relative;
-  background-color: transparent;
+  background-color: #1a1a1a;
   border-radius: 0;
   overflow: visible;
   width: 100%;
@@ -957,7 +957,7 @@ const Card = styled.article`
   flex-direction: column;
   box-shadow: none;
   transition: none;
-  border: none;
+  border: 1px solid #2a2a2a;
 
   &:before {
     display: none;
@@ -968,13 +968,12 @@ const Card = styled.article`
     box-shadow: none;
   }
 `;
-
 const CardHeader = styled.header`
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background-color: transparent;
+  background-color: #1a1a1a;
   position: relative;
   border-bottom: none;
 
@@ -1436,7 +1435,7 @@ const CardContent = styled.div`
   padding: 0 16px 8px;
   display: flex;
   flex-direction: column;
-  background-color: transparent;
+  background-color: #1a1a1a;
 `;
 
 const PostTitle = styled.h2`
