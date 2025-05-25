@@ -1,5 +1,5 @@
 // public/sw.js - REPLACE YOUR ENTIRE FILE WITH THIS
-const CACHE_VERSION = "v1.2.9"; // Change this with each deployment
+const CACHE_VERSION = "v1.3.0"; // Change this with each deployment
 const STATIC_CACHE = `static-cache-${CACHE_VERSION}`;
 
 self.addEventListener("install", (event) => {

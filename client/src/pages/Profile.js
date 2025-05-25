@@ -9,6 +9,8 @@ import {
   FaUpload,
   FaPencilAlt,
   FaSave,
+  FaSparkles,
+  FaHeart,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -86,24 +88,23 @@ const ProfilePage = () => {
     }
 
     try {
-      // Add a fun toast notification style for pending
-      toast.loading("Updating your awesome profile...", {
+      toast.loading("Updating your amazing profile...", {
         style: {
           background: COLORS.cardBackground,
           color: COLORS.textPrimary,
-          border: `2px solid ${COLORS.primaryPurple}`,
+          border: `2px solid ${COLORS.primarySalmon}`,
         },
       });
 
       const success = await updateProfile(data);
       if (success) {
-        toast.success("Profile updated successfully! Looking good! 🔥", {
+        toast.success("Profile updated successfully! Looking fantastic! ✨", {
           style: {
             background: COLORS.cardBackground,
-            color: COLORS.primaryGreen,
-            border: `2px solid ${COLORS.primaryGreen}`,
+            color: COLORS.success,
+            border: `2px solid ${COLORS.success}`,
           },
-          icon: "🚀",
+          icon: "🎉",
           duration: 5000,
         });
         navigate("/");
@@ -111,8 +112,8 @@ const ProfilePage = () => {
         toast.error("Profile update failed. Let's try again!", {
           style: {
             background: COLORS.cardBackground,
-            color: COLORS.danger,
-            border: `2px solid ${COLORS.danger}`,
+            color: COLORS.error,
+            border: `2px solid ${COLORS.error}`,
           },
           icon: "💔",
         });
@@ -121,8 +122,8 @@ const ProfilePage = () => {
       toast.error("An unexpected error occurred. Tech happens!", {
         style: {
           background: COLORS.cardBackground,
-          color: COLORS.danger,
-          border: `2px solid ${COLORS.danger}`,
+          color: COLORS.error,
+          border: `2px solid ${COLORS.error}`,
         },
         icon: "🤯",
       });
@@ -134,189 +135,200 @@ const ProfilePage = () => {
   return (
     <PageWrapper>
       {/* Animated background elements */}
-      <BackgroundGradient />
-      <FloatingCircle
-        top="10%"
-        left="10%"
-        size="100px"
+      <BackgroundPattern />
+      <FloatingElement
+        top="5%"
+        left="8%"
+        size="120px"
         delay="0s"
-        color={COLORS.primaryPurple}
-        opacity="0.1"
-      />
-      <FloatingCircle
-        top="70%"
-        left="80%"
-        size="150px"
-        delay="2s"
-        color={COLORS.primaryBlue}
+        color={COLORS.primarySalmon}
         opacity="0.15"
       />
-      <FloatingCircle
-        top="40%"
-        left="90%"
-        size="80px"
+      <FloatingElement
+        top="75%"
+        left="85%"
+        size="90px"
+        delay="2s"
+        color={COLORS.primaryMint}
+        opacity="0.12"
+      />
+      <FloatingElement
+        top="35%"
+        left="92%"
+        size="150px"
         delay="1s"
-        color={COLORS.primaryGreen}
+        color={COLORS.primaryKhaki}
         opacity="0.1"
       />
-      <FloatingCircle
-        top="90%"
-        left="30%"
-        size="120px"
+      <FloatingElement
+        top="85%"
+        left="15%"
+        size="100px"
         delay="3s"
-        color={COLORS.primaryPurple}
+        color={COLORS.primaryBlueGray}
         opacity="0.08"
       />
 
       <Container>
-        <ContentWrapper>
-          <GlassHeader>
+        <ContentCard>
+          <ProfileHeader>
+            <HeaderBackground />
             <HeaderContent>
-              <Title>Customize Your Profile</Title>
-              <SubTitle>Make it uniquely yours</SubTitle>
+              <SparkleIcon>
+                <FaSparkles />
+              </SparkleIcon>
+              <HeaderTitle>Create Your Perfect Profile</HeaderTitle>
+              <HeaderSubtitle>Show the world who you are ✨</HeaderSubtitle>
             </HeaderContent>
-          </GlassHeader>
+          </ProfileHeader>
 
-          <CardBody>
-            <ProfileImageSection>
+          <ProfileBody>
+            <ImageUploadSection>
               {imagePreview ? (
-                <ProfileImageContainer>
-                  <ProfileImage src={imagePreview} alt="Preview" />
+                <ImageContainer>
+                  <ProfileAvatar src={imagePreview} alt="Profile Preview" />
+                  <ImageBorder />
                   <ImageOverlay>
-                    <OverlayButton
+                    <ChangeButton
                       type="button"
                       onClick={() => {
                         setProfileImage(null);
                         setImagePreview(null);
                       }}
                     >
-                      <FaPencilAlt /> Change
-                    </OverlayButton>
+                      <FaPencilAlt />
+                      <span>Change Photo</span>
+                    </ChangeButton>
                   </ImageOverlay>
-                </ProfileImageContainer>
+                </ImageContainer>
               ) : (
-                <DropAreaContainer {...getRootProps()} tabIndex={0}>
+                <UploadDropzone {...getRootProps()}>
                   <input {...getInputProps()} />
-                  <DropIcon>
+                  <UploadIcon>
                     <FaCamera />
-                  </DropIcon>
-                  <DropText>Upload Profile Picture</DropText>
-                </DropAreaContainer>
+                  </UploadIcon>
+                  <UploadText>Add Your Photo</UploadText>
+                  <UploadHint>Click or drag to upload</UploadHint>
+                </UploadDropzone>
               )}
-            </ProfileImageSection>
+            </ImageUploadSection>
 
-            <Form onSubmit={handleSubmit}>
-              <FormRow>
-                <FormGroup
-                  className={activeField === "firstName" ? "active" : ""}
+            <ProfileForm onSubmit={handleSubmit}>
+              <FormGrid>
+                <InputGroup
+                  className={activeField === "firstName" ? "focused" : ""}
                 >
-                  <Label htmlFor="firstName">First Name</Label>
-                  <InputWrapper>
-                    <Icon>
+                  <InputLabel>First Name</InputLabel>
+                  <InputContainer>
+                    <InputIcon>
                       <FaUser />
-                    </Icon>
-                    <Input
+                    </InputIcon>
+                    <StyledInput
                       type="text"
-                      id="firstName"
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleChange}
                       onFocus={() => setActiveField("firstName")}
                       onBlur={() => setActiveField("")}
+                      placeholder="Enter your first name"
                       required
                     />
-                  </InputWrapper>
-                </FormGroup>
+                  </InputContainer>
+                </InputGroup>
 
-                <FormGroup
-                  className={activeField === "lastName" ? "active" : ""}
+                <InputGroup
+                  className={activeField === "lastName" ? "focused" : ""}
                 >
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <InputWrapper>
-                    <Icon>
+                  <InputLabel>Last Name</InputLabel>
+                  <InputContainer>
+                    <InputIcon>
                       <FaUser />
-                    </Icon>
-                    <Input
+                    </InputIcon>
+                    <StyledInput
                       type="text"
-                      id="lastName"
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleChange}
                       onFocus={() => setActiveField("lastName")}
                       onBlur={() => setActiveField("")}
+                      placeholder="Enter your last name"
                     />
-                  </InputWrapper>
-                </FormGroup>
-              </FormRow>
+                  </InputContainer>
+                </InputGroup>
+              </FormGrid>
 
-              <FormGroup className={activeField === "username" ? "active" : ""}>
-                <Label htmlFor="username">Username</Label>
-                <InputWrapper>
-                  <Icon>
+              <InputGroup
+                className={activeField === "username" ? "focused" : ""}
+              >
+                <InputLabel>Username</InputLabel>
+                <InputContainer>
+                  <InputIcon>
                     <FaUser />
-                  </Icon>
-                  <Input
+                  </InputIcon>
+                  <StyledInput
                     type="text"
-                    id="username"
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
                     onFocus={() => setActiveField("username")}
                     onBlur={() => setActiveField("")}
+                    placeholder="Choose a unique username"
                     required
                   />
-                </InputWrapper>
-              </FormGroup>
+                </InputContainer>
+              </InputGroup>
 
-              <FormGroup className={activeField === "email" ? "active" : ""}>
-                <Label htmlFor="email">Email</Label>
-                <InputWrapper>
-                  <Icon>
+              <InputGroup className={activeField === "email" ? "focused" : ""}>
+                <InputLabel>Email Address</InputLabel>
+                <InputContainer>
+                  <InputIcon>
                     <FaEnvelope />
-                  </Icon>
-                  <Input
+                  </InputIcon>
+                  <StyledInput
                     type="email"
-                    id="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
                     onFocus={() => setActiveField("email")}
                     onBlur={() => setActiveField("")}
+                    placeholder="your@email.com"
                     required
                   />
-                </InputWrapper>
-              </FormGroup>
+                </InputContainer>
+              </InputGroup>
 
-              <FormGroup className={activeField === "bio" ? "active" : ""}>
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
+              <InputGroup className={activeField === "bio" ? "focused" : ""}>
+                <InputLabel>About You</InputLabel>
+                <StyledTextarea
                   name="bio"
-                  placeholder="Tell the world about yourself..."
                   value={formData.bio}
                   onChange={handleChange}
                   onFocus={() => setActiveField("bio")}
                   onBlur={() => setActiveField("")}
+                  placeholder="Tell everyone about yourself... What makes you unique? ✨"
                   rows={4}
                 />
-              </FormGroup>
+              </InputGroup>
 
-              <SubmitButton disabled={loading} type="submit">
+              <SaveButton type="submit" disabled={loading}>
                 {loading ? (
-                  <>
-                    <Spinner />
-                    <span>Saving...</span>
-                  </>
+                  <ButtonContent>
+                    <LoadingSpinner />
+                    <span>Saving Your Profile...</span>
+                  </ButtonContent>
                 ) : (
-                  <>
+                  <ButtonContent>
                     <FaSave />
-                    <span>Save Changes</span>
-                  </>
+                    <span>Save Profile</span>
+                    <HeartIcon>
+                      <FaHeart />
+                    </HeartIcon>
+                  </ButtonContent>
                 )}
-              </SubmitButton>
-            </Form>
-          </CardBody>
-        </ContentWrapper>
+              </SaveButton>
+            </ProfileForm>
+          </ProfileBody>
+        </ContentCard>
       </Container>
     </PageWrapper>
   );
@@ -324,23 +336,29 @@ const ProfilePage = () => {
 
 export default ProfilePage;
 
-// Styled Components with animations and modern design
-const float = keyframes`
-  0% { transform: translateY(0px) }
-  50% { transform: translateY(-15px) }
-  100% { transform: translateY(0px) }
+// Stunning animations and styled components
+const gentleFloat = keyframes`
+  0%, 100% { transform: translateY(0px) rotate(0deg) }
+  25% { transform: translateY(-10px) rotate(1deg) }
+  50% { transform: translateY(-20px) rotate(0deg) }
+  75% { transform: translateY(-10px) rotate(-1deg) }
 `;
 
-const glow = keyframes`
-  0% { box-shadow: 0 0 15px rgba(124, 58, 237, 0.5) }
-  50% { box-shadow: 0 0 25px rgba(124, 58, 237, 0.8) }
-  100% { box-shadow: 0 0 15px rgba(124, 58, 237, 0.5) }
+const shimmer = keyframes`
+  0% { background-position: -200% 0 }
+  100% { background-position: 200% 0 }
 `;
 
 const pulse = keyframes`
-  0% { transform: scale(1) }
+  0%, 100% { transform: scale(1) }
   50% { transform: scale(1.05) }
-  100% { transform: scale(1) }
+`;
+
+const heartBeat = keyframes`
+  0%, 100% { transform: scale(1) }
+  25% { transform: scale(1.1) }
+  50% { transform: scale(1) }
+  75% { transform: scale(1.05) }
 `;
 
 const spin = keyframes`
@@ -348,29 +366,38 @@ const spin = keyframes`
   100% { transform: rotate(360deg) }
 `;
 
-const gradientMove = keyframes`
+const gradientFlow = keyframes`
   0% { background-position: 0% 50% }
   50% { background-position: 100% 50% }
   100% { background-position: 0% 50% }
 `;
 
-const FloatingCircle = styled.div`
+const sparkle = keyframes`
+  0%, 100% { opacity: 1; transform: scale(1) rotate(0deg) }
+  50% { opacity: 0.7; transform: scale(1.2) rotate(180deg) }
+`;
+
+const FloatingElement = styled.div`
   position: absolute;
   width: ${(props) => props.size};
   height: ${(props) => props.size};
   top: ${(props) => props.top};
   left: ${(props) => props.left};
   border-radius: 50%;
-  background-color: ${(props) => props.color};
+  background: linear-gradient(
+    135deg,
+    ${(props) => props.color}40 0%,
+    ${(props) => props.color}20 100%
+  );
   opacity: ${(props) => props.opacity};
-  filter: blur(20px);
-  animation: ${float} 6s ease-in-out infinite;
+  filter: blur(15px);
+  animation: ${gentleFloat} 8s ease-in-out infinite;
   animation-delay: ${(props) => props.delay};
   pointer-events: none;
   z-index: 1;
 `;
 
-const BackgroundGradient = styled.div`
+const BackgroundPattern = styled.div`
   position: absolute;
   top: 0;
   left: 0;
@@ -379,10 +406,13 @@ const BackgroundGradient = styled.div`
   background: linear-gradient(
     135deg,
     ${COLORS.background} 0%,
-    ${COLORS.backgroundDark || "#121212"} 100%
+    ${COLORS.primaryKhaki}30 25%,
+    ${COLORS.accentMint}20 50%,
+    ${COLORS.background} 75%,
+    ${COLORS.primarySalmon}15 100%
   );
   background-size: 400% 400%;
-  animation: ${gradientMove} 15s ease infinite;
+  animation: ${gradientFlow} 20s ease infinite;
   z-index: 0;
 `;
 
@@ -394,127 +424,170 @@ const PageWrapper = styled.div`
   justify-content: center;
   padding: 2rem 1rem;
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 `;
 
 const Container = styled.div`
-  max-width: 900px;
+  max-width: 800px;
   width: 100%;
   position: relative;
   z-index: 2;
 `;
 
-const ContentWrapper = styled.div`
-  border-radius: 16px;
+const ContentCard = styled.div`
+  border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-  background: rgba(25, 25, 35, 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
+  background: ${COLORS.cardBackground};
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), 0 8px 25px rgba(0, 0, 0, 0.08);
+  border: 1px solid ${COLORS.border};
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    transform: translateY(-8px);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15), 0 10px 35px rgba(0, 0, 0, 0.1);
   }
 `;
 
-const GlassHeader = styled.div`
+const ProfileHeader = styled.div`
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const HeaderBackground = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: linear-gradient(
     135deg,
-    ${COLORS.primaryPurple}80 0%,
-    ${COLORS.primaryBlue}80 100%
+    ${COLORS.primaryBlueGray} 0%,
+    ${COLORS.primaryMint} 50%,
+    ${COLORS.accentSalmon} 100%
   );
-  padding: 2rem;
-  position: relative;
-  overflow: hidden;
+  background-size: 300% 300%;
+  animation: ${gradientFlow} 15s ease infinite;
 
-  &:before {
+  &::before {
     content: "";
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(
-      circle,
-      rgba(255, 255, 255, 0.1) 0%,
-      rgba(255, 255, 255, 0) 80%
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      45deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
     );
-    pointer-events: none;
+    background-size: 200% 200%;
+    animation: ${shimmer} 8s ease-in-out infinite;
   }
 `;
 
 const HeaderContent = styled.div`
   position: relative;
-  z-index: 1;
+  z-index: 2;
   text-align: center;
+  color: white;
 `;
 
-const Title = styled.h1`
-  color: white;
-  margin: 0;
+const SparkleIcon = styled.div`
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  animation: ${sparkle} 3s ease-in-out infinite;
+`;
+
+const HeaderTitle = styled.h1`
   font-size: 2.5rem;
   font-weight: 800;
-  letter-spacing: -0.5px;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  margin: 0 0 0.5rem 0;
+  text-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
+  letter-spacing: -1px;
 `;
 
-const SubTitle = styled.p`
-  color: rgba(255, 255, 255, 0.8);
-  margin: 0.5rem 0 0;
+const HeaderSubtitle = styled.p`
   font-size: 1.1rem;
+  margin: 0;
+  opacity: 0.9;
+  font-weight: 500;
 `;
 
-const CardBody = styled.div`
-  padding: 3rem;
+const ProfileBody = styled.div`
+  padding: 3rem 2.5rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  align-items: center;
+  gap: 2.5rem;
 `;
 
-const ProfileImageSection = styled.div`
+const ImageUploadSection = styled.div`
   display: flex;
   justify-content: center;
   margin-bottom: 1rem;
 `;
 
-const ProfileImageContainer = styled.div`
+const ImageContainer = styled.div`
   position: relative;
-  width: 180px;
-  height: 180px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
   overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  border: 4px solid ${COLORS.primaryPurple};
-  animation: ${glow} 3s infinite;
-  transition: transform 0.3s ease;
+  cursor: pointer;
+  transition: all 0.3s ease;
 
   &:hover {
     transform: scale(1.05);
   }
 `;
 
-const ProfileImage = styled.img`
+const ProfileAvatar = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.5s ease;
 
-  ${ProfileImageContainer}:hover & {
+  ${ImageContainer}:hover & {
     transform: scale(1.1);
   }
+`;
+
+const ImageBorder = styled.div`
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  background: linear-gradient(
+    45deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.primaryMint},
+    ${COLORS.primaryBlueGray},
+    ${COLORS.accentSalmon}
+  );
+  background-size: 300% 300%;
+  animation: ${gradientFlow} 8s ease infinite;
+  z-index: -1;
 `;
 
 const ImageOverlay = styled.div`
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   background: linear-gradient(
     to top,
     rgba(0, 0, 0, 0.7) 0%,
-    rgba(0, 0, 0, 0) 50%
+    rgba(0, 0, 0, 0.2) 50%,
+    transparent 100%
   );
   display: flex;
   align-items: flex-end;
@@ -523,16 +596,16 @@ const ImageOverlay = styled.div`
   opacity: 0;
   transition: opacity 0.3s ease;
 
-  ${ProfileImageContainer}:hover & {
+  ${ImageContainer}:hover & {
     opacity: 1;
   }
 `;
 
-const OverlayButton = styled.button`
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+const ChangeButton = styled.button`
+  background: rgba(255, 255, 255, 0.95);
+  color: ${COLORS.textPrimary};
   border: none;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.2rem;
   border-radius: 50px;
   font-size: 0.875rem;
   font-weight: 600;
@@ -540,110 +613,142 @@ const OverlayButton = styled.button`
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
-  backdrop-filter: blur(5px);
   transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: white;
     transform: translateY(-2px);
-  }
-
-  svg {
-    font-size: 0.875rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
   }
 `;
 
-const DropAreaContainer = styled.div`
-  width: 180px;
-  height: 180px;
+const UploadDropzone = styled.div`
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
   background: linear-gradient(
-    145deg,
+    135deg,
     ${COLORS.elevatedBackground} 0%,
-    ${COLORS.backgroundDark || "#1a1a1a"} 100%
+    rgba(255, 255, 255, 0.8) 100%
   );
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  border: 3px dashed ${COLORS.border};
+  border: 3px dashed ${COLORS.primaryMint};
   transition: all 0.3s ease;
+  position: relative;
 
   &:hover {
-    border-color: ${COLORS.primaryPurple};
+    border-color: ${COLORS.primarySalmon};
     transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(
+      135deg,
+      ${COLORS.accentMint}30 0%,
+      rgba(255, 255, 255, 0.9) 100%
+    );
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    right: -6px;
+    bottom: -6px;
+    border-radius: 50%;
+    background: linear-gradient(
+      45deg,
+      ${COLORS.primarySalmon}30,
+      ${COLORS.primaryMint}30,
+      ${COLORS.primaryBlueGray}30
+    );
+    background-size: 200% 200%;
+    animation: ${gradientFlow} 10s ease infinite;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover::before {
+    opacity: 1;
   }
 `;
 
-const DropIcon = styled.div`
-  font-size: 2.5rem;
-  color: ${COLORS.primaryPurple};
-  margin-bottom: 0.75rem;
-  transition: transform 0.3s ease;
+const UploadIcon = styled.div`
+  font-size: 2rem;
+  color: ${COLORS.primaryBlueGray};
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
 
-  ${DropAreaContainer}:hover & {
-    transform: scale(1.2);
+  ${UploadDropzone}:hover & {
+    color: ${COLORS.primarySalmon};
     animation: ${pulse} 2s infinite;
   }
 `;
 
-const DropText = styled.p`
+const UploadText = styled.p`
+  color: ${COLORS.textPrimary};
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+`;
+
+const UploadHint = styled.p`
   color: ${COLORS.textSecondary};
   margin: 0;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.75rem;
 `;
 
-const Form = styled.form`
+const ProfileForm = styled.form`
+  width: 100%;
+  max-width: 500px;
   display: flex;
   flex-direction: column;
-  gap: 1.8rem;
-  width: 100%;
-  max-width: 100%;
+  gap: 1.5rem;
 `;
 
-const FormRow = styled.div`
+const FormGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  gap: 1.5rem;
 
-  @media (max-width: 768px) {
+  @media (max-width: 600px) {
     grid-template-columns: 1fr;
   }
 `;
 
-const FormGroup = styled.div`
+const InputGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  transition: transform 0.3s ease;
-  width: 100%;
+  transition: all 0.3s ease;
 
-  &.active {
-    transform: translateX(5px);
+  &.focused {
+    transform: translateY(-2px);
 
     label {
-      color: ${COLORS.primaryPurple};
+      color: ${COLORS.primarySalmon};
+      font-weight: 600;
     }
   }
 `;
 
-const Label = styled.label`
+const InputLabel = styled.label`
   color: ${COLORS.textSecondary};
   font-size: 0.9rem;
   font-weight: 500;
   margin-left: 0.5rem;
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
 `;
 
-const InputWrapper = styled.div`
+const InputContainer = styled.div`
   position: relative;
-  width: 100%;
 `;
 
-const Icon = styled.div`
+const InputIcon = styled.div`
   position: absolute;
   top: 50%;
   left: 1rem;
@@ -653,91 +758,108 @@ const Icon = styled.div`
   z-index: 1;
 `;
 
-const Input = styled.input`
+const StyledInput = styled.input`
   width: 100%;
-  padding: 1.2rem 1.2rem 1.2rem 3.2rem;
+  padding: 1rem 1rem 1rem 3rem;
   background: ${COLORS.elevatedBackground};
   color: ${COLORS.textPrimary};
-  border: 1px solid ${COLORS.border};
-  border-radius: 8px;
-  font-size: 1.15rem;
-  font-family: "Segoe UI", Roboto, -apple-system, sans-serif;
-  letter-spacing: 0.2px;
+  border: 2px solid ${COLORS.border};
+  border-radius: 12px;
+  font-size: 1rem;
+  font-family: inherit;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 
   &:focus {
-    border-color: ${COLORS.primaryPurple};
-    box-shadow: 0 0 0 3px ${COLORS.primaryPurple}30;
+    border-color: ${COLORS.primarySalmon};
+    background: rgba(255, 255, 255, 0.9);
     outline: none;
-    background: ${COLORS.elevatedBackground}50;
+    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
 
-    & + ${Icon} {
-      color: ${COLORS.primaryPurple};
+    & + ${InputIcon} {
+      color: ${COLORS.primarySalmon};
     }
   }
-`;
 
-const Textarea = styled.textarea`
-  width: 100%;
-  padding: 1.2rem;
-  background: ${COLORS.elevatedBackground};
-  color: ${COLORS.textPrimary};
-  border: 1px solid ${COLORS.border};
-  border-radius: 8px;
-  font-size: 1.15rem;
-  font-family: "Segoe UI", Roboto, -apple-system, sans-serif;
-  letter-spacing: 0.2px;
-  resize: vertical;
-  min-height: 140px;
-  transition: all 0.3s ease;
-
-  &:focus {
-    border-color: ${COLORS.primaryPurple};
-    box-shadow: 0 0 0 3px ${COLORS.primaryPurple}30;
-    outline: none;
-    background: ${COLORS.elevatedBackground}50;
+  &::placeholder {
+    color: ${COLORS.textTertiary};
   }
 `;
 
-const Spinner = styled.div`
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: #fff;
-  animation: ${spin} 1s ease-in-out infinite;
+const StyledTextarea = styled.textarea`
+  width: 100%;
+  padding: 1rem;
+  background: ${COLORS.elevatedBackground};
+  color: ${COLORS.textPrimary};
+  border: 2px solid ${COLORS.border};
+  border-radius: 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 120px;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: ${COLORS.primarySalmon};
+    background: rgba(255, 255, 255, 0.9);
+    outline: none;
+    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
+  }
+
+  &::placeholder {
+    color: ${COLORS.textTertiary};
+  }
 `;
 
-const SubmitButton = styled.button`
+const SaveButton = styled.button`
   width: 100%;
   padding: 1.2rem;
   background: linear-gradient(
     135deg,
-    ${COLORS.primaryGreen} 0%,
-    ${COLORS.accentGreen || "#0d9488"} 100%
+    ${COLORS.primarySalmon} 0%,
+    ${COLORS.accentSalmon} 100%
   );
   color: white;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1.1rem;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
   transition: all 0.3s ease;
-  margin-top: 1.5rem;
-  box-shadow: 0 4px 15px ${COLORS.primaryGreen}50;
+  margin-top: 1rem;
+  box-shadow: 0 6px 20px ${COLORS.primarySalmon}40;
+  position: relative;
+  overflow: hidden;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+    transition: left 0.5s;
+  }
 
   &:hover:not(:disabled) {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px ${COLORS.primaryGreen}70;
+    box-shadow: 0 10px 30px ${COLORS.primarySalmon}50;
     background: linear-gradient(
       135deg,
-      ${COLORS.accentGreen || "#0d9488"} 0%,
-      ${COLORS.primaryGreen} 100%
+      ${COLORS.accentSalmon} 0%,
+      ${COLORS.primarySalmon} 100%
     );
+
+    &:before {
+      left: 100%;
+    }
   }
 
   &:active:not(:disabled) {
@@ -750,8 +872,26 @@ const SubmitButton = styled.button`
     transform: none;
     box-shadow: none;
   }
+`;
 
-  svg {
-    font-size: 1.25rem;
-  }
+const ButtonContent = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+`;
+
+const LoadingSpinner = styled.div`
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: ${spin} 1s linear infinite;
+`;
+
+const HeartIcon = styled.div`
+  color: ${COLORS.heartRed};
+  animation: ${heartBeat} 2s ease-in-out infinite;
+  font-size: 0.9rem;
 `;
