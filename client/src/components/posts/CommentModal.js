@@ -32,6 +32,28 @@ const fadeIn = keyframes`
   100% { opacity: 1; }
 `;
 
+const slideUp = keyframes`
+  0% { 
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  100% { 
+    transform: translateY(0);
+    opacity: 1;
+  }
+`;
+
+const slideDown = keyframes`
+  0% { 
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% { 
+    transform: translateY(100%);
+    opacity: 0;
+  }
+`;
+
 const scaleIn = keyframes`
   0% { 
     transform: scale(0.8) translateY(20px); 
@@ -64,6 +86,7 @@ export const CommentModal = ({
   const [replyingTo, setReplyingTo] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showActions, setShowActions] = useState(null);
+  const [isClosing, setIsClosing] = useState(false);
   const textareaRef = useRef(null);
   const modalRef = useRef(null);
   const actionsRef = useRef(null);
@@ -93,13 +116,13 @@ export const CommentModal = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // CRITICAL FIX: Prevent body scroll and handle escape key
+  // Handle modal open/close with body scroll prevention
   useEffect(() => {
     if (isOpen) {
       // Store current scroll position
       const scrollY = window.scrollY;
 
-      // Prevent body scroll with proper restoration
+      // Prevent body scroll
       document.body.style.position = "fixed";
       document.body.style.top = `-${scrollY}px`;
       document.body.style.width = "100%";
@@ -111,7 +134,7 @@ export const CommentModal = ({
       // Handle escape key
       const handleEscape = (e) => {
         if (e.key === "Escape") {
-          onClose();
+          handleClose();
         }
       };
       document.addEventListener("keydown", handleEscape);
@@ -126,7 +149,16 @@ export const CommentModal = ({
         document.removeEventListener("keydown", handleEscape);
       };
     }
-  }, [isOpen, onClose]);
+  }, [isOpen]);
+
+  // Handle close with animation
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      onClose();
+    }, 300); // Match animation duration
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -172,22 +204,30 @@ export const CommentModal = ({
   // Handle backdrop click
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
-      onClose();
+      handleClose();
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen && !isClosing) return null;
 
   return (
-    <ModalOverlay onClick={handleBackdropClick}>
-      <ModalContainer ref={modalRef} onClick={(e) => e.stopPropagation()}>
+    <ModalOverlay onClick={handleBackdropClick} isClosing={isClosing}>
+      <ModalContainer
+        ref={modalRef}
+        onClick={(e) => e.stopPropagation()}
+        isClosing={isClosing}
+      >
+        {/* Drag Handle */}
+        <DragHandle />
+
         {/* Header */}
         <ModalHeader>
           <HeaderTitle>Comments</HeaderTitle>
-          <CloseButton onClick={onClose}>
+          <CloseButton onClick={handleClose}>
             <FaTimes />
           </CloseButton>
         </ModalHeader>
+
         <ModalContent>
           {/* Post Preview */}
           <PostPreview>
@@ -203,6 +243,7 @@ export const CommentModal = ({
             {post.title && <PostTitle>{post.title}</PostTitle>}
             {post.caption && <PostCaption>{post.caption}</PostCaption>}
           </PostPreview>
+
           {/* Comments List */}
           <CommentsContainer>
             {isLoading ? (
@@ -301,6 +342,7 @@ export const CommentModal = ({
             )}
           </CommentsContainer>
         </ModalContent>
+
         {/* Comment Input */}
         {isAuthenticated ? (
           <CommentInputContainer>
@@ -348,9 +390,6 @@ export const CommentModal = ({
           </AuthPrompt>
         )}
       </ModalContainer>
-      <FallbackCloseButton onClick={onClose}>
-        <FaTimes />
-      </FallbackCloseButton>
     </ModalOverlay>
   );
 };
@@ -365,17 +404,20 @@ export const CommentButton = ({ postId, commentCount = 0, onClick }) => {
   );
 };
 
-// Styled Components - FIXED FOR PERFECT CENTERING
+// Styled Components - TikTok Style Bottom Sheet
 const ModalOverlay = styled.div`
   position: fixed;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.6);
   z-index: 9999;
-  padding: 16px;
   backdrop-filter: blur(4px);
+  animation: ${fadeIn} 0.3s ease-out;
+
+  ${(props) =>
+    props.isClosing &&
+    css`
+      animation: ${fadeIn} 0.3s ease-out reverse;
+    `}
 
   @supports (-webkit-touch-callout: none) {
     min-height: -webkit-fill-available;
@@ -384,41 +426,58 @@ const ModalOverlay = styled.div`
 
 const ModalContainer = styled.div`
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  bottom: 0;
+  left: 0;
+  right: 0;
   background-color: ${COLORS.cardBackground};
-  border-radius: 16px;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  height: 60vh;
+  max-height: 600px;
+  min-height: 400px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   z-index: 10000;
+  animation: ${slideUp} 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  ${(props) =>
+    props.isClosing &&
+    css`
+      animation: ${slideDown} 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    `}
 
   @media (max-width: 768px) {
-    width: calc(100% - 40px);
-    max-width: none;
-    max-height: 80vh;
+    height: 65vh;
+    max-height: none;
   }
 
   @media (max-height: 600px) {
-    max-height: 90vh;
+    height: 70vh;
   }
 
   @media (max-height: 500px) {
-    max-height: 95vh;
+    height: 80vh;
   }
+`;
+
+const DragHandle = styled.div`
+  width: 40px;
+  height: 4px;
+  background-color: ${COLORS.textTertiary};
+  border-radius: 2px;
+  margin: 8px auto 0;
+  opacity: 0.5;
+  flex-shrink: 0;
 `;
 
 const ModalHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid ${COLORS.divider};
+  padding: 12px 20px 16px;
+  border-bottom: 1px solid ${COLORS.divider}40;
   position: sticky;
   top: 0;
   background-color: ${COLORS.cardBackground};
@@ -449,13 +508,14 @@ const CloseButton = styled.button`
   &:hover {
     background-color: ${COLORS.buttonHover};
     color: ${COLORS.textPrimary};
+    transform: scale(1.1);
   }
 `;
 
 const PostPreview = styled.div`
   padding: 16px 20px;
-  border-bottom: 1px solid ${COLORS.divider};
-  background-color: ${COLORS.background}50;
+  border-bottom: 1px solid ${COLORS.divider}30;
+  background-color: ${COLORS.background}20;
   flex-shrink: 0;
 `;
 
@@ -504,29 +564,39 @@ const PostCaption = styled.p`
   margin: 0;
 `;
 
+const ModalContent = styled.div`
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+`;
+
 const CommentsContainer = styled.div`
   flex: 1;
   overflow-y: auto;
   padding: 0;
-  min-height: 0; /* CRITICAL FOR PROPER FLEX SCROLLING */
+  min-height: 0;
 
-  /* IMPROVED SCROLLBAR STYLING */
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+
+  /* Custom scrollbar */
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
 
   &::-webkit-scrollbar-track {
-    background: ${COLORS.background || "#f8f9fa"};
-    border-radius: 3px;
+    background: transparent;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: ${COLORS.textTertiary || "#dee2e6"};
-    border-radius: 3px;
+    background: ${COLORS.textTertiary}40;
+    border-radius: 2px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: ${COLORS.textSecondary || "#adb5bd"};
+    background: ${COLORS.textSecondary}60;
   }
 `;
 
@@ -545,7 +615,7 @@ const LoadingSpinner = styled.div`
   border: 2px solid ${COLORS.divider};
   border-top: 2px solid ${COLORS.accentMint};
   border-radius: 50%;
-  animation: ${spin} 1s linear infinite; /* FIXED ANIMATION */
+  animation: ${spin} 1s linear infinite;
   margin-bottom: 12px;
 `;
 
@@ -589,15 +659,16 @@ const CommentsList = styled.div`
 const CommentItem = styled.div`
   display: flex;
   padding: 16px 20px;
-  border-bottom: 1px solid ${COLORS.divider}30;
+  border-bottom: 1px solid ${COLORS.divider}20;
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: ${COLORS.background}30;
+    background-color: ${COLORS.background}20;
   }
 
   &:last-child {
     border-bottom: none;
+    padding-bottom: 20px;
   }
 `;
 
@@ -628,7 +699,7 @@ const CommentAuthorInfo = styled.div`
   align-items: center;
   gap: 6px;
   flex: 1;
-  min-width: 0; /* Allow text truncation if needed */
+  min-width: 0;
 `;
 
 const CommentAuthor = styled.span`
@@ -650,7 +721,7 @@ const CommentTime = styled.span`
   color: ${COLORS.textTertiary};
   font-size: 12px;
   white-space: nowrap;
-  margin-left: auto; /* Push to the right */
+  margin-left: auto;
 `;
 
 const CommentActions = styled.div`
@@ -677,26 +748,6 @@ const ActionsButton = styled.button`
   &:hover {
     background-color: ${COLORS.buttonHover};
     color: ${COLORS.textSecondary};
-  }
-`;
-
-const FallbackCloseButton = styled.button`
-  position: fixed;
-  bottom: 16px;
-  right: 16px;
-  z-index: 10001;
-  background-color: ${COLORS.accentMint};
-  color: white;
-  border: none;
-  border-radius: 50%;
-  padding: 12px;
-  font-size: 18px;
-  display: none;
-
-  @media (max-width: 768px) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 `;
 
@@ -800,11 +851,11 @@ const ReplyButton = styled.button`
 `;
 
 const CommentInputContainer = styled.div`
-  border-top: 1px solid ${COLORS.divider};
+  border-top: 1px solid ${COLORS.divider}30;
   background-color: ${COLORS.cardBackground};
   position: sticky;
   bottom: 0;
-  flex-shrink: 0; /* PREVENT INPUT FROM SHRINKING */
+  flex-shrink: 0;
 `;
 
 const ReplyIndicator = styled.div`
@@ -813,7 +864,7 @@ const ReplyIndicator = styled.div`
   justify-content: space-between;
   padding: 8px 20px;
   background-color: ${COLORS.accentMint}15;
-  border-bottom: 1px solid ${COLORS.divider};
+  border-bottom: 1px solid ${COLORS.divider}20;
 `;
 
 const ReplyText = styled.span`
@@ -857,11 +908,6 @@ const InputWrapper = styled.div`
   display: flex;
   align-items: flex-end;
   gap: 12px;
-`;
-
-const ModalContent = styled.div`
-  overflow-y: auto;
-  flex: 1;
 `;
 
 const CommentTextarea = styled.textarea`
@@ -925,15 +971,15 @@ const SubmittingSpinner = styled.div`
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top: 2px solid white;
   border-radius: 50%;
-  animation: ${spin} 1s linear infinite; /* FIXED ANIMATION */
+  animation: ${spin} 1s linear infinite;
 `;
 
 const AuthPrompt = styled.div`
   padding: 16px 20px;
   text-align: center;
-  border-top: 1px solid ${COLORS.divider};
-  background-color: ${COLORS.background}30;
-  flex-shrink: 0; /* PREVENT AUTH PROMPT FROM SHRINKING */
+  border-top: 1px solid ${COLORS.divider}30;
+  background-color: ${COLORS.background}20;
+  flex-shrink: 0;
 `;
 
 const AuthPromptText = styled.p`
