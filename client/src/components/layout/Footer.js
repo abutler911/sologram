@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { FaHeart, FaCamera, FaEnvelope, FaGithub } from "react-icons/fa";
-import { COLORS, THEME } from "../theme";
+import { COLORS, THEME } from "../../theme";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
