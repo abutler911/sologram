@@ -1,4 +1,4 @@
-// CloudinaryGallery.js with integrated components
+// CloudinaryGallery.js with enhanced SoloGram theme integration
 
 import React, { useState, useEffect, useCallback, useContext } from "react";
 import styled from "styled-components";
@@ -16,9 +16,10 @@ import {
   FaCalendarAlt,
   FaCheckSquare,
   FaSquare,
+  FaCamera,
 } from "react-icons/fa";
 import { getTransformedImageUrl } from "../utils/cloudinary";
-import { COLORS } from "../theme";
+import { COLORS, THEME } from "../theme";
 import { AuthContext } from "../context/AuthContext";
 import { useDeleteModal } from "../context/DeleteModalContext";
 import { useNavigate } from "react-router-dom";
@@ -56,14 +57,6 @@ const CloudinaryGallery = () => {
   const [selectedAssets, setSelectedAssets] = useState([]);
   const [selectMode, setSelectMode] = useState(false);
   const [bulkActionOpen, setBulkActionOpen] = useState(false);
-  // Remove deleteConfirmation state - we don't need it anymore
-  // const [deleteConfirmation, setDeleteConfirmation] = useState({
-  //   show: false,
-  //   assetId: null,
-  //   assetName: null,
-  //   isBulk: false,
-  //   count: 0,
-  // });
   const [loadingMore, setLoadingMore] = useState(false);
 
   // Verify admin status using the existing auth context
@@ -212,8 +205,6 @@ const CloudinaryGallery = () => {
 
     // Keep selection mode active for further operations
   };
-
-  // Remove the old confirmDelete function - logic is now in the modal callbacks
 
   const fetchAssets = async () => {
     try {
@@ -509,7 +500,12 @@ const CloudinaryGallery = () => {
   return (
     <GalleryContainer>
       <GalleryHeader>
-        <h1>Media Gallery</h1>
+        <HeaderTitle>
+          <GalleryIcon>
+            <FaCamera />
+          </GalleryIcon>
+          Media Gallery
+        </HeaderTitle>
         <HeaderActions>
           <FilterButton onClick={() => setFilterOpen(!filterOpen)}>
             <FaFilter /> Filter
@@ -549,7 +545,10 @@ const CloudinaryGallery = () => {
       {filterOpen && (
         <FilterPanel>
           <FilterHeader>
-            <h3>Filter Media</h3>
+            <FilterTitle>
+              <FaFilter />
+              Filter Media
+            </FilterTitle>
             <CloseButton onClick={() => setFilterOpen(false)}>
               <FaTimes />
             </CloseButton>
@@ -658,7 +657,12 @@ const CloudinaryGallery = () => {
           />
         </LoadingContainer>
       ) : error ? (
-        <ErrorMessage>{error}</ErrorMessage>
+        <ErrorMessage>
+          <ErrorIcon>
+            <FaCamera />
+          </ErrorIcon>
+          <ErrorText>{error}</ErrorText>
+        </ErrorMessage>
       ) : assets.length > 0 ? (
         <>
           {Object.entries(groupAssetsByDate(assets)).map(([dateKey, group]) => (
@@ -685,7 +689,7 @@ const CloudinaryGallery = () => {
                     variants={itemVariants}
                     whileHover={{
                       y: -5,
-                      boxShadow: "0 8px 16px rgba(0, 0, 0, 0.15)",
+                      boxShadow: `0 8px 24px ${COLORS.primarySalmon}30`,
                       zIndex: 2,
                     }}
                   >
@@ -771,7 +775,12 @@ const CloudinaryGallery = () => {
         </>
       ) : (
         <NoAssetsMessage>
-          No media assets found with the current filters
+          <EmptyStateIcon>
+            <FaImage />
+          </EmptyStateIcon>
+          <EmptyStateText>
+            No media assets found with the current filters
+          </EmptyStateText>
         </NoAssetsMessage>
       )}
 
@@ -855,7 +864,7 @@ const CloudinaryGallery = () => {
             <ModalFooter>
               <ActionButton
                 onClick={() => handleCopyUrl(selectedAsset.secure_url)}
-                color={COLORS.info}
+                color={COLORS.primaryMint}
               >
                 <FaCopy /> <span>Copy URL</span>
               </ActionButton>
@@ -904,19 +913,17 @@ const CloudinaryGallery = () => {
           </BulkActions>
         </BulkActionBar>
       )}
-
-      {/* Remove the old DeleteConfirmationModal component - it's now handled globally */}
     </GalleryContainer>
   );
 };
 
-// Keep all your existing styled components - they remain unchanged
-
-// Styled Components
+// Enhanced Styled Components with SoloGram Theme
 const GalleryContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  background-color: ${COLORS.background};
+  min-height: 100vh;
 
   @media (max-width: 768px) {
     padding: 1rem;
@@ -930,22 +937,52 @@ const GalleryHeader = styled.div`
   margin-bottom: 2rem;
   flex-wrap: wrap;
   gap: 1rem;
-
-  h1 {
-    color: ${COLORS.textPrimary};
-    font-weight: 700;
-    font-size: 1.75rem;
-    margin: 0;
-  }
+  padding: 1.5rem;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.cardBackground} 0%,
+    ${COLORS.elevatedBackground} 100%
+  );
+  border-radius: 12px;
+  border: 1px solid ${COLORS.divider};
+  box-shadow: ${COLORS.shadow};
 
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: flex-start;
-
-    h1 {
-      font-size: 1.5rem;
-    }
+    padding: 1rem;
   }
+`;
+
+const HeaderTitle = styled.h1`
+  color: ${COLORS.textPrimary};
+  font-weight: 700;
+  font-size: 1.75rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+  }
+`;
+
+const GalleryIcon = styled.div`
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(
+    45deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
+  );
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+  box-shadow: 0 4px 12px rgba(233, 137, 115, 0.3);
 `;
 
 const HeaderActions = styled.div`
@@ -964,18 +1001,23 @@ const FilterButton = styled.button`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: ${COLORS.primaryBlueGray};
+  background: linear-gradient(
+    45deg,
+    ${COLORS.primaryBlueGray},
+    ${COLORS.accentBlueGray}
+  );
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(101, 142, 169, 0.3);
 
   &:hover {
-    background-color: ${COLORS.accentBlueGray};
     transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(101, 142, 169, 0.4);
   }
 
   &:active {
@@ -987,7 +1029,6 @@ const FilterButton = styled.button`
     justify-content: center;
     padding: 0.75rem;
     border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 `;
 
@@ -995,15 +1036,16 @@ const StatsContainer = styled.div`
   display: flex;
   gap: 1.5rem;
   background-color: ${COLORS.cardBackground};
-  padding: 0.75rem 1.25rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px ${COLORS.shadow};
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: ${COLORS.shadow};
+  border: 1px solid ${COLORS.divider};
 
   @media (max-width: 768px) {
     flex-wrap: wrap;
     justify-content: space-between;
-    padding: 0.5rem 1rem;
-    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    gap: 1rem;
     margin-top: 0.5rem;
     overflow-x: hidden;
   }
@@ -1013,6 +1055,7 @@ const StatItem = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-width: 60px;
 
   @media (max-width: 768px) {
     flex: 0 0 calc(50% - 0.5rem);
@@ -1023,7 +1066,7 @@ const StatItem = styled.div`
 const StatValue = styled.div`
   font-size: 1.25rem;
   font-weight: 600;
-  color: ${COLORS.primaryBlueGray};
+  color: ${COLORS.primarySalmon};
 
   @media (max-width: 768px) {
     font-size: 1rem;
@@ -1033,6 +1076,7 @@ const StatValue = styled.div`
 const StatLabel = styled.div`
   font-size: 0.875rem;
   color: ${COLORS.textSecondary};
+  text-align: center;
 
   @media (max-width: 768px) {
     font-size: 0.75rem;
@@ -1042,23 +1086,35 @@ const StatLabel = styled.div`
 const FilterPanel = styled.div`
   margin-bottom: 2rem;
   background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
-  box-shadow: 0 2px 8px ${COLORS.shadow};
+  border-radius: 12px;
+  box-shadow: ${COLORS.shadow};
   overflow: hidden;
+  border: 1px solid ${COLORS.divider};
 `;
 
 const FilterHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
-  background-color: ${COLORS.elevatedBackground};
-  border-bottom: 1px solid ${COLORS.border};
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.elevatedBackground} 0%,
+    ${COLORS.cardBackground} 100%
+  );
+  border-bottom: 1px solid ${COLORS.divider};
+`;
 
-  h3 {
-    margin: 0;
-    color: ${COLORS.textPrimary};
-    font-size: 1.125rem;
+const FilterTitle = styled.h3`
+  margin: 0;
+  color: ${COLORS.textPrimary};
+  font-size: 1.125rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  svg {
+    color: ${COLORS.primaryBlueGray};
   }
 `;
 
@@ -1073,11 +1129,12 @@ const CloseButton = styled.button`
   justify-content: center;
   padding: 0.5rem;
   border-radius: 50%;
-  transition: background-color 0.3s, color 0.3s;
+  transition: all 0.3s ease;
 
   &:hover {
     background-color: ${COLORS.buttonHover};
     color: ${COLORS.textPrimary};
+    transform: scale(1.1);
   }
 `;
 
@@ -1108,7 +1165,7 @@ const FilterLabel = styled.div`
   font-weight: 600;
 
   svg {
-    color: ${COLORS.primaryBlueGray};
+    color: ${COLORS.primaryMint};
   }
 `;
 
@@ -1124,17 +1181,18 @@ const FilterOption = styled.button`
   color: ${(props) => (props.active ? "white" : COLORS.textSecondary)};
   border: 1px solid
     ${(props) => (props.active ? COLORS.primaryBlueGray : COLORS.border)};
-  border-radius: 4px;
+  border-radius: 6px;
   padding: 0.5rem 1rem;
   cursor: pointer;
   font-size: 0.875rem;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
 
   &:hover {
     background-color: ${(props) =>
       props.active ? COLORS.accentBlueGray : COLORS.buttonHover};
     border-color: ${(props) =>
       props.active ? COLORS.accentBlueGray : COLORS.primaryBlueGray};
+    transform: translateY(-1px);
   }
 `;
 
@@ -1150,16 +1208,18 @@ const CustomDateRange = styled.div`
 `;
 
 const DateInput = styled.input`
-  padding: 0.5rem;
+  padding: 0.75rem;
   border: 1px solid ${COLORS.border};
-  border-radius: 4px;
+  border-radius: 6px;
   color: ${COLORS.textPrimary};
   font-size: 0.875rem;
   background-color: ${COLORS.elevatedBackground};
+  transition: all 0.3s ease;
 
   &:focus {
     outline: none;
     border-color: ${COLORS.primaryBlueGray};
+    box-shadow: 0 0 0 3px rgba(101, 142, 169, 0.1);
   }
 `;
 
@@ -1168,7 +1228,7 @@ const FilterActions = styled.div`
   justify-content: flex-end;
   padding: 1rem 1.5rem;
   gap: 1rem;
-  border-top: 1px solid ${COLORS.border};
+  border-top: 1px solid ${COLORS.divider};
   background-color: ${COLORS.elevatedBackground};
 
   @media (max-width: 768px) {
@@ -1180,30 +1240,37 @@ const ResetButton = styled.button`
   background: none;
   border: 1px solid ${COLORS.border};
   color: ${COLORS.textSecondary};
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: 0.75rem 1.25rem;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 0.875rem;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
 
   &:hover {
     background-color: ${COLORS.buttonHover};
     color: ${COLORS.textPrimary};
+    border-color: ${COLORS.primaryBlueGray};
   }
 `;
 
 const ApplyButton = styled.button`
-  background-color: ${COLORS.primarySalmon};
+  background: linear-gradient(
+    45deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
+  );
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: 0.75rem 1.25rem;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 0.875rem;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(233, 137, 115, 0.3);
 
   &:hover {
-    background-color: ${COLORS.accentSalmon};
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(233, 137, 115, 0.4);
   }
 `;
 
@@ -1225,30 +1292,17 @@ const GalleryGrid = styled.div`
 
 const GalleryItem = styled(motion.div)`
   background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px ${COLORS.shadow};
+  box-shadow: ${COLORS.shadow};
   position: relative;
   aspect-ratio: ${(props) => props.aspectRatio || "1 / 1"};
   cursor: pointer;
+  border: 1px solid ${COLORS.divider};
+  transition: all 0.3s ease;
 
-  &:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 8px;
-    box-shadow: 0 0 0 0 ${COLORS.primarySalmon}50;
-    opacity: 0;
-    transition: all 0.3s ease;
-    z-index: 1;
-  }
-
-  &:hover:before {
-    box-shadow: 0 0 0 4px ${COLORS.primarySalmon}50;
-    opacity: 1;
+  &:hover {
+    border-color: ${COLORS.primarySalmon};
   }
 
   &:hover .item-overlay {
@@ -1260,7 +1314,7 @@ const GalleryImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s;
+  transition: transform 0.3s ease;
 `;
 
 const VideoThumbnail = styled.div`
@@ -1285,7 +1339,7 @@ const VideoPreview = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s;
+  transition: transform 0.3s ease;
 `;
 
 const VideoIcon = styled.div`
@@ -1293,7 +1347,11 @@ const VideoIcon = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: rgba(0, 0, 0, 0.7);
+  background: linear-gradient(
+    45deg,
+    ${COLORS.primaryBlueGray},
+    ${COLORS.primaryMint}
+  );
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -1301,7 +1359,7 @@ const VideoIcon = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 2;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease;
 
   svg {
@@ -1319,10 +1377,10 @@ const ItemOverlay = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  background: linear-gradient(transparent, rgba(18, 18, 18, 0.8));
   padding: 1rem;
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.3s ease;
 `;
 
 const OverlayInfo = styled.div`
@@ -1348,7 +1406,7 @@ const AssetModal = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1365,17 +1423,18 @@ const AssetModal = styled.div`
 
 const ModalContent = styled.div`
   background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   width: 100%;
   max-width: 1000px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+  border: 1px solid ${COLORS.divider};
 
   @media (max-width: 768px) {
     max-height: 100%;
-    border-radius: 0;
+    border-radius: 8px;
   }
 `;
 
@@ -1383,9 +1442,13 @@ const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid ${COLORS.border};
-  background-color: ${COLORS.elevatedBackground};
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid ${COLORS.divider};
+  background: linear-gradient(
+    135deg,
+    ${COLORS.elevatedBackground} 0%,
+    ${COLORS.cardBackground} 100%
+  );
 `;
 
 const ModalTitle = styled.h2`
@@ -1419,8 +1482,9 @@ const AssetPreview = styled.div`
   justify-content: center;
   min-height: 300px;
   background-color: ${COLORS.elevatedBackground};
-  border-radius: 4px;
+  border-radius: 8px;
   overflow: hidden;
+  border: 1px solid ${COLORS.divider};
 `;
 
 const PreviewImage = styled.img`
@@ -1437,12 +1501,13 @@ const PreviewVideo = styled.video`
 const AssetInfo = styled.div`
   flex: 0 0 300px;
   background-color: ${COLORS.elevatedBackground};
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   height: fit-content;
+  border: 1px solid ${COLORS.divider};
 
   @media (max-width: 768px) {
     flex: 1;
@@ -1456,7 +1521,7 @@ const InfoGroup = styled.div`
   gap: 0.25rem;
 
   &:not(:last-child) {
-    border-bottom: 1px solid ${COLORS.border};
+    border-bottom: 1px solid ${COLORS.divider};
     padding-bottom: 1rem;
   }
 
@@ -1469,6 +1534,8 @@ const InfoLabel = styled.div`
   font-size: 0.75rem;
   color: ${COLORS.textTertiary};
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 const InfoValue = styled.div`
@@ -1480,8 +1547,8 @@ const ModalFooter = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid ${COLORS.border};
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid ${COLORS.divider};
   background-color: ${COLORS.elevatedBackground};
 
   @media (max-width: 768px) {
@@ -1489,9 +1556,7 @@ const ModalFooter = styled.div`
     flex-direction: row;
     justify-content: space-between;
     gap: 0.5rem;
-    padding-bottom: calc(
-      1rem + env(safe-area-inset-bottom, 0)
-    ); // Add safe area for iOS devices
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0));
   }
 `;
 
@@ -1502,19 +1567,19 @@ const ActionButton = styled.button`
   background-color: ${(props) => props.color || COLORS.primaryBlueGray};
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.3s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
   &:hover {
     opacity: 0.9;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   }
 
   &:active {
@@ -1525,7 +1590,7 @@ const ActionButton = styled.button`
     flex: 1;
     justify-content: center;
     font-size: 0.75rem;
-    padding: 0.5rem;
+    padding: 0.75rem;
 
     @media (max-width: 360px) {
       span {
@@ -1545,20 +1610,70 @@ const LoadingMoreContainer = styled.div`
 
 const ErrorMessage = styled.div`
   text-align: center;
-  padding: 2rem;
+  padding: 3rem 2rem;
   color: ${COLORS.error};
   background-color: ${COLORS.elevatedBackground};
-  border-radius: 8px;
+  border-radius: 12px;
   margin: 2rem 0;
+  border: 1px solid ${COLORS.divider};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+`;
+
+const ErrorIcon = styled.div`
+  width: 60px;
+  height: 60px;
+  background-color: rgba(255, 107, 107, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${COLORS.error};
+  font-size: 24px;
+`;
+
+const ErrorText = styled.div`
+  max-width: 500px;
+  line-height: 1.5;
 `;
 
 const NoAssetsMessage = styled.div`
   text-align: center;
-  padding: 3rem;
+  padding: 4rem 2rem;
   color: ${COLORS.textSecondary};
   background-color: ${COLORS.elevatedBackground};
-  border-radius: 8px;
+  border-radius: 12px;
   margin: 1rem 0;
+  border: 1px solid ${COLORS.divider};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+`;
+
+const EmptyStateIcon = styled.div`
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(
+    45deg,
+    ${COLORS.primaryBlueGray},
+    ${COLORS.primaryMint}
+  );
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 32px;
+  margin-bottom: 0.5rem;
+`;
+
+const EmptyStateText = styled.div`
+  font-size: 1.125rem;
+  max-width: 400px;
+  line-height: 1.5;
 `;
 
 const DateSection = styled.div`
@@ -1582,7 +1697,7 @@ const DateHeading = styled.h2`
     content: "";
     flex: 1;
     height: 1px;
-    background: ${COLORS.border};
+    background: ${COLORS.divider};
     margin-left: 1rem;
   }
 
@@ -1592,13 +1707,18 @@ const DateHeading = styled.h2`
 `;
 
 const DateCount = styled.span`
-  background-color: ${COLORS.primaryBlueGray};
+  background: linear-gradient(
+    45deg,
+    ${COLORS.primaryBlueGray},
+    ${COLORS.primaryMint}
+  );
   color: white;
   font-size: 0.75rem;
   font-weight: 600;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0.75rem;
   border-radius: 12px;
   margin-left: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const BulkActionBar = styled.div`
@@ -1606,16 +1726,21 @@ const BulkActionBar = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: ${COLORS.primaryBlueGray};
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primaryBlueGray} 0%,
+    ${COLORS.accentBlueGray} 100%
+  );
   color: white;
   padding: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   z-index: 100;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease;
   transform: translateY(${(props) => (props.visible ? "0" : "100%")});
+  border-top: 1px solid ${COLORS.divider};
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -1643,8 +1768,9 @@ const SelectedCount = styled.div`
 
   span {
     background: rgba(255, 255, 255, 0.2);
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
+    padding: 0.25rem 0.75rem;
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
   }
 `;
 
@@ -1657,14 +1783,15 @@ const SelectionAction = styled.button`
   background: none;
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 0.75rem;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
   }
 `;
 
@@ -1683,18 +1810,20 @@ const BulkActionButton = styled.button`
     props.danger ? COLORS.error : COLORS.primarySalmon};
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
   &:hover {
     opacity: 0.9;
     transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   }
 
   &:disabled {
@@ -1704,18 +1833,18 @@ const BulkActionButton = styled.button`
   }
 `;
 
-// Add selection UI to the GalleryItem
 const SelectionOverlay = styled.div`
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
   z-index: 5;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 4px;
-  padding: 0.25rem;
+  background: rgba(18, 18, 18, 0.8);
+  border-radius: 6px;
+  padding: 0.5rem;
   opacity: ${(props) => (props.visible ? 1 : 0)};
-  transition: opacity 0.2s;
+  transition: all 0.3s ease;
   cursor: pointer;
+  backdrop-filter: blur(4px);
 
   ${GalleryItem}:hover & {
     opacity: 1;
@@ -1736,15 +1865,27 @@ const SelectModeButton = styled.button`
   color: ${(props) => (props.active ? "white" : COLORS.textSecondary)};
   border: 1px solid
     ${(props) => (props.active ? COLORS.primarySalmon : COLORS.border)};
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  box-shadow: ${(props) =>
+    props.active ? "0 2px 8px rgba(233, 137, 115, 0.3)" : "none"};
 
   &:hover {
     background-color: ${(props) =>
       props.active ? COLORS.accentSalmon : COLORS.buttonHover};
+    transform: translateY(-1px);
+    box-shadow: ${(props) =>
+      props.active
+        ? "0 4px 16px rgba(233, 137, 115, 0.4)"
+        : "0 2px 8px rgba(0, 0, 0, 0.1)"};
+  }
+
+  @media (max-width: 767px) {
+    padding: 0.75rem;
+    font-size: 0.875rem;
   }
 `;
 
