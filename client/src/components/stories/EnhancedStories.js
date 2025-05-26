@@ -12,7 +12,7 @@ import { toast } from "react-hot-toast";
 import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
 import { useDeleteModal } from "../../context/DeleteModalContext";
-import { COLORS } from "../../theme";
+import { COLORS, THEME } from "../../theme";
 
 const EnhancedStories = ({ isPWA = false }) => {
   // State
@@ -30,7 +30,7 @@ const EnhancedStories = ({ isPWA = false }) => {
   // References and hooks
   const storiesRef = useRef(null);
   const { user, isAuthenticated } = useContext(AuthContext);
-  const { showDeleteModal } = useDeleteModal(); // Add this hook
+  const { showDeleteModal } = useDeleteModal();
   const isAdmin = isAuthenticated && user && user.role === "admin";
   const navigate = useNavigate();
 
@@ -91,22 +91,17 @@ const EnhancedStories = ({ isPWA = false }) => {
 
     if (activeStory) {
       if (!activeStory.media || activeStoryIndex >= activeStory.media.length) {
-        // Safety check - close the story viewer if there's no media
         closeStory();
         return;
       }
 
       const currentMedia = activeStory.media[activeStoryIndex];
-      // Set longer duration for videos (don't auto-progress)
       const isVideo = currentMedia && currentMedia.mediaType === "video";
 
       if (!isVideo) {
-        // Start time for the animation
         const startTime = Date.now();
-        // Total duration for this story item (10 seconds)
         const duration = 10000;
 
-        // Animation function using requestAnimationFrame for smooth progress
         const animate = () => {
           const elapsedTime = Date.now() - startTime;
           const progress = Math.min(elapsedTime / duration, 1);
@@ -114,15 +109,12 @@ const EnhancedStories = ({ isPWA = false }) => {
           setTimeLeft(10 - progress * 10);
 
           if (progress < 1) {
-            // Continue animation
             animationFrameId = requestAnimationFrame(animate);
           } else {
-            // Move to next story item when animation completes
             nextStoryItem();
           }
         };
 
-        // Start the animation
         animationFrameId = requestAnimationFrame(animate);
       }
     }
@@ -138,21 +130,17 @@ const EnhancedStories = ({ isPWA = false }) => {
   // Handle body scroll lock when story is open
   useEffect(() => {
     if (activeStory) {
-      // Prevent body scrolling when story is open
       document.body.style.overflow = "hidden";
 
-      // Add extra padding for iOS notch
       if (localIsPWA || isPWA) {
         document.body.style.paddingTop = "env(safe-area-inset-top, 0)";
       }
     } else {
-      // Restore body scrolling when story is closed
       document.body.style.overflow = "";
       document.body.style.paddingTop = "";
     }
 
     return () => {
-      // Clean up when component unmounts
       document.body.style.overflow = "";
       document.body.style.paddingTop = "";
     };
@@ -163,18 +151,15 @@ const EnhancedStories = ({ isPWA = false }) => {
     if (!user) return storiesData;
 
     return [...storiesData].sort((a, b) => {
-      // Your own story first
       if (a.userId === user._id) return -1;
       if (b.userId === user._id) return 1;
 
-      // Then unwatched stories from friends
       const aIsUnwatched = !a.viewers?.includes(user._id);
       const bIsUnwatched = !b.viewers?.includes(user._id);
 
       if (aIsUnwatched && !bIsUnwatched) return -1;
       if (!aIsUnwatched && bIsUnwatched) return 1;
 
-      // Then sort by recency
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
   };
@@ -206,7 +191,6 @@ const EnhancedStories = ({ isPWA = false }) => {
     }
   };
 
-  // Replace the old delete modal functions with this new one
   const handleDeleteStory = () => {
     if (!activeStory || !isAdmin) return;
 
@@ -234,12 +218,10 @@ const EnhancedStories = ({ isPWA = false }) => {
           );
 
           if (response.data.success) {
-            // Update the UI by removing the deleted story
             setStories((prevStories) =>
               prevStories.filter((story) => story._id !== activeStory._id)
             );
 
-            // Close the story view
             closeStory();
             toast.success("Story deleted successfully");
           } else {
@@ -259,19 +241,12 @@ const EnhancedStories = ({ isPWA = false }) => {
     });
   };
 
-  // Remove the old delete modal functions - we don't need these anymore
-  // const openDeleteModal = () => { ... }
-  // const closeDeleteModal = () => { ... }
-  // const handleDeleteStory = async () => { ... }
-
-  // Calculate the expiration time for a story
   const getExpirationTime = (story) => {
     if (!story || !story.expiresAt) return "Unknown";
 
     const expiresAt = new Date(story.expiresAt);
     const now = new Date();
 
-    // Calculate the time difference in hours and minutes
     const diffMs = expiresAt - now;
 
     if (diffMs <= 0) {
@@ -288,30 +263,24 @@ const EnhancedStories = ({ isPWA = false }) => {
     }
   };
 
-  // Function to get thumbnail URL for a media item
   const getThumbnailUrl = (media) => {
     if (!media) return "/placeholder-image.jpg";
 
     if (media.mediaType === "image") {
       return media.mediaUrl;
     } else if (media.mediaType === "video") {
-      // Check if it's a Cloudinary URL (they typically contain 'cloudinary.com')
       const url = media.mediaUrl;
 
       if (url && url.includes("cloudinary.com")) {
-        // Extract relevant parts of the URL
         const urlParts = url.split("/");
         const uploadIndex = urlParts.findIndex((part) => part === "upload");
 
         if (uploadIndex !== -1) {
-          // Insert thumbnail transformation after 'upload'
           urlParts.splice(uploadIndex + 1, 0, "w_400,h_400,c_fill,g_auto,so_1");
 
-          // Get file extension
           const filename = urlParts[urlParts.length - 1];
           const extension = filename.split(".").pop();
 
-          // Replace extension if it's a video format
           const videoExtensions = ["mp4", "mov", "avi", "webm"];
           if (videoExtensions.includes(extension.toLowerCase())) {
             urlParts[urlParts.length - 1] = filename.replace(
@@ -324,11 +293,9 @@ const EnhancedStories = ({ isPWA = false }) => {
         }
       }
 
-      // Return a default video thumbnail if we couldn't transform the URL
       return "/video-thumbnail-placeholder.jpg";
     }
 
-    // Default case (should not happen)
     return media.mediaUrl;
   };
 
@@ -362,7 +329,7 @@ const EnhancedStories = ({ isPWA = false }) => {
 
   // Render empty state
   if (stories.length === 0 && !isAuthenticated) {
-    return null; // Don't show anything if no stories and not authenticated
+    return null;
   }
 
   if (stories.length === 0 && isAuthenticated) {
@@ -515,16 +482,16 @@ const shimmer = keyframes`
   }
 `;
 
-// Instagram-style Styled Components
+// SoloGram Dark Theme Styled Components
 const StoriesContainer = styled.section`
-  background-color: transparent;
+  background-color: ${COLORS.background};
   border-radius: 0;
-  padding: 8px 0 12px; // Just enough padding for spacing
-  margin: 0; // No margins
+  padding: 8px 0 12px;
+  margin: 0;
   box-shadow: none;
   position: relative;
   z-index: 1;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05); // Subtle separator like Instagram
+  border-bottom: 1px solid ${COLORS.divider};
 
   @media (max-width: 768px) {
     padding: 8px 0 10px;
@@ -543,17 +510,17 @@ const ScrollableContainer = styled.div`
 
 const StoriesWrapper = styled.div`
   display: flex;
-  gap: 12px; // Instagram-like spacing
+  gap: 12px;
   overflow-x: auto;
   scroll-behavior: smooth;
-  scrollbar-width: none; // Hide scrollbar
-  -ms-overflow-style: none; // Hide scrollbar
-  padding: 4px 16px; // Instagram-like padding
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 4px 16px;
   position: relative;
   z-index: 1;
 
   &::-webkit-scrollbar {
-    display: none; // Hide scrollbar
+    display: none;
   }
 
   @media (max-width: 768px) {
@@ -573,13 +540,14 @@ const StoryItem = styled.div`
   align-items: center;
   cursor: pointer;
   flex: 0 0 auto;
-  width: 66px; // Instagram-like size
-  transition: opacity 0.2s ease; // Only fade opacity on hover
+  width: 66px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
   position: relative;
   z-index: 2;
 
   &:hover {
-    opacity: 0.9; // Subtle hover effect like Instagram
+    transform: translateY(-2px);
+    opacity: 0.9;
   }
 
   @media (max-width: 768px) {
@@ -592,21 +560,24 @@ const StoryItem = styled.div`
 `;
 
 const StoryAvatarWrapper = styled.div`
-  width: 62px; // Instagram size
+  width: 62px;
   height: 62px;
   border-radius: 50%;
-  padding: 2px; // Instagram's thin border
-  margin-bottom: 6px; // Space between avatar and username
+  padding: 2px;
+  margin-bottom: 6px;
   position: relative;
   background: ${(props) => {
-    // Instagram-like gradient for stories
     if (props.isOwn)
-      return `linear-gradient(45deg, #C13584, #E1306C, #FD1D1D, #F56040, #FCAF45)`;
+      return `linear-gradient(45deg, ${COLORS.primarySalmon}, ${COLORS.accentSalmon})`;
     if (!props.viewed)
-      return `linear-gradient(45deg, #C13584, #E1306C, #FD1D1D, #F56040, #FCAF45)`;
-    return "#dbdbdb"; // Instagram gray for viewed stories
+      return `linear-gradient(45deg, ${COLORS.primaryBlueGray}, ${COLORS.primaryMint}, ${COLORS.accentMint})`;
+    return COLORS.border;
   }};
   z-index: 2;
+  box-shadow: ${(props) =>
+    props.isOwn || !props.viewed
+      ? `0 0 0 1px ${COLORS.background}, 0 2px 8px rgba(0, 0, 0, 0.3)`
+      : "none"};
 
   @media (max-width: 768px) {
     width: 56px;
@@ -623,14 +594,14 @@ const StoryAvatarWrapper = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
+    background: ${COLORS.cardBackground};
 
     &:before {
-      background-color: #fafafa; // Instagram background color
       content: "\\f03e";
       font-family: "Font Awesome 5 Free";
       font-weight: 900;
       font-size: 1.2rem;
-      color: #8e8e8e; // Instagram gray
+      color: ${COLORS.textTertiary};
       display: flex;
       align-items: center;
       justify-content: center;
@@ -643,31 +614,28 @@ const StoryAvatar = styled.img`
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  background-color: #fafafa; // Instagram background
-  border: 2px solid white; // Instagram-style white border
+  background-color: ${COLORS.cardBackground};
+  border: 2px solid ${COLORS.background};
 `;
 
 const StoryUsername = styled.span`
-  font-size: 12px; // Instagram font size
-  color: #262626; // Instagram text color
+  font-size: 12px;
+  color: ${COLORS.textSecondary};
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
-  font-weight: 400; // Instagram font weight
+  font-weight: 400;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif; // Instagram font stack
+    Arial, sans-serif;
 
   @media (max-width: 480px) {
     font-size: 11px;
   }
 `;
 
-// Your Story / Create Story item
-const CreateStoryItem = styled(StoryItem)`
-  // Same styles as StoryItem
-`;
+const CreateStoryItem = styled(StoryItem)``;
 
 const CreateStoryAvatarWrapper = styled.div`
   width: 62px;
@@ -675,11 +643,17 @@ const CreateStoryAvatarWrapper = styled.div`
   border-radius: 50%;
   margin-bottom: 6px;
   position: relative;
-  background: #fafafa; // Instagram background
-  border: 1px dashed #dbdbdb; // Instagram-like dashed border
+  background: ${COLORS.cardBackground};
+  border: 2px dashed ${COLORS.border};
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: ${COLORS.primaryBlueGray};
+    background: ${COLORS.elevatedBackground};
+  }
 
   @media (max-width: 768px) {
     width: 56px;
@@ -700,12 +674,14 @@ const CreateStoryButton = styled.div`
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #0095f6; // Instagram blue
-  color: white;
+  background: ${COLORS.primaryBlueGray};
+  color: ${COLORS.textPrimary};
   font-size: 14px;
+  transition: all 0.3s ease;
 
   &:hover {
-    opacity: 0.9;
+    background: ${COLORS.primaryMint};
+    transform: scale(1.1);
   }
 
   @media (max-width: 480px) {
@@ -717,7 +693,7 @@ const CreateStoryButton = styled.div`
 
 const CreateStoryLabel = styled.span`
   font-size: 12px;
-  color: #262626; // Instagram text color
+  color: ${COLORS.textSecondary};
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -732,7 +708,6 @@ const CreateStoryLabel = styled.span`
   }
 `;
 
-// Loading skeleton
 const StoryItemSkeleton = styled.div`
   display: flex;
   flex-direction: column;
@@ -746,7 +721,12 @@ const StoryItemSkeleton = styled.div`
     height: 62px;
     border-radius: 50%;
     margin-bottom: 6px;
-    background: linear-gradient(90deg, #efefef 8%, #fbfbfb 18%, #efefef 33%);
+    background: linear-gradient(
+      90deg,
+      ${COLORS.cardBackground} 8%,
+      ${COLORS.elevatedBackground} 18%,
+      ${COLORS.cardBackground} 33%
+    );
     background-size: 200% 100%;
     animation: ${shimmer} 1.5s infinite;
   }
@@ -756,7 +736,12 @@ const StoryItemSkeleton = styled.div`
     width: 40px;
     height: 10px;
     border-radius: 4px;
-    background: linear-gradient(90deg, #efefef 8%, #fbfbfb 18%, #efefef 33%);
+    background: linear-gradient(
+      90deg,
+      ${COLORS.cardBackground} 8%,
+      ${COLORS.elevatedBackground} 18%,
+      ${COLORS.cardBackground} 33%
+    );
     background-size: 200% 100%;
     animation: ${shimmer} 1.5s infinite;
   }
@@ -785,12 +770,8 @@ const StoryItemSkeleton = styled.div`
   }
 `;
 
-const NoStoriesMessage = styled.div`
-  display: none; // Hide message for cleaner Instagram-like experience
-`;
-
 const ErrorMessage = styled.div`
-  color: #ed4956; // Instagram error red
+  color: ${COLORS.error};
   width: 100%;
   text-align: center;
   padding: 12px 0;
@@ -806,7 +787,7 @@ const StoryModal = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #000000;
+  background-color: ${COLORS.background};
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -831,7 +812,6 @@ const ProgressBarContainer = styled.div`
   left: 0;
   right: 0;
 
-  /* iOS Safe Area Support */
   @supports (padding-top: env(safe-area-inset-top)) {
     padding-top: calc(12px + env(safe-area-inset-top, 0));
   }
@@ -840,18 +820,23 @@ const ProgressBarContainer = styled.div`
 const ProgressBarBackground = styled.div`
   position: relative;
   flex: 1;
-  height: 2px; // Instagram uses thinner bars
-  border-radius: 1px;
-  background: rgba(255, 255, 255, 0.3); // More transparent background
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
   overflow: hidden;
 `;
 
 const ProgressFill = styled.div`
   height: 100%;
   width: ${(props) => (props.complete ? "100%" : `${props.progress * 100}%`)};
-  background: white; // Simple white fill instead of gradient
-  transition: width 0.1s linear; // Linear transition like Instagram
-  border-radius: 1px;
+  background: linear-gradient(
+    45deg,
+    ${COLORS.primaryBlueGray},
+    ${COLORS.primaryMint}
+  );
+  transition: width 0.1s linear;
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(136, 178, 204, 0.4);
 `;
 
 const StoryHeader = styled.div`
@@ -866,12 +851,11 @@ const StoryHeader = styled.div`
   z-index: 5;
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.3) 0%,
-    rgba(0, 0, 0, 0) 100%
+    rgba(18, 18, 18, 0.8) 0%,
+    rgba(18, 18, 18, 0) 100%
   );
   pointer-events: none;
 
-  /* iOS Safe Area Support */
   @supports (padding-top: env(safe-area-inset-top)) {
     padding-top: calc(16px + env(safe-area-inset-top, 0));
   }
@@ -884,19 +868,19 @@ const StoryHeaderContent = styled.div`
 
   .story-user {
     font-size: 14px;
-    color: white;
+    color: ${COLORS.textPrimary};
     font-weight: 600;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       Helvetica, Arial, sans-serif;
   }
 `;
 
 const StoryTimestamp = styled.span`
-  color: rgba(255, 255, 255, 0.8);
+  color: ${COLORS.textSecondary};
   font-size: 12px;
   font-weight: normal;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif;
 `;
@@ -909,16 +893,15 @@ const ControlsBar = styled.div`
   display: flex;
   gap: 12px;
 
-  /* iOS Safe Area Support */
   @supports (padding-top: env(safe-area-inset-top)) {
     top: calc(16px + env(safe-area-inset-top, 0));
   }
 `;
 
 const CloseButton = styled.button`
-  background: rgba(0, 0, 0, 0.3);
-  border: none;
-  color: white;
+  background: rgba(18, 18, 18, 0.8);
+  border: 1px solid ${COLORS.border};
+  color: ${COLORS.textPrimary};
   font-size: 18px;
   cursor: pointer;
   display: flex;
@@ -927,22 +910,20 @@ const CloseButton = styled.button`
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.5);
+    background: rgba(30, 30, 30, 0.9);
+    border-color: ${COLORS.primaryBlueGray};
+    transform: scale(1.05);
   }
 `;
 
 const DeleteButton = styled.button`
-  background-color: rgba(
-    237,
-    73,
-    86,
-    0.8
-  ); // Instagram delete color with transparency
-  border: none;
-  color: white;
+  background: rgba(255, 107, 107, 0.9);
+  border: 1px solid ${COLORS.error};
+  color: ${COLORS.textPrimary};
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -951,15 +932,18 @@ const DeleteButton = styled.button`
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 
   &:hover {
-    background-color: rgba(237, 73, 86, 1);
+    background: ${COLORS.error};
+    transform: scale(1.05);
   }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
   }
 `;
 
@@ -972,7 +956,7 @@ const StoryContent = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #000000;
+  background-color: ${COLORS.background};
   width: 100vw;
   height: 100vh;
 `;
