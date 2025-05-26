@@ -1,27 +1,40 @@
-// theme.js - SoloGram New Color Theme: Salmon, Khaki, Mint Blue, Blue Gray
+// theme.js - SoloGram Dark Theme: Salmon, Khaki, Mint Blue, Blue Gray
 
 export const COLORS = {
+  // Brand colors
   primarySalmon: "#e98973",
   primaryKhaki: "#e7d4c0",
   primaryMint: "#88b2cc",
   primaryBlueGray: "#658ea9",
-  accentSalmon: "#ffad9e", // softer version
-  accentMint: "#a8cfd8", // softer version
-  accentBlueGray: "#90aac3", // lighter blue-gray
-  background: "#f8f5f0", // light khaki/neutral
-  cardBackground: "#ffffff", // bright white for card contrast
-  elevatedBackground: "#f0f0f0", // slightly elevated sections
-  textPrimary: "#1a1a1a", // near-black text
-  textSecondary: "#555555", // dark gray text
-  textTertiary: "#888888", // lighter gray text
-  error: "#d9534f",
-  success: "#5cb85c",
-  warning: "#f0ad4e",
-  info: "#5bc0de",
-  border: "#dddddd",
-  divider: "#eeeeee",
-  buttonHover: "#e2e2e2",
-  shadow: "rgba(0, 0, 0, 0.1)",
+
+  // Accent tones
+  accentSalmon: "#ffad9e",
+  accentMint: "#a8cfd8",
+  accentBlueGray: "#90aac3",
+
+  // Dark mode background surfaces
+  background: "#121212", // Main background
+  cardBackground: "#1e1e1e", // Card surfaces
+  elevatedBackground: "#2a2a2a", // Raised UI elements
+
+  // Text colors for dark backgrounds
+  textPrimary: "#ffffff", // Headings, titles
+  textSecondary: "#cccccc", // Captions, body text
+  textTertiary: "#999999", // Meta text, timestamps, tags
+
+  // System status
+  error: "#ff6b6b",
+  success: "#6fcf97",
+  warning: "#f2c94c",
+  info: "#56ccf2",
+
+  // Borders & UI chrome
+  border: "#444444",
+  divider: "#3a3a3a",
+  buttonHover: "#333333",
+
+  // Effects
+  shadow: "0 4px 12px rgba(0, 0, 0, 0.6)",
   heartRed: "#e63946",
   darkAccent: "#40535c",
 };
@@ -29,8 +42,8 @@ export const COLORS = {
 export const THEME = {
   header: {
     background: COLORS.primaryBlueGray,
-    text: "#FFFFFF",
-    icon: "#FFFFFF",
+    text: COLORS.textPrimary,
+    icon: COLORS.textPrimary,
   },
   banner: {
     background: COLORS.accentMint,
@@ -41,18 +54,18 @@ export const THEME = {
   button: {
     primary: {
       background: COLORS.primaryBlueGray,
-      text: "#FFFFFF",
+      text: COLORS.textPrimary,
       hoverBackground: COLORS.accentMint,
     },
     secondary: {
-      background: COLORS.elevatedBackground,
+      background: "#2c2c2c",
       text: COLORS.textPrimary,
-      hoverBackground: COLORS.buttonHover,
+      hoverBackground: "#3a3a3a",
     },
     action: {
       background: COLORS.primarySalmon,
-      text: "#FFFFFF",
-      hoverBackground: "#cc6e5f", // Darker salmon on hover
+      text: COLORS.textPrimary,
+      hoverBackground: "#cc6e5f", // darker salmon
     },
   },
   post: {
