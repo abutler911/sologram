@@ -3,7 +3,6 @@ import PropTypes from "prop-types";
 import Header from "./Header";
 import Footer from "./Footer";
 import BottomNavigation from "./BottomNavigation";
-
 import styled from "styled-components";
 import { COLORS } from "../../theme";
 import LoadingSpinner from "../common/LoadingSpinner";
@@ -58,8 +57,22 @@ const LayoutWrapper = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 1rem; /* Add some space between header and content */
-    padding: 0 1rem; /* Add side padding for content */
+    margin: 0; /* Remove top margin */
+    padding: 0; /* Remove all padding for seamless transition */
+
+    /* Only add side padding to direct children if needed */
+    & > div:not(:last-child) {
+      padding: 0 1rem;
+    }
+
+    /* Special handling for home feed - no padding */
+    &[data-page="home"] {
+      padding: 0;
+
+      & > div {
+        padding: 0;
+      }
+    }
   }
 `;
 

@@ -362,6 +362,7 @@ const PageWrapper = styled.div`
   background-color: #000000; // Black background
   min-height: 100vh;
   padding: 0; // No padding
+  margin: 0; // Ensure no margin
 
   @supports (-webkit-touch-callout: none) {
     min-height: -webkit-fill-available;
@@ -372,20 +373,29 @@ const HomeContainer = styled.div`
   max-width: 470px; // Instagram feed width is narrower
   margin: 0 auto;
   padding: 0; // No padding
+  margin-bottom: 0; // Explicitly remove bottom margin
 
   @media (min-width: 768px) and (max-width: 1024px) {
     max-width: 470px;
     padding: 0;
+    margin-bottom: 0;
   }
 
   @media (max-width: 768px) {
     max-width: 100%;
     padding: 0;
     box-sizing: border-box;
+    margin-bottom: 0;
   }
 
   & > section {
     margin-top: 0; // Remove margin from sections
+    margin-bottom: 0; // Remove bottom margin from sections
+  }
+
+  // Ensure the last element has no bottom margin
+  & > *:last-child {
+    margin-bottom: 0;
   }
 `;
 
@@ -570,7 +580,6 @@ const ClearSearchButton = styled.button`
   }
 `;
 
-// Post grid styles
 const PostGrid = styled.div`
   display: flex;
   flex-direction: column;
@@ -578,6 +587,7 @@ const PostGrid = styled.div`
   padding: 0;
   margin: 0;
   width: 100%;
+  margin-bottom: 0; // Explicitly remove bottom margin
 
   /* Add subtle dividers between posts */
   & > div:not(:last-child) {
@@ -585,15 +595,16 @@ const PostGrid = styled.div`
   }
 
   @media (min-width: 768px) and (max-width: 1024px) {
-    /* Keep single column on tablet */
     display: flex;
     flex-direction: column;
     padding: 0;
+    margin-bottom: 0;
   }
 
   @media (min-width: 1025px) {
     display: flex;
     flex-direction: column;
+    margin-bottom: 0;
   }
 
   @media (max-width: 768px) {
@@ -602,6 +613,7 @@ const PostGrid = styled.div`
     padding: 0;
     width: 100%;
     border-radius: 0;
+    margin-bottom: 0;
   }
 `;
 
@@ -634,8 +646,8 @@ const LoadingContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin: 3rem 0;
-  padding: 2rem;
+  margin: 3rem 0 0 0; // Remove bottom margin
+  padding: 2rem 2rem 0 2rem; // Remove bottom padding
 `;
 
 const LoadingText = styled.div`
@@ -649,7 +661,7 @@ const LoadingMoreContainer = styled.div`
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  margin: 1.5rem 0;
+  margin: 1.5rem 0 0 0;
 `;
 
 const LoadingMoreText = styled.div`
@@ -660,7 +672,7 @@ const LoadingMoreText = styled.div`
 
 const NoPostsMessage = styled.div`
   text-align: center;
-  margin: 2rem 0;
+  margin: 2rem 0 0 0;
   color: ${COLORS.textSecondary};
   font-size: 0.9375rem;
 `;

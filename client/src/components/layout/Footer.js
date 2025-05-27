@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { FaHeart, FaCamera, FaEnvelope, FaGithub } from "react-icons/fa";
-import { COLORS, THEME } from "../../theme";
+import { COLORS } from "../../theme";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -69,13 +69,13 @@ const FooterContainer = styled.footer`
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif;
   color: ${COLORS.textSecondary};
-  margin-top: 0; /* Reduced from 40px */
+  margin-top: 0; /* Remove any top margin */
   position: relative;
   z-index: 1;
 
   @media (max-width: 768px) {
     padding: 24px 0 0 0;
-    margin-top: 0; /* Reduced from 32px */
+    margin-top: 0; /* Remove any top margin */
   }
 `;
 
