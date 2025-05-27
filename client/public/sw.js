@@ -1,5 +1,5 @@
 // public/sw.js - AUTO-VERSIONED
-const CACHE_VERSION = `v${Date.now()}`; // Automatically uses timestamp
+const CACHE_VERSION = `v-${new Date().toISOString()}`;
 const STATIC_CACHE = `static-cache-${CACHE_VERSION}`;
 
 self.addEventListener("install", (event) => {
