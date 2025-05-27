@@ -1,10 +1,33 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { FaHeart, FaCamera, FaEnvelope, FaGithub } from "react-icons/fa";
-import { COLORS } from "../../theme";
+import { COLORS, THEME } from "../../theme";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [swVersion, setSwVersion] = useState(null);
+
+  useEffect(() => {
+    // Get service worker version
+    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+      // Check if we can get version from SW
+      navigator.serviceWorker.addEventListener("message", (event) => {
+        if (event.data.type === "SW_VERSION") {
+          setSwVersion(event.data.version);
+        }
+      });
+
+      // Request version from service worker
+      navigator.serviceWorker.controller.postMessage({ type: "GET_VERSION" });
+    }
+
+    // Fallback: try to get version from a global variable or localStorage
+    const version =
+      localStorage.getItem("app_version") ||
+      window.APP_VERSION ||
+      `v${new Date().toISOString().slice(0, 10)}`;
+    setSwVersion(version);
+  }, []);
 
   return (
     <FooterContainer>
@@ -38,16 +61,15 @@ const Footer = () => {
 
         <FooterBottom>
           <Copyright>
-            Made with{" "}
+            Independently Developed with{" "}
             <HeartIcon>
               <FaHeart />
             </HeartIcon>{" "}
             by Andrew
           </Copyright>
-          <CopyrightLine>
-            &copy; {currentYear} SoloGram | Mr. Gray Enterprises, Inc.
-          </CopyrightLine>
+          <CopyrightLine>&copy; {currentYear} SoloGram</CopyrightLine>
           <TagLine>One Voice. Infinite Moments</TagLine>
+          {swVersion && <VersionDisplay>{swVersion}</VersionDisplay>}
         </FooterBottom>
       </FooterContent>
 
@@ -57,7 +79,7 @@ const Footer = () => {
   );
 };
 
-// SoloGram Dark Theme Footer Styling
+// All your existing styled components stay the same...
 const FooterContainer = styled.footer`
   background: linear-gradient(
     135deg,
@@ -69,13 +91,13 @@ const FooterContainer = styled.footer`
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif;
   color: ${COLORS.textSecondary};
-  margin-top: 0; /* Remove any top margin */
+  margin-top: 0;
   position: relative;
   z-index: 1;
 
   @media (max-width: 768px) {
     padding: 24px 0 0 0;
-    margin-top: 0; /* Remove any top margin */
+    margin-top: 0;
   }
 `;
 
@@ -242,10 +264,29 @@ const TagLine = styled.p`
   opacity: 0.8;
 `;
 
+// NEW: Version display component
+const VersionDisplay = styled.p`
+  margin: 4px 0 0 0;
+  color: ${COLORS.textTertiary};
+  font-size: 9px;
+  font-weight: 300;
+  opacity: 0.6;
+  font-family: "Courier New", monospace;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+
+  &:hover {
+    opacity: 1;
+    cursor: pointer;
+  }
+`;
+
+// This creates space at the bottom for mobile navigation
 const BottomSpacer = styled.div`
   height: calc(60px + env(safe-area-inset-bottom, 20px));
   width: 100%;
-  background: transparent;
+  background: ${COLORS.elevatedBackground}; /* Removed gradient as discussed */
 `;
 
 export default Footer;

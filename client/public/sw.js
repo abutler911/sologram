@@ -1,5 +1,5 @@
-// public/sw.js - REPLACE YOUR ENTIRE FILE WITH THIS
-const CACHE_VERSION = "v1.4.5"; // Change this with each deployment
+// public/sw.js - AUTO-VERSIONED
+const CACHE_VERSION = `v${Date.now()}`; // Automatically uses timestamp
 const STATIC_CACHE = `static-cache-${CACHE_VERSION}`;
 
 self.addEventListener("install", (event) => {
@@ -43,7 +43,6 @@ self.addEventListener("fetch", (event) => {
     !url.hostname.includes("thesologram.com")
   )
     return;
-
   if (url.hostname.includes("cloudinary.com")) return;
 
   // NETWORK-FIRST for JS chunks
