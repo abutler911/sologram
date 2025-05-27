@@ -45,12 +45,16 @@ const GlobalStyle = createGlobalStyle`
 
   .main-content {
     flex: 1;
+    /* REMOVED: padding-bottom that was causing white space */
+    /* Instead, we'll add the spacing to the footer */
+  }
 
+  /* Move the bottom navigation spacing to the footer */
+  footer {
     @media (max-width: 767px) {
-      padding-bottom: 60px;
-
-      @supports (padding-bottom: env(safe-area-inset-bottom)) {
-        padding-bottom: calc(60px + env(safe-area-inset-bottom));
+      margin-bottom: 60px;
+      @supports (margin-bottom: env(safe-area-inset-bottom)) {
+        margin-bottom: calc(60px + env(safe-area-inset-bottom));
       }
     }
   }
@@ -117,13 +121,13 @@ const GlobalStyle = createGlobalStyle`
       overscroll-behavior: none;
       overscroll-behavior-y: contain;
     }
-
+    
     .app {
       display: flex;
       flex-direction: column;
       min-height: 100vh;
     }
-
+    
     .main-content {
       flex: 1;
     }
