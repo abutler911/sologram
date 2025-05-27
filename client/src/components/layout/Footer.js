@@ -242,15 +242,10 @@ const TagLine = styled.p`
   opacity: 0.8;
 `;
 
-// This creates space at the bottom for mobile navigation
 const BottomSpacer = styled.div`
   height: calc(60px + env(safe-area-inset-bottom, 20px));
   width: 100%;
-  background: linear-gradient(
-    to bottom,
-    ${COLORS.elevatedBackground},
-    ${COLORS.background}
-  );
+  background: transparent;
 `;
 
 export default Footer;
