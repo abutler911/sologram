@@ -31,37 +31,32 @@ const Register = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState("");
-  const [formStep, setFormStep] = useState(1); // Track form steps
+  const [formStep, setFormStep] = useState(1);
 
   const { register, isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/");
     }
   }, [isAuthenticated, navigate]);
 
-  // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
 
-    // Clear password error when either password field changes
     if (name === "password" || name === "confirmPassword") {
       setPasswordError("");
     }
   };
 
-  // Handle profile image upload
   const onDrop = (acceptedFiles) => {
     const file = acceptedFiles[0];
     if (!file) return;
 
     setProfileImage(file);
 
-    // Create image preview
     const reader = new FileReader();
     reader.onload = () => {
       setImagePreview(reader.result);
@@ -74,11 +69,10 @@ const Register = () => {
     accept: {
       "image/*": [".jpeg", ".jpg", ".png"],
     },
-    maxSize: 5 * 1024 * 1024, // 5MB
+    maxSize: 5 * 1024 * 1024,
     multiple: false,
   });
 
-  // Move to next form step
   const nextStep = () => {
     if (formData.password !== formData.confirmPassword) {
       setPasswordError("Passwords do not match");
@@ -93,17 +87,14 @@ const Register = () => {
     setFormStep(2);
   };
 
-  // Move to previous form step
   const prevStep = () => {
     setFormStep(1);
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Create form data for submission
     const registerFormData = new FormData();
     registerFormData.append("firstName", formData.firstName);
     registerFormData.append("lastName", formData.lastName);
@@ -246,7 +237,7 @@ const Register = () => {
                 <FormField>
                   <StyledTextArea
                     name="bio"
-                    placeholder="Bio"
+                    placeholder="Tell us about yourself..."
                     value={formData.bio}
                     onChange={handleChange}
                     rows={3}
@@ -279,6 +270,7 @@ const Register = () => {
                         <FaImage />
                       </UploadIcon>
                       <UploadText>Upload Image</UploadText>
+                      <UploadSubtext>JPG, PNG up to 5MB</UploadSubtext>
                     </DropZone>
                   )}
                 </ProfileUploadSection>
@@ -317,18 +309,18 @@ const PageContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  background-color: ${COLORS.background};
+  padding: 20px;
+  background: ${COLORS.background};
 `;
 
 const AuthForm = styled.div`
   width: 100%;
   max-width: 480px;
-  margin: 0 16px;
-  background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
-  padding: 32px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  background: ${COLORS.cardBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: ${COLORS.shadow};
 
   @media (max-width: 600px) {
     margin: 0;
@@ -351,7 +343,8 @@ const LogoContainer = styled.div`
 const LogoIcon = styled.div`
   color: ${COLORS.primarySalmon};
   font-size: 48px;
-  filter: drop-shadow(0 4px 6px rgba(242, 120, 92, 0.25));
+  filter: drop-shadow(0 4px 6px rgba(233, 137, 115, 0.3));
+  margin-bottom: 8px;
 `;
 
 const LogoText = styled.h1`
@@ -359,13 +352,13 @@ const LogoText = styled.h1`
   font-size: 40px;
   font-weight: 500;
   color: ${COLORS.textPrimary};
-  margin: 8px 0 4px;
+  margin: 0 0 4px;
 `;
 
 const Tagline = styled.p`
   color: ${COLORS.primaryMint};
   font-size: 14px;
-  margin: 4px 0 0;
+  margin: 0;
   text-align: center;
   letter-spacing: 0.5px;
 `;
@@ -382,16 +375,16 @@ const StepDot = styled.div`
   height: 10px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? COLORS.primarySalmon : COLORS.border};
+    props.active ? COLORS.primaryBlueGray : COLORS.border};
   transition: background-color 0.3s ease, transform 0.2s ease;
   transform: ${(props) => (props.active ? "scale(1.2)" : "scale(1)")};
 `;
 
 const FormTitle = styled.h2`
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 600;
   color: ${COLORS.textPrimary};
-  margin-bottom: 24px;
+  margin-bottom: 32px;
   text-align: center;
 `;
 
@@ -400,7 +393,7 @@ const Form = styled.form`
 `;
 
 const FormField = styled.div`
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   width: 100%;
 `;
 
@@ -418,23 +411,22 @@ const IconContainer = styled.div`
   font-size: 16px;
   z-index: 2;
   pointer-events: none;
+  transition: color 0.2s ease;
 `;
 
 const StyledInput = styled.input`
   width: 100%;
   height: 56px;
   padding: ${(props) =>
-    props.type === "password"
-      ? "0 16px 0 48px"
-      : props.name === "firstName" || props.name === "lastName"
+    props.name === "firstName" || props.name === "lastName"
       ? "0 16px"
       : "0 16px 0 48px"};
-  background-color: ${COLORS.inputBackground || "#f8f9fa"};
+  background: ${COLORS.elevatedBackground};
   border: 1px solid ${COLORS.border};
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
   color: ${COLORS.textPrimary};
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
 
   &::placeholder {
     color: ${COLORS.textTertiary};
@@ -443,7 +435,12 @@ const StyledInput = styled.input`
   &:focus {
     outline: none;
     border-color: ${COLORS.primaryMint};
-    box-shadow: 0 0 0 2px rgba(134, 227, 206, 0.15);
+    box-shadow: 0 0 0 3px rgba(136, 178, 204, 0.15);
+    background: ${COLORS.cardBackground};
+
+    & + ${IconContainer} {
+      color: ${COLORS.primaryMint};
+    }
   }
 `;
 
@@ -451,13 +448,14 @@ const StyledTextArea = styled.textarea`
   width: 100%;
   min-height: 120px;
   padding: 16px;
-  background-color: ${COLORS.inputBackground || "#f8f9fa"};
+  background: ${COLORS.elevatedBackground};
   border: 1px solid ${COLORS.border};
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
   color: ${COLORS.textPrimary};
   resize: vertical;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
+  font-family: inherit;
 
   &::placeholder {
     color: ${COLORS.textTertiary};
@@ -466,7 +464,8 @@ const StyledTextArea = styled.textarea`
   &:focus {
     outline: none;
     border-color: ${COLORS.primaryMint};
-    box-shadow: 0 0 0 2px rgba(134, 227, 206, 0.15);
+    box-shadow: 0 0 0 3px rgba(136, 178, 204, 0.15);
+    background: ${COLORS.cardBackground};
   }
 `;
 
@@ -477,7 +476,7 @@ const FieldRow = styled.div`
 
   @media (max-width: 480px) {
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
   }
 `;
 
@@ -503,11 +502,11 @@ const DropZone = styled.div`
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  background-color: ${COLORS.inputBackground || "#f8f9fa"};
+  background: ${COLORS.elevatedBackground};
 
   &:hover {
-    border-color: ${COLORS.primarySalmon};
-    background-color: ${COLORS.buttonHover};
+    border-color: ${COLORS.primaryMint};
+    background: ${COLORS.cardBackground};
   }
 `;
 
@@ -518,15 +517,21 @@ const UploadIcon = styled.div`
   transition: color 0.2s ease;
 
   ${DropZone}:hover & {
-    color: ${COLORS.primarySalmon};
+    color: ${COLORS.primaryMint};
   }
 `;
 
 const UploadText = styled.p`
   font-size: 16px;
   color: ${COLORS.textSecondary};
+  margin: 0 0 4px 0;
+  font-weight: 500;
+`;
+
+const UploadSubtext = styled.p`
+  font-size: 12px;
+  color: ${COLORS.textTertiary};
   margin: 0;
-  transition: color 0.2s ease;
 `;
 
 const ProfilePreviewWrapper = styled.div`
@@ -541,15 +546,15 @@ const ProfilePreview = styled.img`
   height: 160px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid ${COLORS.primarySalmon};
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 3px solid ${COLORS.primaryBlueGray};
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 `;
 
 const RemoveButton = styled.button`
   position: absolute;
   top: 0;
   right: 0;
-  background-color: ${COLORS.error || COLORS.primarySalmon};
+  background: ${COLORS.error};
   color: white;
   border: none;
   width: 32px;
@@ -560,11 +565,11 @@ const RemoveButton = styled.button`
   justify-content: center;
   cursor: pointer;
   font-size: 14px;
-  transition: background-color 0.2s, transform 0.2s;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 
   &:hover {
-    background-color: ${COLORS.errorDark || "#e63a2d"};
+    background: #ff5555;
     transform: scale(1.1);
   }
 `;
@@ -581,7 +586,7 @@ const ButtonRow = styled.div`
 
 const BaseButton = styled.button`
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   height: 56px;
   font-size: 16px;
   font-weight: 600;
@@ -590,74 +595,53 @@ const BaseButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
 
   &:disabled {
-    opacity: 0.7;
+    opacity: 0.6;
     cursor: not-allowed;
   }
 `;
 
 const NextButton = styled(BaseButton)`
   width: 100%;
-  background-color: ${COLORS.primarySalmon};
-  color: white;
-  box-shadow: 0 4px 10px rgba(242, 120, 92, 0.25);
+  background: ${COLORS.primaryBlueGray};
+  color: ${COLORS.textPrimary};
   margin-top: 8px;
 
-  svg {
-    margin-left: 8px;
-    font-size: 16px;
-  }
-
   &:hover:not(:disabled) {
-    background-color: ${COLORS.accentSalmon};
+    background: ${COLORS.accentBlueGray};
     transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(242, 120, 92, 0.3);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(242, 120, 92, 0.2);
+    box-shadow: 0 6px 20px rgba(101, 142, 169, 0.3);
   }
 `;
 
 const SubmitButton = styled(BaseButton)`
   flex: 1;
-  background-color: ${COLORS.primarySalmon};
-  color: white;
-  box-shadow: 0 4px 10px rgba(242, 120, 92, 0.25);
+  background: ${COLORS.primarySalmon};
+  color: ${COLORS.textPrimary};
 
   &:hover:not(:disabled) {
-    background-color: ${COLORS.accentSalmon};
+    background: ${COLORS.accentSalmon};
     transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(242, 120, 92, 0.3);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(242, 120, 92, 0.2);
+    box-shadow: 0 6px 20px rgba(233, 137, 115, 0.3);
   }
 `;
 
 const BackButton = styled(BaseButton)`
   flex: 0.8;
-  background-color: transparent;
+  background: transparent;
   color: ${COLORS.textSecondary};
   border: 1px solid ${COLORS.border};
 
-  svg {
-    margin-right: 8px;
-    font-size: 14px;
-  }
-
   &:hover {
-    background-color: ${COLORS.buttonHover || "#f1f3f5"};
+    background: ${COLORS.elevatedBackground};
     border-color: ${COLORS.textSecondary};
   }
 `;
 
 const ErrorText = styled.p`
-  color: ${COLORS.error || "#ff3b30"};
+  color: ${COLORS.error};
   font-size: 14px;
   margin: 8px 0 0 2px;
   font-weight: 500;
@@ -673,15 +657,16 @@ const Divider = styled.div`
 const DividerLine = styled.div`
   flex: 1;
   height: 1px;
-  background-color: ${COLORS.divider};
+  background: ${COLORS.divider};
 `;
 
 const DividerText = styled.span`
   padding: 0 16px;
   color: ${COLORS.textTertiary};
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 1px;
 `;
 
 const AccountLink = styled.p`
@@ -691,14 +676,14 @@ const AccountLink = styled.p`
   text-align: center;
 
   a {
-    color: ${COLORS.primarySalmon};
+    color: ${COLORS.primaryMint};
     font-weight: 600;
     text-decoration: none;
     transition: color 0.2s;
     margin-left: 4px;
 
     &:hover {
-      color: ${COLORS.accentSalmon};
+      color: ${COLORS.accentMint};
       text-decoration: underline;
     }
   }
