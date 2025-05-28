@@ -1,81 +1,191 @@
-// public/sw.js - AUTO-VERSIONED
-const CACHE_VERSION = `v-${new Date().toISOString()}`;
-const STATIC_CACHE = `static-cache-${CACHE_VERSION}`;
+// public/sw.js - Smart runtime versioning
+async function generateCacheVersion() {
+  try {
+    // Try to fetch a small file that changes with each build
+    const response = await fetch("/static/js/bundle.js", {
+      method: "HEAD",
+      cache: "no-cache",
+    });
+
+    // Use ETag or Last-Modified as version identifier
+    const etag = response.headers.get("etag");
+    const lastModified = response.headers.get("last-modified");
+
+    if (etag) {
+      return `v-${etag.replace(/[^a-zA-Z0-9]/g, "")}`;
+    } else if (lastModified) {
+      return `v-${new Date(lastModified).getTime()}`;
+    }
+
+    // Fallback to a simple hash of current time (only changes on restart)
+    return `v-${Date.now().toString(36)}`;
+  } catch (error) {
+    console.warn("Failed to generate version, using fallback");
+    return `v-${Date.now().toString(36)}`;
+  }
+}
+
+// Initialize version on service worker startup
+let CACHE_VERSION = null;
+let STATIC_CACHE = null;
+let DYNAMIC_CACHE = null;
+
+async function initializeCache() {
+  if (!CACHE_VERSION) {
+    CACHE_VERSION = await generateCacheVersion();
+    STATIC_CACHE = `static-cache-${CACHE_VERSION}`;
+    DYNAMIC_CACHE = `dynamic-cache-${CACHE_VERSION}`;
+    console.log("Initialized cache version:", CACHE_VERSION);
+  }
+}
+
+const STATIC_ASSETS = ["/", "/manifest.json", "/favicon.ico"];
 
 self.addEventListener("install", (event) => {
-  console.log("SW installing version:", CACHE_VERSION);
+  console.log("SW installing...");
+
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll([
-        "/",
-        "/static/js/bundle.js",
-        "/static/css/main.css",
-        "/manifest.json",
-      ]);
-    })
+    initializeCache()
+      .then(() => {
+        console.log("SW installing version:", CACHE_VERSION);
+
+        return caches.open(STATIC_CACHE).then((cache) => {
+          console.log("Caching static assets");
+          return Promise.allSettled(
+            STATIC_ASSETS.map((url) =>
+              cache.add(url).catch((err) => {
+                console.warn(`Failed to cache ${url}:`, err);
+                return null;
+              })
+            )
+          );
+        });
+      })
+      .then(() => {
+        console.log("Static assets cached successfully");
+        return self.skipWaiting();
+      })
+      .catch((err) => {
+        console.error("Failed to install service worker:", err);
+      })
   );
-  self.skipWaiting(); // Force immediate activation
 });
 
 self.addEventListener("activate", (event) => {
-  console.log("SW activating version:", CACHE_VERSION);
+  console.log("SW activating...");
+
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== STATIC_CACHE) {
-            console.log("Deleting old cache:", cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
+    initializeCache().then(() => {
+      console.log("SW activating version:", CACHE_VERSION);
+
+      return Promise.all([
+        // Clean up old caches (keep only current version)
+        caches.keys().then((cacheNames) => {
+          const currentCaches = [STATIC_CACHE, DYNAMIC_CACHE];
+          const deletePromises = cacheNames
+            .filter((cacheName) => !currentCaches.includes(cacheName))
+            .map((cacheName) => {
+              console.log("Deleting old cache:", cacheName);
+              return caches.delete(cacheName);
+            });
+
+          return Promise.all(deletePromises);
+        }),
+
+        // Take control immediately
+        self.clients.claim(),
+      ]);
     })
   );
-  return self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
+  const request = event.request;
+  const url = new URL(request.url);
 
-  // Skip external requests
+  // Skip non-GET requests
+  if (request.method !== "GET") return;
+
+  // Skip external resources
   if (
-    event.request.destination === "image" &&
-    !url.hostname.includes("thesologram.com")
-  )
-    return;
-  if (url.hostname.includes("cloudinary.com")) return;
-
-  // NETWORK-FIRST for JS chunks
-  if (event.request.url.endsWith(".js")) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          const cloned = response.clone();
-          caches.open(STATIC_CACHE).then((cache) => {
-            cache.put(event.request, cloned);
-          });
-          return response;
-        })
-        .catch(() => {
-          return caches.match(event.request);
-        })
-    );
+    !url.hostname.includes("thesologram.com") &&
+    !url.hostname.includes("localhost") &&
+    !url.hostname.includes("127.0.0.1")
+  ) {
     return;
   }
 
-  // CACHE-FIRST for everything else
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
+  // Skip API calls
+  if (url.pathname.startsWith("/api/")) {
+    return;
+  }
 
-      return fetch(event.request).then((networkResponse) => {
-        if (networkResponse.ok && url.hostname.includes("thesologram.com")) {
-          caches.open(STATIC_CACHE).then((cache) => {
-            cache.put(event.request, networkResponse.clone());
+  event.respondWith(
+    initializeCache().then(() => {
+      // NETWORK-FIRST for JavaScript bundles
+      if (request.url.includes(".js") || request.url.includes("bundle")) {
+        return fetch(request, { cache: "no-cache" })
+          .then((response) => {
+            if (response.ok) {
+              const responseClone = response.clone();
+              caches.open(DYNAMIC_CACHE).then((cache) => {
+                cache.put(request, responseClone);
+              });
+            }
+            return response;
+          })
+          .catch(() => {
+            return caches.match(request).then((cachedResponse) => {
+              if (cachedResponse) {
+                console.log("Serving JS from cache (offline):", request.url);
+                return cachedResponse;
+              }
+              return new Response("Resource not available offline", {
+                status: 503,
+                statusText: "Service Unavailable",
+              });
+            });
           });
-        }
-        return networkResponse;
-      });
+      }
+
+      // CACHE-FIRST for everything else
+      return caches
+        .match(request)
+        .then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+
+          return fetch(request).then((networkResponse) => {
+            if (networkResponse.ok) {
+              const responseClone = networkResponse.clone();
+              caches.open(DYNAMIC_CACHE).then((cache) => {
+                cache.put(request, responseClone);
+              });
+            }
+            return networkResponse;
+          });
+        })
+        .catch((err) => {
+          console.error("Fetch failed:", err);
+
+          if (request.destination === "document") {
+            return caches.match("/").then((cachedResponse) => {
+              return (
+                cachedResponse ||
+                new Response("App not available offline", {
+                  status: 503,
+                  statusText: "Service Unavailable",
+                })
+              );
+            });
+          }
+
+          return new Response("Resource not available", {
+            status: 404,
+            statusText: "Not Found",
+          });
+        });
     })
   );
 });
