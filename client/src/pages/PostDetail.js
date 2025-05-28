@@ -43,10 +43,12 @@ const PostDetail = () => {
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
   const [showFullscreenMedia, setShowFullscreenMedia] = useState(false);
   const [mediaHovering, setMediaHovering] = useState(false);
+  const [showMobileControls, setShowMobileControls] = useState(false);
   const [readingTime, setReadingTime] = useState("< 1 min read");
   const [showFullscreenControls, setShowFullscreenControls] = useState(true);
   const contentRef = useRef(null);
   const fullscreenTimeoutRef = useRef(null);
+  const mobileControlsTimeoutRef = useRef(null);
 
   const { isAuthenticated } = useContext(AuthContext);
   const { showDeleteModal } = useDeleteModal();
@@ -92,6 +94,23 @@ const PostDetail = () => {
     }
   };
 
+  // Handle mobile touch interaction for showing controls
+  const handleMediaTouch = () => {
+    if (window.innerWidth <= 768) {
+      setShowMobileControls(true);
+
+      // Clear existing timeout
+      if (mobileControlsTimeoutRef.current) {
+        clearTimeout(mobileControlsTimeoutRef.current);
+      }
+
+      // Hide controls after 3 seconds of inactivity
+      mobileControlsTimeoutRef.current = setTimeout(() => {
+        setShowMobileControls(false);
+      }, 3000);
+    }
+  };
+
   // Configure swipe handlers
   const swipeHandlers = useSwipeable({
     onSwipedLeft: nextMedia,
@@ -134,6 +153,18 @@ const PostDetail = () => {
 
     fetchPost();
   }, [id]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (mobileControlsTimeoutRef.current) {
+        clearTimeout(mobileControlsTimeoutRef.current);
+      }
+      if (fullscreenTimeoutRef.current) {
+        clearTimeout(fullscreenTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleDeletePost = () => {
     if (!post) return;
@@ -358,6 +389,7 @@ const PostDetail = () => {
                 {...swipeHandlers}
                 onMouseEnter={() => setMediaHovering(true)}
                 onMouseLeave={() => setMediaHovering(false)}
+                onTouchStart={handleMediaTouch}
               >
                 <MediaTrack
                   style={{
@@ -396,14 +428,32 @@ const PostDetail = () => {
                     <NavButton
                       className="prev"
                       onClick={prevMedia}
-                      style={{ opacity: mediaHovering ? 1 : 0 }}
+                      style={{
+                        opacity:
+                          window.innerWidth <= 768
+                            ? showMobileControls
+                              ? 1
+                              : 0
+                            : mediaHovering
+                            ? 1
+                            : 0,
+                      }}
                     >
                       <FaChevronLeft />
                     </NavButton>
                     <NavButton
                       className="next"
                       onClick={nextMedia}
-                      style={{ opacity: mediaHovering ? 1 : 0 }}
+                      style={{
+                        opacity:
+                          window.innerWidth <= 768
+                            ? showMobileControls
+                              ? 1
+                              : 0
+                            : mediaHovering
+                            ? 1
+                            : 0,
+                      }}
                     >
                       <FaChevronRight />
                     </NavButton>
@@ -893,7 +943,6 @@ const NavButton = styled.button`
   @media (max-width: 768px) {
     width: 2.5rem;
     height: 2.5rem;
-    opacity: 1 !important;
   }
 `;
 
