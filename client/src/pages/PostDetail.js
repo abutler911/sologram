@@ -37,8 +37,6 @@ const PostDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
-  // Remove showDeleteModal state - we don't need it anymore
-  // const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -46,10 +44,12 @@ const PostDetail = () => {
   const [showFullscreenMedia, setShowFullscreenMedia] = useState(false);
   const [mediaHovering, setMediaHovering] = useState(false);
   const [readingTime, setReadingTime] = useState("< 1 min read");
+  const [showFullscreenControls, setShowFullscreenControls] = useState(true);
   const contentRef = useRef(null);
+  const fullscreenTimeoutRef = useRef(null);
 
   const { isAuthenticated } = useContext(AuthContext);
-  const { showDeleteModal } = useDeleteModal(); // Add this hook
+  const { showDeleteModal } = useDeleteModal();
   const navigate = useNavigate();
 
   // Add scroll progress tracking
@@ -135,7 +135,6 @@ const PostDetail = () => {
     fetchPost();
   }, [id]);
 
-  // Replace the old delete modal functions with this new handler
   const handleDeletePost = () => {
     if (!post) return;
 
@@ -170,11 +169,6 @@ const PostDetail = () => {
     });
   };
 
-  // Remove the old delete modal functions:
-  // const openDeleteModal = () => { ... }
-  // const closeDeleteModal = () => { ... }
-  // const handleDeletePost = async () => { ... }
-
   const handleLike = async () => {
     if (!isAuthenticated || !post) {
       toast.error("You must be logged in to like posts.");
@@ -201,11 +195,6 @@ const PostDetail = () => {
   // Handle bookmark
   const handleBookmark = () => {
     setIsBookmarked(!isBookmarked);
-
-    // API call would go here
-    // Example:
-    // axios.post(`/api/posts/${id}/bookmark`);
-
     toast.success(
       isBookmarked ? "Removed from bookmarks" : "Added to bookmarks"
     );
@@ -214,7 +203,66 @@ const PostDetail = () => {
   // Toggle fullscreen media
   const toggleFullscreen = () => {
     setShowFullscreenMedia(!showFullscreenMedia);
+    if (!showFullscreenMedia) {
+      // Show controls when entering fullscreen
+      setShowFullscreenControls(true);
+      resetFullscreenTimeout();
+    } else {
+      // Clear timeout when exiting fullscreen
+      if (fullscreenTimeoutRef.current) {
+        clearTimeout(fullscreenTimeoutRef.current);
+      }
+    }
   };
+
+  // Reset the auto-hide timer for fullscreen controls
+  const resetFullscreenTimeout = () => {
+    if (fullscreenTimeoutRef.current) {
+      clearTimeout(fullscreenTimeoutRef.current);
+    }
+
+    setShowFullscreenControls(true);
+
+    fullscreenTimeoutRef.current = setTimeout(() => {
+      setShowFullscreenControls(false);
+    }, 3000); // Hide after 3 seconds
+  };
+
+  // Handle user interaction in fullscreen mode
+  const handleFullscreenInteraction = () => {
+    if (showFullscreenMedia) {
+      resetFullscreenTimeout();
+    }
+  };
+
+  // Set up fullscreen interaction listeners
+  useEffect(() => {
+    if (showFullscreenMedia) {
+      // Show controls initially and start timeout
+      resetFullscreenTimeout();
+
+      const handleMouseMove = () => handleFullscreenInteraction();
+      const handleTouchStart = () => handleFullscreenInteraction();
+      const handleKeyDown = () => handleFullscreenInteraction();
+
+      // Add event listeners
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("touchstart", handleTouchStart);
+      document.addEventListener("keydown", handleKeyDown);
+
+      return () => {
+        // Clean up event listeners
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("touchstart", handleTouchStart);
+        document.removeEventListener("keydown", handleKeyDown);
+
+        // Clear timeout
+        if (fullscreenTimeoutRef.current) {
+          clearTimeout(fullscreenTimeoutRef.current);
+        }
+      };
+    }
+  }, [showFullscreenMedia]);
 
   // Share post
   const handleShare = () => {
@@ -421,8 +469,6 @@ const PostDetail = () => {
                   </EditLink>
 
                   <DeleteButton onClick={handleDeletePost}>
-                    {" "}
-                    {/* Use new handler */}
                     <FaTrash />
                     <span>Delete</span>
                   </DeleteButton>
@@ -499,8 +545,6 @@ const PostDetail = () => {
           <FaShare />
         </FloatingShareButton>
 
-        {/* Remove the old Delete confirmation modal - it's now handled globally */}
-
         {/* Fullscreen Media Modal */}
         {showFullscreenMedia && (
           <FullscreenModal>
@@ -523,16 +567,27 @@ const PostDetail = () => {
 
               {post.media && post.media.length > 1 && (
                 <>
-                  <FullscreenNavButton className="prev" onClick={prevMedia}>
+                  <FullscreenNavButton
+                    className="prev"
+                    onClick={prevMedia}
+                    style={{ opacity: showFullscreenControls ? 1 : 0 }}
+                  >
                     <FaChevronLeft />
                   </FullscreenNavButton>
-                  <FullscreenNavButton className="next" onClick={nextMedia}>
+                  <FullscreenNavButton
+                    className="next"
+                    onClick={nextMedia}
+                    style={{ opacity: showFullscreenControls ? 1 : 0 }}
+                  >
                     <FaChevronRight />
                   </FullscreenNavButton>
                 </>
               )}
 
-              <CloseFullscreenButton onClick={toggleFullscreen}>
+              <CloseFullscreenButton
+                onClick={toggleFullscreen}
+                style={{ opacity: showFullscreenControls ? 1 : 0 }}
+              >
                 <FaTimes />
               </CloseFullscreenButton>
             </FullscreenMediaContent>
@@ -543,7 +598,8 @@ const PostDetail = () => {
     </PageWrapper>
   );
 };
-// Dark theme wrapper with deep blue background
+
+// Styled Components
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
   min-height: 100vh;
@@ -554,14 +610,13 @@ const PageWrapper = styled.div`
   }
 `;
 
-// Progress Bar
 const ProgressBarContainer = styled.div`
   position: sticky;
   top: 0;
   left: 0;
   width: 100%;
   height: 4px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: ${COLORS.border};
   z-index: 100;
 `;
 
@@ -569,14 +624,13 @@ const ProgressBar = styled.div`
   height: 100%;
   background: linear-gradient(
     90deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.accentSalmon}
+    ${COLORS.primaryMint},
+    ${COLORS.accentMint}
   );
   width: ${(props) => props.width || "0%"};
   transition: width 0.1s;
 `;
 
-// Basic container
 const Container = styled.div`
   max-width: 1000px;
   margin: 0 auto;
@@ -590,14 +644,14 @@ const Container = styled.div`
 const BackButton = styled(Link)`
   display: inline-flex;
   align-items: center;
-  color: ${COLORS.textPrimary};
+  color: ${COLORS.textSecondary};
   text-decoration: none;
   margin-bottom: 2rem;
   transition: color 0.3s;
   font-weight: 500;
 
   &:hover {
-    color: ${COLORS.primarySalmon};
+    color: ${COLORS.primaryMint};
   }
 
   svg {
@@ -618,46 +672,44 @@ const ErrorContainer = styled.div`
 `;
 
 const ErrorMessage = styled.div`
-  background-color: rgba(233, 137, 115, 0.1);
+  background-color: rgba(255, 107, 107, 0.1);
   color: ${COLORS.error};
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: 12px;
   margin-bottom: 2rem;
-  border: 1px solid rgba(233, 137, 115, 0.3);
+  border: 1px solid rgba(255, 107, 107, 0.3);
 `;
 
-// Updated post container with white background and black text
 const PostContainer = styled.div`
   background-color: ${COLORS.cardBackground};
-  border-radius: 12px;
-  box-shadow: 0 8px 24px ${COLORS.shadow};
+  border-radius: 16px;
+  box-shadow: ${COLORS.shadow};
   overflow: hidden;
   border: 1px solid ${COLORS.border};
 
   @media (max-width: 768px) {
-    margin: 0 -1rem;
+    margin: 0 -0.5rem;
     border-radius: 0;
   }
 `;
 
 const MediaSection = styled.div`
   position: relative;
-  background-color: #f5f5f5;
+  background-color: ${COLORS.elevatedBackground};
   width: 100%;
 `;
 
-// New Location Banner component
 const LocationBanner = styled.div`
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background-color: ${COLORS.primaryKhaki}20;
-  border-bottom: 1px solid ${COLORS.divider};
+  background-color: ${COLORS.elevatedBackground};
+  border-bottom: 1px solid ${COLORS.border};
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: ${COLORS.primaryKhaki}30;
+    background-color: ${COLORS.buttonHover};
   }
 `;
 
@@ -684,7 +736,7 @@ const LocationArrow = styled.div`
 
   ${LocationBanner}:hover & {
     transform: translateX(3px);
-    color: ${COLORS.primarySalmon};
+    color: ${COLORS.primaryMint};
   }
 `;
 
@@ -717,7 +769,7 @@ const MediaItem = styled.div`
   justify-content: center;
   align-items: center;
   position: relative;
-  background-color: #f5f5f5;
+  background-color: ${COLORS.elevatedBackground};
 `;
 
 const PostImage = styled.img`
@@ -727,7 +779,7 @@ const PostImage = styled.img`
   transition: transform 0.5s ease;
 
   ${MediaItem}:hover & {
-    transform: scale(1.05);
+    transform: scale(1.02);
   }
 
   &.filter-warm {
@@ -790,7 +842,7 @@ const MediaControls = styled.div`
 
 const ZoomButton = styled.button`
   background-color: ${COLORS.primaryBlueGray};
-  color: white;
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 50%;
   width: 2.5rem;
@@ -799,7 +851,7 @@ const ZoomButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: all 0.2s ease;
 
   &:hover {
     background-color: ${COLORS.accentBlueGray};
@@ -807,13 +859,12 @@ const ZoomButton = styled.button`
   }
 `;
 
-// Navigation buttons with blue theme
 const NavButton = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   background-color: ${COLORS.primaryBlueGray};
-  color: white;
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 50%;
   width: 3rem;
@@ -822,9 +873,9 @@ const NavButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.3s, opacity 0.3s, transform 0.2s;
+  transition: all 0.2s ease;
   z-index: 10;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 
   &:hover {
     background-color: ${COLORS.accentBlueGray};
@@ -850,14 +901,14 @@ const MediaCounter = styled.div`
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background-color: ${COLORS.primaryBlueGray};
-  color: white;
+  background-color: ${COLORS.elevatedBackground};
+  color: ${COLORS.textPrimary};
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.75rem;
   z-index: 10;
   font-weight: 600;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  border: 1px solid ${COLORS.border};
 `;
 
 const ThumbnailContainer = styled.div`
@@ -876,12 +927,12 @@ const Thumbnail = styled.div`
   height: 0.75rem;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? COLORS.primarySalmon : "rgba(255, 255, 255, 0.5)"};
+    props.active ? COLORS.primaryMint : "rgba(255, 255, 255, 0.5)"};
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: all 0.2s ease;
 
   &:hover {
-    background-color: ${COLORS.primarySalmon};
+    background-color: ${COLORS.primaryMint};
     transform: scale(1.2);
   }
 `;
@@ -894,15 +945,14 @@ const ContentContainer = styled.div`
   }
 `;
 
-// Author Section with custom circle avatar for Andrew
 const AuthorSection = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  background-color: ${COLORS.elevatedBackground};
+  border-radius: 12px;
+  border: 1px solid ${COLORS.border};
 `;
 
 const AuthorCircle = styled.div`
@@ -910,7 +960,7 @@ const AuthorCircle = styled.div`
   height: 48px;
   border-radius: 50%;
   background-color: ${COLORS.primarySalmon};
-  color: white;
+  color: ${COLORS.textPrimary};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -918,7 +968,7 @@ const AuthorCircle = styled.div`
   font-weight: bold;
   margin-right: 1rem;
   border: 2px solid ${COLORS.accentSalmon};
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 `;
 
 const AuthorInfo = styled.div`
@@ -929,13 +979,13 @@ const AuthorInfo = styled.div`
 
 const AuthorName = styled.span`
   font-weight: 600;
-  color: #000000;
+  color: ${COLORS.textPrimary};
   font-size: 1.125rem;
   margin-bottom: 0.25rem;
 `;
 
 const ReadingTime = styled.span`
-  color: #666666;
+  color: ${COLORS.textSecondary};
   display: flex;
   align-items: center;
   font-size: 0.875rem;
@@ -959,7 +1009,7 @@ const PostHeader = styled.div`
 
 const PostTitle = styled.h1`
   font-size: 2rem;
-  color: #000000;
+  color: ${COLORS.textPrimary};
   margin: 0;
   font-weight: 700;
   line-height: 1.2;
@@ -984,11 +1034,11 @@ const EditLink = styled(Link)`
   display: flex;
   align-items: center;
   background-color: ${COLORS.primaryBlueGray};
-  color: white;
+  color: ${COLORS.textPrimary};
   padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: 8px;
   text-decoration: none;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: all 0.2s ease;
   font-weight: 500;
 
   &:hover {
@@ -1005,16 +1055,16 @@ const DeleteButton = styled.button`
   display: flex;
   align-items: center;
   background-color: ${COLORS.error};
-  color: white;
+  color: ${COLORS.textPrimary};
   padding: 0.5rem 1rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: all 0.2s ease;
   font-weight: 500;
 
   &:hover {
-    background-color: #b71c1c;
+    background-color: #cc5555;
     transform: translateY(-2px);
   }
 
@@ -1027,13 +1077,13 @@ const MetaData = styled.div`
   display: flex;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #eaeaea;
+  border-bottom: 1px solid ${COLORS.border};
 `;
 
 const TimeStamp = styled.div`
   display: flex;
   align-items: center;
-  color: #666666;
+  color: ${COLORS.textSecondary};
   font-size: 0.875rem;
   margin-right: 1.5rem;
 
@@ -1055,38 +1105,35 @@ const LikesCount = styled.div`
   }
 `;
 
-// Post caption that appears before content
 const PostCaption = styled.div`
   font-size: 1rem;
-  line-height: 1.1;
-  color: #000000;
+  line-height: 1.6;
+  color: ${COLORS.textPrimary};
   margin-bottom: 1.5rem;
   font-weight: 500;
 `;
 
-// Updated post content with black text
 const PostContent = styled.div`
-  font-size: 0.9rem;
-  line-height: 1.1;
-  color: #000000;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: ${COLORS.textSecondary};
   margin-bottom: 2rem;
   white-space: pre-line;
 
   @media (max-width: 640px) {
-    font-size: 0.9rem;
-    line-height: 1.1;
+    font-size: 0.95rem;
+    line-height: 1.6;
   }
 `;
 
-// Engagement Bar
 const EngagementBar = styled.div`
   display: flex;
   justify-content: space-between;
-  background-color: #f9f9f9;
+  background-color: ${COLORS.elevatedBackground};
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: 12px;
   margin: 2rem 0;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  border: 1px solid ${COLORS.border};
 `;
 
 const ActionButton = styled.button`
@@ -1096,12 +1143,12 @@ const ActionButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  color: #666666;
-  transition: color 0.3s, transform 0.2s;
+  color: ${COLORS.textTertiary};
+  transition: all 0.2s ease;
   gap: 0.25rem;
 
   &:hover {
-    color: ${COLORS.primarySalmon};
+    color: ${COLORS.primaryMint};
     transform: translateY(-2px);
   }
 
@@ -1147,23 +1194,23 @@ const TagsContainer = styled.div`
   margin-top: 1.5rem;
 `;
 
-// Updated tag styling
 const Tag = styled.span`
-  background-color: #f0f0f0;
-  color: #666666;
+  background-color: ${COLORS.elevatedBackground};
+  color: ${COLORS.textSecondary};
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-size: 0.875rem;
   margin-right: 0.75rem;
   margin-bottom: 0.75rem;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  border: 1px solid ${COLORS.border};
 
   &:hover {
-    background-color: #e0e0e0;
-    color: ${COLORS.primarySalmon};
+    background-color: ${COLORS.buttonHover};
+    color: ${COLORS.primaryMint};
     transform: translateY(-2px);
   }
 
@@ -1173,7 +1220,6 @@ const Tag = styled.span`
   }
 `;
 
-// Floating Action Button
 const FloatingShareButton = styled.button`
   position: fixed;
   bottom: 2rem;
@@ -1182,19 +1228,20 @@ const FloatingShareButton = styled.button`
   height: 3.5rem;
   border-radius: 50%;
   background-color: ${COLORS.primarySalmon};
-  color: white;
+  color: ${COLORS.textPrimary};
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(233, 137, 115, 0.3);
+  box-shadow: 0 4px 16px rgba(233, 137, 115, 0.4);
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: all 0.2s ease;
   z-index: 90;
   border: none;
 
   &:hover {
     background-color: ${COLORS.accentSalmon};
-    transform: translateY(-5px);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(233, 137, 115, 0.5);
   }
 
   svg {
@@ -1215,11 +1262,10 @@ const Backdrop = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.8);
   z-index: 1000;
 `;
 
-// Fullscreen Media Components
 const FullscreenModal = styled.div`
   position: fixed;
   top: 0;
@@ -1246,7 +1292,7 @@ const FullscreenImage = styled.img`
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   border-radius: 8px;
 `;
 
@@ -1254,7 +1300,7 @@ const FullscreenVideo = styled.video`
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   border-radius: 8px;
 `;
 
@@ -1262,8 +1308,8 @@ const FullscreenNavButton = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: ${COLORS.primarySalmon};
-  color: white;
+  background-color: ${COLORS.primaryBlueGray};
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 50%;
   width: 3.5rem;
@@ -1272,12 +1318,12 @@ const FullscreenNavButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: all 0.3s ease;
   z-index: 1102;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 
   &:hover {
-    background-color: ${COLORS.accentSalmon};
+    background-color: ${COLORS.accentBlueGray};
     transform: translateY(-50%) scale(1.1);
   }
 
@@ -1300,7 +1346,7 @@ const CloseFullscreenButton = styled.button`
   top: 1rem;
   right: 1rem;
   background-color: ${COLORS.error};
-  color: white;
+  color: ${COLORS.textPrimary};
   border: none;
   border-radius: 50%;
   width: 2.5rem;
@@ -1309,12 +1355,12 @@ const CloseFullscreenButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: all 0.3s ease;
   z-index: 1102;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 
   &:hover {
-    background-color: #b71c1c;
+    background-color: #cc5555;
     transform: scale(1.1);
   }
 `;
