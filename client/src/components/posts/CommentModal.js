@@ -71,7 +71,7 @@ const spin = keyframes`
   100% { transform: rotate(360deg); }
 `;
 
-// Comment Modal Component
+// Enhanced Comment Modal Component with Vanilla JS Swipe-to-Close
 export const CommentModal = ({
   isOpen,
   onClose,
@@ -88,9 +88,187 @@ export const CommentModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showActions, setShowActions] = useState(null);
   const [isClosing, setIsClosing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragY, setDragY] = useState(0);
+
   const textareaRef = useRef(null);
   const modalRef = useRef(null);
   const actionsRef = useRef(null);
+  const dragRef = useRef({
+    startY: 0,
+    currentY: 0,
+    startTime: 0,
+    velocityTracker: [],
+  });
+
+  // Swipe gesture handling
+  const handleTouchStart = useCallback((e) => {
+    const touch = e.touches[0];
+    dragRef.current = {
+      startY: touch.clientY,
+      currentY: touch.clientY,
+      startTime: Date.now(),
+      velocityTracker: [{ y: touch.clientY, time: Date.now() }],
+    };
+    setIsDragging(true);
+
+    // Prevent default to avoid scroll issues
+    if (modalRef.current) {
+      modalRef.current.style.transition = "none";
+    }
+  }, []);
+
+  const handleTouchMove = useCallback(
+    (e) => {
+      if (!isDragging) return;
+
+      const touch = e.touches[0];
+      const currentY = touch.clientY;
+      const deltaY = Math.max(0, currentY - dragRef.current.startY); // Only allow downward movement
+
+      dragRef.current.currentY = currentY;
+      dragRef.current.velocityTracker.push({ y: currentY, time: Date.now() });
+
+      // Keep only recent velocity data (last 100ms)
+      const now = Date.now();
+      dragRef.current.velocityTracker = dragRef.current.velocityTracker.filter(
+        (point) => now - point.time < 100
+      );
+
+      setDragY(deltaY);
+
+      // Update modal position with elastic resistance
+      if (modalRef.current) {
+        const resistance = Math.min(deltaY / window.innerHeight, 0.5);
+        const opacity = Math.max(0.3, 1 - resistance * 1.5);
+
+        modalRef.current.style.transform = `translateY(${deltaY}px)`;
+        modalRef.current.style.opacity = opacity;
+      }
+
+      // Prevent default scrolling
+      e.preventDefault();
+    },
+    [isDragging]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    if (!isDragging) return;
+
+    setIsDragging(false);
+
+    // Calculate velocity
+    const velocityData = dragRef.current.velocityTracker;
+    let velocity = 0;
+
+    if (velocityData.length >= 2) {
+      const recent = velocityData[velocityData.length - 1];
+      const previous = velocityData[velocityData.length - 2];
+      const timeDiff = recent.time - previous.time;
+      const yDiff = recent.y - previous.y;
+      velocity = timeDiff > 0 ? yDiff / timeDiff : 0;
+    }
+
+    const modalHeight = modalRef.current?.offsetHeight || window.innerHeight;
+    const threshold = modalHeight * 0.3; // 30% of modal height
+    const velocityThreshold = 0.5; // pixels per millisecond
+
+    // Determine if should close
+    const shouldClose =
+      dragY > threshold || (dragY > 50 && velocity > velocityThreshold);
+
+    if (shouldClose) {
+      handleClose();
+    } else {
+      // Snap back to original position
+      if (modalRef.current) {
+        modalRef.current.style.transition =
+          "all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+        modalRef.current.style.transform = "translateY(0px)";
+        modalRef.current.style.opacity = "1";
+      }
+      setDragY(0);
+    }
+  }, [isDragging, dragY]);
+
+  // Mouse events for desktop
+  const handleMouseDown = useCallback((e) => {
+    dragRef.current = {
+      startY: e.clientY,
+      currentY: e.clientY,
+      startTime: Date.now(),
+      velocityTracker: [{ y: e.clientY, time: Date.now() }],
+    };
+    setIsDragging(true);
+
+    if (modalRef.current) {
+      modalRef.current.style.transition = "none";
+    }
+  }, []);
+
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (!isDragging) return;
+
+      const currentY = e.clientY;
+      const deltaY = Math.max(0, currentY - dragRef.current.startY);
+
+      dragRef.current.currentY = currentY;
+      dragRef.current.velocityTracker.push({ y: currentY, time: Date.now() });
+
+      const now = Date.now();
+      dragRef.current.velocityTracker = dragRef.current.velocityTracker.filter(
+        (point) => now - point.time < 100
+      );
+
+      setDragY(deltaY);
+
+      if (modalRef.current) {
+        const resistance = Math.min(deltaY / window.innerHeight, 0.5);
+        const opacity = Math.max(0.3, 1 - resistance * 1.5);
+
+        modalRef.current.style.transform = `translateY(${deltaY}px)`;
+        modalRef.current.style.opacity = opacity;
+      }
+    },
+    [isDragging]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    if (!isDragging) return;
+
+    setIsDragging(false);
+
+    const velocityData = dragRef.current.velocityTracker;
+    let velocity = 0;
+
+    if (velocityData.length >= 2) {
+      const recent = velocityData[velocityData.length - 1];
+      const previous = velocityData[velocityData.length - 2];
+      const timeDiff = recent.time - previous.time;
+      const yDiff = recent.y - previous.y;
+      velocity = timeDiff > 0 ? yDiff / timeDiff : 0;
+    }
+
+    const modalHeight = modalRef.current?.offsetHeight || window.innerHeight;
+    const threshold = modalHeight * 0.3;
+    const velocityThreshold = 0.5;
+
+    const shouldClose =
+      dragY > threshold || (dragY > 50 && velocity > velocityThreshold);
+
+    if (shouldClose) {
+      handleClose();
+    } else {
+      if (modalRef.current) {
+        modalRef.current.style.transition =
+          "all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+        modalRef.current.style.transform = "translateY(0px)";
+        modalRef.current.style.opacity = "1";
+      }
+      setDragY(0);
+    }
+  }, [isDragging, dragY]);
 
   // Auto-resize textarea
   const adjustTextareaHeight = useCallback(() => {
@@ -117,22 +295,35 @@ export const CommentModal = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Add global mouse event listeners for drag
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove, {
+        passive: false,
+      });
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "none";
+
+      return () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        document.body.style.userSelect = "";
+      };
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
   // Handle modal open/close with body scroll prevention
   useEffect(() => {
     if (isOpen) {
-      // Store current scroll position
       const scrollY = window.scrollY;
 
-      // Prevent body scroll
       document.body.style.position = "fixed";
       document.body.style.top = `-${scrollY}px`;
       document.body.style.width = "100%";
       document.body.style.overflow = "hidden";
 
-      // Focus on textarea when modal opens
       setTimeout(() => textareaRef.current?.focus(), 300);
 
-      // Handle escape key
       const handleEscape = (e) => {
         if (e.key === "Escape") {
           handleClose();
@@ -141,7 +332,6 @@ export const CommentModal = ({
       document.addEventListener("keydown", handleEscape);
 
       return () => {
-        // Restore body scroll to exact position
         document.body.style.position = "";
         document.body.style.top = "";
         document.body.style.width = "";
@@ -155,10 +345,17 @@ export const CommentModal = ({
   // Handle close with animation
   const handleClose = () => {
     setIsClosing(true);
+    if (modalRef.current) {
+      modalRef.current.style.transition = "all 0.3s ease-out";
+      modalRef.current.style.transform = "translateY(100%)";
+      modalRef.current.style.opacity = "0";
+    }
+
     setTimeout(() => {
       setIsClosing(false);
+      setDragY(0);
       onClose();
-    }, 300); // Match animation duration
+    }, 300);
   };
 
   const handleSubmit = async (e) => {
@@ -202,7 +399,6 @@ export const CommentModal = ({
     }
   };
 
-  // Handle backdrop click
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
       handleClose();
@@ -217,9 +413,13 @@ export const CommentModal = ({
         ref={modalRef}
         onClick={(e) => e.stopPropagation()}
         isClosing={isClosing}
+        isDragging={isDragging}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        {/* Drag Handle */}
-        <DragHandle />
+        {/* Enhanced Drag Handle */}
+        <DragHandle onMouseDown={handleMouseDown} isDragging={isDragging} />
 
         {/* Header */}
         <ModalHeader>
@@ -262,8 +462,13 @@ export const CommentModal = ({
               </EmptyState>
             ) : (
               <CommentsList>
-                {comments.map((comment) => (
-                  <CommentItem key={comment._id}>
+                {comments.map((comment, index) => (
+                  <CommentItem
+                    key={comment._id}
+                    style={{
+                      animationDelay: `${index * 0.05}s`,
+                    }}
+                  >
                     <CommentAvatar
                       src={comment.author.avatar || AUTHOR_IMAGE}
                       alt={comment.author.name}
@@ -396,7 +601,7 @@ export const CommentModal = ({
   );
 };
 
-// Updated Comment Button for PostCard
+// Updated Comment Button
 export const CommentButton = ({ postId, commentCount = 0, onClick }) => {
   return (
     <CommentButtonWrapper onClick={onClick}>
@@ -406,7 +611,7 @@ export const CommentButton = ({ postId, commentCount = 0, onClick }) => {
   );
 };
 
-// Styled Components - TikTok Style Bottom Sheet
+// Styled Components with Enhanced Drag Behavior
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -446,7 +651,16 @@ const ModalContainer = styled.div`
   display: flex;
   flex-direction: column;
   z-index: 10000;
-  animation: ${slideUp} 0.3s ease-out;
+  animation: ${slideUp} 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: ${(props) => (props.isDragging ? "grabbing" : "grab")};
+  user-select: ${(props) => (props.isDragging ? "none" : "auto")};
+  touch-action: none;
+
+  ${(props) =>
+    props.isClosing &&
+    css`
+      animation: ${slideDown} 0.3s ease-out;
+    `}
 
   @supports (-webkit-touch-callout: none) {
     height: -webkit-fill-available;
@@ -460,8 +674,21 @@ const DragHandle = styled.div`
   background-color: ${COLORS.textTertiary};
   border-radius: 2px;
   margin: 8px auto 0;
-  opacity: 0.5;
+  opacity: ${(props) => (props.isDragging ? 1 : 0.5)};
   flex-shrink: 0;
+  cursor: grab;
+  transition: all 0.2s ease;
+  transform: ${(props) => (props.isDragging ? "scaleY(1.5)" : "scaleY(1)")};
+
+  &:hover {
+    opacity: 0.8;
+    transform: scaleY(1.5);
+  }
+
+  &:active {
+    cursor: grabbing;
+    opacity: 1;
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -474,6 +701,7 @@ const ModalHeader = styled.div`
   top: 0;
   background-color: ${COLORS.cardBackground};
   z-index: 2;
+  user-select: none;
 `;
 
 const HeaderTitle = styled.h2`
@@ -500,6 +728,10 @@ const CloseButton = styled.button`
     background-color: ${COLORS.buttonHover};
     color: ${COLORS.textPrimary};
     transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 `;
 
@@ -632,6 +864,8 @@ const CommentItem = styled.div`
   padding: 16px 20px;
   border-bottom: 1px solid ${COLORS.divider}20;
   transition: background-color 0.2s ease;
+  animation: ${scaleIn} 0.3s ease-out;
+  animation-fill-mode: both;
 
   &:hover {
     background-color: ${COLORS.background}20;
@@ -719,6 +953,10 @@ const ActionsButton = styled.button`
     background-color: ${COLORS.buttonHover};
     color: ${COLORS.textSecondary};
   }
+
+  &:active {
+    transform: scale(0.9);
+  }
 `;
 
 const ActionsMenu = styled.div`
@@ -759,6 +997,10 @@ const ActionItem = styled.button`
       props.destructive ? COLORS.heartRed + "15" : COLORS.buttonHover};
   }
 
+  &:active {
+    transform: scale(0.98);
+  }
+
   &:not(:last-child) {
     border-bottom: 1px solid ${COLORS.divider};
   }
@@ -795,6 +1037,10 @@ const LikeButton = styled.button`
     transform: scale(1.05);
   }
 
+  &:active:not(:disabled) {
+    transform: scale(0.9);
+  }
+
   &:disabled {
     opacity: 0.5;
   }
@@ -818,6 +1064,10 @@ const ReplyButton = styled.button`
   &:hover {
     color: ${COLORS.textSecondary};
   }
+
+  &:active {
+    transform: scale(0.95);
+  }
 `;
 
 const CommentInputContainer = styled.div`
@@ -835,6 +1085,7 @@ const ReplyIndicator = styled.div`
   padding: 8px 20px;
   background-color: ${COLORS.accentMint}15;
   border-bottom: 1px solid ${COLORS.divider}20;
+  animation: ${scaleIn} 0.2s ease-out;
 `;
 
 const ReplyText = styled.span`
@@ -855,6 +1106,10 @@ const CancelReply = styled.button`
   &:hover {
     background-color: ${COLORS.buttonHover};
     color: ${COLORS.textPrimary};
+  }
+
+  &:active {
+    transform: scale(0.9);
   }
 `;
 
@@ -984,6 +1239,10 @@ const CommentButtonWrapper = styled.button`
   &:hover {
     transform: scale(1.15);
     color: ${COLORS.textSecondary};
+  }
+
+  &:active {
+    transform: scale(0.9);
   }
 `;
 
