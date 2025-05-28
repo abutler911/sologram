@@ -37,10 +37,13 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "node scripts/build.js && react-scripts build",
+    "build:production": "node scripts/build.js && react-scripts build && echo '✅ Build complete with updated service worker'",
+    "build:original": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "analyze": "source-map-explorer 'build/static/js/*.js'"
+    "analyze": "source-map-explorer 'build/static/js/*.js'",
+    "sw:update": "node scripts/build.js"
   },
   "eslintConfig": {
     "extends": [

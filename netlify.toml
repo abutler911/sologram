@@ -1,12 +1,42 @@
 [build]
-  command = "npm run build"
+  command = "CI= npm run build"
   publish = "build"
+
+[build.environment]
+  CI = ""
+  NODE_VERSION = "18"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
+# Service Worker - Never cache (critical for updates)
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+# Static JS/CSS - Cache for 1 year (performance)
+[[headers]]
+  for = "/static/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/static/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Manifest - Cache for 1 day
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+# Your existing CSP and other headers
 [[headers]]
   for = "/*"
   [headers.values]
