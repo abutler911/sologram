@@ -2021,13 +2021,14 @@ function PostCreator({ initialData = null, isEditing = false }) {
                         position: "absolute",
                         top: "10px",
                         left: "10px",
-                        background: "rgba(0,0,0,0.7)",
+                        background: "rgba(0,0,0,0.8)",
                         color: "white",
                         padding: "8px",
                         fontSize: "10px",
                         borderRadius: "4px",
-                        maxWidth: "200px",
+                        maxWidth: "300px",
                         wordBreak: "break-all",
+                        zIndex: 999,
                       }}
                     >
                       <div>
@@ -2047,6 +2048,12 @@ function PostCreator({ initialData = null, isEditing = false }) {
                       </div>
                       <div>
                         Error: {media[currentIndex].error ? "Yes" : "No"}
+                      </div>
+                      <div style={{ marginTop: "4px", fontSize: "9px" }}>
+                        Actual SRC:{" "}
+                        {media[currentIndex].mediaUrl ||
+                          media[currentIndex].previewUrl ||
+                          "NONE"}
                       </div>
                     </div>
                   )}
@@ -2107,11 +2114,14 @@ function PostCreator({ initialData = null, isEditing = false }) {
                           <img
                             src={
                               media[currentIndex].mediaUrl ||
-                              media[currentIndex].previewUrl
+                              media[currentIndex].previewUrl ||
+                              ""
                             }
                             alt={filter.name}
                             onError={(e) => {
-                              e.target.src = PLACEHOLDER_IMG;
+                              console.error("Filter preview error:", e);
+                              console.log("Filter preview src:", e.target.src);
+                              // Don't replace with placeholder for debugging
                             }}
                           />
                         </FilterPreview>
