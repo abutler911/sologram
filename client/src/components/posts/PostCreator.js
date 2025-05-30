@@ -54,48 +54,35 @@ const isMobileDevice = () => {
 };
 
 const createSafeBlobUrl = (file) => {
+  console.log("Creating preview for:", file.name, "Mobile:", isMobileDevice());
+
   try {
-    // On mobile, especially iOS, blob URLs can be unreliable
-    // We'll create a data URL as fallback for images
-    if (isMobileDevice() && file.type.startsWith("image/")) {
+    // Always use data URL for images on mobile for better compatibility
+    if (file.type.startsWith("image/")) {
       return new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = () => resolve(null);
+        reader.onload = (e) => {
+          console.log("Data URL created successfully for:", file.name);
+          resolve(e.target.result);
+        };
+        reader.onerror = (e) => {
+          console.error("FileReader error for:", file.name, e);
+          resolve(null);
+        };
         reader.readAsDataURL(file);
       });
     }
 
-    // For desktop or videos, use blob URL
+    // For videos, try blob URL first, fallback to data URL
     const url = URL.createObjectURL(file);
     return new Promise((resolve) => {
-      if (file.type.startsWith("image/")) {
-        const img = new Image();
-        img.onload = () => {
-          resolve(url);
-        };
-        img.onerror = () => {
-          URL.revokeObjectURL(url);
-          // Fallback to data URL on error
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target.result);
-          reader.onerror = () => resolve(null);
-          reader.readAsDataURL(file);
-        };
-        img.src = url;
-      } else {
-        resolve(url);
-      }
+      // For videos, we can't easily test the blob URL, so just return it
+      console.log("Blob URL created for video:", file.name, url);
+      resolve(url);
     });
   } catch (error) {
-    console.error("Failed to create blob URL:", error);
-    // Fallback to data URL
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target.result);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(file);
-    });
+    console.error("Failed to create preview URL for:", file.name, error);
+    return Promise.resolve(null);
   }
 };
 
@@ -1450,13 +1437,20 @@ const MediaItem = ({
   const [isLoading, setIsLoading] = useState(!mediaItem.mediaUrl);
 
   useEffect(() => {
-    setImageSrc(getSafeImageSrc(mediaItem));
+    const newSrc = getSafeImageSrc(mediaItem);
+    console.log(
+      "MediaItem effect - updating src:",
+      newSrc,
+      "for item:",
+      mediaItem.id
+    );
+    setImageSrc(newSrc);
     setHasError(false);
-    setIsLoading(!mediaItem.mediaUrl);
+    setIsLoading(!mediaItem.mediaUrl && !mediaItem.previewUrl);
   }, [mediaItem.mediaUrl, mediaItem.previewUrl]);
 
   const handleImageError = (e) => {
-    console.error("Image load error:", e.target.src);
+    console.error("Image load error for:", mediaItem.id, "src:", e.target.src);
     const currentSrc = e.target.src;
 
     // Try fallback sources
@@ -1474,9 +1468,36 @@ const MediaItem = ({
   };
 
   const handleImageLoad = () => {
+    console.log("Image loaded successfully for:", mediaItem.id);
     setIsLoading(false);
     setHasError(false);
   };
+
+  // Don't render anything if we don't have a valid source
+  if (!imageSrc || imageSrc === PLACEHOLDER_IMG) {
+    return (
+      <MediaItemContainer isDragging={isDragging} {...dragProps}>
+        <MediaContent>
+          <UploadOverlay>
+            <UploadText>
+              {mediaItem.uploading
+                ? `Uploading... ${mediaItem.progress || 0}%`
+                : "Processing..."}
+            </UploadText>
+          </UploadOverlay>
+        </MediaContent>
+        <MediaActions className="media-actions">
+          <ActionButton
+            onClick={() => onRemove(index)}
+            className="remove"
+            title="Remove media"
+          >
+            <FaTimes />
+          </ActionButton>
+        </MediaActions>
+      </MediaItemContainer>
+    );
+  }
 
   return (
     <MediaItemContainer isDragging={isDragging} {...dragProps}>
@@ -1485,12 +1506,6 @@ const MediaItem = ({
       </DragHandle>
 
       <MediaContent>
-        {isLoading && !mediaItem.mediaUrl && (
-          <UploadOverlay>
-            <UploadText>Loading preview...</UploadText>
-          </UploadOverlay>
-        )}
-
         {mediaItem.mediaType === "video" ? (
           <video
             src={imageSrc}
@@ -1499,12 +1514,12 @@ const MediaItem = ({
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              display: isLoading ? "none" : "block",
             }}
             onError={handleImageError}
             onLoadedData={handleImageLoad}
             playsInline
             muted
+            preload="metadata"
           />
         ) : (
           <img
@@ -1517,8 +1532,8 @@ const MediaItem = ({
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              display: isLoading ? "none" : "block",
             }}
+            loading="eager"
           />
         )}
 
@@ -1549,7 +1564,7 @@ const MediaItem = ({
       <MediaActions className="media-actions">
         <ActionButton
           onClick={() => onFilter(mediaItem, index)}
-          disabled={mediaItem.uploading || mediaItem.error}
+          disabled={mediaItem.uploading || mediaItem.error || hasError}
           title="Apply filter"
         >
           <FaFilter />
