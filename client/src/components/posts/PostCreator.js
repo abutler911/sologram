@@ -270,9 +270,13 @@ const MediaItemContainer = styled.div`
     ${(props) => (props.isDragging ? COLORS.primarySalmon : COLORS.border)};
   transition: all 0.2s ease;
   cursor: ${(props) => (props.isDragging ? "grabbing" : "grab")};
+  transform: ${(props) => (props.isDragging ? "scale(1.05)" : "scale(1)")};
+  opacity: ${(props) => (props.isDragging ? "0.8" : "1")};
+  z-index: ${(props) => (props.isDragging ? "10" : "1")};
 
   &:hover {
-    transform: translateY(-2px);
+    transform: ${(props) =>
+      props.isDragging ? "scale(1.05)" : "translateY(-2px)"};
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
@@ -282,6 +286,16 @@ const MediaItemContainer = styled.div`
 
   &:hover .media-actions {
     opacity: 1;
+  }
+
+  &:hover .drag-indicator {
+    opacity: 1;
+  }
+
+  /* Drag and drop visual feedback */
+  &[data-drag-over="true"] {
+    border-color: ${COLORS.primaryMint};
+    background: ${COLORS.primaryMint}10;
   }
 `;
 
@@ -296,10 +310,34 @@ const DragHandle = styled.div`
   padding: 4px;
   opacity: 0;
   transition: opacity 0.2s ease;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
 
   svg {
     font-size: 12px;
   }
+`;
+
+const DragIndicator = styled.div`
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  z-index: 3;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 `;
 
 const MediaContent = styled.div`
@@ -1490,7 +1528,7 @@ const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
   );
 };
 
-// Media Item Component with Stories-style preview handling
+// Media Item Component with drag & drop reordering
 const MediaItem = ({
   mediaItem,
   index,
@@ -1536,10 +1574,40 @@ const MediaItem = ({
     setHasError(false);
   };
 
+  const handleDragStart = (e) => {
+    e.dataTransfer.setData("text/plain", index.toString());
+    e.dataTransfer.effectAllowed = "move";
+    // Add a small delay to allow the drag to start properly
+    setTimeout(() => {
+      if (dragProps.onDragStart) {
+        dragProps.onDragStart(e, index);
+      }
+    }, 0);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
+    const toIndex = index;
+
+    if (fromIndex !== toIndex && onReorder) {
+      onReorder(fromIndex, toIndex);
+    }
+  };
+
   // Show processing state if no preview available yet
   if ((!imageSrc || imageSrc === PLACEHOLDER_IMG) && !mediaItem.mediaUrl) {
     return (
-      <MediaItemContainer isDragging={isDragging} {...dragProps}>
+      <MediaItemContainer
+        isDragging={isDragging}
+        draggable={false}
+        {...dragProps}
+      >
         <MediaContent className="processing-state">
           <ProcessingOverlay>
             <ProcessingText>
@@ -1568,7 +1636,14 @@ const MediaItem = ({
   }
 
   return (
-    <MediaItemContainer isDragging={isDragging} {...dragProps}>
+    <MediaItemContainer
+      isDragging={isDragging}
+      draggable={!mediaItem.uploading && !mediaItem.error}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      {...dragProps}
+    >
       <DragHandle className="drag-handle">
         <FaGripVertical />
       </DragHandle>
@@ -1635,6 +1710,9 @@ const MediaItem = ({
           {FILTERS.find((f) => f.id === mediaItem.filter)?.name}
         </FilterBadge>
       )}
+
+      {/* Drag indicator */}
+      <DragIndicator className="drag-indicator">{index + 1}</DragIndicator>
     </MediaItemContainer>
   );
 };
@@ -1897,7 +1975,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
     setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
-  // Submit handler
+  // Submit handler - FIXED to include filters and existing media
   const handleSubmit = async () => {
     if (media.length === 0) {
       toast.error("Please add at least one photo or video");
@@ -1940,21 +2018,25 @@ function PostCreator({ initialData = null, isEditing = false }) {
     setIsSubmitting(true);
 
     try {
-      const mediaItems = media
-        .filter((item) => !item.error && !item.isExisting)
-        .map((item) => ({
-          mediaUrl: item.mediaUrl,
-          cloudinaryId: item.cloudinaryId,
-          mediaType: item.mediaType || item.type,
-          filter: item.filter || "none",
-        }));
+      // Process ALL media items (new uploads AND existing media with potential filter changes)
+      const mediaItems = media.map((item, index) => ({
+        mediaUrl: item.mediaUrl,
+        cloudinaryId: item.cloudinaryId,
+        mediaType: item.mediaType || item.type,
+        filter: item.filter || "none", // Ensure filter is included
+        order: index, // Preserve the order from drag & drop
+        // Include the _id for existing media items
+        ...(item.isExisting && item._id && { _id: item._id }),
+      }));
+
+      console.log("Submitting media with filters:", mediaItems);
 
       const payload = {
         title: title ?? "",
         caption: caption ?? "",
         content: content ?? "",
         tags: tags.join(","),
-        media: mediaItems,
+        media: mediaItems, // Send ALL media items with their filters and order
         location: location ?? "",
         date: eventDate,
       };
@@ -1962,19 +2044,29 @@ function PostCreator({ initialData = null, isEditing = false }) {
       let response;
 
       if (isEditing) {
-        const existingMediaIds = media
-          .filter((item) => item.isExisting && item._id)
-          .map((item) => item._id)
-          .join(",");
-
-        if (existingMediaIds) {
-          payload.keepMedia = existingMediaIds;
-        }
-
+        // For editing, we need to handle existing media differently
+        // Send all media (existing + new) and let backend handle it
         response = await axios.put(`/api/posts/${initialData._id}`, payload);
         toast.success("Post updated successfully!");
       } else {
-        response = await axios.post("/api/posts", payload);
+        // For new posts, only send new media items
+        const newMediaItems = media
+          .filter((item) => !item.error && !item.isExisting)
+          .map((item, index) => ({
+            mediaUrl: item.mediaUrl,
+            cloudinaryId: item.cloudinaryId,
+            mediaType: item.mediaType || item.type,
+            filter: item.filter || "none",
+            order: index,
+          }));
+
+        const newPostPayload = {
+          ...payload,
+          media: newMediaItems,
+        };
+
+        console.log("Creating new post with media:", newMediaItems);
+        response = await axios.post("/api/posts", newPostPayload);
         toast.success("Post created successfully!");
       }
 
@@ -2093,11 +2185,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
                   onRemove={removeMedia}
                   onFilter={openFilterModal}
                   onReorder={reorderMedia}
-                  isDragging={draggedIndex === index}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, index)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, index)}
+                  isDragging={false}
                 />
               ))}
 
