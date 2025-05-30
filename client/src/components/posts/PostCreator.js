@@ -54,32 +54,43 @@ const isMobileDevice = () => {
 };
 
 const createSafeBlobUrl = (file) => {
-  console.log("Creating preview for:", file.name, "Mobile:", isMobileDevice());
+  console.log(
+    "Creating preview for:",
+    file.name,
+    "Type:",
+    file.type,
+    "Size:",
+    file.size
+  );
 
   try {
-    // Always use data URL for images on mobile for better compatibility
+    // For images, always use data URL on mobile, blob URL on desktop
     if (file.type.startsWith("image/")) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          console.log("Data URL created successfully for:", file.name);
-          resolve(e.target.result);
-        };
-        reader.onerror = (e) => {
-          console.error("FileReader error for:", file.name, e);
-          resolve(null);
-        };
-        reader.readAsDataURL(file);
-      });
+      if (isMobileDevice()) {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            console.log("Data URL created for mobile:", file.name);
+            resolve(e.target.result);
+          };
+          reader.onerror = (e) => {
+            console.error("FileReader error:", e);
+            resolve(null);
+          };
+          reader.readAsDataURL(file);
+        });
+      } else {
+        // Desktop: use blob URL
+        const url = URL.createObjectURL(file);
+        console.log("Blob URL created for desktop:", file.name, url);
+        return Promise.resolve(url);
+      }
     }
 
-    // For videos, try blob URL first, fallback to data URL
+    // For videos, always use blob URL
     const url = URL.createObjectURL(file);
-    return new Promise((resolve) => {
-      // For videos, we can't easily test the blob URL, so just return it
-      console.log("Blob URL created for video:", file.name, url);
-      resolve(url);
-    });
+    console.log("Blob URL created for video:", file.name, url);
+    return Promise.resolve(url);
   } catch (error) {
     console.error("Failed to create preview URL for:", file.name, error);
     return Promise.resolve(null);
@@ -330,6 +341,63 @@ const MediaContent = styled.div`
       filter: brightness(1.1) contrast(0.9) saturate(1.1);
     }
   }
+
+  /* Stories-style image fallback */
+  &.image-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: ${COLORS.cardBackground};
+
+    &:before {
+      content: "\\f03e";
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      font-size: 1.2rem;
+      color: ${COLORS.textTertiary};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  &.processing-state {
+    background: ${COLORS.elevatedBackground};
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+`;
+
+// Stories-style image and video components
+const StoryStyleImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background-color: ${COLORS.cardBackground};
+`;
+
+const StoryStyleVideo = styled.video`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  outline: none;
+`;
+
+const ProcessingOverlay = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: ${COLORS.textSecondary};
+  text-align: center;
+  padding: 8px;
+`;
+
+const ProcessingText = styled.div`
+  font-size: 11px;
+  font-weight: 500;
 `;
 
 const MediaActions = styled.div`
@@ -1422,7 +1490,7 @@ const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
   );
 };
 
-// Media Item Component
+// Media Item Component with Stories-style preview handling
 const MediaItem = ({
   mediaItem,
   index,
@@ -1434,7 +1502,9 @@ const MediaItem = ({
 }) => {
   const [imageSrc, setImageSrc] = useState(getSafeImageSrc(mediaItem));
   const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(!mediaItem.mediaUrl);
+  const [isLoading, setIsLoading] = useState(
+    !mediaItem.mediaUrl && !mediaItem.previewUrl
+  );
 
   useEffect(() => {
     const newSrc = getSafeImageSrc(mediaItem);
@@ -1451,20 +1521,13 @@ const MediaItem = ({
 
   const handleImageError = (e) => {
     console.error("Image load error for:", mediaItem.id, "src:", e.target.src);
-    const currentSrc = e.target.src;
 
-    // Try fallback sources
-    if (currentSrc === mediaItem.mediaUrl && mediaItem.previewUrl) {
-      console.log("Trying previewUrl as fallback");
-      setImageSrc(mediaItem.previewUrl);
-    } else if (currentSrc === mediaItem.previewUrl && mediaItem.mediaUrl) {
-      console.log("Trying mediaUrl as fallback");
-      setImageSrc(mediaItem.mediaUrl);
-    } else {
-      console.log("All sources failed, using placeholder");
-      setImageSrc(PLACEHOLDER_IMG);
-      setHasError(true);
+    // Hide the broken image and show fallback
+    e.target.style.display = "none";
+    if (e.target.parentNode) {
+      e.target.parentNode.classList.add("image-fallback");
     }
+    setHasError(true);
   };
 
   const handleImageLoad = () => {
@@ -1473,18 +1536,23 @@ const MediaItem = ({
     setHasError(false);
   };
 
-  // Don't render anything if we don't have a valid source
-  if (!imageSrc || imageSrc === PLACEHOLDER_IMG) {
+  // Show processing state if no preview available yet
+  if ((!imageSrc || imageSrc === PLACEHOLDER_IMG) && !mediaItem.mediaUrl) {
     return (
       <MediaItemContainer isDragging={isDragging} {...dragProps}>
-        <MediaContent>
-          <UploadOverlay>
-            <UploadText>
+        <MediaContent className="processing-state">
+          <ProcessingOverlay>
+            <ProcessingText>
               {mediaItem.uploading
                 ? `Uploading... ${mediaItem.progress || 0}%`
                 : "Processing..."}
-            </UploadText>
-          </UploadOverlay>
+            </ProcessingText>
+            {mediaItem.uploading && (
+              <UploadProgress>
+                <UploadProgressInner width={mediaItem.progress || 0} />
+              </UploadProgress>
+            )}
+          </ProcessingOverlay>
         </MediaContent>
         <MediaActions className="media-actions">
           <ActionButton
@@ -1507,33 +1575,24 @@ const MediaItem = ({
 
       <MediaContent>
         {mediaItem.mediaType === "video" ? (
-          <video
+          <StoryStyleVideo
             src={imageSrc}
             className={mediaItem.filterClass || ""}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
             onError={handleImageError}
             onLoadedData={handleImageLoad}
             playsInline
             muted
             preload="metadata"
+            loading="lazy"
           />
         ) : (
-          <img
+          <StoryStyleImage
             src={imageSrc}
             className={mediaItem.filterClass || ""}
             alt="Media preview"
             onError={handleImageError}
             onLoad={handleImageLoad}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-            loading="eager"
+            loading="lazy"
           />
         )}
 
@@ -1549,13 +1608,6 @@ const MediaItem = ({
         {mediaItem.error && (
           <ErrorOverlay>
             <ErrorText>Upload failed</ErrorText>
-            <RetryButton onClick={() => onRemove(index)}>Remove</RetryButton>
-          </ErrorOverlay>
-        )}
-
-        {hasError && !mediaItem.uploading && (
-          <ErrorOverlay>
-            <ErrorText>Preview unavailable</ErrorText>
             <RetryButton onClick={() => onRemove(index)}>Remove</RetryButton>
           </ErrorOverlay>
         )}
