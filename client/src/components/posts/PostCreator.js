@@ -1906,90 +1906,149 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 )}
 
                 <PreviewContainer>
-                  {media[currentIndex].type === "video" ||
-                  media[currentIndex].mediaType === "video" ? (
-                    <VideoPreview
-                      src={
-                        media[currentIndex].mediaUrl ||
-                        media[currentIndex].previewUrl
-                      }
-                      className={
-                        media[currentIndex].filterClass ||
-                        filters.find((f) => f.id === media[currentIndex].filter)
-                          ?.className ||
-                        ""
-                      }
-                      controls
-                      playsInline
-                      onError={(e) => {
-                        console.error("Video error:", e);
-                        e.target.src = PLACEHOLDER_IMG;
-                      }}
-                    />
-                  ) : (
-                    <ImagePreview
-                      src={
-                        media[currentIndex].mediaUrl ||
-                        media[currentIndex].previewUrl
-                      }
-                      className={
-                        media[currentIndex].filterClass ||
-                        filters.find((f) => f.id === media[currentIndex].filter)
-                          ?.className ||
-                        ""
-                      }
-                      alt="Preview"
-                      onError={(e) => {
-                        console.error("Image error:", e);
-                        e.target.src = PLACEHOLDER_IMG;
-                      }}
-                    />
+                  {media[currentIndex] && (
+                    <>
+                      {media[currentIndex].type === "video" ||
+                      media[currentIndex].mediaType === "video" ? (
+                        <VideoPreview
+                          src={
+                            media[currentIndex].mediaUrl ||
+                            media[currentIndex].previewUrl ||
+                            ""
+                          }
+                          className={
+                            media[currentIndex].filterClass ||
+                            filters.find(
+                              (f) => f.id === media[currentIndex].filter
+                            )?.className ||
+                            ""
+                          }
+                          controls
+                          playsInline
+                          onError={(e) => {
+                            console.error("Video error:", e);
+                            console.log("Video src was:", e.target.src);
+                            console.log("Media item:", media[currentIndex]);
+                          }}
+                        />
+                      ) : (
+                        <ImagePreview
+                          src={
+                            media[currentIndex].mediaUrl ||
+                            media[currentIndex].previewUrl ||
+                            ""
+                          }
+                          className={
+                            media[currentIndex].filterClass ||
+                            filters.find(
+                              (f) => f.id === media[currentIndex].filter
+                            )?.className ||
+                            ""
+                          }
+                          alt="Preview"
+                          onError={(e) => {
+                            console.error("Image error:", e);
+                            console.log("Image src was:", e.target.src);
+                            console.log("Media item:", media[currentIndex]);
+                            // Don't replace with placeholder immediately, let's see what's wrong
+                          }}
+                          onLoad={(e) => {
+                            console.log(
+                              "Image loaded successfully:",
+                              e.target.src
+                            );
+                          }}
+                        />
+                      )}
+
+                      {media[currentIndex].uploading && (
+                        <UploadOverlay>
+                          <UploadProgress>
+                            <UploadProgressInner
+                              width={media[currentIndex].progress || 0}
+                            />
+                          </UploadProgress>
+                          <p>
+                            Uploading... {media[currentIndex].progress || 0}%
+                          </p>
+                        </UploadOverlay>
+                      )}
+
+                      {media[currentIndex].error && (
+                        <ErrorOverlay>
+                          <p>Upload failed</p>
+                          {media[currentIndex].errorMessage && (
+                            <p style={{ fontSize: "12px", marginTop: "5px" }}>
+                              {media[currentIndex].errorMessage}
+                            </p>
+                          )}
+                          <button onClick={() => removeMedia(currentIndex)}>
+                            Remove
+                          </button>
+                        </ErrorOverlay>
+                      )}
+
+                      <RemoveButton onClick={() => removeMedia(currentIndex)}>
+                        <FaTimes />
+                      </RemoveButton>
+
+                      {media.length > 1 && (
+                        <NavigationButtons>
+                          <NavButton
+                            onClick={showPrevious}
+                            disabled={currentIndex === 0}
+                          >
+                            <FaArrowLeft />
+                          </NavButton>
+                          <MediaCounter>
+                            {currentIndex + 1} / {media.length}
+                          </MediaCounter>
+                          <NavButton
+                            onClick={showNext}
+                            disabled={currentIndex === media.length - 1}
+                          >
+                            <FaArrowRight />
+                          </NavButton>
+                        </NavigationButtons>
+                      )}
+                    </>
                   )}
 
-                  {media[currentIndex].uploading && (
-                    <UploadOverlay>
-                      <UploadProgress>
-                        <UploadProgressInner
-                          width={media[currentIndex].progress}
-                        />
-                      </UploadProgress>
-                      <p>Uploading... {media[currentIndex].progress}%</p>
-                    </UploadOverlay>
-                  )}
-                  {media[currentIndex].error && (
-                    <ErrorOverlay>
-                      <p>Upload failed</p>
-                      {media[currentIndex].errorMessage && (
-                        <p style={{ fontSize: "12px", marginTop: "5px" }}>
-                          {media[currentIndex].errorMessage}
-                        </p>
-                      )}
-                      <button onClick={() => removeMedia(currentIndex)}>
-                        Remove
-                      </button>
-                    </ErrorOverlay>
-                  )}
-                  <RemoveButton onClick={() => removeMedia(currentIndex)}>
-                    <FaTimes />
-                  </RemoveButton>
-                  {media.length > 1 && (
-                    <NavigationButtons>
-                      <NavButton
-                        onClick={showPrevious}
-                        disabled={currentIndex === 0}
-                      >
-                        <FaArrowLeft />
-                      </NavButton>
-                      <MediaCounter>
-                        {currentIndex + 1} / {media.length}
-                      </MediaCounter>
-                      <NavButton
-                        onClick={showNext}
-                        disabled={currentIndex === media.length - 1}
-                      >
-                        <FaArrowRight />
-                      </NavButton>
-                    </NavigationButtons>
+                  {/* Debug info - remove this once working */}
+                  {media[currentIndex] && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "10px",
+                        left: "10px",
+                        background: "rgba(0,0,0,0.7)",
+                        color: "white",
+                        padding: "8px",
+                        fontSize: "10px",
+                        borderRadius: "4px",
+                        maxWidth: "200px",
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      <div>
+                        Type:{" "}
+                        {media[currentIndex].type ||
+                          media[currentIndex].mediaType}
+                      </div>
+                      <div>
+                        MediaURL: {media[currentIndex].mediaUrl ? "✓" : "✗"}
+                      </div>
+                      <div>
+                        PreviewURL: {media[currentIndex].previewUrl ? "✓" : "✗"}
+                      </div>
+                      <div>
+                        Uploading:{" "}
+                        {media[currentIndex].uploading ? "Yes" : "No"}
+                      </div>
+                      <div>
+                        Error: {media[currentIndex].error ? "Yes" : "No"}
+                      </div>
+                    </div>
                   )}
                 </PreviewContainer>
               </MediaPreview>
