@@ -29,11 +29,70 @@ import { COLORS } from "../../theme";
 import { useUploadManager } from "../../hooks/useUploadManager";
 import { AuthContext } from "../../context/AuthContext";
 
-// Default placeholder - using data URI instead of external service
+// Constants
 const PLACEHOLDER_IMG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='sans-serif' fill='%23999999'%3EImage Not Available%3C/text%3E%3C/svg%3E";
 
-// AI Content Generator Modal Component
+const FILTERS = [
+  { id: "none", name: "Normal", className: "" },
+  { id: "clarendon", name: "Clarendon", className: "filter-clarendon" },
+  { id: "gingham", name: "Gingham", className: "filter-gingham" },
+  { id: "moon", name: "Moon", className: "filter-moon" },
+  { id: "lark", name: "Lark", className: "filter-lark" },
+  { id: "warm", name: "Warm", className: "filter-warm" },
+  { id: "cool", name: "Cool", className: "filter-cool" },
+  { id: "bw", name: "B&W", className: "filter-grayscale" },
+  { id: "vintage", name: "Vintage", className: "filter-vintage" },
+];
+
+// Utility Functions
+const isMobileDevice = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+};
+
+const createSafeBlobUrl = (file) => {
+  try {
+    const url = URL.createObjectURL(file);
+
+    // Test if the blob URL is accessible (especially important on mobile Safari)
+    return new Promise((resolve) => {
+      if (file.type.startsWith("image/")) {
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(img.src);
+          resolve(url);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          resolve(null);
+        };
+        img.src = url;
+      } else {
+        // For videos, assume the blob URL works
+        resolve(url);
+      }
+    });
+  } catch (error) {
+    console.error("Failed to create blob URL:", error);
+    return Promise.resolve(null);
+  }
+};
+
+const getSafeImageSrc = (mediaItem) => {
+  // Prioritize uploaded URL over blob URL on mobile devices
+  if (isMobileDevice()) {
+    return mediaItem.mediaUrl || mediaItem.previewUrl || PLACEHOLDER_IMG;
+  }
+
+  // On desktop, prioritize blob URL for faster loading
+  return mediaItem.previewUrl || mediaItem.mediaUrl || PLACEHOLDER_IMG;
+};
+
+// Components
+
+// AI Content Generator Modal
 const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
   const [formData, setFormData] = useState({
     description: "",
@@ -97,24 +156,12 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
       }
 
       setGeneratedContent(data.data);
-      toast.success("Content generated successfully!", {
-        style: {
-          background: COLORS.cardBackground,
-          color: COLORS.textPrimary,
-          border: `1px solid ${COLORS.border}`,
-        },
-      });
+      toast.success("Content generated successfully!");
     } catch (error) {
       setError(
         error.message || "Failed to generate content. Please try again."
       );
-      toast.error("Failed to generate content", {
-        style: {
-          background: COLORS.cardBackground,
-          color: COLORS.error,
-          border: `1px solid ${COLORS.error}30`,
-        },
-      });
+      toast.error("Failed to generate content");
     } finally {
       setIsGenerating(false);
     }
@@ -168,7 +215,7 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              placeholder="Describe what your post is about... (e.g., 'New product launch - innovative wireless headphones')"
+              placeholder="Describe what your post is about..."
               maxLength="500"
             />
             <CharCount>{formData.description.length}/500</CharCount>
@@ -212,7 +259,7 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
               name="additionalContext"
               value={formData.additionalContext}
               onChange={handleInputChange}
-              placeholder="Any additional details, target audience, or specific requirements..."
+              placeholder="Any additional details..."
               maxLength="200"
             />
           </FormGroup>
@@ -282,7 +329,1012 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
   );
 };
 
-// Styled Components (keeping your existing styles, adding new ones for AI modal)
+// Media Preview Component
+const MediaPreviewComponent = ({
+  mediaItem,
+  onRemove,
+  onError,
+  showRemoveButton = true,
+}) => {
+  const [imageSrc, setImageSrc] = useState(getSafeImageSrc(mediaItem));
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(!mediaItem.mediaUrl);
+
+  useEffect(() => {
+    setImageSrc(getSafeImageSrc(mediaItem));
+    setHasError(false);
+    setIsLoading(!mediaItem.mediaUrl);
+  }, [mediaItem.mediaUrl, mediaItem.previewUrl]);
+
+  const handleImageError = (e) => {
+    console.error("Image load error:", e.target.src);
+
+    // Try alternative sources
+    const currentSrc = e.target.src;
+
+    if (currentSrc === mediaItem.mediaUrl && mediaItem.previewUrl) {
+      console.log("Trying previewUrl as fallback");
+      setImageSrc(mediaItem.previewUrl);
+    } else if (currentSrc === mediaItem.previewUrl && mediaItem.mediaUrl) {
+      console.log("Trying mediaUrl as fallback");
+      setImageSrc(mediaItem.mediaUrl);
+    } else {
+      console.log("All sources failed, using placeholder");
+      setImageSrc(PLACEHOLDER_IMG);
+      setHasError(true);
+      if (onError) onError(mediaItem);
+    }
+  };
+
+  const handleImageLoad = () => {
+    setIsLoading(false);
+    setHasError(false);
+  };
+
+  if (mediaItem.type === "video" || mediaItem.mediaType === "video") {
+    return (
+      <VideoPreview
+        src={imageSrc}
+        className={mediaItem.filterClass || ""}
+        controls
+        playsInline
+        onError={handleImageError}
+        onLoadedData={handleImageLoad}
+      />
+    );
+  }
+
+  return (
+    <>
+      {isLoading && (
+        <LoadingPlaceholder>
+          <LoadingText>Loading image...</LoadingText>
+        </LoadingPlaceholder>
+      )}
+
+      <ImagePreview
+        src={imageSrc}
+        className={mediaItem.filterClass || ""}
+        alt="Preview"
+        onError={handleImageError}
+        onLoad={handleImageLoad}
+        style={{
+          display: isLoading ? "none" : "block",
+          maxWidth: "100%",
+          maxHeight: "100%",
+          objectFit: "contain",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+        }}
+      />
+
+      {hasError && (
+        <ErrorPlaceholder>
+          <ErrorText>Unable to load image</ErrorText>
+        </ErrorPlaceholder>
+      )}
+
+      {showRemoveButton && (
+        <RemoveButton onClick={onRemove}>
+          <FaTimes />
+        </RemoveButton>
+      )}
+    </>
+  );
+};
+
+// Main PostCreator Component
+function PostCreator({ initialData = null, isEditing = false }) {
+  // State management
+  const [media, setMedia] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [title, setTitle] = useState(initialData?.title || "");
+  const [caption, setCaption] = useState(initialData?.caption || "");
+  const [content, setContent] = useState(initialData?.content || "");
+  const [tags, setTags] = useState(initialData?.tags || []);
+  const [currentTag, setCurrentTag] = useState("");
+  const [location, setLocation] = useState(initialData?.location || "");
+  const [activeFilter, setActiveFilter] = useState("none");
+  const [activeAction, setActiveAction] = useState("filter");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [step, setStep] = useState(1);
+  const [eventDate, setEventDate] = useState(() => {
+    const rawDate = initialData?.date || new Date().toISOString();
+    return rawDate.split("T")[0];
+  });
+  const [showAIModal, setShowAIModal] = useState(false);
+
+  // Refs and hooks
+  const navigate = useNavigate();
+  const inputFileRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const videoCameraInputRef = useRef(null);
+  const { startUpload, mountedRef } = useUploadManager(setMedia);
+  const { user } = useContext(AuthContext);
+
+  // Cleanup effect for blob URLs
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+
+      // Clean up blob URLs
+      media.forEach((item) => {
+        if (
+          item.previewUrl &&
+          !item.isExisting &&
+          item.previewUrl.startsWith("blob:")
+        ) {
+          try {
+            URL.revokeObjectURL(item.previewUrl);
+          } catch (err) {
+            console.warn("Failed to revoke URL:", err);
+          }
+        }
+      });
+    };
+  }, []);
+
+  // Load existing media when editing
+  useEffect(() => {
+    if (isEditing && initialData?.media?.length > 0) {
+      const existingMedia = initialData.media.map((item) => {
+        const filter = item.filter || "none";
+        const filterClass =
+          FILTERS.find((f) => f.id === filter)?.className || "";
+
+        return {
+          id:
+            item._id ||
+            `existing_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 8)}`,
+          _id: item._id,
+          mediaUrl: item.mediaUrl,
+          cloudinaryId: item.cloudinaryId,
+          mediaType: item.mediaType,
+          filter: filter,
+          filterClass: filterClass,
+          isExisting: true,
+          uploading: false,
+          error: false,
+        };
+      });
+
+      setMedia(existingMedia);
+    }
+  }, [isEditing, initialData]);
+
+  // File drop handler
+  const onDrop = useCallback(
+    async (acceptedFiles) => {
+      const uniqueFiles = acceptedFiles.filter((file) => {
+        const isDuplicate = media.some(
+          (m) =>
+            m.file?.name === file.name &&
+            m.file?.size === file.size &&
+            m.file?.lastModified === file.lastModified
+        );
+
+        if (isDuplicate) {
+          toast.error(`File "${file.name}" is already added.`);
+          return false;
+        }
+        return true;
+      });
+
+      if (uniqueFiles.length === 0) return;
+
+      // Process files and create blob URLs safely
+      const newItems = await Promise.all(
+        uniqueFiles.map(async (file) => {
+          const id = `media_${Date.now()}_${Math.random()
+            .toString(36)
+            .substring(2, 8)}`;
+          const isVideo = file.type.startsWith("video/");
+          const previewUrl = await createSafeBlobUrl(file);
+
+          return {
+            id,
+            file,
+            previewUrl,
+            type: isVideo ? "video" : "image",
+            mediaType: isVideo ? "video" : "image",
+            filter: "none",
+            filterClass: "",
+            uploading: true,
+            progress: 0,
+            error: false,
+            isMobile: isMobileDevice(),
+          };
+        })
+      );
+
+      setMedia((prev) => [...prev, ...newItems]);
+
+      // Start uploads
+      newItems.forEach((item) => {
+        startUpload(item.file, item.id, item.type)
+          .then((result) => {
+            console.log(`Upload complete for ${item.id}:`, result);
+          })
+          .catch((error) => {
+            console.error(`Upload failed for ${item.id}:`, error);
+          });
+      });
+    },
+    [media, startUpload]
+  );
+
+  // Configure dropzone
+  const { getRootProps, getInputProps } = useDropzone({
+    accept: {
+      "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp"],
+      "video/*": [".mp4", ".mov", ".avi", ".webm"],
+    },
+    onDrop,
+    maxSize: 25 * 1024 * 1024, // 25MB
+  });
+
+  // Camera capture handler
+  const handleCameraCapture = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const isDuplicate = media.some(
+      (m) =>
+        m.file?.name === file.name &&
+        m.file?.size === file.size &&
+        m.file?.lastModified === file.lastModified
+    );
+
+    if (isDuplicate) {
+      toast.error(`File "${file.name}" is already added.`);
+      return;
+    }
+
+    const id = `camera_${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(2, 8)}`;
+    const isVideo = file.type.startsWith("video/");
+    const mediaType = isVideo ? "video" : "image";
+    const previewUrl = await createSafeBlobUrl(file);
+
+    // Add to media list
+    setMedia((current) => [
+      ...current,
+      {
+        id,
+        file,
+        previewUrl,
+        type: mediaType,
+        mediaType: mediaType,
+        filter: "none",
+        filterClass: "",
+        uploading: true,
+        progress: 0,
+        error: false,
+        isMobile: isMobileDevice(),
+      },
+    ]);
+
+    // Start upload
+    try {
+      await startUpload(file, id, mediaType);
+    } catch (error) {
+      console.error("Upload failed:", error);
+    } finally {
+      if (event.target) {
+        event.target.value = "";
+      }
+    }
+  };
+
+  // AI content handler
+  const handleAIContentApply = (generatedContent) => {
+    if (generatedContent.title) {
+      setTitle(generatedContent.title);
+    }
+
+    if (generatedContent.caption) {
+      setCaption(generatedContent.caption);
+    }
+
+    if (generatedContent.tags && generatedContent.tags.length > 0) {
+      const availableSlots = 5 - tags.length;
+      const newTags = generatedContent.tags.slice(0, availableSlots);
+      setTags((prev) => [...prev, ...newTags]);
+
+      toast.success(`Content applied with ${newTags.length} tags!`);
+    } else {
+      toast.success("Content applied!");
+    }
+  };
+
+  // Tag management
+  const addTag = (tagText = null) => {
+    const tagToAdd = tagText || currentTag.trim();
+    if (!tagToAdd || tags.includes(tagToAdd)) return;
+    if (tags.length >= 5) {
+      toast.error("Maximum 5 tags allowed");
+      return;
+    }
+    setTags([...tags, tagToAdd]);
+    setCurrentTag("");
+  };
+
+  const handleTagInputKeyDown = (e) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      if (currentTag.trim()) {
+        addTag();
+      }
+    } else if (e.key === "Backspace" && !currentTag && tags.length > 0) {
+      setTags(tags.slice(0, -1));
+    }
+  };
+
+  const handleTagInputChange = (e) => {
+    const value = e.target.value;
+    if (value.includes(" ")) {
+      const tagText = value.split(" ")[0].trim();
+      if (tagText) {
+        addTag(tagText);
+      }
+    } else {
+      setCurrentTag(value);
+    }
+  };
+
+  const removeTag = (tagToRemove) => {
+    setTags(tags.filter((tag) => tag !== tagToRemove));
+  };
+
+  // Media navigation
+  const showPrevious = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const showNext = () => {
+    if (currentIndex < media.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  // Filter application
+  const applyFilter = (filterId) => {
+    setActiveFilter(filterId);
+    const filterClass = FILTERS.find((f) => f.id === filterId)?.className || "";
+
+    setMedia((currentMedia) =>
+      currentMedia.map((item, index) =>
+        index === currentIndex
+          ? { ...item, filter: filterId, filterClass }
+          : item
+      )
+    );
+  };
+
+  // Remove media
+  const removeMedia = (indexToRemove) => {
+    const itemToRemove = media[indexToRemove];
+
+    // Clean up blob URL if it exists
+    if (
+      itemToRemove?.previewUrl &&
+      !itemToRemove.isExisting &&
+      itemToRemove.previewUrl.startsWith("blob:")
+    ) {
+      try {
+        URL.revokeObjectURL(itemToRemove.previewUrl);
+      } catch (err) {
+        console.warn("Failed to revoke URL:", err);
+      }
+    }
+
+    setMedia((current) => {
+      const newMedia = current.filter((_, index) => index !== indexToRemove);
+      if (currentIndex >= newMedia.length) {
+        setCurrentIndex(Math.max(0, newMedia.length - 1));
+      }
+      return newMedia;
+    });
+  };
+
+  // Submit handler
+  const handleSubmit = async () => {
+    // Validation
+    if (media.length === 0) {
+      toast.error("Please add at least one photo or video");
+      return;
+    }
+
+    if (!title.trim()) {
+      toast.error("Please add a title");
+      return;
+    }
+
+    if (!caption.trim()) {
+      toast.error("Please add a caption");
+      return;
+    }
+
+    if (media.some((item) => item.uploading)) {
+      toast.error("Please wait for uploads to complete");
+      return;
+    }
+
+    const failedItems = media.filter((item) => item.error);
+    if (failedItems.length > 0) {
+      toast.error(
+        `Please remove ${failedItems.length} failed upload(s) before continuing`
+      );
+      return;
+    }
+
+    const incompleteItems = media.filter(
+      (item) => !item.mediaUrl || !item.cloudinaryId
+    );
+    if (incompleteItems.length > 0) {
+      toast.error(
+        `${incompleteItems.length} media item(s) failed to upload properly`
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const mediaItems = media
+        .filter((item) => !item.error && !item.isExisting)
+        .map((item) => ({
+          mediaUrl: item.mediaUrl,
+          cloudinaryId: item.cloudinaryId,
+          mediaType: item.mediaType || item.type,
+          filter: item.filter || "none",
+        }));
+
+      const payload = {
+        title: title ?? "",
+        caption: caption ?? "",
+        content: content ?? "",
+        tags: tags.join(","),
+        media: mediaItems,
+        location: location ?? "",
+        date: eventDate,
+      };
+
+      let response;
+
+      if (isEditing) {
+        const existingMediaIds = media
+          .filter((item) => item.isExisting && item._id)
+          .map((item) => item._id)
+          .join(",");
+
+        if (existingMediaIds) {
+          payload.keepMedia = existingMediaIds;
+        }
+
+        response = await axios.put(`/api/posts/${initialData._id}`, payload);
+        toast.success("Post updated successfully!");
+      } else {
+        response = await axios.post("/api/posts", payload);
+        toast.success("Post created successfully!");
+      }
+
+      navigate(`/post/${response.data.data._id}`);
+    } catch (error) {
+      console.error("Error creating/updating post:", error);
+      const errorMessage = error.response?.data?.message || "Please try again";
+      toast.error(
+        `Failed to ${isEditing ? "update" : "create"} post: ${errorMessage}`
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Calculate upload progress
+  const totalProgress = media.length
+    ? Math.round(
+        media.reduce((sum, item) => sum + (item.progress || 0), 0) /
+          media.length
+      )
+    : 0;
+
+  return (
+    <Container>
+      <PageTitle>
+        <h1>{isEditing ? "Edit Post" : "Create New Post"}</h1>
+        <p>Share your moments with SoloGram</p>
+      </PageTitle>
+
+      <Header>
+        {step === 1 ? (
+          <>
+            <h1>Select Media</h1>
+            {media.length > 0 && (
+              <NextButton
+                onClick={() => setStep(2)}
+                disabled={media.some(
+                  (item) => !item.mediaUrl || item.uploading
+                )}
+              >
+                Next
+              </NextButton>
+            )}
+          </>
+        ) : (
+          <>
+            <BackButton onClick={() => setStep(1)}>Back</BackButton>
+            <h1>Post Details</h1>
+            <NextButton
+              onClick={handleSubmit}
+              disabled={
+                isSubmitting ||
+                !title.trim() ||
+                !caption.trim() ||
+                media.length === 0 ||
+                media.some((item) => item.uploading)
+              }
+            >
+              {isSubmitting ? "Sharing..." : "Share"}
+            </NextButton>
+          </>
+        )}
+      </Header>
+
+      {step === 1 ? (
+        <MediaSection>
+          {media.length === 0 ? (
+            <DropArea {...getRootProps()}>
+              <input {...getInputProps()} ref={inputFileRef} />
+              <UploadIcon>
+                <FaImage />
+                <FaVideo />
+              </UploadIcon>
+              <p>Create a new post by uploading your photos and videos</p>
+              <ButtonGroup>
+                <CameraButton
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (cameraInputRef.current) {
+                      cameraInputRef.current.accept = "image/*";
+                      cameraInputRef.current.capture = "environment";
+                      cameraInputRef.current.click();
+                    }
+                  }}
+                >
+                  <FaCamera />
+                  <span>Camera</span>
+                </CameraButton>
+                <VideoCameraButton
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (videoCameraInputRef.current) {
+                      videoCameraInputRef.current.accept = "video/*";
+                      videoCameraInputRef.current.capture = "environment";
+                      videoCameraInputRef.current.click();
+                    }
+                  }}
+                >
+                  <FaVideo />
+                  <span>Video</span>
+                </VideoCameraButton>
+                <GalleryButton
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const galleryInput = document.createElement("input");
+                    galleryInput.type = "file";
+                    galleryInput.accept = "image/*,video/*";
+                    galleryInput.multiple = true;
+                    galleryInput.style.display = "none";
+
+                    galleryInput.onchange = (event) => {
+                      if (event.target.files?.length) {
+                        onDrop(Array.from(event.target.files));
+                      }
+                    };
+
+                    document.body.appendChild(galleryInput);
+                    galleryInput.click();
+
+                    setTimeout(() => {
+                      document.body.removeChild(galleryInput);
+                    }, 1000);
+                  }}
+                >
+                  <FaImage />
+                  <span>Gallery</span>
+                </GalleryButton>
+              </ButtonGroup>
+              <input
+                type="file"
+                ref={cameraInputRef}
+                onChange={handleCameraCapture}
+                accept="image/*"
+                capture="environment"
+                style={{ display: "none" }}
+              />
+              <input
+                type="file"
+                ref={videoCameraInputRef}
+                onChange={handleCameraCapture}
+                accept="video/*"
+                capture="environment"
+                style={{ display: "none" }}
+              />
+            </DropArea>
+          ) : (
+            <>
+              <MediaPreview>
+                {media.some((item) => item.uploading) && (
+                  <div style={{ margin: "15px 0" }}>
+                    <ProgressBar>
+                      <ProgressFill percent={totalProgress} />
+                    </ProgressBar>
+                    <div
+                      style={{
+                        textAlign: "center",
+                        color: COLORS.primaryBlueGray,
+                        fontSize: "14px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Uploading... {totalProgress}%
+                    </div>
+                  </div>
+                )}
+
+                <PreviewContainer>
+                  {media[currentIndex] && (
+                    <>
+                      <MediaPreviewComponent
+                        mediaItem={media[currentIndex]}
+                        onRemove={() => removeMedia(currentIndex)}
+                        onError={(item) => {
+                          console.error("Media preview error for:", item);
+                        }}
+                      />
+
+                      {media[currentIndex].uploading && (
+                        <UploadOverlay>
+                          <UploadProgress>
+                            <UploadProgressInner
+                              width={media[currentIndex].progress || 0}
+                            />
+                          </UploadProgress>
+                          <p>
+                            Uploading... {media[currentIndex].progress || 0}%
+                          </p>
+                        </UploadOverlay>
+                      )}
+
+                      {media[currentIndex].error && (
+                        <ErrorOverlay>
+                          <p>Upload failed</p>
+                          {media[currentIndex].errorMessage && (
+                            <p style={{ fontSize: "12px", marginTop: "5px" }}>
+                              {media[currentIndex].errorMessage}
+                            </p>
+                          )}
+                          <button onClick={() => removeMedia(currentIndex)}>
+                            Remove
+                          </button>
+                        </ErrorOverlay>
+                      )}
+
+                      {media.length > 1 && (
+                        <NavigationButtons>
+                          <NavButton
+                            onClick={showPrevious}
+                            disabled={currentIndex === 0}
+                          >
+                            <FaArrowLeft />
+                          </NavButton>
+                          <MediaCounter>
+                            {currentIndex + 1} / {media.length}
+                          </MediaCounter>
+                          <NavButton
+                            onClick={showNext}
+                            disabled={currentIndex === media.length - 1}
+                          >
+                            <FaArrowRight />
+                          </NavButton>
+                        </NavigationButtons>
+                      )}
+                    </>
+                  )}
+                </PreviewContainer>
+              </MediaPreview>
+
+              {/* Action Bar */}
+              <ActionBar>
+                <ActionButton
+                  active={activeAction === "filter"}
+                  onClick={() => setActiveAction("filter")}
+                >
+                  <FaFilter />
+                  <span>Filter</span>
+                </ActionButton>
+                <ActionButton
+                  active={activeAction === "add"}
+                  onClick={() => {
+                    setActiveAction("add");
+                    const galleryInput = document.createElement("input");
+                    galleryInput.type = "file";
+                    galleryInput.accept = "image/*,video/*";
+                    galleryInput.multiple = true;
+                    galleryInput.style.display = "none";
+
+                    galleryInput.onchange = (event) => {
+                      if (event.target.files?.length) {
+                        onDrop(Array.from(event.target.files));
+                      }
+                    };
+
+                    document.body.appendChild(galleryInput);
+                    galleryInput.click();
+
+                    setTimeout(() => {
+                      document.body.removeChild(galleryInput);
+                    }, 1000);
+                  }}
+                >
+                  <FaImage />
+                  <span>Add</span>
+                </ActionButton>
+              </ActionBar>
+
+              {activeAction === "filter" && (
+                <FilterOptions>
+                  <FiltersGrid>
+                    {FILTERS.map((filter) => (
+                      <FilterItem
+                        key={filter.id}
+                        active={media[currentIndex].filter === filter.id}
+                        onClick={() => applyFilter(filter.id)}
+                      >
+                        <FilterPreview
+                          className={filter.className}
+                          active={media[currentIndex].filter === filter.id}
+                        >
+                          <img
+                            src={getSafeImageSrc(media[currentIndex])}
+                            alt={filter.name}
+                            onError={(e) => {
+                              e.target.src = PLACEHOLDER_IMG;
+                            }}
+                          />
+                        </FilterPreview>
+                        <span>{filter.name}</span>
+                      </FilterItem>
+                    ))}
+                  </FiltersGrid>
+                </FilterOptions>
+              )}
+            </>
+          )}
+        </MediaSection>
+      ) : (
+        <div style={{ margin: "20px 0" }}>
+          {/* Post Details Section with AI Integration */}
+
+          {/* Title field with AI assist */}
+          <FormGroup>
+            <ContentHeader>
+              <Label>Post Title *</Label>
+              <AIButton
+                type="button"
+                onClick={() => setShowAIModal(true)}
+                title="Generate content with AI"
+              >
+                <FaRobot />
+                <span>AI Assist</span>
+              </AIButton>
+            </ContentHeader>
+            <InputGroup>
+              <FaPencilAlt />
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Add a title for your post"
+                maxLength={100}
+                required
+              />
+            </InputGroup>
+            <CharCount overLimit={title.length > 80}>
+              {title.length}/100
+            </CharCount>
+          </FormGroup>
+
+          {/* Date field */}
+          <FormGroup>
+            <Label>Event Date</Label>
+            <InputGroup>
+              <FaCalendarDay />
+              <Input
+                type="date"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
+                required
+              />
+            </InputGroup>
+          </FormGroup>
+
+          {/* Caption field */}
+          <FormGroup>
+            <Label>Caption *</Label>
+            <Textarea
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              placeholder="Write a caption..."
+              rows={4}
+              maxLength={2200}
+              required
+            />
+            <CharCount overLimit={caption.length > 2000}>
+              {caption.length}/2200
+            </CharCount>
+          </FormGroup>
+
+          {/* Location field */}
+          <FormGroup>
+            <Label>Location</Label>
+            <InputGroup>
+              <FaLocationArrow />
+              <Input
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Add location"
+              />
+            </InputGroup>
+          </FormGroup>
+
+          {/* Tags field */}
+          <FormGroup>
+            <Label>Tags</Label>
+            <InputGroup>
+              <FaTag />
+              <div style={{ position: "relative", width: "100%" }}>
+                <Input
+                  value={currentTag}
+                  onChange={handleTagInputChange}
+                  onKeyDown={handleTagInputKeyDown}
+                  placeholder="Type tags and press space to add..."
+                  maxLength={30}
+                  style={{ paddingRight: currentTag.trim() ? "80px" : "12px" }}
+                />
+                {currentTag.trim() && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      right: "12px",
+                      transform: "translateY(-50%)",
+                      background: `${COLORS.primarySalmon}15`,
+                      color: COLORS.primarySalmon,
+                      padding: "4px 8px",
+                      borderRadius: "12px",
+                      fontSize: "12px",
+                      fontWeight: "500",
+                      border: `1px solid ${COLORS.primarySalmon}30`,
+                      pointerEvents: "none",
+                    }}
+                  >
+                    #{currentTag.trim()}
+                  </div>
+                )}
+              </div>
+            </InputGroup>
+
+            {tags.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "8px",
+                  marginTop: "8px",
+                  padding: "12px",
+                  backgroundColor: COLORS.elevatedBackground,
+                  borderRadius: "8px",
+                  border: `1px dashed ${COLORS.primaryMint}30`,
+                  minHeight: "48px",
+                }}
+              >
+                {tags.map((tag, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      backgroundColor: `${COLORS.primarySalmon}20`,
+                      color: COLORS.primarySalmon,
+                      padding: "6px 12px",
+                      borderRadius: "16px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      border: `1px solid ${COLORS.primarySalmon}30`,
+                    }}
+                  >
+                    #{tag}
+                    <button
+                      onClick={() => removeTag(tag)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "inherit",
+                        padding: "0",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "16px",
+                        height: "16px",
+                        borderRadius: "50%",
+                      }}
+                    >
+                      <FaTimes />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </FormGroup>
+
+          {/* Additional content field */}
+          <FormGroup>
+            <Label>Additional Content</Label>
+            <InputGroup>
+              <FaPencilAlt />
+              <Input
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Add additional content (optional)"
+              />
+            </InputGroup>
+          </FormGroup>
+
+          {/* Publish Button */}
+          <PublishButton
+            onClick={handleSubmit}
+            disabled={
+              isSubmitting ||
+              !title.trim() ||
+              !caption.trim() ||
+              media.length === 0 ||
+              media.some((item) => item.uploading)
+            }
+          >
+            {isSubmitting
+              ? isEditing
+                ? "Updating..."
+                : "Sharing..."
+              : isEditing
+              ? "Update Post"
+              : "Share Post"}
+          </PublishButton>
+        </div>
+      )}
+
+      {/* AI Content Generator Modal */}
+      <AIContentModal
+        isOpen={showAIModal}
+        onClose={() => setShowAIModal(false)}
+        onApplyContent={handleAIContentApply}
+      />
+    </Container>
+  );
+}
+
+// Styled Components
 const Container = styled.div`
   max-width: 800px;
   margin: 0 auto;
@@ -339,335 +1391,6 @@ const Header = styled.div`
   }
 `;
 
-// AI Modal Styled Components
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-`;
-
-const ModalContent = styled.div`
-  background: ${COLORS.cardBackground};
-  border-radius: 12px;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  border: 1px solid ${COLORS.border};
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid ${COLORS.border};
-
-  h3 {
-    margin: 0;
-    color: ${COLORS.textPrimary};
-    font-size: 1.25rem;
-  }
-`;
-
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  color: ${COLORS.textSecondary};
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 4px;
-
-  &:hover {
-    background: ${COLORS.elevatedBackground};
-    color: ${COLORS.textPrimary};
-  }
-`;
-
-const ModalBody = styled.div`
-  padding: 1.5rem;
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 1rem;
-  position: relative;
-
-  &:first-of-type {
-    border-top: 1px solid ${COLORS.primaryMint}20;
-    padding-top: 15px;
-  }
-`;
-
-const Label = styled.label`
-  display: block;
-  color: ${COLORS.textSecondary};
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  font-size: 0.875rem;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 6px;
-  padding: 0.75rem;
-  color: ${COLORS.textPrimary};
-  font-size: 0.875rem;
-
-  &:focus {
-    outline: none;
-    border-color: ${COLORS.primarySalmon};
-    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
-  }
-
-  &::placeholder {
-    color: ${COLORS.textTertiary};
-  }
-`;
-
-const Select = styled.select`
-  width: 100%;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 6px;
-  padding: 0.75rem;
-  color: ${COLORS.textPrimary};
-  font-size: 0.875rem;
-  cursor: pointer;
-
-  &:focus {
-    outline: none;
-    border-color: ${COLORS.primarySalmon};
-    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
-  }
-`;
-
-const InputRow = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const CharCount = styled.div`
-  font-size: 0.75rem;
-  color: ${COLORS.textTertiary};
-  text-align: right;
-  margin-top: 0.25rem;
-`;
-
-const ErrorMessage = styled.div`
-  background: ${COLORS.error}15;
-  border: 1px solid ${COLORS.error}30;
-  color: ${COLORS.error};
-  padding: 0.75rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-`;
-
-const GenerateButton = styled.button`
-  width: 100%;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primarySalmon} 0%,
-    ${COLORS.accentSalmon} 100%
-  );
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.875rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-
-  &:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px ${COLORS.primarySalmon}30;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const LoadingSpinner = styled.div`
-  width: 16px;
-  height: 16px;
-  border: 2px solid transparent;
-  border-top: 2px solid currentColor;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-`;
-
-const GeneratedSection = styled.div`
-  border-top: 1px solid ${COLORS.border};
-  padding-top: 1.5rem;
-  animation: slideIn 0.3s ease;
-
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-`;
-
-const SectionTitle = styled.h4`
-  color: ${COLORS.textPrimary};
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-`;
-
-const ContentPreview = styled.div`
-  margin-bottom: 1rem;
-`;
-
-const ContentLabel = styled.div`
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: ${COLORS.textSecondary};
-  margin-bottom: 0.5rem;
-`;
-
-const ContentBox = styled.div`
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 6px;
-  padding: 0.75rem;
-  color: ${COLORS.textPrimary};
-  line-height: 1.5;
-  font-size: 0.875rem;
-`;
-
-const TagsPreview = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-`;
-
-const TagPreview = styled.span`
-  background: ${COLORS.primarySalmon}20;
-  color: ${COLORS.primarySalmon};
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-`;
-
-const ButtonRow = styled.div`
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-`;
-
-const SecondaryButton = styled.button`
-  flex: 1;
-  background: ${COLORS.elevatedBackground};
-  color: ${COLORS.textSecondary};
-  border: 1px solid ${COLORS.border};
-  border-radius: 6px;
-  padding: 0.75rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${COLORS.border};
-    color: ${COLORS.textPrimary};
-  }
-`;
-
-const ApplyButton = styled.button`
-  flex: 2;
-  background: ${COLORS.primaryMint};
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${COLORS.accentMint};
-    transform: translateY(-1px);
-  }
-`;
-
-// Enhanced form components for details section
-const ContentHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-`;
-
-const AIButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryMint} 0%,
-    ${COLORS.primarySalmon} 100%
-  );
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  svg {
-    font-size: 1rem;
-  }
-`;
-
-// Your existing styled components continue here...
 const MediaSection = styled.div`
   margin-top: 35px;
 `;
@@ -777,14 +1500,8 @@ const GalleryButton = styled(MediaButton)`
   }
 `;
 
-// Continue with all your existing styled components...
-// (I'll include the essential ones for the functionality)
-
-// Continue with all your existing styled components...
-// (I'll include the essential ones for the functionality)
-
 const MediaPreview = styled.div`
-  margin-bottom: ${(props) => (props.small ? "20px" : "30px")};
+  margin-bottom: 30px;
 `;
 
 const PreviewContainer = styled.div`
@@ -813,6 +1530,9 @@ const ImagePreview = styled.img`
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 
   &.filter-warm {
     filter: saturate(1.5) sepia(0.2) contrast(1.1);
@@ -882,6 +1602,42 @@ const VideoPreview = styled.video`
   &.filter-lark {
     filter: brightness(1.1) contrast(0.9) saturate(1.1);
   }
+`;
+
+const LoadingPlaceholder = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: ${COLORS.elevatedBackground};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${COLORS.textSecondary};
+  font-size: 14px;
+`;
+
+const LoadingText = styled.div`
+  color: ${COLORS.textSecondary};
+`;
+
+const ErrorPlaceholder = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: ${COLORS.error}10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${COLORS.error};
+  font-size: 14px;
+`;
+
+const ErrorText = styled.div`
+  color: ${COLORS.error};
 `;
 
 const UploadOverlay = styled.div`
@@ -1160,6 +1916,52 @@ const ProgressFill = styled.div`
   transition: width 0.3s ease;
 `;
 
+// Form Components
+const FormGroup = styled.div`
+  margin-bottom: 1rem;
+  position: relative;
+
+  &:first-of-type {
+    border-top: 1px solid ${COLORS.primaryMint}20;
+    padding-top: 15px;
+  }
+`;
+
+const ContentHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+`;
+
+const Label = styled.label`
+  display: block;
+  color: ${COLORS.textSecondary};
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  padding: 0.75rem;
+  color: ${COLORS.textPrimary};
+  font-size: 0.875rem;
+
+  &:focus {
+    outline: none;
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
+  }
+
+  &::placeholder {
+    color: ${COLORS.textTertiary};
+  }
+`;
+
 const Textarea = styled.textarea`
   width: 100%;
   padding: 12px;
@@ -1213,6 +2015,13 @@ const InputGroup = styled.div`
       box-shadow: none;
     }
   }
+`;
+
+const CharCount = styled.div`
+  font-size: 0.75rem;
+  color: ${(props) => (props.overLimit ? COLORS.error : COLORS.textTertiary)};
+  text-align: right;
+  margin-top: 0.25rem;
 `;
 
 const NextButton = styled.button`
@@ -1283,1213 +2092,279 @@ const PublishButton = styled.button`
   }
 `;
 
-// Main component with AI integration
-function PostCreator({ initialData = null, isEditing = false }) {
-  // Component state
-  const [media, setMedia] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [title, setTitle] = useState(initialData?.title || "");
-  const [caption, setCaption] = useState(initialData?.caption || "");
-  const [content, setContent] = useState(initialData?.content || "");
-  const [tags, setTags] = useState(initialData?.tags || []);
-  const [currentTag, setCurrentTag] = useState("");
-  const [location, setLocation] = useState(initialData?.location || "");
-  const [activeFilter, setActiveFilter] = useState("none");
-  const [activeAction, setActiveAction] = useState("filter");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [step, setStep] = useState(1);
-  const [eventDate, setEventDate] = useState(() => {
-    const rawDate = initialData?.date || new Date().toISOString();
-    return rawDate.split("T")[0];
-  });
-  const [showAIModal, setShowAIModal] = useState(false);
-
-  const navigate = useNavigate();
-  const inputFileRef = useRef(null);
-  const cameraInputRef = useRef(null);
-  const videoCameraInputRef = useRef(null);
-  const { startUpload, mountedRef } = useUploadManager(setMedia);
-  const { user } = useContext(AuthContext);
-
-  // Handle AI content application
-  const handleAIContentApply = (generatedContent) => {
-    // Apply title
-    if (generatedContent.title) {
-      setTitle(generatedContent.title);
-    }
-
-    // Apply caption
-    if (generatedContent.caption) {
-      setCaption(generatedContent.caption);
-    }
-
-    // Add suggested tags (limit to available slots)
-    if (generatedContent.tags && generatedContent.tags.length > 0) {
-      const availableSlots = 5 - tags.length;
-      const newTags = generatedContent.tags.slice(0, availableSlots);
-      setTags((prev) => [...prev, ...newTags]);
-
-      if (newTags.length > 0) {
-        toast.success(`Applied content with ${newTags.length} tags!`, {
-          style: {
-            background: COLORS.cardBackground,
-            color: COLORS.textPrimary,
-            border: `1px solid ${COLORS.border}`,
-          },
-        });
-      } else {
-        toast.success("Content applied!", {
-          style: {
-            background: COLORS.cardBackground,
-            color: COLORS.textPrimary,
-            border: `1px solid ${COLORS.border}`,
-          },
-        });
-      }
-    } else {
-      toast.success("Content applied!", {
-        style: {
-          background: COLORS.cardBackground,
-          color: COLORS.textPrimary,
-          border: `1px solid ${COLORS.border}`,
-        },
-      });
-    }
-  };
-
-  // Instagram-like filters
-  const filters = [
-    { id: "none", name: "Normal", className: "" },
-    { id: "clarendon", name: "Clarendon", className: "filter-clarendon" },
-    { id: "gingham", name: "Gingham", className: "filter-gingham" },
-    { id: "moon", name: "Moon", className: "filter-moon" },
-    { id: "lark", name: "Lark", className: "filter-lark" },
-    { id: "warm", name: "Warm", className: "filter-warm" },
-    { id: "cool", name: "Cool", className: "filter-cool" },
-    { id: "bw", name: "B&W", className: "filter-grayscale" },
-    { id: "vintage", name: "Vintage", className: "filter-vintage" },
-  ];
-
-  // Tag management functions
-  const addTag = (tagText = null) => {
-    const tagToAdd = tagText || currentTag.trim();
-
-    if (!tagToAdd || tags.includes(tagToAdd)) return;
-    if (tags.length >= 5) {
-      toast.error("Maximum 5 tags allowed");
-      return;
-    }
-
-    setTags([...tags, tagToAdd]);
-    setCurrentTag("");
-  };
-
-  const handleTagInputKeyDown = (e) => {
-    if (e.key === " " || e.key === "Enter") {
-      e.preventDefault();
-      if (currentTag.trim()) {
-        addTag();
-      }
-    } else if (e.key === "Backspace" && !currentTag && tags.length > 0) {
-      // Remove last tag when backspacing on empty input
-      setTags(tags.slice(0, -1));
-    }
-  };
-
-  const handleTagInputChange = (e) => {
-    const value = e.target.value;
-    // Prevent spaces from being typed (since space creates tags)
-    if (value.includes(" ")) {
-      // Extract the tag before the space and create it
-      const tagText = value.split(" ")[0].trim();
-      if (tagText) {
-        addTag(tagText);
-      }
-    } else {
-      setCurrentTag(value);
-    }
-  };
-
-  const removeTag = (tagToRemove) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove));
-  };
-
-  // Load existing media when editing
-  useEffect(() => {
-    if (isEditing && initialData?.media?.length > 0) {
-      const existingMedia = initialData.media.map((item) => {
-        const filter = item.filter || "none";
-        const filterClass =
-          filters.find((f) => f.id === filter)?.className || "";
-
-        return {
-          id:
-            item._id ||
-            `existing_${Date.now()}_${Math.random()
-              .toString(36)
-              .substring(2, 8)}`,
-          _id: item._id,
-          mediaUrl: item.mediaUrl,
-          cloudinaryId: item.cloudinaryId,
-          mediaType: item.mediaType,
-          filter: filter,
-          filterClass: filterClass,
-          isExisting: true,
-          uploading: false,
-          error: false,
-        };
-      });
-
-      setMedia(existingMedia);
-    }
-  }, [isEditing, initialData]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-
-      // Revoke object URLs to prevent memory leaks
-      media.forEach((item) => {
-        if (item.previewUrl && !item.isExisting) {
-          try {
-            URL.revokeObjectURL(item.previewUrl);
-          } catch (err) {
-            console.error("Failed to revoke URL:", err);
-          }
-        }
-      });
-    };
-  }, [media]);
-
-  const onDrop = useCallback(
-    (acceptedFiles) => {
-      const uniqueFiles = acceptedFiles.filter((file) => {
-        const isDuplicate = media.some(
-          (m) =>
-            m.file?.name === file.name &&
-            m.file?.size === file.size &&
-            m.file?.lastModified === file.lastModified
-        );
-
-        if (isDuplicate) {
-          toast.error(`File "${file.name}" is already added.`);
-          return false;
-        }
-        return true;
-      });
-
-      if (uniqueFiles.length === 0) return;
-
-      // Detect mobile device
-      const isMobile =
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-          navigator.userAgent
-        );
-
-      // Add all files to the media array first
-      const newItems = uniqueFiles.map((file) => {
-        const id = `media_${Date.now()}_${Math.random()
-          .toString(36)
-          .substring(2, 8)}`;
-        const isVideo = file.type.startsWith("video/");
-
-        let objectUrl = null;
-
-        // Only create blob URL if not on mobile or if it's likely to work
-        if (!isMobile || (isMobile && file.size < 10 * 1024 * 1024)) {
-          // < 10MB on mobile
-          try {
-            objectUrl = URL.createObjectURL(file);
-          } catch (error) {
-            console.warn("Could not create blob URL:", error);
-          }
-        }
-
-        console.log(
-          `Processing ${isVideo ? "video" : "image"}: ${file.name}, type: ${
-            file.type
-          }, mobile: ${isMobile}`
-        );
-
-        return {
-          id,
-          file,
-          previewUrl: objectUrl,
-          type: isVideo ? "video" : "image",
-          mediaType: isVideo ? "video" : "image",
-          filter: "none",
-          filterClass: "",
-          uploading: true,
-          progress: 0,
-          error: false,
-          isMobile: isMobile,
-        };
-      });
-
-      setMedia((prev) => [...prev, ...newItems]);
-
-      // Then start uploads for each item
-      newItems.forEach((item) => {
-        startUpload(item.file, item.id, item.type)
-          .then((result) => {
-            console.log(`Upload complete for ${item.id}:`, result);
-          })
-          .catch((error) => {
-            console.error(`Upload failed for ${item.id}:`, error);
-          });
-      });
-    },
-    [media, startUpload]
+const AIButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primaryMint} 0%,
+    ${COLORS.primarySalmon} 100%
   );
-
-  // Configure dropzone
-  const { getRootProps, getInputProps } = useDropzone({
-    accept: {
-      "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp"],
-      "video/*": [".mp4", ".mov", ".avi", ".webm"],
-    },
-    onDrop,
-    maxSize: 25 * 1024 * 1024, // 25MB
-  });
-
-  // Handle camera capture with mobile-specific logic
-  const handleCameraCapture = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    console.log(`Camera capture - File: ${file.name}, Type: ${file.type}`);
-
-    const isDuplicate = media.some(
-      (m) =>
-        m.file?.name === file.name &&
-        m.file?.size === file.size &&
-        m.file?.lastModified === file.lastModified
-    );
-
-    if (isDuplicate) {
-      toast.error(`File "${file.name}" is already added.`);
-      return;
-    }
-
-    const id = `camera_${Date.now()}_${Math.random()
-      .toString(36)
-      .substring(2, 8)}`;
-
-    const isVideo = file.type.startsWith("video/");
-    const mediaType = isVideo ? "video" : "image";
-
-    console.log(`Camera captured a ${mediaType}: ${file.name}`);
-
-    // Create blob URL with mobile-friendly approach
-    let objectUrl;
-    try {
-      objectUrl = URL.createObjectURL(file);
-
-      // Test if the blob URL is accessible (mobile Safari sometimes blocks this)
-      if (!isVideo) {
-        const testImg = new Image();
-        testImg.onload = () => {
-          console.log("Blob URL is accessible");
-          URL.revokeObjectURL(testImg.src);
-        };
-        testImg.onerror = () => {
-          console.warn("Blob URL not accessible, will rely on upload URL");
-        };
-        testImg.src = objectUrl;
-      }
-    } catch (error) {
-      console.error("Failed to create blob URL:", error);
-      objectUrl = null;
-    }
-
-    // First add the file to the media list
-    setMedia((current) => [
-      ...current,
-      {
-        id,
-        file,
-        previewUrl: objectUrl,
-        type: mediaType,
-        mediaType: mediaType,
-        filter: "none",
-        filterClass: "",
-        uploading: true,
-        progress: 0,
-        error: false,
-        isMobile:
-          /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-            navigator.userAgent
-          ),
-      },
-    ]);
-
-    // Then start the upload with explicit file type
-    try {
-      const result = await startUpload(file, id, mediaType);
-      console.log(`Upload completed successfully:`, result);
-    } catch (error) {
-      console.error("Upload failed:", error);
-    } finally {
-      if (event.target) {
-        event.target.value = "";
-      }
-    }
-  };
-
-  // Navigation between media items
-  const showPrevious = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
-
-  const showNext = () => {
-    if (currentIndex < media.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  // Apply filter to current media
-  const applyFilter = (filterId) => {
-    setActiveFilter(filterId);
-
-    // Find the class name associated with this filter ID
-    const filterClass = filters.find((f) => f.id === filterId)?.className || "";
-
-    // Update the filter on the current media item
-    setMedia((currentMedia) =>
-      currentMedia.map((item, index) =>
-        index === currentIndex
-          ? { ...item, filter: filterId, filterClass }
-          : item
-      )
-    );
-  };
-
-  // Remove media item
-  const removeMedia = (indexToRemove) => {
-    // Remove the item
-    setMedia((current) => {
-      const newMedia = current.filter((_, index) => index !== indexToRemove);
-
-      // Adjust current index if needed
-      if (currentIndex >= newMedia.length) {
-        setCurrentIndex(Math.max(0, newMedia.length - 1));
-      }
-
-      return newMedia;
-    });
-  };
-
-  const totalProgress = media.length
-    ? Math.round(
-        media.reduce((sum, item) => sum + (item.progress || 0), 0) /
-          media.length
-      )
-    : 0;
-
-  // Submit the post
-  const handleSubmit = async () => {
-    if (media.length === 0) {
-      toast.error("Please add at least one photo or video");
-      return;
-    }
-
-    if (!title.trim()) {
-      toast.error("Please add a title");
-      return;
-    }
-
-    if (!caption.trim()) {
-      toast.error("Please add a caption");
-      return;
-    }
-
-    // Check for any uploads still in progress
-    if (media.some((item) => item.uploading)) {
-      toast.error("Please wait for uploads to complete");
-      return;
-    }
-
-    // Check for any failed uploads
-    const failedItems = media.filter((item) => item.error);
-    if (failedItems.length > 0) {
-      toast.error(
-        `Please remove ${failedItems.length} failed upload(s) before continuing`
-      );
-      return;
-    }
-
-    // Make sure all media items have the required properties
-    const incompleteItems = media.filter(
-      (item) => !item.mediaUrl || !item.cloudinaryId
-    );
-
-    if (incompleteItems.length > 0) {
-      toast.error(
-        `${incompleteItems.length} media item(s) failed to upload properly`
-      );
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Prepare the media items for submission
-      const mediaItems = media
-        .filter((item) => !item.error && !item.isExisting)
-        .map((item) => ({
-          mediaUrl: item.mediaUrl,
-          cloudinaryId: item.cloudinaryId,
-          mediaType: item.mediaType || item.type,
-          filter: item.filter || "none",
-        }));
-
-      console.log("Submitting media items:", mediaItems);
-
-      // Create the payload with all required fields
-      const payload = {
-        title: title ?? "",
-        caption: caption ?? "",
-        content: content ?? "",
-        tags: tags.join(","),
-        media: mediaItems,
-        location: location ?? "",
-        date: eventDate,
-      };
-
-      console.log("Submitting post payload:", payload);
-
-      let response;
-
-      if (isEditing) {
-        // Add existing media IDs to keep
-        const existingMediaIds = media
-          .filter((item) => item.isExisting && item._id)
-          .map((item) => item._id)
-          .join(",");
-
-        if (existingMediaIds) {
-          payload.keepMedia = existingMediaIds;
-        }
-
-        response = await axios.put(`/api/posts/${initialData._id}`, payload);
-        toast.success("Post updated successfully!");
-      } else {
-        response = await axios.post("/api/posts", payload);
-        toast.success("Post created successfully!");
-      }
-
-      console.log("Server response:", response.data);
-      navigate(`/post/${response.data.data._id}`);
-    } catch (error) {
-      console.error("Error creating/updating post:", error);
-      const errorMessage = error.response?.data?.message || "Please try again";
-      toast.error(
-        `Failed to ${isEditing ? "update" : "create"} post: ${errorMessage}`
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const goBack = () => {
-    navigate("/");
-  };
-
-  // Render the enhanced UI with AI integration
-  return (
-    <Container>
-      <PageTitle>
-        <h1>{isEditing ? "Edit Post" : "Create New Post"}</h1>
-        <p>Share your moments with SoloGram</p>
-      </PageTitle>
-
-      <Header>
-        {step === 1 ? (
-          <>
-            <h1>Select Media</h1>
-            {media.length > 0 && (
-              <NextButton
-                onClick={() => setStep(2)}
-                disabled={media.some(
-                  (item) => !item.mediaUrl || item.uploading
-                )}
-              >
-                Next
-              </NextButton>
-            )}
-          </>
-        ) : (
-          <>
-            <BackButton onClick={() => setStep(1)}>Back</BackButton>
-            <h1>Post Details</h1>
-            <NextButton
-              onClick={handleSubmit}
-              disabled={
-                isSubmitting ||
-                !title.trim() ||
-                !caption.trim() ||
-                media.length === 0 ||
-                media.some((item) => item.uploading)
-              }
-            >
-              {isSubmitting ? "Sharing..." : "Share"}
-            </NextButton>
-          </>
-        )}
-      </Header>
-
-      {step === 1 ? (
-        <MediaSection>
-          {media.length === 0 ? (
-            <DropArea {...getRootProps()}>
-              <input {...getInputProps()} ref={inputFileRef} />
-              <UploadIcon>
-                <FaImage />
-                <FaVideo />
-              </UploadIcon>
-              <p>Create a new post by uploading your photos and videos</p>
-              <ButtonGroup>
-                <CameraButton
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (cameraInputRef.current) {
-                      cameraInputRef.current.accept = "image/*";
-                      cameraInputRef.current.capture = "environment";
-                      cameraInputRef.current.click();
-                    }
-                  }}
-                >
-                  <FaCamera />
-                  <span>Camera</span>
-                </CameraButton>
-                <VideoCameraButton
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (videoCameraInputRef.current) {
-                      videoCameraInputRef.current.accept = "video/*";
-                      videoCameraInputRef.current.capture = "environment";
-                      videoCameraInputRef.current.click();
-                    }
-                  }}
-                >
-                  <FaVideo />
-                  <span>Video</span>
-                </VideoCameraButton>
-                <GalleryButton
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const galleryInput = document.createElement("input");
-                    galleryInput.type = "file";
-                    galleryInput.accept = "image/*,video/*";
-                    galleryInput.multiple = true;
-                    galleryInput.style.display = "none";
-
-                    galleryInput.onchange = (event) => {
-                      if (event.target.files?.length) {
-                        onDrop(Array.from(event.target.files));
-                      }
-                    };
-
-                    document.body.appendChild(galleryInput);
-                    galleryInput.click();
-
-                    setTimeout(() => {
-                      document.body.removeChild(galleryInput);
-                    }, 1000);
-                  }}
-                >
-                  <FaImage />
-                  <span>Gallery</span>
-                </GalleryButton>
-              </ButtonGroup>
-              <input
-                type="file"
-                ref={cameraInputRef}
-                onChange={handleCameraCapture}
-                accept="image/*"
-                capture="environment"
-                style={{ display: "none" }}
-              />
-              <input
-                type="file"
-                ref={videoCameraInputRef}
-                onChange={handleCameraCapture}
-                accept="video/*"
-                capture="environment"
-                style={{ display: "none" }}
-              />
-            </DropArea>
-          ) : (
-            <>
-              <MediaPreview>
-                {media.some((item) => item.uploading) && (
-                  <div style={{ margin: "15px 0" }}>
-                    <ProgressBar>
-                      <ProgressFill percent={totalProgress} />
-                    </ProgressBar>
-                    <div
-                      style={{
-                        textAlign: "center",
-                        color: COLORS.primaryBlueGray,
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      Uploading... {totalProgress}%
-                    </div>
-                  </div>
-                )}
-
-                <PreviewContainer>
-                  {media[currentIndex] && (
-                    <>
-                      {media[currentIndex].type === "video" ||
-                      media[currentIndex].mediaType === "video" ? (
-                        <VideoPreview
-                          src={
-                            media[currentIndex].mediaUrl ||
-                            media[currentIndex].previewUrl ||
-                            ""
-                          }
-                          className={
-                            media[currentIndex].filterClass ||
-                            filters.find(
-                              (f) => f.id === media[currentIndex].filter
-                            )?.className ||
-                            ""
-                          }
-                          controls
-                          playsInline
-                          onError={(e) => {
-                            console.error("Video error:", e);
-                            console.log("Video src was:", e.target.src);
-                            console.log("Media item:", media[currentIndex]);
-                          }}
-                        />
-                      ) : (
-                        <ImagePreview
-                          key={`${media[currentIndex].id}-${
-                            media[currentIndex].mediaUrl ||
-                            media[currentIndex].previewUrl
-                          }`} // Force re-render when URL changes
-                          src={
-                            // Prioritize mediaUrl on mobile, previewUrl on desktop
-                            media[currentIndex].isMobile
-                              ? media[currentIndex].mediaUrl ||
-                                media[currentIndex].previewUrl ||
-                                ""
-                              : media[currentIndex].previewUrl ||
-                                media[currentIndex].mediaUrl ||
-                                ""
-                          }
-                          className={
-                            media[currentIndex].filterClass ||
-                            filters.find(
-                              (f) => f.id === media[currentIndex].filter
-                            )?.className ||
-                            ""
-                          }
-                          alt="Preview"
-                          crossOrigin="anonymous" // Add for mobile compatibility
-                          loading="eager" // Force immediate loading
-                          onError={(e) => {
-                            console.error("Image error:", e);
-                            console.log("Failed src:", e.target.src);
-                            console.log("Available URLs:", {
-                              mediaUrl: media[currentIndex].mediaUrl,
-                              previewUrl: media[currentIndex].previewUrl,
-                              isMobile: media[currentIndex].isMobile,
-                            });
-
-                            // Try alternative URL
-                            const currentSrc = e.target.src;
-                            if (
-                              currentSrc === media[currentIndex].mediaUrl &&
-                              media[currentIndex].previewUrl
-                            ) {
-                              console.log("Trying previewUrl as fallback");
-                              e.target.src = media[currentIndex].previewUrl;
-                            } else if (
-                              currentSrc === media[currentIndex].previewUrl &&
-                              media[currentIndex].mediaUrl
-                            ) {
-                              console.log("Trying mediaUrl as fallback");
-                              e.target.src = media[currentIndex].mediaUrl;
-                            } else {
-                              console.error("No more URLs to try");
-                              // Show a simple colored div instead of broken image
-                              e.target.style.display = "none";
-                              if (e.target.parentNode) {
-                                const placeholder =
-                                  document.createElement("div");
-                                placeholder.style.cssText = `
-                                  width: 100%;
-                                  height: 100%;
-                                  background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
-                                  display: flex;
-                                  align-items: center;
-                                  justify-content: center;
-                                  color: #666;
-                                  font-size: 14px;
-                                `;
-                                placeholder.textContent = "Image Loading...";
-                                e.target.parentNode.appendChild(placeholder);
-                              }
-                            }
-                          }}
-                          onLoad={(e) => {
-                            console.log(
-                              "✅ Image loaded successfully:",
-                              e.target.src
-                            );
-                            // Remove any placeholder divs
-                            const placeholders =
-                              e.target.parentNode?.querySelectorAll(
-                                'div[style*="background: linear-gradient"]'
-                              );
-                            placeholders?.forEach((p) => p.remove());
-                          }}
-                          style={{
-                            // Mobile-specific styles
-                            maxWidth: "100%",
-                            maxHeight: "100%",
-                            objectFit: "contain",
-                            ...(media[currentIndex].isMobile && {
-                              imageRendering: "auto",
-                              WebkitImageRendering: "auto",
-                              WebkitUserSelect: "none",
-                              userSelect: "none",
-                            }),
-                          }}
-                        />
-                      )}
-
-                      {media[currentIndex].uploading && (
-                        <UploadOverlay>
-                          <UploadProgress>
-                            <UploadProgressInner
-                              width={media[currentIndex].progress || 0}
-                            />
-                          </UploadProgress>
-                          <p>
-                            Uploading... {media[currentIndex].progress || 0}%
-                          </p>
-                        </UploadOverlay>
-                      )}
-
-                      {media[currentIndex].error && (
-                        <ErrorOverlay>
-                          <p>Upload failed</p>
-                          {media[currentIndex].errorMessage && (
-                            <p style={{ fontSize: "12px", marginTop: "5px" }}>
-                              {media[currentIndex].errorMessage}
-                            </p>
-                          )}
-                          <button onClick={() => removeMedia(currentIndex)}>
-                            Remove
-                          </button>
-                        </ErrorOverlay>
-                      )}
-
-                      <RemoveButton onClick={() => removeMedia(currentIndex)}>
-                        <FaTimes />
-                      </RemoveButton>
-
-                      {media.length > 1 && (
-                        <NavigationButtons>
-                          <NavButton
-                            onClick={showPrevious}
-                            disabled={currentIndex === 0}
-                          >
-                            <FaArrowLeft />
-                          </NavButton>
-                          <MediaCounter>
-                            {currentIndex + 1} / {media.length}
-                          </MediaCounter>
-                          <NavButton
-                            onClick={showNext}
-                            disabled={currentIndex === media.length - 1}
-                          >
-                            <FaArrowRight />
-                          </NavButton>
-                        </NavigationButtons>
-                      )}
-                    </>
-                  )}
-
-                  {/* Debug info - remove this once working */}
-                  {media[currentIndex] && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "10px",
-                        left: "10px",
-                        background: "rgba(0,0,0,0.8)",
-                        color: "white",
-                        padding: "8px",
-                        fontSize: "10px",
-                        borderRadius: "4px",
-                        maxWidth: "300px",
-                        wordBreak: "break-all",
-                        zIndex: 999,
-                      }}
-                    >
-                      <div>
-                        Type:{" "}
-                        {media[currentIndex].type ||
-                          media[currentIndex].mediaType}
-                      </div>
-                      <div>
-                        MediaURL: {media[currentIndex].mediaUrl ? "✓" : "✗"}
-                      </div>
-                      <div>
-                        PreviewURL: {media[currentIndex].previewUrl ? "✓" : "✗"}
-                      </div>
-                      <div>
-                        Uploading:{" "}
-                        {media[currentIndex].uploading ? "Yes" : "No"}
-                      </div>
-                      <div>
-                        Error: {media[currentIndex].error ? "Yes" : "No"}
-                      </div>
-                      <div>
-                        Mobile: {media[currentIndex].isMobile ? "Yes" : "No"}
-                      </div>
-                      <div>
-                        Has MediaURL:{" "}
-                        {media[currentIndex].mediaUrl
-                          ? media[currentIndex].mediaUrl.substring(0, 50) +
-                            "..."
-                          : "No"}
-                      </div>
-                      <div>
-                        Has PreviewURL:{" "}
-                        {media[currentIndex].previewUrl
-                          ? media[currentIndex].previewUrl.substring(0, 50) +
-                            "..."
-                          : "No"}
-                      </div>
-                      <div style={{ marginTop: "4px", fontSize: "9px" }}>
-                        Using SRC:{" "}
-                        {media[currentIndex].isMobile
-                          ? media[currentIndex].mediaUrl ||
-                            media[currentIndex].previewUrl ||
-                            "NONE"
-                          : media[currentIndex].previewUrl ||
-                            media[currentIndex].mediaUrl ||
-                            "NONE"}
-                      </div>
-                      <div
-                        style={{
-                          marginTop: "2px",
-                          fontSize: "8px",
-                          color: "#ff9999",
-                        }}
-                      >
-                        File size:{" "}
-                        {media[currentIndex].file
-                          ? Math.round(media[currentIndex].file.size / 1024) +
-                            "KB"
-                          : "Unknown"}
-                      </div>
-                    </div>
-                  )}
-                </PreviewContainer>
-              </MediaPreview>
-
-              {/* Action Bar */}
-              <ActionBar>
-                <ActionButton
-                  active={activeAction === "filter"}
-                  onClick={() => setActiveAction("filter")}
-                >
-                  <FaFilter />
-                  <span>Filter</span>
-                </ActionButton>
-                <ActionButton
-                  active={activeAction === "add"}
-                  onClick={() => {
-                    setActiveAction("add");
-                    const galleryInput = document.createElement("input");
-                    galleryInput.type = "file";
-                    galleryInput.accept = "image/*,video/*";
-                    galleryInput.multiple = true;
-                    galleryInput.style.display = "none";
-
-                    galleryInput.onchange = (event) => {
-                      if (event.target.files?.length) {
-                        onDrop(Array.from(event.target.files));
-                      }
-                    };
-
-                    document.body.appendChild(galleryInput);
-                    galleryInput.click();
-
-                    setTimeout(() => {
-                      document.body.removeChild(galleryInput);
-                    }, 1000);
-                  }}
-                >
-                  <FaImage />
-                  <span>Add</span>
-                </ActionButton>
-              </ActionBar>
-
-              {activeAction === "filter" && (
-                <FilterOptions>
-                  <FiltersGrid>
-                    {filters.map((filter) => (
-                      <FilterItem
-                        key={filter.id}
-                        active={media[currentIndex].filter === filter.id}
-                        onClick={() => applyFilter(filter.id)}
-                      >
-                        <FilterPreview
-                          className={filter.className}
-                          active={media[currentIndex].filter === filter.id}
-                        >
-                          <img
-                            src={
-                              media[currentIndex].mediaUrl ||
-                              media[currentIndex].previewUrl ||
-                              ""
-                            }
-                            alt={filter.name}
-                            onError={(e) => {
-                              console.error("Filter preview error:", e);
-                              console.log("Filter preview src:", e.target.src);
-                              // Don't replace with placeholder for debugging
-                            }}
-                          />
-                        </FilterPreview>
-                        <span>{filter.name}</span>
-                      </FilterItem>
-                    ))}
-                  </FiltersGrid>
-                </FilterOptions>
-              )}
-            </>
-          )}
-        </MediaSection>
-      ) : (
-        <div style={{ margin: "20px 0" }}>
-          {/* Enhanced Post Details Section with AI Integration */}
-
-          {/* Title field with AI assist */}
-          <FormGroup>
-            <ContentHeader>
-              <Label>Post Title *</Label>
-              <AIButton
-                type="button"
-                onClick={() => setShowAIModal(true)}
-                title="Generate content with AI"
-              >
-                <FaRobot />
-                <span>AI Assist</span>
-              </AIButton>
-            </ContentHeader>
-            <InputGroup>
-              <FaPencilAlt />
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Add a title for your post"
-                maxLength={100}
-                required
-              />
-            </InputGroup>
-            <CharCount overLimit={title.length > 80}>
-              {title.length}/100
-            </CharCount>
-          </FormGroup>
-
-          {/* Date field */}
-          <FormGroup>
-            <Label>Event Date</Label>
-            <InputGroup>
-              <FaCalendarDay />
-              <Input
-                type="date"
-                value={eventDate}
-                onChange={(e) => setEventDate(e.target.value)}
-                required
-              />
-            </InputGroup>
-          </FormGroup>
-
-          {/* Caption field */}
-          <FormGroup>
-            <Label>Caption *</Label>
-            <Textarea
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              placeholder="Write a caption..."
-              rows={4}
-              maxLength={2200}
-              required
-            />
-            <CharCount overLimit={caption.length > 2000}>
-              {caption.length}/2200
-            </CharCount>
-          </FormGroup>
-
-          {/* Location field */}
-          <FormGroup>
-            <Label>Location</Label>
-            <InputGroup>
-              <FaLocationArrow />
-              <Input
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="Add location"
-              />
-            </InputGroup>
-          </FormGroup>
-
-          {/* Tags field */}
-          <FormGroup>
-            <Label>Tags</Label>
-            <InputGroup>
-              <FaTag />
-              <div style={{ position: "relative", width: "100%" }}>
-                <Input
-                  value={currentTag}
-                  onChange={handleTagInputChange}
-                  onKeyDown={handleTagInputKeyDown}
-                  placeholder="Type tags and press space to add..."
-                  maxLength={30}
-                  style={{ paddingRight: currentTag.trim() ? "80px" : "12px" }}
-                />
-                {currentTag.trim() && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      right: "12px",
-                      transform: "translateY(-50%)",
-                      background: `${COLORS.primarySalmon}15`,
-                      color: COLORS.primarySalmon,
-                      padding: "4px 8px",
-                      borderRadius: "12px",
-                      fontSize: "12px",
-                      fontWeight: "500",
-                      border: `1px solid ${COLORS.primarySalmon}30`,
-                      pointerEvents: "none",
-                    }}
-                  >
-                    #{currentTag.trim()}
-                  </div>
-                )}
-              </div>
-            </InputGroup>
-
-            {tags.length > 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "8px",
-                  marginTop: "8px",
-                  padding: "12px",
-                  backgroundColor: COLORS.elevatedBackground,
-                  borderRadius: "8px",
-                  border: `1px dashed ${COLORS.primaryMint}30`,
-                  minHeight: "48px",
-                }}
-              >
-                {tags.map((tag, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      backgroundColor: `${COLORS.primarySalmon}20`,
-                      color: COLORS.primarySalmon,
-                      padding: "6px 12px",
-                      borderRadius: "16px",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      border: `1px solid ${COLORS.primarySalmon}30`,
-                    }}
-                  >
-                    #{tag}
-                    <button
-                      onClick={() => removeTag(tag)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "inherit",
-                        padding: "0",
-                        fontSize: "12px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: "16px",
-                        height: "16px",
-                        borderRadius: "50%",
-                      }}
-                    >
-                      <FaTimes />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </FormGroup>
-
-          {/* Additional content field */}
-          <FormGroup>
-            <Label>Additional Content</Label>
-            <InputGroup>
-              <FaPencilAlt />
-              <Input
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Add additional content (optional)"
-              />
-            </InputGroup>
-          </FormGroup>
-
-          {/* Publish Button */}
-          <PublishButton
-            onClick={handleSubmit}
-            disabled={
-              isSubmitting ||
-              !title.trim() ||
-              !caption.trim() ||
-              media.length === 0 ||
-              media.some((item) => item.uploading)
-            }
-          >
-            {isSubmitting
-              ? isEditing
-                ? "Updating..."
-                : "Sharing..."
-              : isEditing
-              ? "Update Post"
-              : "Share Post"}
-          </PublishButton>
-        </div>
-      )}
-
-      {/* AI Content Generator Modal */}
-      <AIContentModal
-        isOpen={showAIModal}
-        onClose={() => setShowAIModal(false)}
-        onApplyContent={handleAIContentApply}
-      />
-    </Container>
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  svg {
+    font-size: 1rem;
+  }
+`;
+
+// AI Modal Components
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+`;
+
+const ModalContent = styled.div`
+  background: ${COLORS.cardBackground};
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid ${COLORS.border};
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid ${COLORS.border};
+
+  h3 {
+    margin: 0;
+    color: ${COLORS.textPrimary};
+    font-size: 1.25rem;
+  }
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: ${COLORS.textSecondary};
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+
+  &:hover {
+    background: ${COLORS.elevatedBackground};
+    color: ${COLORS.textPrimary};
+  }
+`;
+
+const ModalBody = styled.div`
+  padding: 1.5rem;
+`;
+
+const Select = styled.select`
+  width: 100%;
+  background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  padding: 0.75rem;
+  color: ${COLORS.textPrimary};
+  font-size: 0.875rem;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
+  }
+`;
+
+const InputRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  background: ${COLORS.error}15;
+  border: 1px solid ${COLORS.error}30;
+  color: ${COLORS.error};
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+`;
+
+const GenerateButton = styled.button`
+  width: 100%;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon} 0%,
+    ${COLORS.accentSalmon} 100%
   );
-}
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px ${COLORS.primarySalmon}30;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const LoadingSpinner = styled.div`
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
+const GeneratedSection = styled.div`
+  border-top: 1px solid ${COLORS.border};
+  padding-top: 1.5rem;
+  animation: slideIn 0.3s ease;
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`;
+
+const SectionTitle = styled.h4`
+  color: ${COLORS.textPrimary};
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+`;
+
+const ContentPreview = styled.div`
+  margin-bottom: 1rem;
+`;
+
+const ContentLabel = styled.div`
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: ${COLORS.textSecondary};
+  margin-bottom: 0.5rem;
+`;
+
+const ContentBox = styled.div`
+  background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  padding: 0.75rem;
+  color: ${COLORS.textPrimary};
+  line-height: 1.5;
+  font-size: 0.875rem;
+`;
+
+const TagsPreview = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+`;
+
+const TagPreview = styled.span`
+  background: ${COLORS.primarySalmon}20;
+  color: ${COLORS.primarySalmon};
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+`;
+
+const ButtonRow = styled.div`
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+`;
+
+const SecondaryButton = styled.button`
+  flex: 1;
+  background: ${COLORS.elevatedBackground};
+  color: ${COLORS.textSecondary};
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${COLORS.border};
+    color: ${COLORS.textPrimary};
+  }
+`;
+
+const ApplyButton = styled.button`
+  flex: 2;
+  background: ${COLORS.primaryMint};
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${COLORS.accentMint};
+    transform: translateY(-1px);
+  }
+`;
 
 export default PostCreator;
