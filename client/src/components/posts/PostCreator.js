@@ -1853,9 +1853,21 @@ function PostCreator({ initialData = null, isEditing = false }) {
   };
 
   const addMoreMedia = () => {
-    if (inputFileRef.current) {
-      inputFileRef.current.click();
-    }
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*,video/*";
+    fileInput.multiple = true;
+    fileInput.style.display = "none";
+
+    fileInput.onchange = (e) => {
+      if (e.target.files?.length) {
+        onDrop(Array.from(e.target.files));
+      }
+      document.body.removeChild(fileInput);
+    };
+
+    document.body.appendChild(fileInput);
+    fileInput.click();
   };
 
   const handleFileInputChange = (e) => {
@@ -1904,7 +1916,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
         <MediaSection>
           {media.length === 0 ? (
             <DropArea {...getRootProps()} isDragActive={isDragActive}>
-              <input {...getInputProps()} ref={inputFileRef} />
+              <input {...getInputProps()} />
               <UploadIcon className="upload-icon">
                 <FaImage />
                 <FaVideo />
@@ -1913,9 +1925,25 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 <h3>Add photos and videos</h3>
                 <p>Drag and drop or click to upload</p>
               </DropText>
-              <UploadButton type="button">
+              <UploadButton
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (inputFileRef.current) {
+                    inputFileRef.current.click();
+                  }
+                }}
+              >
                 <FaPlus /> Select from device
               </UploadButton>
+              <input
+                type="file"
+                ref={inputFileRef}
+                onChange={handleFileInputChange}
+                accept="image/*,video/*"
+                multiple
+                style={{ display: "none" }}
+              />
             </DropArea>
           ) : (
             <MediaGrid>
