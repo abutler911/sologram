@@ -780,6 +780,386 @@ const GalleryButton = styled(MediaButton)`
 // Continue with all your existing styled components...
 // (I'll include the essential ones for the functionality)
 
+// Continue with all your existing styled components...
+// (I'll include the essential ones for the functionality)
+
+const MediaPreview = styled.div`
+  margin-bottom: ${(props) => (props.small ? "20px" : "30px")};
+`;
+
+const PreviewContainer = styled.div`
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 600px;
+  background-color: ${COLORS.background};
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px ${COLORS.shadow};
+  border: 1px solid ${COLORS.primaryMint}20;
+
+  @media (max-width: 768px) {
+    border-radius: 8px;
+    margin: 0 auto 15px;
+    width: 100%;
+  }
+`;
+
+const ImagePreview = styled.img`
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+
+  &.filter-warm {
+    filter: saturate(1.5) sepia(0.2) contrast(1.1);
+  }
+
+  &.filter-cool {
+    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
+  }
+
+  &.filter-grayscale {
+    filter: grayscale(1);
+  }
+
+  &.filter-vintage {
+    filter: sepia(0.4) saturate(1.3) contrast(1.2);
+  }
+
+  &.filter-clarendon {
+    filter: contrast(1.2) saturate(1.35);
+  }
+
+  &.filter-gingham {
+    filter: brightness(1.05) hue-rotate(-10deg) sepia(0.2);
+  }
+
+  &.filter-moon {
+    filter: grayscale(1) brightness(1.1) contrast(1.1);
+  }
+
+  &.filter-lark {
+    filter: brightness(1.1) contrast(0.9) saturate(1.1);
+  }
+`;
+
+const VideoPreview = styled.video`
+  max-width: 100%;
+  max-height: 100%;
+
+  &.filter-warm {
+    filter: saturate(1.5) sepia(0.2) contrast(1.1);
+  }
+
+  &.filter-cool {
+    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
+  }
+
+  &.filter-grayscale {
+    filter: grayscale(1);
+  }
+
+  &.filter-vintage {
+    filter: sepia(0.4) saturate(1.3) contrast(1.2);
+  }
+
+  &.filter-clarendon {
+    filter: contrast(1.2) saturate(1.35);
+  }
+
+  &.filter-gingham {
+    filter: brightness(1.05) hue-rotate(-10deg) sepia(0.2);
+  }
+
+  &.filter-moon {
+    filter: grayscale(1) brightness(1.1) contrast(1.1);
+  }
+
+  &.filter-lark {
+    filter: brightness(1.1) contrast(0.9) saturate(1.1);
+  }
+`;
+
+const UploadOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  z-index: 2;
+`;
+
+const UploadProgress = styled.div`
+  width: 80%;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  margin-bottom: 10px;
+  overflow: hidden;
+`;
+
+const UploadProgressInner = styled.div`
+  height: 100%;
+  width: ${(props) => props.width}%;
+  background-color: ${COLORS.primarySalmon};
+  transition: width 0.3s;
+`;
+
+const ErrorOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(244, 67, 54, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  z-index: 2;
+
+  button {
+    background: white;
+    color: ${COLORS.error};
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    margin-top: 10px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+`;
+
+const RemoveButton = styled.button`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: ${COLORS.primarySalmon};
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  z-index: 3;
+  transition: background-color 0.2s, transform 0.2s;
+
+  &:hover {
+    background: ${COLORS.error};
+    transform: scale(1.05);
+  }
+`;
+
+const NavigationButtons = styled.div`
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 3;
+`;
+
+const NavButton = styled.button`
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: ${COLORS.primaryBlueGray};
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: transform 0.2s, background-color 0.2s;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:hover:not(:disabled) {
+    background: ${COLORS.primarySalmon};
+    transform: scale(1.05);
+  }
+`;
+
+const MediaCounter = styled.div`
+  background: ${COLORS.primaryMint};
+  color: ${COLORS.textPrimary};
+  border-radius: 12px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+`;
+
+const ActionBar = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background-color: ${COLORS.cardBackground};
+  border-top: 1px solid ${COLORS.primarySalmon}20;
+  border-bottom: 1px solid ${COLORS.primarySalmon}20;
+  padding: 12px 0;
+  margin: 15px -10px;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  border-radius: 8px;
+`;
+
+const ActionButton = styled.button`
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 16px;
+  cursor: pointer;
+  color: ${(props) =>
+    props.active ? COLORS.primarySalmon : COLORS.primaryBlueGray};
+
+  svg {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+
+  span {
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  &:hover {
+    color: ${COLORS.primarySalmon};
+  }
+`;
+
+const FilterOptions = styled.div`
+  margin-top: 20px;
+`;
+
+const FiltersGrid = styled.div`
+  display: flex;
+  overflow-x: auto;
+  gap: 15px;
+  padding: 15px 10px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  background-color: ${COLORS.background}50;
+  border-radius: 8px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    padding-bottom: 15px;
+  }
+`;
+
+const FilterItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  opacity: ${(props) => (props.active ? 1 : 0.7)};
+  transform: ${(props) => (props.active ? "scale(1.05)" : "scale(1)")};
+  transition: all 0.2s ease;
+
+  span {
+    margin-top: 8px;
+    font-size: 12px;
+    color: ${(props) =>
+      props.active ? COLORS.primarySalmon : COLORS.textSecondary};
+    font-weight: ${(props) => (props.active ? "600" : "normal")};
+  }
+
+  &:hover {
+    opacity: 1;
+  }
+`;
+
+const FilterPreview = styled.div`
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  border: 2px solid
+    ${(props) => (props.active ? COLORS.primarySalmon : "transparent")};
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &.filter-warm img {
+    filter: saturate(1.5) sepia(0.2) contrast(1.1);
+  }
+
+  &.filter-cool img {
+    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
+  }
+
+  &.filter-grayscale img {
+    filter: grayscale(1);
+  }
+
+  &.filter-vintage img {
+    filter: sepia(0.4) saturate(1.3) contrast(1.2);
+  }
+
+  &.filter-clarendon img {
+    filter: contrast(1.2) saturate(1.35);
+  }
+
+  &.filter-gingham img {
+    filter: brightness(1.05) hue-rotate(-10deg) sepia(0.2);
+  }
+
+  &.filter-moon img {
+    filter: grayscale(1) brightness(1.1) contrast(1.1);
+  }
+
+  &.filter-lark img {
+    filter: brightness(1.1) contrast(0.9) saturate(1.1);
+  }
+`;
+
+const ProgressBar = styled.div`
+  height: 6px;
+  background-color: ${COLORS.elevatedBackground};
+  border-radius: 3px;
+  margin: 10px 0;
+  overflow: hidden;
+`;
+
+const ProgressFill = styled.div`
+  height: 100%;
+  width: ${(props) => props.percent || 0}%;
+  background-color: ${COLORS.primarySalmon};
+  transition: width 0.3s ease;
+`;
+
 const Textarea = styled.textarea`
   width: 100%;
   padding: 12px;
@@ -1505,8 +1885,184 @@ function PostCreator({ initialData = null, isEditing = false }) {
               />
             </DropArea>
           ) : (
-            // Media preview section would go here
-            <div>Media preview and filter controls...</div>
+            <>
+              <MediaPreview>
+                {media.some((item) => item.uploading) && (
+                  <div style={{ margin: "15px 0" }}>
+                    <ProgressBar>
+                      <ProgressFill percent={totalProgress} />
+                    </ProgressBar>
+                    <div
+                      style={{
+                        textAlign: "center",
+                        color: COLORS.primaryBlueGray,
+                        fontSize: "14px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Uploading... {totalProgress}%
+                    </div>
+                  </div>
+                )}
+
+                <PreviewContainer>
+                  {media[currentIndex].type === "video" ||
+                  media[currentIndex].mediaType === "video" ? (
+                    <VideoPreview
+                      src={
+                        media[currentIndex].mediaUrl ||
+                        media[currentIndex].previewUrl
+                      }
+                      className={
+                        media[currentIndex].filterClass ||
+                        filters.find((f) => f.id === media[currentIndex].filter)
+                          ?.className ||
+                        ""
+                      }
+                      controls
+                      playsInline
+                      onError={(e) => {
+                        console.error("Video error:", e);
+                        e.target.src = PLACEHOLDER_IMG;
+                      }}
+                    />
+                  ) : (
+                    <ImagePreview
+                      src={
+                        media[currentIndex].mediaUrl ||
+                        media[currentIndex].previewUrl
+                      }
+                      className={
+                        media[currentIndex].filterClass ||
+                        filters.find((f) => f.id === media[currentIndex].filter)
+                          ?.className ||
+                        ""
+                      }
+                      alt="Preview"
+                      onError={(e) => {
+                        console.error("Image error:", e);
+                        e.target.src = PLACEHOLDER_IMG;
+                      }}
+                    />
+                  )}
+
+                  {media[currentIndex].uploading && (
+                    <UploadOverlay>
+                      <UploadProgress>
+                        <UploadProgressInner
+                          width={media[currentIndex].progress}
+                        />
+                      </UploadProgress>
+                      <p>Uploading... {media[currentIndex].progress}%</p>
+                    </UploadOverlay>
+                  )}
+                  {media[currentIndex].error && (
+                    <ErrorOverlay>
+                      <p>Upload failed</p>
+                      {media[currentIndex].errorMessage && (
+                        <p style={{ fontSize: "12px", marginTop: "5px" }}>
+                          {media[currentIndex].errorMessage}
+                        </p>
+                      )}
+                      <button onClick={() => removeMedia(currentIndex)}>
+                        Remove
+                      </button>
+                    </ErrorOverlay>
+                  )}
+                  <RemoveButton onClick={() => removeMedia(currentIndex)}>
+                    <FaTimes />
+                  </RemoveButton>
+                  {media.length > 1 && (
+                    <NavigationButtons>
+                      <NavButton
+                        onClick={showPrevious}
+                        disabled={currentIndex === 0}
+                      >
+                        <FaArrowLeft />
+                      </NavButton>
+                      <MediaCounter>
+                        {currentIndex + 1} / {media.length}
+                      </MediaCounter>
+                      <NavButton
+                        onClick={showNext}
+                        disabled={currentIndex === media.length - 1}
+                      >
+                        <FaArrowRight />
+                      </NavButton>
+                    </NavigationButtons>
+                  )}
+                </PreviewContainer>
+              </MediaPreview>
+
+              {/* Action Bar */}
+              <ActionBar>
+                <ActionButton
+                  active={activeAction === "filter"}
+                  onClick={() => setActiveAction("filter")}
+                >
+                  <FaFilter />
+                  <span>Filter</span>
+                </ActionButton>
+                <ActionButton
+                  active={activeAction === "add"}
+                  onClick={() => {
+                    setActiveAction("add");
+                    const galleryInput = document.createElement("input");
+                    galleryInput.type = "file";
+                    galleryInput.accept = "image/*,video/*";
+                    galleryInput.multiple = true;
+                    galleryInput.style.display = "none";
+
+                    galleryInput.onchange = (event) => {
+                      if (event.target.files?.length) {
+                        onDrop(Array.from(event.target.files));
+                      }
+                    };
+
+                    document.body.appendChild(galleryInput);
+                    galleryInput.click();
+
+                    setTimeout(() => {
+                      document.body.removeChild(galleryInput);
+                    }, 1000);
+                  }}
+                >
+                  <FaImage />
+                  <span>Add</span>
+                </ActionButton>
+              </ActionBar>
+
+              {activeAction === "filter" && (
+                <FilterOptions>
+                  <FiltersGrid>
+                    {filters.map((filter) => (
+                      <FilterItem
+                        key={filter.id}
+                        active={media[currentIndex].filter === filter.id}
+                        onClick={() => applyFilter(filter.id)}
+                      >
+                        <FilterPreview
+                          className={filter.className}
+                          active={media[currentIndex].filter === filter.id}
+                        >
+                          <img
+                            src={
+                              media[currentIndex].mediaUrl ||
+                              media[currentIndex].previewUrl
+                            }
+                            alt={filter.name}
+                            onError={(e) => {
+                              e.target.src = PLACEHOLDER_IMG;
+                            }}
+                          />
+                        </FilterPreview>
+                        <span>{filter.name}</span>
+                      </FilterItem>
+                    ))}
+                  </FiltersGrid>
+                </FilterOptions>
+              )}
+            </>
           )}
         </MediaSection>
       ) : (
