@@ -1481,18 +1481,35 @@ function PostCreator({ initialData = null, isEditing = false }) {
 
       if (uniqueFiles.length === 0) return;
 
+      // Detect mobile device
+      const isMobile =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+
       // Add all files to the media array first
       const newItems = uniqueFiles.map((file) => {
         const id = `media_${Date.now()}_${Math.random()
           .toString(36)
           .substring(2, 8)}`;
         const isVideo = file.type.startsWith("video/");
-        const objectUrl = URL.createObjectURL(file);
+
+        let objectUrl = null;
+
+        // Only create blob URL if not on mobile or if it's likely to work
+        if (!isMobile || (isMobile && file.size < 10 * 1024 * 1024)) {
+          // < 10MB on mobile
+          try {
+            objectUrl = URL.createObjectURL(file);
+          } catch (error) {
+            console.warn("Could not create blob URL:", error);
+          }
+        }
 
         console.log(
           `Processing ${isVideo ? "video" : "image"}: ${file.name}, type: ${
             file.type
-          }`
+          }, mobile: ${isMobile}`
         );
 
         return {
@@ -1506,6 +1523,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
           uploading: true,
           progress: 0,
           error: false,
+          isMobile: isMobile,
         };
       });
 
@@ -1535,7 +1553,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
     maxSize: 25 * 1024 * 1024, // 25MB
   });
 
-  // Handle camera capture
+  // Handle camera capture with mobile-specific logic
   const handleCameraCapture = async (event) => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -1561,10 +1579,31 @@ function PostCreator({ initialData = null, isEditing = false }) {
       .substring(2, 8)}`;
 
     const isVideo = file.type.startsWith("video/");
-    const objectUrl = URL.createObjectURL(file);
     const mediaType = isVideo ? "video" : "image";
 
     console.log(`Camera captured a ${mediaType}: ${file.name}`);
+
+    // Create blob URL with mobile-friendly approach
+    let objectUrl;
+    try {
+      objectUrl = URL.createObjectURL(file);
+
+      // Test if the blob URL is accessible (mobile Safari sometimes blocks this)
+      if (!isVideo) {
+        const testImg = new Image();
+        testImg.onload = () => {
+          console.log("Blob URL is accessible");
+          URL.revokeObjectURL(testImg.src);
+        };
+        testImg.onerror = () => {
+          console.warn("Blob URL not accessible, will rely on upload URL");
+        };
+        testImg.src = objectUrl;
+      }
+    } catch (error) {
+      console.error("Failed to create blob URL:", error);
+      objectUrl = null;
+    }
 
     // First add the file to the media list
     setMedia((current) => [
@@ -1580,6 +1619,10 @@ function PostCreator({ initialData = null, isEditing = false }) {
         uploading: true,
         progress: 0,
         error: false,
+        isMobile:
+          /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+            navigator.userAgent
+          ),
       },
     ]);
 
@@ -1934,9 +1977,14 @@ function PostCreator({ initialData = null, isEditing = false }) {
                       ) : (
                         <ImagePreview
                           src={
-                            media[currentIndex].mediaUrl ||
-                            media[currentIndex].previewUrl ||
-                            ""
+                            // Prioritize mediaUrl on mobile, previewUrl on desktop
+                            media[currentIndex].isMobile
+                              ? media[currentIndex].mediaUrl ||
+                                media[currentIndex].previewUrl ||
+                                ""
+                              : media[currentIndex].previewUrl ||
+                                media[currentIndex].mediaUrl ||
+                                ""
                           }
                           className={
                             media[currentIndex].filterClass ||
@@ -1950,13 +1998,33 @@ function PostCreator({ initialData = null, isEditing = false }) {
                             console.error("Image error:", e);
                             console.log("Image src was:", e.target.src);
                             console.log("Media item:", media[currentIndex]);
-                            // Don't replace with placeholder immediately, let's see what's wrong
+
+                            // On mobile, try the other URL if one fails
+                            if (
+                              media[currentIndex].isMobile &&
+                              e.target.src === media[currentIndex].previewUrl
+                            ) {
+                              e.target.src = media[currentIndex].mediaUrl || "";
+                            } else if (
+                              !media[currentIndex].isMobile &&
+                              e.target.src === media[currentIndex].mediaUrl
+                            ) {
+                              e.target.src =
+                                media[currentIndex].previewUrl || "";
+                            }
                           }}
                           onLoad={(e) => {
                             console.log(
                               "Image loaded successfully:",
                               e.target.src
                             );
+                          }}
+                          style={{
+                            // Mobile-specific styles
+                            ...(media[currentIndex].isMobile && {
+                              imageRendering: "auto",
+                              WebkitImageRendering: "auto",
+                            }),
                           }}
                         />
                       )}
@@ -2049,11 +2117,18 @@ function PostCreator({ initialData = null, isEditing = false }) {
                       <div>
                         Error: {media[currentIndex].error ? "Yes" : "No"}
                       </div>
+                      <div>
+                        Mobile: {media[currentIndex].isMobile ? "Yes" : "No"}
+                      </div>
                       <div style={{ marginTop: "4px", fontSize: "9px" }}>
                         Actual SRC:{" "}
-                        {media[currentIndex].mediaUrl ||
-                          media[currentIndex].previewUrl ||
-                          "NONE"}
+                        {media[currentIndex].isMobile
+                          ? media[currentIndex].mediaUrl ||
+                            media[currentIndex].previewUrl ||
+                            "NONE"
+                          : media[currentIndex].previewUrl ||
+                            media[currentIndex].mediaUrl ||
+                            "NONE"}
                       </div>
                     </div>
                   )}
