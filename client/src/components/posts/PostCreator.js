@@ -15,8 +15,7 @@ import {
   FaVideo,
   FaCamera,
   FaTimes,
-  FaArrowRight,
-  FaArrowLeft,
+  FaPlus,
   FaFilter,
   FaTag,
   FaPencilAlt,
@@ -24,6 +23,8 @@ import {
   FaCalendarDay,
   FaRobot,
   FaMagic,
+  FaGripVertical,
+  FaCheck,
 } from "react-icons/fa";
 import { COLORS } from "../../theme";
 import { useUploadManager } from "../../hooks/useUploadManager";
@@ -55,8 +56,6 @@ const isMobileDevice = () => {
 const createSafeBlobUrl = (file) => {
   try {
     const url = URL.createObjectURL(file);
-
-    // Test if the blob URL is accessible (especially important on mobile Safari)
     return new Promise((resolve) => {
       if (file.type.startsWith("image/")) {
         const img = new Image();
@@ -70,7 +69,6 @@ const createSafeBlobUrl = (file) => {
         };
         img.src = url;
       } else {
-        // For videos, assume the blob URL works
         resolve(url);
       }
     });
@@ -81,18 +79,13 @@ const createSafeBlobUrl = (file) => {
 };
 
 const getSafeImageSrc = (mediaItem) => {
-  // Prioritize uploaded URL over blob URL on mobile devices
   if (isMobileDevice()) {
     return mediaItem.mediaUrl || mediaItem.previewUrl || PLACEHOLDER_IMG;
   }
-
-  // On desktop, prioritize blob URL for faster loading
   return mediaItem.previewUrl || mediaItem.mediaUrl || PLACEHOLDER_IMG;
 };
 
-// Components
-
-// AI Content Generator Modal
+// AI Content Generator Modal Component
 const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
   const [formData, setFormData] = useState({
     description: "",
@@ -171,7 +164,6 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
     if (generatedContent) {
       onApplyContent(generatedContent);
       onClose();
-      // Reset modal state
       setGeneratedContent(null);
       setFormData({
         description: "",
@@ -185,7 +177,6 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
 
   const handleClose = () => {
     onClose();
-    // Reset modal state
     setGeneratedContent(null);
     setFormData({
       description: "",
@@ -329,97 +320,188 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
   );
 };
 
-// Media Preview Component
-const MediaPreviewComponent = ({
+// Filter Selection Modal Component
+const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
+  const [selectedFilter, setSelectedFilter] = useState(
+    mediaItem?.filter || "none"
+  );
+
+  useEffect(() => {
+    if (mediaItem) {
+      setSelectedFilter(mediaItem.filter || "none");
+    }
+  }, [mediaItem]);
+
+  const handleApplyFilter = () => {
+    onApplyFilter(selectedFilter);
+    onClose();
+  };
+
+  if (!isOpen || !mediaItem) return null;
+
+  return (
+    <ModalOverlay onClick={onClose}>
+      <FilterModalContent onClick={(e) => e.stopPropagation()}>
+        <ModalHeader>
+          <h3>Choose Filter</h3>
+          <CloseButton onClick={onClose}>
+            <FaTimes />
+          </CloseButton>
+        </ModalHeader>
+
+        <FilterPreviewSection>
+          <MainPreview>
+            {mediaItem.mediaType === "video" ? (
+              <video
+                src={getSafeImageSrc(mediaItem)}
+                className={
+                  FILTERS.find((f) => f.id === selectedFilter)?.className || ""
+                }
+                style={{ width: "100%", height: "300px", objectFit: "cover" }}
+                controls
+                playsInline
+              />
+            ) : (
+              <img
+                src={getSafeImageSrc(mediaItem)}
+                className={
+                  FILTERS.find((f) => f.id === selectedFilter)?.className || ""
+                }
+                style={{ width: "100%", height: "300px", objectFit: "cover" }}
+                alt="Preview"
+              />
+            )}
+          </MainPreview>
+
+          <FiltersGrid>
+            {FILTERS.map((filter) => (
+              <FilterOption
+                key={filter.id}
+                active={selectedFilter === filter.id}
+                onClick={() => setSelectedFilter(filter.id)}
+              >
+                <FilterThumbnail className={filter.className}>
+                  <img
+                    src={getSafeImageSrc(mediaItem)}
+                    alt={filter.name}
+                    onError={(e) => {
+                      e.target.src = PLACEHOLDER_IMG;
+                    }}
+                  />
+                </FilterThumbnail>
+                <FilterName active={selectedFilter === filter.id}>
+                  {filter.name}
+                </FilterName>
+              </FilterOption>
+            ))}
+          </FiltersGrid>
+
+          <FilterActionBar>
+            <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
+            <ApplyButton onClick={handleApplyFilter}>
+              <FaCheck /> Apply Filter
+            </ApplyButton>
+          </FilterActionBar>
+        </FilterPreviewSection>
+      </FilterModalContent>
+    </ModalOverlay>
+  );
+};
+
+// Media Item Component
+const MediaItem = ({
   mediaItem,
+  index,
   onRemove,
-  onError,
-  showRemoveButton = true,
+  onFilter,
+  onReorder,
+  isDragging,
+  ...dragProps
 }) => {
   const [imageSrc, setImageSrc] = useState(getSafeImageSrc(mediaItem));
   const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(!mediaItem.mediaUrl);
 
   useEffect(() => {
     setImageSrc(getSafeImageSrc(mediaItem));
     setHasError(false);
-    setIsLoading(!mediaItem.mediaUrl);
   }, [mediaItem.mediaUrl, mediaItem.previewUrl]);
 
   const handleImageError = (e) => {
-    console.error("Image load error:", e.target.src);
-
-    // Try alternative sources
     const currentSrc = e.target.src;
-
     if (currentSrc === mediaItem.mediaUrl && mediaItem.previewUrl) {
-      console.log("Trying previewUrl as fallback");
       setImageSrc(mediaItem.previewUrl);
     } else if (currentSrc === mediaItem.previewUrl && mediaItem.mediaUrl) {
-      console.log("Trying mediaUrl as fallback");
       setImageSrc(mediaItem.mediaUrl);
     } else {
-      console.log("All sources failed, using placeholder");
       setImageSrc(PLACEHOLDER_IMG);
       setHasError(true);
-      if (onError) onError(mediaItem);
     }
   };
 
-  const handleImageLoad = () => {
-    setIsLoading(false);
-    setHasError(false);
-  };
-
-  if (mediaItem.type === "video" || mediaItem.mediaType === "video") {
-    return (
-      <VideoPreview
-        src={imageSrc}
-        className={mediaItem.filterClass || ""}
-        controls
-        playsInline
-        onError={handleImageError}
-        onLoadedData={handleImageLoad}
-      />
-    );
-  }
-
   return (
-    <>
-      {isLoading && (
-        <LoadingPlaceholder>
-          <LoadingText>Loading image...</LoadingText>
-        </LoadingPlaceholder>
-      )}
+    <MediaItemContainer isDragging={isDragging} {...dragProps}>
+      <DragHandle>
+        <FaGripVertical />
+      </DragHandle>
 
-      <ImagePreview
-        src={imageSrc}
-        className={mediaItem.filterClass || ""}
-        alt="Preview"
-        onError={handleImageError}
-        onLoad={handleImageLoad}
-        style={{
-          display: isLoading ? "none" : "block",
-          maxWidth: "100%",
-          maxHeight: "100%",
-          objectFit: "contain",
-          userSelect: "none",
-          WebkitUserSelect: "none",
-        }}
-      />
+      <MediaContent>
+        {mediaItem.mediaType === "video" ? (
+          <video
+            src={imageSrc}
+            className={mediaItem.filterClass || ""}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            onError={handleImageError}
+          />
+        ) : (
+          <img
+            src={imageSrc}
+            className={mediaItem.filterClass || ""}
+            alt="Media preview"
+            onError={handleImageError}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        )}
 
-      {hasError && (
-        <ErrorPlaceholder>
-          <ErrorText>Unable to load image</ErrorText>
-        </ErrorPlaceholder>
-      )}
+        {mediaItem.uploading && (
+          <UploadOverlay>
+            <UploadProgress>
+              <UploadProgressInner width={mediaItem.progress || 0} />
+            </UploadProgress>
+            <UploadText>Uploading... {mediaItem.progress || 0}%</UploadText>
+          </UploadOverlay>
+        )}
 
-      {showRemoveButton && (
-        <RemoveButton onClick={onRemove}>
+        {mediaItem.error && (
+          <ErrorOverlay>
+            <ErrorText>Upload failed</ErrorText>
+            <RetryButton onClick={() => onRemove(index)}>Remove</RetryButton>
+          </ErrorOverlay>
+        )}
+      </MediaContent>
+
+      <MediaActions>
+        <ActionButton
+          onClick={() => onFilter(mediaItem, index)}
+          disabled={mediaItem.uploading || mediaItem.error}
+          title="Apply filter"
+        >
+          <FaFilter />
+        </ActionButton>
+        <ActionButton
+          onClick={() => onRemove(index)}
+          className="remove"
+          title="Remove media"
+        >
           <FaTimes />
-        </RemoveButton>
+        </ActionButton>
+      </MediaActions>
+
+      {mediaItem.filter && mediaItem.filter !== "none" && (
+        <FilterBadge>
+          {FILTERS.find((f) => f.id === mediaItem.filter)?.name}
+        </FilterBadge>
       )}
-    </>
+    </MediaItemContainer>
   );
 };
 
@@ -427,28 +509,25 @@ const MediaPreviewComponent = ({
 function PostCreator({ initialData = null, isEditing = false }) {
   // State management
   const [media, setMedia] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [title, setTitle] = useState(initialData?.title || "");
   const [caption, setCaption] = useState(initialData?.caption || "");
   const [content, setContent] = useState(initialData?.content || "");
   const [tags, setTags] = useState(initialData?.tags || []);
   const [currentTag, setCurrentTag] = useState("");
   const [location, setLocation] = useState(initialData?.location || "");
-  const [activeFilter, setActiveFilter] = useState("none");
-  const [activeAction, setActiveAction] = useState("filter");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [step, setStep] = useState(1);
   const [eventDate, setEventDate] = useState(() => {
     const rawDate = initialData?.date || new Date().toISOString();
     return rawDate.split("T")[0];
   });
   const [showAIModal, setShowAIModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [selectedMediaForFilter, setSelectedMediaForFilter] = useState(null);
+  const [draggedIndex, setDraggedIndex] = useState(null);
 
   // Refs and hooks
   const navigate = useNavigate();
   const inputFileRef = useRef(null);
-  const cameraInputRef = useRef(null);
-  const videoCameraInputRef = useRef(null);
   const { startUpload, mountedRef } = useUploadManager(setMedia);
   const { user } = useContext(AuthContext);
 
@@ -456,8 +535,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
   useEffect(() => {
     return () => {
       mountedRef.current = false;
-
-      // Clean up blob URLs
       media.forEach((item) => {
         if (
           item.previewUrl &&
@@ -524,7 +601,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
 
       if (uniqueFiles.length === 0) return;
 
-      // Process files and create blob URLs safely
       const newItems = await Promise.all(
         uniqueFiles.map(async (file) => {
           const id = `media_${Date.now()}_${Math.random()
@@ -566,67 +642,63 @@ function PostCreator({ initialData = null, isEditing = false }) {
   );
 
   // Configure dropzone
-  const { getRootProps, getInputProps } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp"],
       "video/*": [".mp4", ".mov", ".avi", ".webm"],
     },
     onDrop,
     maxSize: 25 * 1024 * 1024, // 25MB
+    noClick: media.length > 0, // Disable click when media exists
   });
 
-  // Camera capture handler
-  const handleCameraCapture = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // Media management functions
+  const removeMedia = (indexToRemove) => {
+    const itemToRemove = media[indexToRemove];
 
-    const isDuplicate = media.some(
-      (m) =>
-        m.file?.name === file.name &&
-        m.file?.size === file.size &&
-        m.file?.lastModified === file.lastModified
-    );
-
-    if (isDuplicate) {
-      toast.error(`File "${file.name}" is already added.`);
-      return;
-    }
-
-    const id = `camera_${Date.now()}_${Math.random()
-      .toString(36)
-      .substring(2, 8)}`;
-    const isVideo = file.type.startsWith("video/");
-    const mediaType = isVideo ? "video" : "image";
-    const previewUrl = await createSafeBlobUrl(file);
-
-    // Add to media list
-    setMedia((current) => [
-      ...current,
-      {
-        id,
-        file,
-        previewUrl,
-        type: mediaType,
-        mediaType: mediaType,
-        filter: "none",
-        filterClass: "",
-        uploading: true,
-        progress: 0,
-        error: false,
-        isMobile: isMobileDevice(),
-      },
-    ]);
-
-    // Start upload
-    try {
-      await startUpload(file, id, mediaType);
-    } catch (error) {
-      console.error("Upload failed:", error);
-    } finally {
-      if (event.target) {
-        event.target.value = "";
+    if (
+      itemToRemove?.previewUrl &&
+      !itemToRemove.isExisting &&
+      itemToRemove.previewUrl.startsWith("blob:")
+    ) {
+      try {
+        URL.revokeObjectURL(itemToRemove.previewUrl);
+      } catch (err) {
+        console.warn("Failed to revoke URL:", err);
       }
     }
+
+    setMedia((current) =>
+      current.filter((_, index) => index !== indexToRemove)
+    );
+  };
+
+  const openFilterModal = (mediaItem, index) => {
+    setSelectedMediaForFilter({ ...mediaItem, index });
+    setShowFilterModal(true);
+  };
+
+  const applyFilter = (filterId) => {
+    if (!selectedMediaForFilter) return;
+
+    const filterClass = FILTERS.find((f) => f.id === filterId)?.className || "";
+
+    setMedia((currentMedia) =>
+      currentMedia.map((item, index) =>
+        index === selectedMediaForFilter.index
+          ? { ...item, filter: filterId, filterClass }
+          : item
+      )
+    );
+  };
+
+  const reorderMedia = (fromIndex, toIndex) => {
+    setMedia((currentMedia) => {
+      const newMedia = [...currentMedia];
+      const [movedItem] = newMedia.splice(fromIndex, 1);
+      newMedia.splice(toIndex, 0, movedItem);
+      return newMedia;
+    });
   };
 
   // AI content handler
@@ -689,62 +761,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
     setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
-  // Media navigation
-  const showPrevious = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
-
-  const showNext = () => {
-    if (currentIndex < media.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  // Filter application
-  const applyFilter = (filterId) => {
-    setActiveFilter(filterId);
-    const filterClass = FILTERS.find((f) => f.id === filterId)?.className || "";
-
-    setMedia((currentMedia) =>
-      currentMedia.map((item, index) =>
-        index === currentIndex
-          ? { ...item, filter: filterId, filterClass }
-          : item
-      )
-    );
-  };
-
-  // Remove media
-  const removeMedia = (indexToRemove) => {
-    const itemToRemove = media[indexToRemove];
-
-    // Clean up blob URL if it exists
-    if (
-      itemToRemove?.previewUrl &&
-      !itemToRemove.isExisting &&
-      itemToRemove.previewUrl.startsWith("blob:")
-    ) {
-      try {
-        URL.revokeObjectURL(itemToRemove.previewUrl);
-      } catch (err) {
-        console.warn("Failed to revoke URL:", err);
-      }
-    }
-
-    setMedia((current) => {
-      const newMedia = current.filter((_, index) => index !== indexToRemove);
-      if (currentIndex >= newMedia.length) {
-        setCurrentIndex(Math.max(0, newMedia.length - 1));
-      }
-      return newMedia;
-    });
-  };
-
   // Submit handler
   const handleSubmit = async () => {
-    // Validation
     if (media.length === 0) {
       toast.error("Please add at least one photo or video");
       return;
@@ -836,499 +854,234 @@ function PostCreator({ initialData = null, isEditing = false }) {
     }
   };
 
-  // Calculate upload progress
-  const totalProgress = media.length
-    ? Math.round(
-        media.reduce((sum, item) => sum + (item.progress || 0), 0) /
-          media.length
-      )
-    : 0;
+  const addMoreMedia = () => {
+    if (inputFileRef.current) {
+      inputFileRef.current.click();
+    }
+  };
+
+  const handleFileInputChange = (e) => {
+    if (e.target.files?.length) {
+      onDrop(Array.from(e.target.files));
+      e.target.value = ""; // Reset input
+    }
+  };
+
+  // Drag and drop handlers for reordering
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== dropIndex) {
+      reorderMedia(draggedIndex, dropIndex);
+    }
+    setDraggedIndex(null);
+  };
+
+  const isFormValid =
+    media.length > 0 &&
+    title.trim() &&
+    caption.trim() &&
+    !media.some((item) => item.uploading || item.error);
 
   return (
     <Container>
-      <PageTitle>
-        <h1>{isEditing ? "Edit Post" : "Create New Post"}</h1>
-        <p>Share your moments with SoloGram</p>
-      </PageTitle>
-
       <Header>
-        {step === 1 ? (
-          <>
-            <h1>Select Media</h1>
-            {media.length > 0 && (
-              <NextButton
-                onClick={() => setStep(2)}
-                disabled={media.some(
-                  (item) => !item.mediaUrl || item.uploading
-                )}
-              >
-                Next
-              </NextButton>
-            )}
-          </>
-        ) : (
-          <>
-            <BackButton onClick={() => setStep(1)}>Back</BackButton>
-            <h1>Post Details</h1>
-            <NextButton
-              onClick={handleSubmit}
-              disabled={
-                isSubmitting ||
-                !title.trim() ||
-                !caption.trim() ||
-                media.length === 0 ||
-                media.some((item) => item.uploading)
-              }
-            >
-              {isSubmitting ? "Sharing..." : "Share"}
-            </NextButton>
-          </>
-        )}
+        <HeaderContent>
+          <h1>{isEditing ? "Edit Post" : "Create New Post"}</h1>
+          <p>Share your moments with the world</p>
+        </HeaderContent>
       </Header>
 
-      {step === 1 ? (
+      <ContentSection>
+        {/* Media Upload/Display Section */}
         <MediaSection>
           {media.length === 0 ? (
-            <DropArea {...getRootProps()}>
+            <DropArea {...getRootProps()} isDragActive={isDragActive}>
               <input {...getInputProps()} ref={inputFileRef} />
               <UploadIcon>
                 <FaImage />
                 <FaVideo />
               </UploadIcon>
-              <p>Create a new post by uploading your photos and videos</p>
-              <ButtonGroup>
-                <CameraButton
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (cameraInputRef.current) {
-                      cameraInputRef.current.accept = "image/*";
-                      cameraInputRef.current.capture = "environment";
-                      cameraInputRef.current.click();
-                    }
-                  }}
-                >
-                  <FaCamera />
-                  <span>Camera</span>
-                </CameraButton>
-                <VideoCameraButton
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (videoCameraInputRef.current) {
-                      videoCameraInputRef.current.accept = "video/*";
-                      videoCameraInputRef.current.capture = "environment";
-                      videoCameraInputRef.current.click();
-                    }
-                  }}
-                >
-                  <FaVideo />
-                  <span>Video</span>
-                </VideoCameraButton>
-                <GalleryButton
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const galleryInput = document.createElement("input");
-                    galleryInput.type = "file";
-                    galleryInput.accept = "image/*,video/*";
-                    galleryInput.multiple = true;
-                    galleryInput.style.display = "none";
-
-                    galleryInput.onchange = (event) => {
-                      if (event.target.files?.length) {
-                        onDrop(Array.from(event.target.files));
-                      }
-                    };
-
-                    document.body.appendChild(galleryInput);
-                    galleryInput.click();
-
-                    setTimeout(() => {
-                      document.body.removeChild(galleryInput);
-                    }, 1000);
-                  }}
-                >
-                  <FaImage />
-                  <span>Gallery</span>
-                </GalleryButton>
-              </ButtonGroup>
-              <input
-                type="file"
-                ref={cameraInputRef}
-                onChange={handleCameraCapture}
-                accept="image/*"
-                capture="environment"
-                style={{ display: "none" }}
-              />
-              <input
-                type="file"
-                ref={videoCameraInputRef}
-                onChange={handleCameraCapture}
-                accept="video/*"
-                capture="environment"
-                style={{ display: "none" }}
-              />
+              <DropText>
+                <h3>Add photos and videos</h3>
+                <p>Drag and drop or click to upload</p>
+              </DropText>
+              <UploadButton type="button">
+                <FaPlus /> Select from device
+              </UploadButton>
             </DropArea>
           ) : (
-            <>
-              <MediaPreview>
-                {media.some((item) => item.uploading) && (
-                  <div style={{ margin: "15px 0" }}>
-                    <ProgressBar>
-                      <ProgressFill percent={totalProgress} />
-                    </ProgressBar>
-                    <div
-                      style={{
-                        textAlign: "center",
-                        color: COLORS.primaryBlueGray,
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      Uploading... {totalProgress}%
-                    </div>
-                  </div>
-                )}
+            <MediaGrid>
+              {media.map((item, index) => (
+                <MediaItem
+                  key={item.id}
+                  mediaItem={item}
+                  index={index}
+                  onRemove={removeMedia}
+                  onFilter={openFilterModal}
+                  onReorder={reorderMedia}
+                  isDragging={draggedIndex === index}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, index)}
+                />
+              ))}
 
-                <PreviewContainer>
-                  {media[currentIndex] && (
-                    <>
-                      <MediaPreviewComponent
-                        mediaItem={media[currentIndex]}
-                        onRemove={() => removeMedia(currentIndex)}
-                        onError={(item) => {
-                          console.error("Media preview error for:", item);
-                        }}
-                      />
+              <AddMoreButton onClick={addMoreMedia}>
+                <FaPlus />
+                <span>Add more</span>
+              </AddMoreButton>
 
-                      {media[currentIndex].uploading && (
-                        <UploadOverlay>
-                          <UploadProgress>
-                            <UploadProgressInner
-                              width={media[currentIndex].progress || 0}
-                            />
-                          </UploadProgress>
-                          <p>
-                            Uploading... {media[currentIndex].progress || 0}%
-                          </p>
-                        </UploadOverlay>
-                      )}
-
-                      {media[currentIndex].error && (
-                        <ErrorOverlay>
-                          <p>Upload failed</p>
-                          {media[currentIndex].errorMessage && (
-                            <p style={{ fontSize: "12px", marginTop: "5px" }}>
-                              {media[currentIndex].errorMessage}
-                            </p>
-                          )}
-                          <button onClick={() => removeMedia(currentIndex)}>
-                            Remove
-                          </button>
-                        </ErrorOverlay>
-                      )}
-
-                      {media.length > 1 && (
-                        <NavigationButtons>
-                          <NavButton
-                            onClick={showPrevious}
-                            disabled={currentIndex === 0}
-                          >
-                            <FaArrowLeft />
-                          </NavButton>
-                          <MediaCounter>
-                            {currentIndex + 1} / {media.length}
-                          </MediaCounter>
-                          <NavButton
-                            onClick={showNext}
-                            disabled={currentIndex === media.length - 1}
-                          >
-                            <FaArrowRight />
-                          </NavButton>
-                        </NavigationButtons>
-                      )}
-                    </>
-                  )}
-                </PreviewContainer>
-              </MediaPreview>
-
-              {/* Action Bar */}
-              <ActionBar>
-                <ActionButton
-                  active={activeAction === "filter"}
-                  onClick={() => setActiveAction("filter")}
-                >
-                  <FaFilter />
-                  <span>Filter</span>
-                </ActionButton>
-                <ActionButton
-                  active={activeAction === "add"}
-                  onClick={() => {
-                    setActiveAction("add");
-                    const galleryInput = document.createElement("input");
-                    galleryInput.type = "file";
-                    galleryInput.accept = "image/*,video/*";
-                    galleryInput.multiple = true;
-                    galleryInput.style.display = "none";
-
-                    galleryInput.onchange = (event) => {
-                      if (event.target.files?.length) {
-                        onDrop(Array.from(event.target.files));
-                      }
-                    };
-
-                    document.body.appendChild(galleryInput);
-                    galleryInput.click();
-
-                    setTimeout(() => {
-                      document.body.removeChild(galleryInput);
-                    }, 1000);
-                  }}
-                >
-                  <FaImage />
-                  <span>Add</span>
-                </ActionButton>
-              </ActionBar>
-
-              {activeAction === "filter" && (
-                <FilterOptions>
-                  <FiltersGrid>
-                    {FILTERS.map((filter) => (
-                      <FilterItem
-                        key={filter.id}
-                        active={media[currentIndex].filter === filter.id}
-                        onClick={() => applyFilter(filter.id)}
-                      >
-                        <FilterPreview
-                          className={filter.className}
-                          active={media[currentIndex].filter === filter.id}
-                        >
-                          <img
-                            src={getSafeImageSrc(media[currentIndex])}
-                            alt={filter.name}
-                            onError={(e) => {
-                              e.target.src = PLACEHOLDER_IMG;
-                            }}
-                          />
-                        </FilterPreview>
-                        <span>{filter.name}</span>
-                      </FilterItem>
-                    ))}
-                  </FiltersGrid>
-                </FilterOptions>
-              )}
-            </>
+              <input
+                type="file"
+                ref={inputFileRef}
+                onChange={handleFileInputChange}
+                accept="image/*,video/*"
+                multiple
+                style={{ display: "none" }}
+              />
+            </MediaGrid>
           )}
         </MediaSection>
-      ) : (
-        <div style={{ margin: "20px 0" }}>
-          {/* Post Details Section with AI Integration */}
 
-          {/* Title field with AI assist */}
+        {/* Post Details Form */}
+        <PostDetailsSection>
+          <SectionHeader>
+            <h3>Post Details</h3>
+            <AIButton onClick={() => setShowAIModal(true)}>
+              <FaRobot />
+              <span>AI Assist</span>
+            </AIButton>
+          </SectionHeader>
+
           <FormGroup>
-            <ContentHeader>
-              <Label>Post Title *</Label>
-              <AIButton
-                type="button"
-                onClick={() => setShowAIModal(true)}
-                title="Generate content with AI"
-              >
-                <FaRobot />
-                <span>AI Assist</span>
-              </AIButton>
-            </ContentHeader>
-            <InputGroup>
-              <FaPencilAlt />
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Add a title for your post"
-                maxLength={100}
-                required
-              />
-            </InputGroup>
-            <CharCount overLimit={title.length > 80}>
-              {title.length}/100
-            </CharCount>
+            <Label>Title *</Label>
+            <FormInput
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Add a catchy title..."
+              maxLength={100}
+            />
+            <CharCount>{title.length}/100</CharCount>
           </FormGroup>
 
-          {/* Date field */}
-          <FormGroup>
-            <Label>Event Date</Label>
-            <InputGroup>
-              <FaCalendarDay />
-              <Input
-                type="date"
-                value={eventDate}
-                onChange={(e) => setEventDate(e.target.value)}
-                required
-              />
-            </InputGroup>
-          </FormGroup>
-
-          {/* Caption field */}
           <FormGroup>
             <Label>Caption *</Label>
-            <Textarea
+            <FormTextarea
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              placeholder="Write a caption..."
+              placeholder="Write a caption that tells your story..."
               rows={4}
               maxLength={2200}
-              required
             />
-            <CharCount overLimit={caption.length > 2000}>
-              {caption.length}/2200
-            </CharCount>
+            <CharCount>{caption.length}/2200</CharCount>
           </FormGroup>
 
-          {/* Location field */}
-          <FormGroup>
-            <Label>Location</Label>
-            <InputGroup>
-              <FaLocationArrow />
-              <Input
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="Add location"
-              />
-            </InputGroup>
-          </FormGroup>
+          <TwoColumnGroup>
+            <FormGroup>
+              <Label>Event Date</Label>
+              <IconInput>
+                <FaCalendarDay />
+                <FormInput
+                  type="date"
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                />
+              </IconInput>
+            </FormGroup>
 
-          {/* Tags field */}
+            <FormGroup>
+              <Label>Location</Label>
+              <IconInput>
+                <FaLocationArrow />
+                <FormInput
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Add location"
+                />
+              </IconInput>
+            </FormGroup>
+          </TwoColumnGroup>
+
           <FormGroup>
             <Label>Tags</Label>
-            <InputGroup>
+            <TagInput>
               <FaTag />
-              <div style={{ position: "relative", width: "100%" }}>
-                <Input
-                  value={currentTag}
-                  onChange={handleTagInputChange}
-                  onKeyDown={handleTagInputKeyDown}
-                  placeholder="Type tags and press space to add..."
-                  maxLength={30}
-                  style={{ paddingRight: currentTag.trim() ? "80px" : "12px" }}
-                />
-                {currentTag.trim() && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      right: "12px",
-                      transform: "translateY(-50%)",
-                      background: `${COLORS.primarySalmon}15`,
-                      color: COLORS.primarySalmon,
-                      padding: "4px 8px",
-                      borderRadius: "12px",
-                      fontSize: "12px",
-                      fontWeight: "500",
-                      border: `1px solid ${COLORS.primarySalmon}30`,
-                      pointerEvents: "none",
-                    }}
-                  >
-                    #{currentTag.trim()}
-                  </div>
-                )}
-              </div>
-            </InputGroup>
+              <TagInputField
+                value={currentTag}
+                onChange={handleTagInputChange}
+                onKeyDown={handleTagInputKeyDown}
+                placeholder="Type tags and press space to add..."
+                maxLength={30}
+              />
+            </TagInput>
 
             {tags.length > 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "8px",
-                  marginTop: "8px",
-                  padding: "12px",
-                  backgroundColor: COLORS.elevatedBackground,
-                  borderRadius: "8px",
-                  border: `1px dashed ${COLORS.primaryMint}30`,
-                  minHeight: "48px",
-                }}
-              >
+              <TagsContainer>
                 {tags.map((tag, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      backgroundColor: `${COLORS.primarySalmon}20`,
-                      color: COLORS.primarySalmon,
-                      padding: "6px 12px",
-                      borderRadius: "16px",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      border: `1px solid ${COLORS.primarySalmon}30`,
-                    }}
-                  >
+                  <Tag key={index}>
                     #{tag}
-                    <button
-                      onClick={() => removeTag(tag)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "inherit",
-                        padding: "0",
-                        fontSize: "12px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: "16px",
-                        height: "16px",
-                        borderRadius: "50%",
-                      }}
-                    >
+                    <TagRemoveButton onClick={() => removeTag(tag)}>
                       <FaTimes />
-                    </button>
-                  </div>
+                    </TagRemoveButton>
+                  </Tag>
                 ))}
-              </div>
+              </TagsContainer>
             )}
           </FormGroup>
 
-          {/* Additional content field */}
           <FormGroup>
             <Label>Additional Content</Label>
-            <InputGroup>
+            <IconInput>
               <FaPencilAlt />
-              <Input
+              <FormInput
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Add additional content (optional)"
+                placeholder="Add any additional details (optional)"
               />
-            </InputGroup>
+            </IconInput>
           </FormGroup>
+        </PostDetailsSection>
+      </ContentSection>
 
-          {/* Publish Button */}
-          <PublishButton
-            onClick={handleSubmit}
-            disabled={
-              isSubmitting ||
-              !title.trim() ||
-              !caption.trim() ||
-              media.length === 0 ||
-              media.some((item) => item.uploading)
-            }
-          >
-            {isSubmitting
-              ? isEditing
-                ? "Updating..."
-                : "Sharing..."
-              : isEditing
-              ? "Update Post"
-              : "Share Post"}
-          </PublishButton>
-        </div>
-      )}
+      {/* Action Bar */}
+      <ActionBar>
+        <PostButton
+          onClick={handleSubmit}
+          disabled={!isFormValid || isSubmitting}
+        >
+          {isSubmitting
+            ? isEditing
+              ? "Updating..."
+              : "Publishing..."
+            : isEditing
+            ? "Update Post"
+            : "Publish Post"}
+        </PostButton>
+      </ActionBar>
 
-      {/* AI Content Generator Modal */}
+      {/* Modals */}
       <AIContentModal
         isOpen={showAIModal}
         onClose={() => setShowAIModal(false)}
         onApplyContent={handleAIContentApply}
+      />
+
+      <FilterModal
+        isOpen={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        mediaItem={selectedMediaForFilter}
+        onApplyFilter={applyFilter}
       />
     </Container>
   );
@@ -1336,308 +1089,286 @@ function PostCreator({ initialData = null, isEditing = false }) {
 
 // Styled Components
 const Container = styled.div`
-  max-width: 800px;
+  max-width: 600px;
   margin: 0 auto;
-  padding: 20px;
-  background-color: ${COLORS.cardBackground};
-  border-radius: 12px;
-  box-shadow: 0 4px 15px ${COLORS.shadow};
-  color: ${COLORS.textPrimary};
-  border: 1px solid ${COLORS.primaryMint}20;
+  background: ${COLORS.cardBackground};
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid ${COLORS.border};
 
   @media (max-width: 768px) {
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px ${COLORS.shadow};
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    min-height: 100vh;
   }
 `;
 
-const PageTitle = styled.div`
+const Header = styled.div`
+  padding: 24px;
+  border-bottom: 1px solid ${COLORS.border};
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primaryMint}15 0%,
+    ${COLORS.primarySalmon}15 100%
+  );
+`;
+
+const HeaderContent = styled.div`
   text-align: center;
-  margin-bottom: 20px;
-  color: ${COLORS.primaryBlueGray};
 
   h1 {
+    margin: 0 0 8px 0;
     font-size: 24px;
-    margin-bottom: 5px;
     font-weight: 700;
+    color: ${COLORS.textPrimary};
   }
 
   p {
+    margin: 0;
     color: ${COLORS.textSecondary};
     font-size: 14px;
   }
 `;
 
-const Header = styled.div`
+const ContentSection = styled.div`
   display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-  position: relative;
-  padding-bottom: 15px;
-  border-bottom: 2px solid ${COLORS.primarySalmon}20;
-
-  h1 {
-    flex-grow: 1;
-    text-align: center;
-    font-size: 20px;
-    color: ${COLORS.primaryBlueGray};
-    margin: 0;
-    font-weight: 600;
-  }
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
 
   @media (max-width: 768px) {
-    padding-bottom: 10px;
+    padding: 16px;
+    gap: 20px;
   }
 `;
 
 const MediaSection = styled.div`
-  margin-top: 35px;
+  min-height: 200px;
 `;
 
 const DropArea = styled.div`
-  border: 2px dashed ${COLORS.primaryMint};
+  border: 2px dashed
+    ${(props) => (props.isDragActive ? COLORS.primarySalmon : COLORS.border)};
   border-radius: 12px;
-  padding: 40px 20px;
+  padding: 48px 24px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s;
-  min-height: 300px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background-color: ${COLORS.background}85;
+  transition: all 0.3s ease;
+  background: ${(props) =>
+    props.isDragActive
+      ? `${COLORS.primarySalmon}08`
+      : COLORS.elevatedBackground};
 
   &:hover {
     border-color: ${COLORS.primarySalmon};
-    background-color: ${COLORS.primaryKhaki}15;
-    transform: translateY(-2px);
-  }
-
-  p {
-    margin: 15px 0;
-    color: ${COLORS.textSecondary};
-    max-width: 80%;
-    line-height: 1.5;
+    background: ${COLORS.primarySalmon}08;
   }
 `;
 
 const UploadIcon = styled.div`
   display: flex;
-  gap: 20px;
-  font-size: 40px;
-  color: ${COLORS.primaryBlueGray};
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
 
   svg {
-    transition: transform 0.3s, color 0.3s;
+    font-size: 32px;
+    color: ${COLORS.primaryBlueGray};
+    transition: color 0.3s ease;
   }
 
   ${DropArea}:hover & svg {
     color: ${COLORS.primarySalmon};
-    transform: scale(1.1);
   }
 `;
 
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 10px;
-  margin-top: 25px;
-  flex-wrap: wrap;
-  justify-content: center;
-  width: 100%;
-  max-width: 500px;
+const DropText = styled.div`
+  margin-bottom: 24px;
+
+  h3 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: ${COLORS.textPrimary};
+  }
+
+  p {
+    margin: 0;
+    color: ${COLORS.textSecondary};
+    font-size: 14px;
+  }
 `;
 
-const MediaButton = styled.button`
-  display: flex;
+const UploadButton = styled.button`
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  background-color: ${COLORS.cardBackground};
-  color: ${COLORS.textPrimary};
-  border: 1px solid ${COLORS.primaryMint}40;
+  gap: 8px;
+  background: ${COLORS.primarySalmon};
+  color: white;
+  border: none;
   border-radius: 8px;
-  padding: 12px 20px;
-  cursor: pointer;
-  transition: all 0.25s ease;
+  padding: 12px 24px;
   font-weight: 600;
-  font-size: 14px;
-  box-shadow: 0 2px 5px ${COLORS.shadow};
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${COLORS.accentSalmon};
+    transform: translateY(-1px);
+  }
+
+  svg {
+    font-size: 14px;
+  }
+`;
+
+const MediaGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+`;
+
+const MediaItemContainer = styled.div`
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: ${COLORS.elevatedBackground};
+  border: 2px solid
+    ${(props) => (props.isDragging ? COLORS.primarySalmon : COLORS.border)};
+  transition: all 0.2s ease;
+  cursor: ${(props) => (props.isDragging ? "grabbing" : "grab")};
 
   &:hover {
     transform: translateY(-2px);
-    border-color: ${COLORS.primarySalmon};
-    background-color: ${COLORS.primaryKhaki}10;
-    box-shadow: 0 4px 8px ${COLORS.primarySalmon}20;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
+`;
 
-  &:active {
-    transform: translateY(1px);
+const DragHandle = styled.div`
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 3;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 4px;
+  padding: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+
+  ${MediaItemContainer}:hover & {
+    opacity: 1;
   }
 
   svg {
-    font-size: 18px;
-    transition: transform 0.2s ease;
+    font-size: 12px;
   }
 `;
 
-const CameraButton = styled(MediaButton)`
-  svg {
-    color: ${COLORS.primarySalmon};
-  }
-`;
-
-const VideoCameraButton = styled(MediaButton)`
-  svg {
-    color: ${COLORS.primaryBlueGray};
-  }
-`;
-
-const GalleryButton = styled(MediaButton)`
-  svg {
-    color: ${COLORS.primaryMint};
-  }
-`;
-
-const MediaPreview = styled.div`
-  margin-bottom: 30px;
-`;
-
-const PreviewContainer = styled.div`
+const MediaContent = styled.div`
   position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;
-  max-height: 600px;
-  background-color: ${COLORS.background};
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px ${COLORS.shadow};
-  border: 1px solid ${COLORS.primaryMint}20;
+  height: 100%;
 
-  @media (max-width: 768px) {
-    border-radius: 8px;
-    margin: 0 auto 15px;
-    width: 100%;
+  img,
+  video {
+    &.filter-warm {
+      filter: saturate(1.5) sepia(0.2) contrast(1.1);
+    }
+
+    &.filter-cool {
+      filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
+    }
+
+    &.filter-grayscale {
+      filter: grayscale(1);
+    }
+
+    &.filter-vintage {
+      filter: sepia(0.4) saturate(1.3) contrast(1.2);
+    }
+
+    &.filter-clarendon {
+      filter: contrast(1.2) saturate(1.35);
+    }
+
+    &.filter-gingham {
+      filter: brightness(1.05) hue-rotate(-10deg) sepia(0.2);
+    }
+
+    &.filter-moon {
+      filter: grayscale(1) brightness(1.1) contrast(1.1);
+    }
+
+    &.filter-lark {
+      filter: brightness(1.1) contrast(0.9) saturate(1.1);
+    }
   }
 `;
 
-const ImagePreview = styled.img`
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-
-  &.filter-warm {
-    filter: saturate(1.5) sepia(0.2) contrast(1.1);
-  }
-
-  &.filter-cool {
-    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
-  }
-
-  &.filter-grayscale {
-    filter: grayscale(1);
-  }
-
-  &.filter-vintage {
-    filter: sepia(0.4) saturate(1.3) contrast(1.2);
-  }
-
-  &.filter-clarendon {
-    filter: contrast(1.2) saturate(1.35);
-  }
-
-  &.filter-gingham {
-    filter: brightness(1.05) hue-rotate(-10deg) sepia(0.2);
-  }
-
-  &.filter-moon {
-    filter: grayscale(1) brightness(1.1) contrast(1.1);
-  }
-
-  &.filter-lark {
-    filter: brightness(1.1) contrast(0.9) saturate(1.1);
-  }
-`;
-
-const VideoPreview = styled.video`
-  max-width: 100%;
-  max-height: 100%;
-
-  &.filter-warm {
-    filter: saturate(1.5) sepia(0.2) contrast(1.1);
-  }
-
-  &.filter-cool {
-    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
-  }
-
-  &.filter-grayscale {
-    filter: grayscale(1);
-  }
-
-  &.filter-vintage {
-    filter: sepia(0.4) saturate(1.3) contrast(1.2);
-  }
-
-  &.filter-clarendon {
-    filter: contrast(1.2) saturate(1.35);
-  }
-
-  &.filter-gingham {
-    filter: brightness(1.05) hue-rotate(-10deg) sepia(0.2);
-  }
-
-  &.filter-moon {
-    filter: grayscale(1) brightness(1.1) contrast(1.1);
-  }
-
-  &.filter-lark {
-    filter: brightness(1.1) contrast(0.9) saturate(1.1);
-  }
-`;
-
-const LoadingPlaceholder = styled.div`
+const MediaActions = styled.div`
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: ${COLORS.elevatedBackground};
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+
+  ${MediaItemContainer}:hover & {
+    opacity: 1;
+  }
+`;
+
+const ActionButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${COLORS.textSecondary};
-  font-size: 14px;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${COLORS.primarySalmon};
+  }
+
+  &.remove:hover {
+    background: ${COLORS.error};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  svg {
+    font-size: 12px;
+  }
 `;
 
-const LoadingText = styled.div`
-  color: ${COLORS.textSecondary};
-`;
-
-const ErrorPlaceholder = styled.div`
+const FilterBadge = styled.div`
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: ${COLORS.error}10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${COLORS.error};
-  font-size: 14px;
-`;
-
-const ErrorText = styled.div`
-  color: ${COLORS.error};
+  bottom: 4px;
+  left: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
 `;
 
 const UploadOverlay = styled.div`
@@ -1646,29 +1377,33 @@ const UploadOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.8);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   color: white;
-  z-index: 2;
 `;
 
 const UploadProgress = styled.div`
-  width: 80%;
-  height: 6px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-  margin-bottom: 10px;
+  width: 70%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
   overflow: hidden;
+  margin-bottom: 8px;
 `;
 
 const UploadProgressInner = styled.div`
   height: 100%;
   width: ${(props) => props.width}%;
-  background-color: ${COLORS.primarySalmon};
-  transition: width 0.3s;
+  background: ${COLORS.primarySalmon};
+  transition: width 0.3s ease;
+`;
+
+const UploadText = styled.div`
+  font-size: 10px;
+  font-weight: 500;
 `;
 
 const ErrorOverlay = styled.div`
@@ -1677,190 +1412,354 @@ const ErrorOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(244, 67, 54, 0.7);
+  background: rgba(244, 67, 54, 0.9);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   color: white;
-  z-index: 2;
-
-  button {
-    background: white;
-    color: ${COLORS.error};
-    border: none;
-    border-radius: 4px;
-    padding: 8px 16px;
-    margin-top: 10px;
-    cursor: pointer;
-    font-weight: bold;
-  }
+  text-align: center;
+  padding: 8px;
 `;
 
-const RemoveButton = styled.button`
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: ${COLORS.primarySalmon};
-  color: white;
+const ErrorText = styled.div`
+  font-size: 11px;
+  font-weight: 500;
+  margin-bottom: 8px;
+`;
+
+const RetryButton = styled.button`
+  background: white;
+  color: ${COLORS.error};
   border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+`;
+
+const AddMoreButton = styled.button`
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  aspect-ratio: 1;
+  background: ${COLORS.elevatedBackground};
+  border: 2px dashed ${COLORS.border};
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
-  z-index: 3;
-  transition: background-color 0.2s, transform 0.2s;
+  transition: all 0.2s ease;
+  color: ${COLORS.textSecondary};
 
   &:hover {
-    background: ${COLORS.error};
-    transform: scale(1.05);
+    border-color: ${COLORS.primarySalmon};
+    color: ${COLORS.primarySalmon};
+    background: ${COLORS.primarySalmon}08;
   }
-`;
-
-const NavigationButtons = styled.div`
-  position: absolute;
-  bottom: 10px;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  z-index: 3;
-`;
-
-const NavButton = styled.button`
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: ${COLORS.primaryBlueGray};
-  color: white;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 14px;
-  transition: transform 0.2s, background-color 0.2s;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  &:hover:not(:disabled) {
-    background: ${COLORS.primarySalmon};
-    transform: scale(1.05);
-  }
-`;
-
-const MediaCounter = styled.div`
-  background: ${COLORS.primaryMint};
-  color: ${COLORS.textPrimary};
-  border-radius: 12px;
-  padding: 5px 10px;
-  font-size: 12px;
-  font-weight: 600;
-`;
-
-const ActionBar = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  background-color: ${COLORS.cardBackground};
-  border-top: 1px solid ${COLORS.primarySalmon}20;
-  border-bottom: 1px solid ${COLORS.primarySalmon}20;
-  padding: 12px 0;
-  margin: 15px -10px;
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-  border-radius: 8px;
-`;
-
-const ActionButton = styled.button`
-  background: transparent;
-  border: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 16px;
-  cursor: pointer;
-  color: ${(props) =>
-    props.active ? COLORS.primarySalmon : COLORS.primaryBlueGray};
 
   svg {
     font-size: 20px;
-    margin-bottom: 4px;
   }
 
   span {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
-  }
-
-  &:hover {
-    color: ${COLORS.primarySalmon};
   }
 `;
 
-const FilterOptions = styled.div`
-  margin-top: 20px;
+const PostDetailsSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const SectionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: ${COLORS.textPrimary};
+  }
+`;
+
+const AIButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primaryMint} 0%,
+    ${COLORS.primarySalmon} 100%
+  );
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  svg {
+    font-size: 14px;
+  }
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const TwoColumnGroup = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const Label = styled.label`
+  font-size: 14px;
+  font-weight: 600;
+  color: ${COLORS.textPrimary};
+`;
+
+const FormInput = styled.input`
+  width: 100%;
+  padding: 12px;
+  background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 8px;
+  color: ${COLORS.textPrimary};
+  font-size: 14px;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
+  }
+
+  &::placeholder {
+    color: ${COLORS.textTertiary};
+  }
+`;
+
+const FormTextarea = styled.textarea`
+  width: 100%;
+  padding: 12px;
+  background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 8px;
+  color: ${COLORS.textPrimary};
+  font-size: 14px;
+  resize: vertical;
+  min-height: 100px;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
+  }
+
+  &::placeholder {
+    color: ${COLORS.textTertiary};
+  }
+`;
+
+const IconInput = styled.div`
+  display: flex;
+  align-items: center;
+  background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+
+  &:focus-within {
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
+  }
+
+  svg {
+    margin: 0 12px;
+    color: ${COLORS.primarySalmon};
+    font-size: 16px;
+  }
+
+  input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 12px 12px 12px 0;
+
+    &:focus {
+      outline: none;
+    }
+  }
+`;
+
+const TagInput = styled(IconInput)``;
+
+const TagInputField = styled.input`
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 12px 12px 12px 0;
+
+  &:focus {
+    outline: none;
+  }
+`;
+
+const TagsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  background: ${COLORS.elevatedBackground};
+  border-radius: 8px;
+  border: 1px dashed ${COLORS.border};
+`;
+
+const Tag = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: ${COLORS.primarySalmon}20;
+  color: ${COLORS.primarySalmon};
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+`;
+
+const TagRemoveButton = styled.button`
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+
+  &:hover {
+    background: ${COLORS.primarySalmon}30;
+  }
+
+  svg {
+    font-size: 10px;
+  }
+`;
+
+const CharCount = styled.div`
+  font-size: 12px;
+  color: ${COLORS.textTertiary};
+  text-align: right;
+`;
+
+const ActionBar = styled.div`
+  padding: 24px;
+  border-top: 1px solid ${COLORS.border};
+  background: ${COLORS.elevatedBackground};
+
+  @media (max-width: 768px) {
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+  }
+`;
+
+const PostButton = styled.button`
+  width: 100%;
+  background: ${COLORS.primarySalmon};
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: ${COLORS.accentSalmon};
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    background: ${COLORS.border};
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+// Filter Modal Styled Components
+const FilterModalContent = styled(ModalContent)`
+  max-width: 600px;
+`;
+
+const FilterPreviewSection = styled.div`
+  padding: 0;
+`;
+
+const MainPreview = styled.div`
+  padding: 0;
+  background: ${COLORS.background};
+  border-bottom: 1px solid ${COLORS.border};
 `;
 
 const FiltersGrid = styled.div`
-  display: flex;
-  overflow-x: auto;
-  gap: 15px;
-  padding: 15px 10px;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  background-color: ${COLORS.background}50;
-  border-radius: 8px;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-
-  @media (max-width: 768px) {
-    padding-bottom: 15px;
-  }
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 8px;
+  padding: 16px;
+  max-height: 200px;
+  overflow-y: auto;
 `;
 
-const FilterItem = styled.div`
+const FilterOption = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-  opacity: ${(props) => (props.active ? 1 : 0.7)};
-  transform: ${(props) => (props.active ? "scale(1.05)" : "scale(1)")};
+  padding: 8px;
+  border-radius: 8px;
   transition: all 0.2s ease;
-
-  span {
-    margin-top: 8px;
-    font-size: 12px;
-    color: ${(props) =>
-      props.active ? COLORS.primarySalmon : COLORS.textSecondary};
-    font-weight: ${(props) => (props.active ? "600" : "normal")};
-  }
+  opacity: ${(props) => (props.active ? 1 : 0.7)};
 
   &:hover {
     opacity: 1;
+    background: ${COLORS.elevatedBackground};
   }
 `;
 
-const FilterPreview = styled.div`
+const FilterThumbnail = styled.div`
   width: 60px;
   height: 60px;
-  border-radius: 4px;
+  border-radius: 8px;
   overflow: hidden;
-  position: relative;
   border: 2px solid
-    ${(props) => (props.active ? COLORS.primarySalmon : "transparent")};
+    ${(props) => (props.active ? COLORS.primarySalmon : COLORS.border)};
 
   img {
     width: 100%;
@@ -1901,227 +1800,22 @@ const FilterPreview = styled.div`
   }
 `;
 
-const ProgressBar = styled.div`
-  height: 6px;
-  background-color: ${COLORS.elevatedBackground};
-  border-radius: 3px;
-  margin: 10px 0;
-  overflow: hidden;
+const FilterName = styled.span`
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: ${(props) => (props.active ? "600" : "400")};
+  color: ${(props) =>
+    props.active ? COLORS.primarySalmon : COLORS.textSecondary};
 `;
 
-const ProgressFill = styled.div`
-  height: 100%;
-  width: ${(props) => props.percent || 0}%;
-  background-color: ${COLORS.primarySalmon};
-  transition: width 0.3s ease;
-`;
-
-// Form Components
-const FormGroup = styled.div`
-  margin-bottom: 1rem;
-  position: relative;
-
-  &:first-of-type {
-    border-top: 1px solid ${COLORS.primaryMint}20;
-    padding-top: 15px;
-  }
-`;
-
-const ContentHeader = styled.div`
+const FilterActionBar = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
+  gap: 12px;
+  padding: 16px;
+  border-top: 1px solid ${COLORS.border};
 `;
 
-const Label = styled.label`
-  display: block;
-  color: ${COLORS.textSecondary};
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  font-size: 0.875rem;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 6px;
-  padding: 0.75rem;
-  color: ${COLORS.textPrimary};
-  font-size: 0.875rem;
-
-  &:focus {
-    outline: none;
-    border-color: ${COLORS.primarySalmon};
-    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
-  }
-
-  &::placeholder {
-    color: ${COLORS.textTertiary};
-  }
-`;
-
-const Textarea = styled.textarea`
-  width: 100%;
-  padding: 12px;
-  background-color: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.primaryMint}30;
-  border-radius: 4px;
-  color: ${COLORS.textPrimary};
-  font-size: 16px;
-  resize: vertical;
-  transition: all 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: ${COLORS.primarySalmon};
-    box-shadow: 0 0 0 2px ${COLORS.primarySalmon}20;
-  }
-
-  &::placeholder {
-    color: ${COLORS.textTertiary};
-  }
-`;
-
-const InputGroup = styled.div`
-  display: flex;
-  align-items: center;
-  border: 1px solid ${COLORS.primaryMint}30;
-  border-radius: 4px;
-  background-color: ${COLORS.elevatedBackground};
-  overflow: hidden;
-  transition: all 0.2s;
-
-  &:focus-within {
-    border-color: ${COLORS.primarySalmon};
-    box-shadow: 0 0 0 2px ${COLORS.primarySalmon}20;
-  }
-
-  svg {
-    color: ${COLORS.primarySalmon};
-    margin: 0 12px;
-    font-size: 18px;
-  }
-
-  input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    padding: 12px 0 12px 0;
-
-    &:focus {
-      outline: none;
-      box-shadow: none;
-    }
-  }
-`;
-
-const CharCount = styled.div`
-  font-size: 0.75rem;
-  color: ${(props) => (props.overLimit ? COLORS.error : COLORS.textTertiary)};
-  text-align: right;
-  margin-top: 0.25rem;
-`;
-
-const NextButton = styled.button`
-  position: absolute;
-  right: 0;
-  top: 0;
-  background: transparent;
-  color: ${COLORS.primarySalmon};
-  border: none;
-  padding: 0 10px;
-  font-weight: 600;
-  font-size: 15px;
-  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
-  opacity: ${(props) => (props.disabled ? "0.5" : "1")};
-  transition: all 0.2s;
-
-  &:hover:not(:disabled) {
-    transform: translateY(-1px);
-  }
-`;
-
-const BackButton = styled.button`
-  position: absolute;
-  left: 0;
-  top: 0;
-  background: transparent;
-  color: ${COLORS.primaryBlueGray};
-  border: none;
-  padding: 0 10px;
-  font-weight: 600;
-  font-size: 15px;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    transform: translateY(-1px);
-    color: ${COLORS.textPrimary};
-  }
-`;
-
-const PublishButton = styled.button`
-  background-color: ${COLORS.primarySalmon};
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 12px 25px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s;
-  width: 100%;
-  margin-top: 20px;
-  box-shadow: 0 2px 8px ${COLORS.primarySalmon}30;
-
-  &:disabled {
-    background-color: ${COLORS.elevatedBackground};
-    cursor: not-allowed;
-  }
-
-  &:hover:not(:disabled) {
-    background-color: ${COLORS.accentSalmon};
-    transform: translateY(-1px);
-  }
-
-  @media (max-width: 768px) {
-    position: sticky;
-    bottom: 0;
-    border-radius: 0;
-  }
-`;
-
-const AIButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryMint} 0%,
-    ${COLORS.primarySalmon} 100%
-  );
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  svg {
-    font-size: 1rem;
-  }
-`;
-
-// AI Modal Components
+// Modal Components (shared with AI modal)
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -2203,6 +1897,26 @@ const InputRow = styled.div`
 
   @media (max-width: 480px) {
     grid-template-columns: 1fr;
+  }
+`;
+
+const Input = styled.input`
+  width: 100%;
+  background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  padding: 0.75rem;
+  color: ${COLORS.textPrimary};
+  font-size: 0.875rem;
+
+  &:focus {
+    outline: none;
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
+  }
+
+  &::placeholder {
+    color: ${COLORS.textTertiary};
   }
 `;
 
@@ -2360,6 +2074,10 @@ const ApplyButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 
   &:hover {
     background: ${COLORS.accentMint};
