@@ -408,7 +408,6 @@ const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
   );
 };
 
-// Media Item Component
 const MediaItem = ({
   mediaItem,
   index,
@@ -440,7 +439,7 @@ const MediaItem = ({
 
   return (
     <MediaItemContainer isDragging={isDragging} {...dragProps}>
-      <DragHandle>
+      <DragHandle className="drag-handle">
         <FaGripVertical />
       </DragHandle>
 
@@ -479,7 +478,7 @@ const MediaItem = ({
         )}
       </MediaContent>
 
-      <MediaActions>
+      <MediaActions className="media-actions">
         <ActionButton
           onClick={() => onFilter(mediaItem, index)}
           disabled={mediaItem.uploading || mediaItem.error}
@@ -1166,6 +1165,10 @@ const DropArea = styled.div`
     border-color: ${COLORS.primarySalmon};
     background: ${COLORS.primarySalmon}08;
   }
+
+  &:hover svg {
+    color: ${COLORS.primarySalmon};
+  }
 `;
 
 const UploadIcon = styled.div`
@@ -1178,10 +1181,6 @@ const UploadIcon = styled.div`
     font-size: 32px;
     color: ${COLORS.primaryBlueGray};
     transition: color 0.3s ease;
-  }
-
-  ${DropArea}:hover & svg {
-    color: ${COLORS.primarySalmon};
   }
 `;
 
