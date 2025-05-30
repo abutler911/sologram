@@ -55,17 +55,32 @@ const isMobileDevice = () => {
 
 const createSafeBlobUrl = (file) => {
   try {
+    // On mobile, especially iOS, blob URLs can be unreliable
+    // We'll create a data URL as fallback for images
+    if (isMobileDevice() && file.type.startsWith("image/")) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // For desktop or videos, use blob URL
     const url = URL.createObjectURL(file);
     return new Promise((resolve) => {
       if (file.type.startsWith("image/")) {
         const img = new Image();
         img.onload = () => {
-          URL.revokeObjectURL(img.src);
           resolve(url);
         };
         img.onerror = () => {
           URL.revokeObjectURL(url);
-          resolve(null);
+          // Fallback to data URL on error
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(file);
         };
         img.src = url;
       } else {
@@ -74,15 +89,29 @@ const createSafeBlobUrl = (file) => {
     });
   } catch (error) {
     console.error("Failed to create blob URL:", error);
-    return Promise.resolve(null);
+    // Fallback to data URL
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
   }
 };
 
 const getSafeImageSrc = (mediaItem) => {
-  if (isMobileDevice()) {
-    return mediaItem.mediaUrl || mediaItem.previewUrl || PLACEHOLDER_IMG;
+  // Always prioritize uploaded URL first
+  if (mediaItem.mediaUrl) {
+    return mediaItem.mediaUrl;
   }
-  return mediaItem.previewUrl || mediaItem.mediaUrl || PLACEHOLDER_IMG;
+
+  // Then use preview URL (blob or data URL)
+  if (mediaItem.previewUrl) {
+    return mediaItem.previewUrl;
+  }
+
+  // Fallback to placeholder
+  return PLACEHOLDER_IMG;
 };
 
 // Styled Components - Base Components First
@@ -1418,22 +1447,35 @@ const MediaItem = ({
 }) => {
   const [imageSrc, setImageSrc] = useState(getSafeImageSrc(mediaItem));
   const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(!mediaItem.mediaUrl);
 
   useEffect(() => {
     setImageSrc(getSafeImageSrc(mediaItem));
     setHasError(false);
+    setIsLoading(!mediaItem.mediaUrl);
   }, [mediaItem.mediaUrl, mediaItem.previewUrl]);
 
   const handleImageError = (e) => {
+    console.error("Image load error:", e.target.src);
     const currentSrc = e.target.src;
+
+    // Try fallback sources
     if (currentSrc === mediaItem.mediaUrl && mediaItem.previewUrl) {
+      console.log("Trying previewUrl as fallback");
       setImageSrc(mediaItem.previewUrl);
     } else if (currentSrc === mediaItem.previewUrl && mediaItem.mediaUrl) {
+      console.log("Trying mediaUrl as fallback");
       setImageSrc(mediaItem.mediaUrl);
     } else {
+      console.log("All sources failed, using placeholder");
       setImageSrc(PLACEHOLDER_IMG);
       setHasError(true);
     }
+  };
+
+  const handleImageLoad = () => {
+    setIsLoading(false);
+    setHasError(false);
   };
 
   return (
@@ -1443,12 +1485,26 @@ const MediaItem = ({
       </DragHandle>
 
       <MediaContent>
+        {isLoading && !mediaItem.mediaUrl && (
+          <UploadOverlay>
+            <UploadText>Loading preview...</UploadText>
+          </UploadOverlay>
+        )}
+
         {mediaItem.mediaType === "video" ? (
           <video
             src={imageSrc}
             className={mediaItem.filterClass || ""}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: isLoading ? "none" : "block",
+            }}
             onError={handleImageError}
+            onLoadedData={handleImageLoad}
+            playsInline
+            muted
           />
         ) : (
           <img
@@ -1456,7 +1512,13 @@ const MediaItem = ({
             className={mediaItem.filterClass || ""}
             alt="Media preview"
             onError={handleImageError}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            onLoad={handleImageLoad}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: isLoading ? "none" : "block",
+            }}
           />
         )}
 
@@ -1472,6 +1534,13 @@ const MediaItem = ({
         {mediaItem.error && (
           <ErrorOverlay>
             <ErrorText>Upload failed</ErrorText>
+            <RetryButton onClick={() => onRemove(index)}>Remove</RetryButton>
+          </ErrorOverlay>
+        )}
+
+        {hasError && !mediaItem.uploading && (
+          <ErrorOverlay>
+            <ErrorText>Preview unavailable</ErrorText>
             <RetryButton onClick={() => onRemove(index)}>Remove</RetryButton>
           </ErrorOverlay>
         )}
@@ -1533,6 +1602,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   useEffect(() => {
     return () => {
       mountedRef.current = false;
+      // Only revoke blob URLs, not data URLs
       media.forEach((item) => {
         if (
           item.previewUrl &&
@@ -1654,6 +1724,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const removeMedia = (indexToRemove) => {
     const itemToRemove = media[indexToRemove];
 
+    // Only revoke blob URLs, not data URLs
     if (
       itemToRemove?.previewUrl &&
       !itemToRemove.isExisting &&
