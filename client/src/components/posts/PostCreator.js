@@ -1976,6 +1976,10 @@ function PostCreator({ initialData = null, isEditing = false }) {
                         />
                       ) : (
                         <ImagePreview
+                          key={`${media[currentIndex].id}-${
+                            media[currentIndex].mediaUrl ||
+                            media[currentIndex].previewUrl
+                          }`} // Force re-render when URL changes
                           src={
                             // Prioritize mediaUrl on mobile, previewUrl on desktop
                             media[currentIndex].isMobile
@@ -1994,36 +1998,75 @@ function PostCreator({ initialData = null, isEditing = false }) {
                             ""
                           }
                           alt="Preview"
+                          crossOrigin="anonymous" // Add for mobile compatibility
+                          loading="eager" // Force immediate loading
                           onError={(e) => {
                             console.error("Image error:", e);
-                            console.log("Image src was:", e.target.src);
-                            console.log("Media item:", media[currentIndex]);
+                            console.log("Failed src:", e.target.src);
+                            console.log("Available URLs:", {
+                              mediaUrl: media[currentIndex].mediaUrl,
+                              previewUrl: media[currentIndex].previewUrl,
+                              isMobile: media[currentIndex].isMobile,
+                            });
 
-                            // On mobile, try the other URL if one fails
+                            // Try alternative URL
+                            const currentSrc = e.target.src;
                             if (
-                              media[currentIndex].isMobile &&
-                              e.target.src === media[currentIndex].previewUrl
+                              currentSrc === media[currentIndex].mediaUrl &&
+                              media[currentIndex].previewUrl
                             ) {
-                              e.target.src = media[currentIndex].mediaUrl || "";
+                              console.log("Trying previewUrl as fallback");
+                              e.target.src = media[currentIndex].previewUrl;
                             } else if (
-                              !media[currentIndex].isMobile &&
-                              e.target.src === media[currentIndex].mediaUrl
+                              currentSrc === media[currentIndex].previewUrl &&
+                              media[currentIndex].mediaUrl
                             ) {
-                              e.target.src =
-                                media[currentIndex].previewUrl || "";
+                              console.log("Trying mediaUrl as fallback");
+                              e.target.src = media[currentIndex].mediaUrl;
+                            } else {
+                              console.error("No more URLs to try");
+                              // Show a simple colored div instead of broken image
+                              e.target.style.display = "none";
+                              if (e.target.parentNode) {
+                                const placeholder =
+                                  document.createElement("div");
+                                placeholder.style.cssText = `
+                                  width: 100%;
+                                  height: 100%;
+                                  background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+                                  display: flex;
+                                  align-items: center;
+                                  justify-content: center;
+                                  color: #666;
+                                  font-size: 14px;
+                                `;
+                                placeholder.textContent = "Image Loading...";
+                                e.target.parentNode.appendChild(placeholder);
+                              }
                             }
                           }}
                           onLoad={(e) => {
                             console.log(
-                              "Image loaded successfully:",
+                              "✅ Image loaded successfully:",
                               e.target.src
                             );
+                            // Remove any placeholder divs
+                            const placeholders =
+                              e.target.parentNode?.querySelectorAll(
+                                'div[style*="background: linear-gradient"]'
+                              );
+                            placeholders?.forEach((p) => p.remove());
                           }}
                           style={{
                             // Mobile-specific styles
+                            maxWidth: "100%",
+                            maxHeight: "100%",
+                            objectFit: "contain",
                             ...(media[currentIndex].isMobile && {
                               imageRendering: "auto",
                               WebkitImageRendering: "auto",
+                              WebkitUserSelect: "none",
+                              userSelect: "none",
                             }),
                           }}
                         />
@@ -2120,8 +2163,22 @@ function PostCreator({ initialData = null, isEditing = false }) {
                       <div>
                         Mobile: {media[currentIndex].isMobile ? "Yes" : "No"}
                       </div>
+                      <div>
+                        Has MediaURL:{" "}
+                        {media[currentIndex].mediaUrl
+                          ? media[currentIndex].mediaUrl.substring(0, 50) +
+                            "..."
+                          : "No"}
+                      </div>
+                      <div>
+                        Has PreviewURL:{" "}
+                        {media[currentIndex].previewUrl
+                          ? media[currentIndex].previewUrl.substring(0, 50) +
+                            "..."
+                          : "No"}
+                      </div>
                       <div style={{ marginTop: "4px", fontSize: "9px" }}>
-                        Actual SRC:{" "}
+                        Using SRC:{" "}
                         {media[currentIndex].isMobile
                           ? media[currentIndex].mediaUrl ||
                             media[currentIndex].previewUrl ||
@@ -2129,6 +2186,19 @@ function PostCreator({ initialData = null, isEditing = false }) {
                           : media[currentIndex].previewUrl ||
                             media[currentIndex].mediaUrl ||
                             "NONE"}
+                      </div>
+                      <div
+                        style={{
+                          marginTop: "2px",
+                          fontSize: "8px",
+                          color: "#ff9999",
+                        }}
+                      >
+                        File size:{" "}
+                        {media[currentIndex].file
+                          ? Math.round(media[currentIndex].file.size / 1024) +
+                            "KB"
+                          : "Unknown"}
                       </div>
                     </div>
                   )}
