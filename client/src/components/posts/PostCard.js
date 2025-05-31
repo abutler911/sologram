@@ -1,4 +1,4 @@
-import {
+import React, {
   memo,
   useState,
   useCallback,
@@ -6,6 +6,7 @@ import {
   useEffect,
   useRef,
   Suspense,
+  lazy,
 } from "react";
 import { Link } from "react-router-dom";
 import styled, { keyframes, css } from "styled-components";
@@ -29,9 +30,11 @@ import { useDeleteModal } from "../../context/DeleteModalContext";
 import { AuthContext } from "../../context/AuthContext";
 import authorImg from "../../assets/andy.jpg";
 import { getTransformedImageUrl } from "../../utils/cloudinary";
-import { CommentModal } from "./CommentModal";
-import { COLORS } from "../../theme";
 
+import { COLORS } from "../../theme";
+const CommentModal = lazy(() =>
+  import("./CommentModal").then((module) => ({ default: module.CommentModal }))
+);
 const AUTHOR_IMAGE = authorImg;
 const AUTHOR_NAME = "Andrew";
 
@@ -910,16 +913,20 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         </Suspense>
       )}
 
-      <CommentModal
-        isOpen={showCommentModal}
-        onClose={() => setShowCommentModal(false)}
-        post={post}
-        comments={comments}
-        onAddComment={handleAddComment}
-        onLikeComment={handleLikeComment}
-        onDeleteComment={handleDeleteComment}
-        isLoading={isLoadingComments}
-      />
+      {showCommentModal && (
+        <Suspense fallback={<div>Loading comments...</div>}>
+          <CommentModal
+            isOpen={showCommentModal}
+            onClose={() => setShowCommentModal(false)}
+            post={post}
+            comments={comments}
+            onAddComment={handleAddComment}
+            onLikeComment={handleLikeComment}
+            onDeleteComment={handleDeleteComment}
+            isLoading={isLoadingComments}
+          />
+        </Suspense>
+      )}
     </CardWrapper>
   );
 });

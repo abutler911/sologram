@@ -1,6 +1,6 @@
 // public/sw.js - Simple, working service worker
-const CACHE_NAME = "sologram-v__BUILD_TIME__"; // This gets replaced at build time
-const DYNAMIC_CACHE = "sologram-dynamic-v__BUILD_TIME__";
+const CACHE_NAME = "sologram-v1748703270830"; // This gets replaced at build time
+const DYNAMIC_CACHE = "sologram-dynamic-v1748703270830";
 
 // Assets to cache immediately
 const STATIC_ASSETS = [

@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo } from "react";
+import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import PrivateRoute from "./components/PrivateRoute";
 
@@ -7,6 +7,47 @@ import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import BottomNavigation from "./components/layout/BottomNavigation";
 import LoadingSpinner from "./components/common/LoadingSpinner";
+
+// ✅ MOVE ALL LAZY IMPORTS OUTSIDE THE COMPONENT
+// Lazy load components - these are created once and cached
+const Home = React.lazy(() => import("./pages/Home"));
+const Login = React.lazy(() => import("./pages/Login"));
+const Register = React.lazy(() => import("./pages/Register"));
+const PostDetail = React.lazy(() => import("./pages/PostDetail"));
+const NotFound = React.lazy(() => import("./pages/NotFound"));
+const About = React.lazy(() => import("./pages/About"));
+const Privacy = React.lazy(() => import("./pages/Privacy"));
+const Terms = React.lazy(() => import("./pages/Terms"));
+const Thoughts = React.lazy(() => import("./pages/Thoughts"));
+
+// Collection pages
+const CollectionsList = React.lazy(() => import("./pages/CollectionsList"));
+const CollectionDetail = React.lazy(() => import("./pages/CollectionDetail"));
+const CreateCollection = React.lazy(() => import("./pages/CreateCollection"));
+const EditCollection = React.lazy(() => import("./pages/EditCollection"));
+const AddPostsToCollection = React.lazy(() =>
+  import("./pages/AddPostsToCollection")
+);
+
+// Post management
+const CreatePost = React.lazy(() => import("./pages/CreatePost"));
+const EditPost = React.lazy(() => import("./pages/EditPost"));
+
+// Story features
+const CreateStory = React.lazy(() => import("./pages/CreateStory"));
+const StoryArchive = React.lazy(() => import("./pages/StoryArchive"));
+const ArchivedStoryView = React.lazy(() => import("./pages/ArchivedStoryView"));
+
+// Thought management
+const CreateThought = React.lazy(() => import("./pages/CreateThought"));
+const EditThought = React.lazy(() => import("./pages/EditThought"));
+
+// Admin/Profile pages
+const ProfilePage = React.lazy(() => import("./pages/Profile"));
+const CloudinaryGallery = React.lazy(() => import("./pages/CloudinaryGallery"));
+const AIContentGenerator = React.lazy(() =>
+  import("./components/admin/AIContentGenerator")
+);
 
 const LoadingFallback = () => <LoadingSpinner />;
 
@@ -21,50 +62,6 @@ const StandardLayout = ({ children, headerProps }) => (
 );
 
 const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
-  // Lazy load components
-  const Home = React.lazy(() => import("./pages/Home"));
-  const Login = React.lazy(() => import("./pages/Login"));
-  const Register = React.lazy(() => import("./pages/Register"));
-  const PostDetail = React.lazy(() => import("./pages/PostDetail"));
-  const NotFound = React.lazy(() => import("./pages/NotFound"));
-  const About = React.lazy(() => import("./pages/About"));
-  const Privacy = React.lazy(() => import("./pages/Privacy"));
-  const Terms = React.lazy(() => import("./pages/Terms"));
-  const Thoughts = React.lazy(() => import("./pages/Thoughts"));
-
-  // Collection pages
-  const CollectionsList = React.lazy(() => import("./pages/CollectionsList"));
-  const CollectionDetail = React.lazy(() => import("./pages/CollectionDetail"));
-  const CreateCollection = React.lazy(() => import("./pages/CreateCollection"));
-  const EditCollection = React.lazy(() => import("./pages/EditCollection"));
-  const AddPostsToCollection = React.lazy(() =>
-    import("./pages/AddPostsToCollection")
-  );
-
-  // Post management
-  const CreatePost = React.lazy(() => import("./pages/CreatePost"));
-  const EditPost = React.lazy(() => import("./pages/EditPost"));
-
-  // Story features
-  const CreateStory = React.lazy(() => import("./pages/CreateStory"));
-  const StoryArchive = React.lazy(() => import("./pages/StoryArchive"));
-  const ArchivedStoryView = React.lazy(() =>
-    import("./pages/ArchivedStoryView")
-  );
-
-  // Thought management
-  const CreateThought = React.lazy(() => import("./pages/CreateThought"));
-  const EditThought = React.lazy(() => import("./pages/EditThought"));
-
-  // Admin/Profile pages
-  const ProfilePage = React.lazy(() => import("./pages/Profile"));
-  const CloudinaryGallery = React.lazy(() =>
-    import("./pages/CloudinaryGallery")
-  );
-  const AIContentGenerator = React.lazy(() =>
-    import("./components/admin/AIContentGenerator")
-  );
-
   // Create a special route component that requires admin role
   const AdminRoute = ({ children }) => {
     return (

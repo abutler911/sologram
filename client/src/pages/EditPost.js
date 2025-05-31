@@ -1,22 +1,22 @@
 // pages/EditPost.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { FaEdit } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import PostCreator from "../components/posts/PostCreator";
-import { COLORS, THEME } from "../theme";
-
+import { COLORS } from "../theme";
 // Import LoadingSpinner component
 import LoadingSpinner from "../components/common/LoadingSpinner";
+
+// 🎯 KEY CHANGE: Lazy load PostCreator instead of direct import
+const PostCreator = lazy(() => import("../components/posts/PostCreator"));
 
 const EditPost = () => {
   const { id } = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const navigate = useNavigate();
 
   // Fetch post data
@@ -24,7 +24,6 @@ const EditPost = () => {
     const fetchPost = async () => {
       try {
         setLoading(true);
-
         const response = await axios.get(`/api/posts/${id}`);
         setPost(response.data.data);
         setError(null);
@@ -38,7 +37,6 @@ const EditPost = () => {
         setLoading(false);
       }
     };
-
     fetchPost();
   }, [id]);
 
@@ -78,18 +76,26 @@ const EditPost = () => {
           <HeaderSubtitle>Update and refine your content</HeaderSubtitle>
         </PageHeader>
 
-        <PostCreator initialData={post} isEditing={true} />
+        {/* 🎯 KEY CHANGE: Wrap PostCreator in Suspense for lazy loading */}
+        <Suspense
+          fallback={
+            <LoadingContainer>
+              <LoadingSpinner text="Loading editor" size="40px" />
+            </LoadingContainer>
+          }
+        >
+          <PostCreator initialData={post} isEditing={true} />
+        </Suspense>
       </Container>
     </PageWrapper>
   );
 };
 
-// Styled Components
+// Styled Components (unchanged)
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
   min-height: 100vh;
   padding: 2rem 0;
-
   @media (max-width: 768px) {
     padding: 0;
     background-color: ${COLORS.background};
@@ -101,7 +107,6 @@ const Container = styled.div`
   max-width: 1000px;
   margin: 0 auto;
   padding: 0 2rem;
-
   @media (max-width: 768px) {
     padding: 0;
   }
@@ -166,7 +171,6 @@ const BackButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.3s;
-
   &:hover {
     background-color: ${COLORS.buttonHover};
   }

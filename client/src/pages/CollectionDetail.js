@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, lazy, Suspense } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import axios from "axios";
@@ -12,8 +12,10 @@ import {
   FaPlusCircle,
 } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
-import PostCard from "../components/posts/PostCard";
-import { COLORS, THEME } from "../theme"; // Import your theme
+import { COLORS, THEME } from "../theme";
+
+// 🎯 KEY CHANGE: Lazy load PostCard instead of direct import
+const PostCard = lazy(() => import("../components/posts/PostCard"));
 
 const CollectionDetail = () => {
   const { id } = useParams();
@@ -170,11 +172,18 @@ const CollectionDetail = () => {
         ) : (
           <PostsGrid>
             {collection.posts.map((post) => (
-              <PostCard
-                key={post._id}
-                post={post}
-                onDelete={handleDeletePost}
-              />
+              <PostCardWrapper key={post._id}>
+                {/* 🎯 KEY CHANGE: Wrap PostCard in Suspense for lazy loading */}
+                <Suspense
+                  fallback={
+                    <PostCardSkeleton>
+                      <div>Loading post...</div>
+                    </PostCardSkeleton>
+                  }
+                >
+                  <PostCard post={post} onDelete={handleDeletePost} />
+                </Suspense>
+              </PostCardWrapper>
             ))}
           </PostsGrid>
         )}
@@ -228,7 +237,7 @@ const CollectionDetail = () => {
   );
 };
 
-// Styled Components with Modern Twilight theme
+// Styled Components (keeping your existing styles)
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
   min-height: 100vh;
@@ -338,7 +347,7 @@ const EditButton = styled(Link)`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #1565c0; /* Darker blue on hover */
+    background-color: #1565c0;
   }
 
   svg {
@@ -363,7 +372,7 @@ const DeleteButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #c0392b; /* Darker red on hover */
+    background-color: #c0392b;
   }
 
   svg {
@@ -389,7 +398,7 @@ const AddPostButton = styled(Link)`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #2e7d32; /* Darker green on hover */
+    background-color: #2e7d32;
   }
 
   svg {
@@ -399,6 +408,23 @@ const AddPostButton = styled(Link)`
   @media (max-width: 640px) {
     justify-content: center;
   }
+`;
+
+// 🎯 NEW: Added PostCard wrapper and skeleton for lazy loading
+const PostCardWrapper = styled.div`
+  width: 100%;
+`;
+
+const PostCardSkeleton = styled.div`
+  width: 100%;
+  height: 400px;
+  background-color: ${COLORS.cardBackground};
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid ${COLORS.border};
+  color: ${COLORS.textSecondary};
 `;
 
 const PostsGrid = styled.div`
@@ -462,7 +488,7 @@ const EmptyActionLink = styled(Link)`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #4527a0; /* Darker purple on hover */
+    background-color: #4527a0;
   }
 `;
 
@@ -537,7 +563,7 @@ const ConfirmDeleteButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #c0392b; /* Darker red on hover */
+    background-color: #c0392b;
   }
 
   @media (max-width: 480px) {
