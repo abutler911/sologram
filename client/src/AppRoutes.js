@@ -1,5 +1,6 @@
-import React, { Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { Suspense, lazy } from "react";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
+// Assuming PrivateRoute handles auth logic and navigation
 import PrivateRoute from "./components/PrivateRoute";
 
 // Import static components used in multiple routes
@@ -8,211 +9,148 @@ import Footer from "./components/layout/Footer";
 import BottomNavigation from "./components/layout/BottomNavigation";
 import LoadingSpinner from "./components/common/LoadingSpinner";
 
-// ✅ MOVE ALL LAZY IMPORTS OUTSIDE THE COMPONENT
-// Lazy load components - these are created once and cached
-const Home = React.lazy(() => import("./pages/Home"));
-const Login = React.lazy(() => import("./pages/Login"));
-const Register = React.lazy(() => import("./pages/Register"));
-const PostDetail = React.lazy(() => import("./pages/PostDetail"));
-const NotFound = React.lazy(() => import("./pages/NotFound"));
-const About = React.lazy(() => import("./pages/About"));
-const Privacy = React.lazy(() => import("./pages/Privacy"));
-const Terms = React.lazy(() => import("./pages/Terms"));
-const Thoughts = React.lazy(() => import("./pages/Thoughts"));
+// --- Lazy Load Pages ---
+// For an even better UX, consider prefetching common next navigations
+// e.g., const Login = lazy(() => import(/* webpackPrefetch: true */ "./pages/Login"));
+
+const Home = lazy(() => import("./pages/Home"));
+const Login = lazy(() => import(/* webpackPrefetch: true */ "./pages/Login"));
+const Register = lazy(() =>
+  import(/* webpackPrefetch: true */ "./pages/Register")
+);
+const PostDetail = lazy(() => import("./pages/PostDetail"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const About = lazy(() => import("./pages/About"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Thoughts = lazy(() => import("./pages/Thoughts"));
 
 // Collection pages
-const CollectionsList = React.lazy(() => import("./pages/CollectionsList"));
-const CollectionDetail = React.lazy(() => import("./pages/CollectionDetail"));
-const CreateCollection = React.lazy(() => import("./pages/CreateCollection"));
-const EditCollection = React.lazy(() => import("./pages/EditCollection"));
-const AddPostsToCollection = React.lazy(() =>
-  import("./pages/AddPostsToCollection")
-);
+const CollectionsList = lazy(() => import("./pages/CollectionsList"));
+const CollectionDetail = lazy(() => import("./pages/CollectionDetail"));
+const CreateCollection = lazy(() => import("./pages/CreateCollection"));
+const EditCollection = lazy(() => import("./pages/EditCollection"));
+const AddPostsToCollection = lazy(() => import("./pages/AddPostsToCollection"));
 
 // Post management
-const CreatePost = React.lazy(() => import("./pages/CreatePost"));
-const EditPost = React.lazy(() => import("./pages/EditPost"));
+const CreatePost = lazy(() =>
+  import(/* webpackPrefetch: true */ "./pages/CreatePost")
+);
+const EditPost = lazy(() => import("./pages/EditPost"));
 
 // Story features
-const CreateStory = React.lazy(() => import("./pages/CreateStory"));
-const StoryArchive = React.lazy(() => import("./pages/StoryArchive"));
-const ArchivedStoryView = React.lazy(() => import("./pages/ArchivedStoryView"));
+const CreateStory = lazy(() => import("./pages/CreateStory"));
+const StoryArchive = lazy(() => import("./pages/StoryArchive"));
+const ArchivedStoryView = lazy(() => import("./pages/ArchivedStoryView"));
 
 // Thought management
-const CreateThought = React.lazy(() => import("./pages/CreateThought"));
-const EditThought = React.lazy(() => import("./pages/EditThought"));
+const CreateThought = lazy(() => import("./pages/CreateThought"));
+const EditThought = lazy(() => import("./pages/EditThought"));
 
 // Admin/Profile pages
-const ProfilePage = React.lazy(() => import("./pages/Profile"));
-const CloudinaryGallery = React.lazy(() => import("./pages/CloudinaryGallery"));
-const AIContentGenerator = React.lazy(() =>
+const ProfilePage = lazy(() =>
+  import(/* webpackPrefetch: true */ "./pages/Profile")
+);
+const CloudinaryGallery = lazy(() => import("./pages/CloudinaryGallery"));
+const AIContentGenerator = lazy(() =>
   import("./components/admin/AIContentGenerator")
 );
 
+// --- Fallback & Layout Components ---
 const LoadingFallback = () => <LoadingSpinner />;
 
-// Layout component to avoid repetition
+// StandardLayout now uses Outlet to render child routes
 const StandardLayout = ({ children, headerProps }) => (
   <>
     <Header {...headerProps} />
-    <main className="main-content">{children}</main>
+    <main className="main-content">
+      {/* If children is provided directly, render it, otherwise Outlet for nested routes */}
+      {children || <Outlet />}
+    </main>
     <Footer />
     <BottomNavigation />
   </>
 );
 
-const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
-  // Create a special route component that requires admin role
-  const AdminRoute = ({ children }) => {
-    return (
-      <PrivateRoute>
-        {user && user.role === "admin" ? children : <NotFound />}
-      </PrivateRoute>
-    );
-  };
+// AdminRoute now uses Outlet
+const AdminRoute = ({ user }) => {
+  // Assuming PrivateRoute already handles the basic "is user logged in?" check.
+  // This component specifically checks for the 'admin' role.
+  if (!user) {
+    // This case should ideally be handled by PrivateRoute wrapping AdminRoute
+    return <Navigate to="/login" replace />;
+  }
+  return user.role === "admin" ? <Outlet /> : <NotFound />; // Or <Navigate to="/unauthorized" />
+};
 
+const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
-        {/* Public routes */}
+        {/* --- Group 1: Public Routes with Standard Layout --- */}
         <Route
-          path="/"
           element={
             <StandardLayout
               headerProps={{
                 onSearch: handleSearch,
                 onClearSearch: handleClearSearch,
               }}
-            >
-              <Home ref={homeRef} />
-            </StandardLayout>
+            />
           }
-        />
+        >
+          <Route path="/" element={<Home ref={homeRef} />} />{" "}
+          {/* Ensure Home uses forwardRef */}
+          <Route path="/post/:id" element={<PostDetail />} />
+          <Route path="/collections" element={<CollectionsList />} />
+          <Route path="/collections/:id" element={<CollectionDetail />} />
+          <Route path="/thoughts" element={<Thoughts />} />
+        </Route>
+        {/* --- Group 2: Public Routes without Standard Layout (or with a different layout) --- */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/post/:id" element={<PostDetail />} />
-        <Route path="/about" element={<About />} />
+        <Route path="/about" element={<About />} />{" "}
+        {/* These could also use StandardLayout if desired */}
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
-        <Route path="/collections" element={<CollectionsList />} />
-        <Route path="/collections/:id" element={<CollectionDetail />} />
-        <Route path="/thoughts" element={<Thoughts />} />
-
-        {/* Private routes */}
-        <Route
-          path="/profile"
-          element={
-            <PrivateRoute>
-              <StandardLayout>
-                <ProfilePage />
-              </StandardLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/create"
-          element={
-            <PrivateRoute>
-              <CreatePost />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/edit/:id"
-          element={
-            <PrivateRoute>
-              <EditPost />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/create-story"
-          element={
-            <PrivateRoute>
-              <CreateStory />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/story-archive"
-          element={
-            <PrivateRoute>
-              <StoryArchive />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/story-archive/:id"
-          element={
-            <PrivateRoute>
-              <ArchivedStoryView />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/collections/create"
-          element={
-            <PrivateRoute>
-              <CreateCollection />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/collections/:id/edit"
-          element={
-            <PrivateRoute>
-              <EditCollection />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/collections/:id/add-posts"
-          element={
-            <PrivateRoute>
-              <AddPostsToCollection />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/thoughts/:id/edit"
-          element={
-            <PrivateRoute>
-              <EditThought />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/thoughts/create"
-          element={
-            <PrivateRoute>
-              <CreateThought />
-            </PrivateRoute>
-          }
-        />
-
-        {/* Admin-only routes */}
-        <Route
-          path="/media-gallery"
-          element={
-            <AdminRoute>
-              <StandardLayout>
-                <CloudinaryGallery />
-              </StandardLayout>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/ai-content"
-          element={
-            <AdminRoute>
-              <StandardLayout>
-                <AIContentGenerator />
-              </StandardLayout>
-            </AdminRoute>
-          }
-        />
-
-        {/* 404 - Must be last */}
+        {/* --- Group 3: Private Routes --- */}
+        {/* All routes within this PrivateRoute wrapper require authentication */}
+        <Route element={<PrivateRoute user={user} />}>
+          {" "}
+          {/* Pass user to PrivateRoute */}
+          {/* Sub-Group 3a: Private routes WITH Standard Layout */}
+          <Route element={<StandardLayout />}>
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/story-archive" element={<StoryArchive />} />
+            <Route path="/story-archive/:id" element={<ArchivedStoryView />} />
+            {/* Add other private routes that need the standard layout here */}
+          </Route>
+          {/* Sub-Group 3b: Private routes WITHOUT Standard Layout (e.g., fullscreen editors) */}
+          <Route path="/create" element={<CreatePost />} />
+          <Route path="/edit/:id" element={<EditPost />} />
+          <Route path="/create-story" element={<CreateStory />} />
+          <Route path="/collections/create" element={<CreateCollection />} />
+          <Route path="/collections/:id/edit" element={<EditCollection />} />
+          <Route
+            path="/collections/:id/add-posts"
+            element={<AddPostsToCollection />}
+          />
+          <Route path="/thoughts/create" element={<CreateThought />} />
+          <Route path="/thoughts/:id/edit" element={<EditThought />} />
+          {/* Sub-Group 3c: Admin-Only Routes (already protected by PrivateRoute, now check role) */}
+          {/* These admin routes also get the StandardLayout */}
+          <Route element={<AdminRoute user={user} />}>
+            {" "}
+            {/* Pass user to AdminRoute */}
+            <Route element={<StandardLayout />}>
+              <Route path="/media-gallery" element={<CloudinaryGallery />} />
+              <Route
+                path="/admin/ai-content"
+                element={<AIContentGenerator />}
+              />
+            </Route>
+          </Route>
+        </Route>
+        {/* 404 Not Found - Must be the last route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
