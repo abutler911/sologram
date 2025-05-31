@@ -37,6 +37,7 @@ const CommentModal = lazy(() =>
 );
 const AUTHOR_IMAGE = authorImg;
 const AUTHOR_NAME = "Andrew";
+const AUTHOR_IMAGE_URL = "/images/andy.jpg";
 
 const fadeIn = keyframes`
   0% { opacity: 0; transform: translateY(12px); }
@@ -55,26 +56,6 @@ const pulse = keyframes`
   0% { transform: scale(1); }
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
-`;
-
-const fontFaceStyles = css`
-  @font-face {
-    font-family: "ParadiseSignature";
-    src: url("/fonts/Paradise Signature.otf") format("opentype");
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-  }
-
-  @font-face {
-    font-family: "Autography";
-    src: url("/fonts/Autography.woff2") format("woff2"),
-      url("/fonts/Autography.woff") format("woff"),
-      url("/fonts/Autography.ttf") format("truetype");
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-  }
 `;
 
 const FullscreenModalComponent = ({ onClick, children }) => (
@@ -565,7 +546,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         <CardHeader aria-label="Post header">
           <UserInfo>
             <UserAvatarImage
-              src={AUTHOR_IMAGE}
+              src={AUTHOR_IMAGE_URL}
               alt="Andrew's avatar"
               width="44"
               height="44"
@@ -933,7 +914,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
 // STYLED COMPONENTS
 const CardWrapper = styled.div`
-  ${fontFaceStyles}
   background-color: #1a1a1a;
   width: 100%;
   max-width: 600px;

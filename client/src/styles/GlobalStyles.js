@@ -1,13 +1,18 @@
 // client/src/styles/GlobalStyles.js
 import { createGlobalStyle } from "styled-components";
-import AutographyFont from "../assets/fonts/Autography.otf";
 
 const GlobalStyle = createGlobalStyle`
+   @font-face {
+    font-family: "ParadiseSignature";
+    src: url("/fonts/Paradise_Signature.woff2") format("woff2"); 
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+
   @font-face {
     font-family: "Autography";
-    src: url("/fonts/Autography.woff2") format("woff2"),
-         url("/fonts/Autography.woff") format("woff"),
-         url("/fonts/Autography.ttf") format("truetype");
+    src: url("/fonts/Autography.woff2") format("woff2");
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -116,22 +121,12 @@ const GlobalStyle = createGlobalStyle`
     }
   }
 
-  @media screen and (display-mode: standalone) {
-    body {
-      overscroll-behavior: none;
-      overscroll-behavior-y: contain;
-    }
-    
-    .app {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    
-    .main-content {
-      flex: 1;
-    }
+ @media screen and (display-mode: standalone) {
+  body {
+    overscroll-behavior: none;
+    overscroll-behavior-y: contain;
   }
+}
 
   @keyframes spin {
     0% { transform: rotate(0deg); }
