@@ -40,25 +40,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- CONSERVATIVE Font Loading - Only optimize the least critical one -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
-      rel="stylesheet"
-    />
-    <!-- Only make Mystery Quest non-blocking since it's likely least used -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Mystery+Quest&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Pacifico&family=Mystery+Quest&display=swap"
       rel="stylesheet"
       media="print"
       onload="this.media='all'"
     />
     <noscript>
       <link
-        href="https://fonts.googleapis.com/css2?family=Mystery+Quest&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Pacifico&family=Mystery+Quest&display=swap"
         rel="stylesheet"
       />
     </noscript>
@@ -78,16 +68,6 @@
       type="font/opentype"
       crossorigin
     />
-
-    <!-- Minimal critical CSS only for font-display -->
-    <style>
-      /* Add font-display swap to prevent invisible text */
-      @supports (font-display: swap) {
-        * {
-          font-display: swap;
-        }
-      }
-    </style>
 
     <!-- Icons -->
     <link
