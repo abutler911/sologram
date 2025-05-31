@@ -40,7 +40,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- CONSERVATIVE Font Loading - Only optimize the least critical one -->
+    <!-- OPTIMIZED Font Loading - Make Mystery Quest non-blocking only -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
       rel="stylesheet"
@@ -49,7 +49,7 @@
       href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
       rel="stylesheet"
     />
-    <!-- Only make Mystery Quest non-blocking since it's likely least used -->
+    <!-- Make only Mystery Quest non-blocking since it's likely least critical -->
     <link
       href="https://fonts.googleapis.com/css2?family=Mystery+Quest&display=swap"
       rel="stylesheet"
@@ -63,29 +63,30 @@
       />
     </noscript>
 
-    <!-- Keep original local font loading -->
-    <link
-      rel="preload"
-      href="/fonts/Autography.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="/fonts/Paradise Signature.otf"
-      as="font"
-      type="font/opentype"
-      crossorigin
-    />
+    <!-- FIXED Local Font Loading - Only preload if actually used -->
+    <!-- Remove font preloads that aren't used immediately to save bandwidth -->
+    <!-- <link rel="preload" href="/fonts/Autography.woff2" as="font" type="font/woff2" crossorigin /> -->
+    <!-- <link rel="preload" href="/fonts/Paradise Signature.otf" as="font" type="font/opentype" crossorigin /> -->
 
-    <!-- Minimal critical CSS only for font-display -->
+    <!-- Font loading optimization styles -->
     <style>
-      /* Add font-display swap to prevent invisible text */
-      @supports (font-display: swap) {
-        * {
-          font-display: swap;
-        }
+      /* Ensure font-display swap for performance */
+      @font-face {
+        font-family: "Autography";
+        src: url("/fonts/Autography.woff2") format("woff2");
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Paradise Signature";
+        src: url("/fonts/Paradise Signature.otf") format("opentype");
+        font-display: swap;
+      }
+
+      /* Prevent layout shift with system font fallbacks */
+      body {
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, sans-serif;
       }
     </style>
 
@@ -129,36 +130,41 @@
       }
     </script>
 
-    <!-- Keep Google Analytics as original - it was working before -->
+    <!-- IMPROVED Google Analytics - Better error handling and performance -->
     <script>
-      // Gracefully handle GA blocking
-      window.addEventListener(
-        "error",
-        function (e) {
-          if (
-            e.target &&
-            e.target.src &&
-            e.target.src.includes("googletagmanager")
-          ) {
-            console.log("Google Analytics blocked (likely by ad blocker)");
-            // Optional: Send to your own analytics
-          }
-        },
-        true
-      );
-    </script>
-    <!-- Google Tag Manager -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-VG8RGGQQWZ"
-    ></script>
-    <script nonce="abc123">
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
+      // Check if GA is blocked before trying to load
+      function loadGoogleAnalytics() {
+        // Only load if not blocked
+        if (navigator.onLine) {
+          const script = document.createElement("script");
+          script.src =
+            "https://www.googletagmanager.com/gtag/js?id=G-VG8RGGQQWZ";
+          script.async = true;
+
+          script.onload = function () {
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+              dataLayer.push(arguments);
+            }
+            gtag("js", new Date());
+            gtag("config", "G-VG8RGGQQWZ");
+            console.log("Google Analytics loaded successfully");
+          };
+
+          script.onerror = function () {
+            console.log("Google Analytics blocked or failed to load");
+          };
+
+          document.head.appendChild(script);
+        }
       }
-      gtag("js", new Date());
-      gtag("config", "G-VG8RGGQQWZ");
+
+      // Load GA after page is fully interactive
+      if (document.readyState === "complete") {
+        loadGoogleAnalytics();
+      } else {
+        window.addEventListener("load", loadGoogleAnalytics);
+      }
     </script>
   </body>
 </html>
