@@ -40,20 +40,47 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- Fonts -->
+    <!-- NON-BLOCKING Google Fonts -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
     <link
       href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
     <link
       href="https://fonts.googleapis.com/css2?family=Mystery+Quest&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Mystery+Quest&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
 
+    <!-- Local fonts - only preload the MOST critical one -->
     <link
       rel="preload"
       href="/fonts/Autography.woff2"
@@ -61,13 +88,37 @@
       type="font/woff2"
       crossorigin
     />
-    <link
-      rel="preload"
-      href="/fonts/Paradise Signature.otf"
-      as="font"
-      type="font/opentype"
-      crossorigin
-    />
+
+    <!-- Critical CSS for font fallbacks and performance -->
+    <style>
+      /* Critical font fallbacks to prevent layout shift */
+      body {
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, sans-serif;
+        font-display: swap;
+      }
+
+      /* Prevent layout shift for custom fonts */
+      .pacifico-text {
+        font-family: Pacifico, cursive;
+        font-display: swap;
+      }
+
+      .mystery-quest-text {
+        font-family: "Mystery Quest", cursive;
+        font-display: swap;
+      }
+
+      .autography-text {
+        font-family: "Autography", cursive;
+        font-display: swap;
+      }
+
+      .paradise-text {
+        font-family: "Paradise Signature", cursive;
+        font-display: swap;
+      }
+    </style>
 
     <!-- Icons -->
     <link
@@ -92,6 +143,19 @@
     </noscript>
     <div id="root"></div>
 
+    <!-- Load Paradise Signature font after page load -->
+    <script>
+      window.addEventListener("load", function () {
+        const paradiseFont = document.createElement("link");
+        paradiseFont.rel = "preload";
+        paradiseFont.href = "/fonts/Paradise Signature.otf";
+        paradiseFont.as = "font";
+        paradiseFont.type = "font/opentype";
+        paradiseFont.crossorigin = true;
+        document.head.appendChild(paradiseFont);
+      });
+    </script>
+
     <!-- Service Worker -->
     <script>
       // Proper service worker registration
@@ -108,7 +172,24 @@
         });
       }
     </script>
+
+    <!-- Google Analytics - Loaded after page interaction for better performance -->
     <script>
+      window.addEventListener("load", function () {
+        // Load GA after page is interactive
+        const script = document.createElement("script");
+        script.src = "https://www.googletagmanager.com/gtag/js?id=G-VG8RGGQQWZ";
+        script.async = true;
+        document.head.appendChild(script);
+
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+          dataLayer.push(arguments);
+        }
+        gtag("js", new Date());
+        gtag("config", "G-VG8RGGQQWZ");
+      });
+
       // Gracefully handle GA blocking
       window.addEventListener(
         "error",
@@ -124,19 +205,6 @@
         },
         true
       );
-    </script>
-    <!-- Google Tag Manager -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-VG8RGGQQWZ"
-    ></script>
-    <script nonce="abc123">
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag("js", new Date());
-      gtag("config", "G-VG8RGGQQWZ");
     </script>
   </body>
 </html>
