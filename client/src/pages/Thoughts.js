@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useContext, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+  lazy,
+  Suspense,
+} from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 import axios from "axios";
@@ -10,16 +17,13 @@ import { useDeleteModal } from "../context/DeleteModalContext";
 import MainLayout from "../components/layout/MainLayout";
 import { format } from "date-fns";
 
-// Import ThoughtCard component
-import ThoughtCard from "../components/posts/ThoughtCard";
-
 // Import LoadingSpinner component
 import LoadingSpinner from "../components/common/LoadingSpinner";
 
 // Import theme constants
 import { COLORS } from "../theme";
 import { moodColors, moodEmojis } from "../utils/themeConstants";
-
+const ThoughtCard = lazy(() => import("../components/posts/ThoughtCard"));
 // Define animations
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(20px); }
@@ -784,17 +788,33 @@ const Thoughts = () => {
           ) : filteredThoughts.length > 0 ? (
             <>
               {filteredThoughts.map((thought) => (
-                <ThoughtCard
+                <Suspense
                   key={thought._id}
-                  thought={thought}
-                  defaultUser={defaultUser}
-                  formatDate={formatDate}
-                  handleLike={handleLike}
-                  handleRetweet={handleRetweet}
-                  handlePin={handlePin}
-                  canCreateThought={canCreateThought}
-                  onDelete={handleDeleteThought} // Use new handler
-                />
+                  fallback={
+                    <div
+                      style={{
+                        height: "200px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#666",
+                      }}
+                    >
+                      Loading thought...
+                    </div>
+                  }
+                >
+                  <ThoughtCard
+                    thought={thought}
+                    defaultUser={defaultUser}
+                    formatDate={formatDate}
+                    handleLike={handleLike}
+                    handleRetweet={handleRetweet}
+                    handlePin={handlePin}
+                    canCreateThought={canCreateThought}
+                    onDelete={handleDeleteThought}
+                  />
+                </Suspense>
               ))}
 
               {loadingMore && hasMore && (
