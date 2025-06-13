@@ -6,6 +6,7 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
+const fs = require("fs"); // file system access for static assets check
 
 // ----------- Security & Performance -----------
 const helmet = require("helmet"); // secure HTTP headers
@@ -59,9 +60,8 @@ const PORT = process.env.PORT || 5000;
 })();
 
 // ----------- Security & Performance Middleware -----------
-securityHeaders(app); // custom CSP/HSTS/etc.
 app.use(helmet()); // apply secure headers
-
+securityHeaders(app); // custom CSP/HSTS/etc.
 app.use(
   cors({
     // CORS config
@@ -98,7 +98,7 @@ app.use(express.urlencoded({ extended: true, limit: "300mb" }));
 // ----------- Rate Limiting for Auth -----------
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per window
+  max: 100, // limit each IP to 100 requests
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -123,14 +123,15 @@ app.get("/health", (req, res) => {
 });
 
 // ----------- Serve Static Assets (Production) -----------
-if (process.env.NODE_ENV === "production") {
-  const clientBuild = path.join(__dirname, "../client/build");
+const clientBuild = path.resolve(__dirname, "../client/build");
+if (fs.existsSync(clientBuild)) {
   app.use(express.static(clientBuild));
-
-  // React catch-all for non-API routes
+  // catch-all for React routes
   app.get(/^\/(?!api|health).*/, (req, res) => {
-    res.sendFile(path.resolve(clientBuild, "index.html"));
+    res.sendFile(path.join(clientBuild, "index.html"));
   });
+} else {
+  logger.warn(`Skipping static assets: ${clientBuild} not found`);
 }
 
 // ----------- Root Route -----------
@@ -165,7 +166,6 @@ app.use(errorHandler);
     // Graceful shutdown logic
     const graceful = async () => {
       logger.info("Graceful shutdown initiated");
-      // Force exit after 10s
       const timer = setTimeout(() => {
         logger.error("Shutdown timed out, forcing exit");
         process.exit(1);
