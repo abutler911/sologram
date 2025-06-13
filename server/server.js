@@ -59,8 +59,9 @@ const PORT = process.env.PORT || 5000;
 })();
 
 // ----------- Security & Performance Middleware -----------
+securityHeaders(app); // custom CSP/HSTS/etc.
 app.use(helmet()); // apply secure headers
-app.use(securityHeaders(app)); // custom CSP/HSTS/etc.
+
 app.use(
   cors({
     // CORS config
