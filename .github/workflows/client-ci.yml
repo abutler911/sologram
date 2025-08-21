@@ -1,0 +1,50 @@
+name: Client CI
+
+on:
+  push:
+    branches: [main, development]
+    paths:
+      - "client/**"
+      - ".github/workflows/client-ci.yml"
+  pull_request:
+    branches: [main, development]
+    paths:
+      - "client/**"
+      - ".github/workflows/client-ci.yml"
+
+concurrency:
+  group: client-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (client)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+        # (optional) keep lint visible but non-blocking for now
+      - name: Lint (non-blocking)
+        run: npm run lint --if-present
+        continue-on-error: true
+
+      - name: Build (ignore CI warnings)
+        run: npm run build
+        env:
+          CI: "false"
+      - name: Lint (non-blocking)
+        run: npm run lint --if-present
+        continue-on-error: true
+
+      - name: Build (ignore CI warnings)
+        run: npm run build
+        env:
+          CI: "false"
