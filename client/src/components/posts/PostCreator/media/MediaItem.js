@@ -18,7 +18,7 @@ import {
   DragIndicator,
   ProcessingOverlay,
   ProcessingText,
-} from "./PostCreator.styles";
+} from "../../PostCreator.styles";
 import { FaFilter, FaTimes, FaGripVertical } from "react-icons/fa";
 import { FILTERS } from "../../lib/media";
 

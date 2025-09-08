@@ -64,7 +64,7 @@ import {
   FilterThumbnail,
   FilterName,
   FilterActionBar,
-} from "./PostCreator.styles";
+} from "../../PostCreator.styles";
 
 import {
   FaImage,
