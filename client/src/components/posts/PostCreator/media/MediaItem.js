@@ -1,9 +1,6 @@
-// src/components/posts/PostCreator/media/MediaItem.jsx
 import React, { useEffect, useState } from "react";
-import { FaGripVertical, FaFilter, FaTimes } from "react-icons/fa";
 import {
   MediaItemContainer,
-  DragHandle,
   MediaContent,
   StoryStyleImage,
   StoryStyleVideo,
@@ -17,35 +14,39 @@ import {
   MediaActions,
   ActionButton,
   FilterBadge,
+  DragHandle,
   DragIndicator,
-} from "../../PostCreator.styles";
-import { FILTERS } from "../../../lib/media";
-import { getSafeImageSrc } from "../utils/preview";
+  ProcessingOverlay,
+  ProcessingText,
+} from "./PostCreator.styles";
+import { FaFilter, FaTimes, FaGripVertical } from "react-icons/fa";
+import { FILTERS } from "../../lib/media";
 
-function Item({
+const getSafeSrc = (item) => item?.mediaUrl || item?.previewUrl || "";
+
+const MediaItem = ({
   mediaItem,
   index,
   onRemove,
   onFilter,
+  onReorder,
   isDragging,
   ...dragProps
-}) {
-  const [imageSrc, setImageSrc] = useState(getSafeImageSrc(mediaItem));
+}) => {
+  const [imageSrc, setImageSrc] = useState(getSafeSrc(mediaItem));
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(
     !mediaItem.mediaUrl && !mediaItem.previewUrl
   );
 
   useEffect(() => {
-    const newSrc = getSafeImageSrc(mediaItem);
+    const newSrc = getSafeSrc(mediaItem);
     setImageSrc(newSrc);
     setHasError(false);
     setIsLoading(!mediaItem.mediaUrl && !mediaItem.previewUrl);
   }, [mediaItem.mediaUrl, mediaItem.previewUrl]);
 
-  const handleImageError = (e) => {
-    e.target.style.display = "none";
-    e.target.parentNode?.classList.add("image-fallback");
+  const handleImageError = () => {
     setHasError(true);
   };
 
@@ -54,24 +55,22 @@ function Item({
     setHasError(false);
   };
 
-  // processing fallback
-  if (
-    (!imageSrc || imageSrc.startsWith("data:image/svg+xml")) &&
-    !mediaItem.mediaUrl
-  ) {
+  if (!imageSrc && !mediaItem.mediaUrl) {
     return (
       <MediaItemContainer isDragging={isDragging} {...dragProps}>
         <MediaContent className="processing-state">
-          <UploadText>
-            {mediaItem.uploading
-              ? `Uploading... ${mediaItem.progress || 0}%`
-              : "Processing..."}
-          </UploadText>
-          {mediaItem.uploading && (
-            <UploadProgress>
-              <UploadProgressInner width={mediaItem.progress || 0} />
-            </UploadProgress>
-          )}
+          <ProcessingOverlay>
+            <ProcessingText>
+              {mediaItem.uploading
+                ? `Uploading... ${mediaItem.progress || 0}%`
+                : "Processing..."}
+            </ProcessingText>
+            {mediaItem.uploading && (
+              <UploadProgress>
+                <UploadProgressInner width={mediaItem.progress || 0} />
+              </UploadProgress>
+            )}
+          </ProcessingOverlay>
         </MediaContent>
         <MediaActions className="media-actions">
           <ActionButton
@@ -157,6 +156,6 @@ function Item({
       <DragIndicator className="drag-indicator">{index + 1}</DragIndicator>
     </MediaItemContainer>
   );
-}
+};
 
-export default React.memo(Item);
+export default MediaItem;

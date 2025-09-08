@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import MediaItem from "./PostCreator/media/MediaItem";
+
 import {
   Container,
   Header,
@@ -17,23 +19,6 @@ import {
   MediaGrid,
   ActionBar,
   PostButton,
-  MediaItemContainer,
-  MediaContent,
-  ProcessingOverlay,
-  ProcessingText,
-  UploadProgress,
-  UploadProgressInner,
-  UploadText,
-  MediaActions,
-  ActionButton,
-  FilterBadge,
-  DragIndicator,
-  StoryStyleVideo,
-  StoryStyleImage,
-  UploadOverlay,
-  ErrorOverlay,
-  ErrorText,
-  RetryButton,
   AddMoreButton,
   PostDetailsSection,
   SectionHeader,
@@ -80,19 +65,18 @@ import {
   FilterName,
   FilterActionBar,
 } from "./PostCreator.styles";
+
 import {
   FaImage,
   FaVideo,
   FaTimes,
   FaPlus,
-  FaFilter,
   FaTag,
   FaPencilAlt,
   FaLocationArrow,
   FaCalendarDay,
   FaRobot,
   FaMagic,
-  FaGripVertical,
   FaCheck,
 } from "react-icons/fa";
 import { useUploadManager } from "../../hooks/useUploadManager";
@@ -441,144 +425,6 @@ const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
   );
 };
 
-const MediaItem = ({
-  mediaItem,
-  index,
-  onRemove,
-  onFilter,
-  onReorder,
-  isDragging,
-  ...dragProps
-}) => {
-  const [imageSrc, setImageSrc] = useState(getSafeImageSrc(mediaItem));
-  const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(
-    !mediaItem.mediaUrl && !mediaItem.previewUrl
-  );
-
-  useEffect(() => {
-    const newSrc = getSafeImageSrc(mediaItem);
-    setImageSrc(newSrc);
-    setHasError(false);
-    setIsLoading(!mediaItem.mediaUrl && !mediaItem.previewUrl);
-  }, [mediaItem.mediaUrl, mediaItem.previewUrl]);
-
-  const handleImageError = (e) => {
-    e.target.style.display = "none";
-    if (e.target.parentNode) {
-      e.target.parentNode.classList.add("image-fallback");
-    }
-    setHasError(true);
-  };
-
-  const handleImageLoad = () => {
-    setIsLoading(false);
-    setHasError(false);
-  };
-
-  if ((!imageSrc || imageSrc === PLACEHOLDER_IMG) && !mediaItem.mediaUrl) {
-    return (
-      <MediaItemContainer isDragging={isDragging} {...dragProps}>
-        <MediaContent className="processing-state">
-          <ProcessingOverlay>
-            <ProcessingText>
-              {mediaItem.uploading
-                ? `Uploading... ${mediaItem.progress || 0}%`
-                : "Processing..."}
-            </ProcessingText>
-            {mediaItem.uploading && (
-              <UploadProgress>
-                <UploadProgressInner width={mediaItem.progress || 0} />
-              </UploadProgress>
-            )}
-          </ProcessingOverlay>
-        </MediaContent>
-        <MediaActions className="media-actions">
-          <ActionButton
-            onClick={() => onRemove(index)}
-            className="remove"
-            title="Remove media"
-          >
-            <FaTimes />
-          </ActionButton>
-        </MediaActions>
-      </MediaItemContainer>
-    );
-  }
-
-  return (
-    <MediaItemContainer isDragging={isDragging} {...dragProps}>
-      <div className="drag-handle">
-        <FaGripVertical />
-      </div>
-
-      <MediaContent>
-        {mediaItem.mediaType === "video" ? (
-          <StoryStyleVideo
-            src={imageSrc}
-            className={mediaItem.filterClass || ""}
-            onError={handleImageError}
-            onLoadedData={handleImageLoad}
-            playsInline
-            muted
-            preload="metadata"
-          />
-        ) : (
-          <StoryStyleImage
-            src={imageSrc}
-            className={mediaItem.filterClass || ""}
-            alt="Media preview"
-            onError={handleImageError}
-            onLoad={handleImageLoad}
-            loading="lazy"
-          />
-        )}
-
-        {mediaItem.uploading && (
-          <UploadOverlay>
-            <UploadProgress>
-              <UploadProgressInner width={mediaItem.progress || 0} />
-            </UploadProgress>
-            <UploadText>Uploading... {mediaItem.progress || 0}%</UploadText>
-          </UploadOverlay>
-        )}
-
-        {mediaItem.error && (
-          <ErrorOverlay>
-            <ErrorText>Upload failed</ErrorText>
-            <RetryButton onClick={() => onRemove(index)}>Remove</RetryButton>
-          </ErrorOverlay>
-        )}
-      </MediaContent>
-
-      <MediaActions className="media-actions">
-        <ActionButton
-          onClick={() => onFilter(mediaItem, index)}
-          disabled={mediaItem.uploading || mediaItem.error || hasError}
-          title="Apply filter"
-        >
-          <FaFilter />
-        </ActionButton>
-        <ActionButton
-          onClick={() => onRemove(index)}
-          className="remove"
-          title="Remove media"
-        >
-          <FaTimes />
-        </ActionButton>
-      </MediaActions>
-
-      {mediaItem.filter && mediaItem.filter !== "none" && (
-        <FilterBadge>
-          {FILTERS.find((f) => f.id === mediaItem.filter)?.name}
-        </FilterBadge>
-      )}
-
-      <DragIndicator className="drag-indicator">{index + 1}</DragIndicator>
-    </MediaItemContainer>
-  );
-};
-
 function PostCreator({ initialData = null, isEditing = false }) {
   const [media, setMedia] = useState([]);
   const [title, setTitle] = useState(initialData?.title || "");
@@ -599,6 +445,28 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const navigate = useNavigate();
   const inputFileRef = useRef(null);
   const { startUpload, mountedRef } = useUploadManager(setMedia);
+
+  const mediaRef = useRef(media);
+  useEffect(() => {
+    mediaRef.current = media;
+  }, [media]);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      mediaRef.current.forEach((item) => {
+        if (
+          item?.previewUrl &&
+          !item.isExisting &&
+          item.previewUrl.startsWith("blob:")
+        ) {
+          try {
+            URL.revokeObjectURL(item.previewUrl);
+          } catch {}
+        }
+      });
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
