@@ -1,5 +1,5 @@
 // client/src/components/posts/PostCreator.jsx
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
@@ -85,6 +85,13 @@ import { filterToClass, fileToMediaType, FILTERS } from "../../lib/media";
 
 const PLACEHOLDER_IMG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='sans-serif' fill='%23999999'%3EImage Not Available%3C/text%3E%3C/svg%3E";
+
+// Local YYYY-MM-DD helper (prevents UTC day rollback)
+const toLocalDateInput = (dateLike) => {
+  const d = dateLike ? new Date(dateLike) : new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().split("T")[0];
+};
 
 const isMobileDevice = () =>
   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
@@ -434,16 +441,16 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const [currentTag, setCurrentTag] = useState("");
   const [location, setLocation] = useState(initialData?.location || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [eventDate, setEventDate] = useState(() => {
-    const rawDate = initialData?.date || new Date().toISOString();
-    return rawDate.split("T")[0];
-  });
+
+  const [eventDate, setEventDate] = useState(() =>
+    toLocalDateInput(initialData?.date)
+  );
   const [showAIModal, setShowAIModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedMediaForFilter, setSelectedMediaForFilter] = useState(null);
 
   const navigate = useNavigate();
-  const inputFileRef = useRef(null);
+
   const { startUpload, mountedRef } = useUploadManager(setMedia);
 
   const mediaRef = useRef(media);
@@ -457,23 +464,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
       mediaRef.current.forEach((item) => {
         if (
           item?.previewUrl &&
-          !item.isExisting &&
-          item.previewUrl.startsWith("blob:")
-        ) {
-          try {
-            URL.revokeObjectURL(item.previewUrl);
-          } catch {}
-        }
-      });
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-      media.forEach((item) => {
-        if (
-          item.previewUrl &&
           !item.isExisting &&
           item.previewUrl.startsWith("blob:")
         ) {
@@ -563,14 +553,17 @@ function PostCreator({ initialData = null, isEditing = false }) {
     [media, startUpload]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     accept: {
       "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp"],
       "video/*": [".mp4", ".mov", ".avi", ".webm"],
     },
     onDrop,
+
     maxSize: 25 * 1024 * 1024,
-    noClick: media.length > 0,
+    // prevent auto-opening quirks on mobile; we’ll trigger picker manually
+    noClick: true,
+    noKeyboard: true,
   });
 
   const removeMedia = (indexToRemove) => {
@@ -750,27 +743,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
     }
   };
 
-  const addMoreMedia = () => {
-    const fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = "image/*,video/*";
-    fileInput.multiple = true;
-    fileInput.style.display = "none";
-    fileInput.onchange = (e) => {
-      if (e.target.files?.length) onDrop(Array.from(e.target.files));
-      document.body.removeChild(fileInput);
-    };
-    document.body.appendChild(fileInput);
-    fileInput.click();
-  };
-
-  const handleFileInputChange = (e) => {
-    if (e.target.files?.length) {
-      onDrop(Array.from(e.target.files));
-      e.target.value = "";
-    }
-  };
-
   const isFormValid =
     media.length > 0 &&
     title.trim() &&
@@ -803,19 +775,11 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (inputFileRef.current) inputFileRef.current.click();
+                  open();
                 }}
               >
                 <FaPlus /> Select from device
               </UploadButton>
-              <input
-                type="file"
-                ref={inputFileRef}
-                onChange={handleFileInputChange}
-                accept="image/*,video/*"
-                multiple
-                style={{ display: "none" }}
-              />
             </DropArea>
           ) : (
             <MediaGrid>
@@ -834,19 +798,11 @@ function PostCreator({ initialData = null, isEditing = false }) {
                   />
                 )}
                 AddMoreButton={
-                  <AddMoreButton onClick={addMoreMedia}>
+                  <AddMoreButton onClick={open}>
                     <FaPlus />
                     <span>Add more</span>
                   </AddMoreButton>
                 }
-              />
-              <input
-                type="file"
-                ref={inputFileRef}
-                onChange={handleFileInputChange}
-                accept="image/*,video/*"
-                multiple
-                style={{ display: "none" }}
               />
             </MediaGrid>
           )}
