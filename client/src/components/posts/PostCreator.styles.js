@@ -1,7 +1,7 @@
+// client/src/components/posts/PostCreator.styles.js
 import styled from "styled-components";
 import { COLORS } from "../../theme";
 
-/* Layout */
 export const Container = styled.div`
   max-width: 600px;
   margin: 0 auto;
@@ -63,55 +63,16 @@ export const MediaSection = styled.div`
   min-height: 200px;
 `;
 
-export const ActionBar = styled.div`
-  padding: 24px;
-  border-top: 1px solid ${COLORS.border};
-  background: ${COLORS.elevatedBackground};
-
-  @media (max-width: 768px) {
-    position: sticky;
-    bottom: 0;
-    z-index: 100;
-  }
-`;
-
-export const PostButton = styled.button`
-  width: 100%;
-  background: ${COLORS.primarySalmon};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 16px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover:not(:disabled) {
-    background: ${COLORS.accentSalmon};
-    transform: translateY(-1px);
-  }
-
-  &:disabled {
-    background: ${COLORS.border};
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-/* Upload / Dropzone */
 export const DropArea = styled.div`
   border: 2px dashed
-    ${(props) => (props.isDragActive ? COLORS.primarySalmon : COLORS.border)};
+    ${(p) => (p.isDragActive ? COLORS.primarySalmon : COLORS.border)};
   border-radius: 12px;
   padding: 48px 24px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: ${(props) =>
-    props.isDragActive
-      ? `${COLORS.primarySalmon}08`
-      : COLORS.elevatedBackground};
+  background: ${(p) =>
+    p.isDragActive ? `${COLORS.primarySalmon}08` : COLORS.elevatedBackground};
 
   &:hover {
     border-color: ${COLORS.primarySalmon};
@@ -186,7 +147,6 @@ export const MediaGrid = styled.div`
   }
 `;
 
-/* Media Item */
 export const MediaItemContainer = styled.div`
   position: relative;
   aspect-ratio: 1;
@@ -194,16 +154,15 @@ export const MediaItemContainer = styled.div`
   overflow: hidden;
   background: ${COLORS.elevatedBackground};
   border: 2px solid
-    ${(props) => (props.isDragging ? COLORS.primarySalmon : COLORS.border)};
+    ${(p) => (p.isDragging ? COLORS.primarySalmon : COLORS.border)};
   transition: all 0.2s ease;
-  cursor: ${(props) => (props.isDragging ? "grabbing" : "grab")};
-  transform: ${(props) => (props.isDragging ? "scale(1.05)" : "scale(1)")};
-  opacity: ${(props) => (props.isDragging ? "0.8" : "1")};
-  z-index: ${(props) => (props.isDragging ? "10" : "1")};
+  cursor: ${(p) => (p.isDragging ? "grabbing" : "grab")};
+  transform: ${(p) => (p.isDragging ? "scale(1.05)" : "scale(1)")};
+  opacity: ${(p) => (p.isDragging ? "0.8" : "1")};
+  z-index: ${(p) => (p.isDragging ? "10" : "1")};
 
   &:hover {
-    transform: ${(props) =>
-      props.isDragging ? "scale(1.05)" : "translateY(-2px)"};
+    transform: ${(p) => (p.isDragging ? "scale(1.05)" : "translateY(-2px)")};
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
@@ -339,67 +298,20 @@ export const StoryStyleVideo = styled.video`
   outline: none;
 `;
 
-/* Upload / Error overlays */
-export const UploadOverlay = styled.div`
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.8);
+export const ProcessingOverlay = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: white;
-`;
-
-export const UploadProgress = styled.div`
-  width: 70%;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 8px;
-`;
-
-export const UploadProgressInner = styled.div`
-  height: 100%;
-  width: ${(props) => props.width}%;
-  background: ${COLORS.primarySalmon};
-  transition: width 0.3s ease;
-`;
-
-export const UploadText = styled.div`
-  font-size: 10px;
-  font-weight: 500;
-`;
-
-export const ErrorOverlay = styled.div`
-  position: absolute;
-  inset: 0;
-  background: rgba(244, 67, 54, 0.9);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: white;
+  gap: 8px;
+  color: ${COLORS.textSecondary};
   text-align: center;
   padding: 8px;
 `;
 
-export const ErrorText = styled.div`
+export const ProcessingText = styled.div`
   font-size: 11px;
   font-weight: 500;
-  margin-bottom: 8px;
-`;
-
-export const RetryButton = styled.button`
-  background: white;
-  color: ${COLORS.error};
-  border: none;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 10px;
-  font-weight: 600;
-  cursor: pointer;
 `;
 
 export const MediaActions = styled.div`
@@ -455,6 +367,68 @@ export const FilterBadge = styled.div`
   font-weight: 500;
 `;
 
+export const UploadOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+`;
+
+export const UploadProgress = styled.div`
+  width: 70%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+`;
+
+export const UploadProgressInner = styled.div`
+  height: 100%;
+  width: ${(p) => p.width}%;
+  background: ${COLORS.primarySalmon};
+  transition: width 0.3s ease;
+`;
+
+export const UploadText = styled.div`
+  font-size: 10px;
+  font-weight: 500;
+`;
+
+export const ErrorOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  background: rgba(244, 67, 54, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-align: center;
+  padding: 8px;
+`;
+
+export const ErrorText = styled.div`
+  font-size: 11px;
+  font-weight: 500;
+  margin-bottom: 8px;
+`;
+
+export const RetryButton = styled.button`
+  background: white;
+  color: ${COLORS.error};
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+`;
+
 export const AddMoreButton = styled.button`
   display: flex;
   flex-direction: column;
@@ -485,7 +459,12 @@ export const AddMoreButton = styled.button`
   }
 `;
 
-/* Post details & form */
+export const PostDetailsSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
 export const SectionHeader = styled.div`
   display: flex;
   justify-content: space-between;
@@ -676,6 +655,10 @@ export const TagRemoveButton = styled.button`
   &:hover {
     background: ${COLORS.primarySalmon}30;
   }
+
+  svg {
+    font-size: 10px;
+  }
 `;
 
 export const CharCount = styled.div`
@@ -684,7 +667,42 @@ export const CharCount = styled.div`
   text-align: right;
 `;
 
-/* Modals (shared) */
+export const ActionBar = styled.div`
+  padding: 24px;
+  border-top: 1px solid ${COLORS.border};
+  background: ${COLORS.elevatedBackground};
+
+  @media (max-width: 768px) {
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+  }
+`;
+
+export const PostButton = styled.button`
+  width: 100%;
+  background: ${COLORS.primarySalmon};
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: ${COLORS.accentSalmon};
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    background: ${COLORS.border};
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
 export const ModalOverlay = styled.div`
   position: fixed;
   inset: 0;
@@ -951,7 +969,6 @@ export const ApplyButton = styled.button`
   }
 `;
 
-/* Filter modal extras */
 export const FilterModalContent = styled(ModalContent)`
   max-width: 600px;
 `;
@@ -983,7 +1000,7 @@ export const FilterOption = styled.div`
   padding: 8px;
   border-radius: 8px;
   transition: all 0.2s ease;
-  opacity: ${(props) => (props.active ? 1 : 0.7)};
+  opacity: ${(p) => (p.active ? 1 : 0.7)};
 
   &:hover {
     opacity: 1;
@@ -996,8 +1013,7 @@ export const FilterThumbnail = styled.div`
   height: 60px;
   border-radius: 8px;
   overflow: hidden;
-  border: 2px solid
-    ${(props) => (props.active ? COLORS.primarySalmon : COLORS.border)};
+  border: 2px solid ${(p) => (p.active ? COLORS.primarySalmon : COLORS.border)};
 
   img {
     width: 100%;
@@ -1034,9 +1050,8 @@ export const FilterThumbnail = styled.div`
 export const FilterName = styled.span`
   margin-top: 8px;
   font-size: 12px;
-  font-weight: ${(props) => (props.active ? "600" : "400")};
-  color: ${(props) =>
-    props.active ? COLORS.primarySalmon : COLORS.textSecondary};
+  font-weight: ${(p) => (p.active ? "600" : "400")};
+  color: ${(p) => (p.active ? COLORS.primarySalmon : COLORS.textSecondary)};
 `;
 
 export const FilterActionBar = styled.div`
