@@ -20,7 +20,7 @@ import {
   ProcessingText,
 } from "../../PostCreator.styles";
 import { FaFilter, FaTimes, FaGripVertical } from "react-icons/fa";
-import { FILTERS } from "../../lib/media";
+import { FILTERS } from "../../../lib/media";
 
 const getSafeSrc = (item) => item?.mediaUrl || item?.previewUrl || "";
 
