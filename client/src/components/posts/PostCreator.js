@@ -1,15 +1,85 @@
-import React, {
-  useState,
-  useRef,
-  useCallback,
-  useEffect,
-  useContext,
-} from "react";
+// client/src/components/posts/PostCreator.jsx
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import styled from "styled-components";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import {
+  Container,
+  Header,
+  HeaderContent,
+  ContentSection,
+  MediaSection,
+  DropArea,
+  UploadIcon,
+  DropText,
+  UploadButton,
+  MediaGrid,
+  ActionBar,
+  PostButton,
+  MediaItemContainer,
+  MediaContent,
+  ProcessingOverlay,
+  ProcessingText,
+  UploadProgress,
+  UploadProgressInner,
+  UploadText,
+  MediaActions,
+  ActionButton,
+  FilterBadge,
+  DragIndicator,
+  StoryStyleVideo,
+  StoryStyleImage,
+  UploadOverlay,
+  ErrorOverlay,
+  ErrorText,
+  RetryButton,
+  AddMoreButton,
+  PostDetailsSection,
+  SectionHeader,
+  AIButton,
+  FormGroup,
+  Label,
+  FormInput,
+  FormTextarea,
+  TwoColumnGroup,
+  IconInput,
+  TagInput,
+  TagInputField,
+  TagsContainer,
+  Tag,
+  TagRemoveButton,
+  CharCount,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  CloseButton,
+  ModalBody,
+  Select,
+  InputRow,
+  Input,
+  ErrorMessage,
+  GenerateButton,
+  LoadingSpinner,
+  GeneratedSection,
+  SectionTitle,
+  ContentPreview,
+  ContentLabel,
+  ContentBox,
+  TagsPreview,
+  TagPreview,
+  ButtonRow,
+  SecondaryButton,
+  ApplyButton,
+  FilterModalContent,
+  FilterPreviewSection,
+  MainPreview,
+  FiltersGrid,
+  FilterOption,
+  FilterThumbnail,
+  FilterName,
+  FilterActionBar,
+} from "./PostCreator.styles";
 import {
   FaImage,
   FaVideo,
@@ -25,1176 +95,46 @@ import {
   FaGripVertical,
   FaCheck,
 } from "react-icons/fa";
-import { COLORS } from "../../theme";
 import { useUploadManager } from "../../hooks/useUploadManager";
 import MediaGridSortable from "./MediaGridSortable";
 import { filterToClass, fileToMediaType, FILTERS } from "../../lib/media";
-import { AuthContext } from "../../context/AuthContext";
 
-// Constants
 const PLACEHOLDER_IMG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='sans-serif' fill='%23999999'%3EImage Not Available%3C/text%3E%3C/svg%3E";
 
-// Utility Functions
-const isMobileDevice = () => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+const isMobileDevice = () =>
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
     navigator.userAgent
   );
-};
 
 const createSafeBlobUrl = (file) => {
-  console.log(
-    "Creating preview for:",
-    file.name,
-    "Type:",
-    file.type,
-    "Size:",
-    file.size
-  );
-
   try {
-    // For images, always use data URL on mobile, blob URL on desktop
     if (file.type.startsWith("image/")) {
       if (isMobileDevice()) {
         return new Promise((resolve) => {
           const reader = new FileReader();
-          reader.onload = (e) => {
-            console.log("Data URL created for mobile:", file.name);
-            resolve(e.target.result);
-          };
-          reader.onerror = (e) => {
-            console.error("FileReader error:", e);
-            resolve(null);
-          };
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = () => resolve(null);
           reader.readAsDataURL(file);
         });
       } else {
-        // Desktop: use blob URL
         const url = URL.createObjectURL(file);
-        console.log("Blob URL created for desktop:", file.name, url);
         return Promise.resolve(url);
       }
     }
-
-    // For videos, always use blob URL
     const url = URL.createObjectURL(file);
-    console.log("Blob URL created for video:", file.name, url);
     return Promise.resolve(url);
-  } catch (error) {
-    console.error("Failed to create preview URL for:", file.name, error);
+  } catch {
     return Promise.resolve(null);
   }
 };
 
 const getSafeImageSrc = (mediaItem) => {
-  // Always prioritize uploaded URL first
-  if (mediaItem.mediaUrl) {
-    return mediaItem.mediaUrl;
-  }
-
-  // Then use preview URL (blob or data URL)
-  if (mediaItem.previewUrl) {
-    return mediaItem.previewUrl;
-  }
-
-  // Fallback to placeholder
+  if (mediaItem.mediaUrl) return mediaItem.mediaUrl;
+  if (mediaItem.previewUrl) return mediaItem.previewUrl;
   return PLACEHOLDER_IMG;
 };
 
-// Styled Components - Base Components First
-const Container = styled.div`
-  max-width: 600px;
-  margin: 0 auto;
-  background: ${COLORS.cardBackground};
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid ${COLORS.border};
-
-  @media (max-width: 768px) {
-    margin: 0;
-    border-radius: 0;
-    box-shadow: none;
-    border: none;
-    min-height: 100vh;
-  }
-`;
-
-const Header = styled.div`
-  padding: 24px;
-  border-bottom: 1px solid ${COLORS.border};
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryMint}15 0%,
-    ${COLORS.primarySalmon}15 100%
-  );
-`;
-
-const HeaderContent = styled.div`
-  text-align: center;
-
-  h1 {
-    margin: 0 0 8px 0;
-    font-size: 24px;
-    font-weight: 700;
-    color: ${COLORS.textPrimary};
-  }
-
-  p {
-    margin: 0;
-    color: ${COLORS.textSecondary};
-    font-size: 14px;
-  }
-`;
-
-const ContentSection = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding: 24px;
-
-  @media (max-width: 768px) {
-    padding: 16px;
-    gap: 20px;
-  }
-`;
-
-const MediaSection = styled.div`
-  min-height: 200px;
-`;
-
-const DropArea = styled.div`
-  border: 2px dashed
-    ${(props) => (props.isDragActive ? COLORS.primarySalmon : COLORS.border)};
-  border-radius: 12px;
-  padding: 48px 24px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background: ${(props) =>
-    props.isDragActive
-      ? `${COLORS.primarySalmon}08`
-      : COLORS.elevatedBackground};
-
-  &:hover {
-    border-color: ${COLORS.primarySalmon};
-    background: ${COLORS.primarySalmon}08;
-  }
-
-  &:hover .upload-icon svg {
-    color: ${COLORS.primarySalmon};
-  }
-`;
-
-const UploadIcon = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-bottom: 16px;
-
-  svg {
-    font-size: 32px;
-    color: ${COLORS.primaryBlueGray};
-    transition: color 0.3s ease;
-  }
-`;
-
-const DropText = styled.div`
-  margin-bottom: 24px;
-
-  h3 {
-    margin: 0 0 8px 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: ${COLORS.textPrimary};
-  }
-
-  p {
-    margin: 0;
-    color: ${COLORS.textSecondary};
-    font-size: 14px;
-  }
-`;
-
-const UploadButton = styled.button`
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: ${COLORS.primarySalmon};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${COLORS.accentSalmon};
-    transform: translateY(-1px);
-  }
-
-  svg {
-    font-size: 14px;
-  }
-`;
-
-const MediaGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
-
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(3, 1fr);
-  }
-`;
-
-const MediaItemContainer = styled.div`
-  position: relative;
-  aspect-ratio: 1;
-  border-radius: 8px;
-  overflow: hidden;
-  background: ${COLORS.elevatedBackground};
-  border: 2px solid
-    ${(props) => (props.isDragging ? COLORS.primarySalmon : COLORS.border)};
-  transition: all 0.2s ease;
-  cursor: ${(props) => (props.isDragging ? "grabbing" : "grab")};
-  transform: ${(props) => (props.isDragging ? "scale(1.05)" : "scale(1)")};
-  opacity: ${(props) => (props.isDragging ? "0.8" : "1")};
-  z-index: ${(props) => (props.isDragging ? "10" : "1")};
-
-  &:hover {
-    transform: ${(props) =>
-      props.isDragging ? "scale(1.05)" : "translateY(-2px)"};
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  &:hover .drag-handle {
-    opacity: 1;
-  }
-
-  &:hover .media-actions {
-    opacity: 1;
-  }
-
-  &:hover .drag-indicator {
-    opacity: 1;
-  }
-
-  /* Drag and drop visual feedback */
-  &[data-drag-over="true"] {
-    border-color: ${COLORS.primaryMint};
-    background: ${COLORS.primaryMint}10;
-  }
-`;
-
-const DragHandle = styled.div`
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  z-index: 3;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  border-radius: 4px;
-  padding: 4px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  cursor: grab;
-
-  &:active {
-    cursor: grabbing;
-  }
-
-  svg {
-    font-size: 12px;
-  }
-`;
-
-const DragIndicator = styled.div`
-  position: absolute;
-  bottom: 4px;
-  left: 4px;
-  z-index: 3;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 600;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-`;
-
-const MediaContent = styled.div`
-  position: relative;
-  width: 100%;
-  height: 100%;
-
-  img,
-  video {
-    &.filter-warm {
-      filter: saturate(1.5) sepia(0.2) contrast(1.1);
-    }
-
-    &.filter-cool {
-      filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
-    }
-
-    &.filter-grayscale {
-      filter: grayscale(1);
-    }
-
-    &.filter-vintage {
-      filter: sepia(0.4) saturate(1.3) contrast(1.2);
-    }
-
-    &.filter-clarendon {
-      filter: contrast(1.2) saturate(1.35);
-    }
-
-    &.filter-gingham {
-      filter: brightness(1.05) hue-rotate(-10deg) sepia(0.2);
-    }
-
-    &.filter-moon {
-      filter: grayscale(1) brightness(1.1) contrast(1.1);
-    }
-
-    &.filter-lark {
-      filter: brightness(1.1) contrast(0.9) saturate(1.1);
-    }
-  }
-
-  /* Stories-style image fallback */
-  &.image-fallback {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: ${COLORS.cardBackground};
-
-    &:before {
-      content: "\\f03e";
-      font-family: "Font Awesome 5 Free";
-      font-weight: 900;
-      font-size: 1.2rem;
-      color: ${COLORS.textTertiary};
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-  }
-
-  &.processing-state {
-    background: ${COLORS.elevatedBackground};
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-`;
-
-// Stories-style image and video components
-const StoryStyleImage = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background-color: ${COLORS.cardBackground};
-`;
-
-const StoryStyleVideo = styled.video`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  outline: none;
-`;
-
-const ProcessingOverlay = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: ${COLORS.textSecondary};
-  text-align: center;
-  padding: 8px;
-`;
-
-const ProcessingText = styled.div`
-  font-size: 11px;
-  font-weight: 500;
-`;
-
-const MediaActions = styled.div`
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-`;
-
-const ActionButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${COLORS.primarySalmon};
-  }
-
-  &.remove:hover {
-    background: ${COLORS.error};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  svg {
-    font-size: 12px;
-  }
-`;
-
-const FilterBadge = styled.div`
-  position: absolute;
-  bottom: 4px;
-  left: 4px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 500;
-`;
-
-const UploadOverlay = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: white;
-`;
-
-const UploadProgress = styled.div`
-  width: 70%;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 8px;
-`;
-
-const UploadProgressInner = styled.div`
-  height: 100%;
-  width: ${(props) => props.width}%;
-  background: ${COLORS.primarySalmon};
-  transition: width 0.3s ease;
-`;
-
-const UploadText = styled.div`
-  font-size: 10px;
-  font-weight: 500;
-`;
-
-const ErrorOverlay = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(244, 67, 54, 0.9);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  text-align: center;
-  padding: 8px;
-`;
-
-const ErrorText = styled.div`
-  font-size: 11px;
-  font-weight: 500;
-  margin-bottom: 8px;
-`;
-
-const RetryButton = styled.button`
-  background: white;
-  color: ${COLORS.error};
-  border: none;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 10px;
-  font-weight: 600;
-  cursor: pointer;
-`;
-
-const AddMoreButton = styled.button`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  aspect-ratio: 1;
-  background: ${COLORS.elevatedBackground};
-  border: 2px dashed ${COLORS.border};
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: ${COLORS.textSecondary};
-
-  &:hover {
-    border-color: ${COLORS.primarySalmon};
-    color: ${COLORS.primarySalmon};
-    background: ${COLORS.primarySalmon}08;
-  }
-
-  svg {
-    font-size: 20px;
-  }
-
-  span {
-    font-size: 12px;
-    font-weight: 500;
-  }
-`;
-
-const PostDetailsSection = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-`;
-
-const SectionHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  h3 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: ${COLORS.textPrimary};
-  }
-`;
-
-const AIButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryMint} 0%,
-    ${COLORS.primarySalmon} 100%
-  );
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  svg {
-    font-size: 14px;
-  }
-`;
-
-const FormGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const TwoColumnGroup = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const Label = styled.label`
-  font-size: 14px;
-  font-weight: 600;
-  color: ${COLORS.textPrimary};
-`;
-
-const FormInput = styled.input`
-  width: 100%;
-  padding: 12px;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 8px;
-  color: ${COLORS.textPrimary};
-  font-size: 14px;
-  transition: all 0.2s ease;
-
-  &:focus {
-    outline: none;
-    border-color: ${COLORS.primarySalmon};
-    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
-  }
-
-  &::placeholder {
-    color: ${COLORS.textTertiary};
-  }
-`;
-
-const FormTextarea = styled.textarea`
-  width: 100%;
-  padding: 12px;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 8px;
-  color: ${COLORS.textPrimary};
-  font-size: 14px;
-  resize: vertical;
-  min-height: 100px;
-  transition: all 0.2s ease;
-
-  &:focus {
-    outline: none;
-    border-color: ${COLORS.primarySalmon};
-    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
-  }
-
-  &::placeholder {
-    color: ${COLORS.textTertiary};
-  }
-`;
-
-const IconInput = styled.div`
-  display: flex;
-  align-items: center;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 8px;
-  overflow: hidden;
-  transition: all 0.2s ease;
-
-  &:focus-within {
-    border-color: ${COLORS.primarySalmon};
-    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
-  }
-
-  svg {
-    margin: 0 12px;
-    color: ${COLORS.primarySalmon};
-    font-size: 16px;
-  }
-
-  input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    padding: 12px 12px 12px 0;
-
-    &:focus {
-      outline: none;
-    }
-  }
-`;
-
-const TagInput = styled(IconInput)``;
-
-const TagInputField = styled.input`
-  flex: 1;
-  border: none;
-  background: transparent;
-  padding: 12px 12px 12px 0;
-
-  &:focus {
-    outline: none;
-  }
-`;
-
-const TagsContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px;
-  background: ${COLORS.elevatedBackground};
-  border-radius: 8px;
-  border: 1px dashed ${COLORS.border};
-`;
-
-const Tag = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: ${COLORS.primarySalmon}20;
-  color: ${COLORS.primarySalmon};
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 14px;
-  font-weight: 500;
-`;
-
-const TagRemoveButton = styled.button`
-  background: none;
-  border: none;
-  color: inherit;
-  padding: 0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-
-  &:hover {
-    background: ${COLORS.primarySalmon}30;
-  }
-
-  svg {
-    font-size: 10px;
-  }
-`;
-
-const CharCount = styled.div`
-  font-size: 12px;
-  color: ${COLORS.textTertiary};
-  text-align: right;
-`;
-
-const ActionBar = styled.div`
-  padding: 24px;
-  border-top: 1px solid ${COLORS.border};
-  background: ${COLORS.elevatedBackground};
-
-  @media (max-width: 768px) {
-    position: sticky;
-    bottom: 0;
-    z-index: 100;
-  }
-`;
-
-const PostButton = styled.button`
-  width: 100%;
-  background: ${COLORS.primarySalmon};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 16px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover:not(:disabled) {
-    background: ${COLORS.accentSalmon};
-    transform: translateY(-1px);
-  }
-
-  &:disabled {
-    background: ${COLORS.border};
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-// Modal Components
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-`;
-
-const ModalContent = styled.div`
-  background: ${COLORS.cardBackground};
-  border-radius: 12px;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  border: 1px solid ${COLORS.border};
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid ${COLORS.border};
-
-  h3 {
-    margin: 0;
-    color: ${COLORS.textPrimary};
-    font-size: 1.25rem;
-  }
-`;
-
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  color: ${COLORS.textSecondary};
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 4px;
-
-  &:hover {
-    background: ${COLORS.elevatedBackground};
-    color: ${COLORS.textPrimary};
-  }
-`;
-
-const ModalBody = styled.div`
-  padding: 1.5rem;
-`;
-
-const Select = styled.select`
-  width: 100%;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 6px;
-  padding: 0.75rem;
-  color: ${COLORS.textPrimary};
-  font-size: 0.875rem;
-  cursor: pointer;
-
-  &:focus {
-    outline: none;
-    border-color: ${COLORS.primarySalmon};
-    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
-  }
-`;
-
-const InputRow = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const Input = styled.input`
-  width: 100%;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 6px;
-  padding: 0.75rem;
-  color: ${COLORS.textPrimary};
-  font-size: 0.875rem;
-
-  &:focus {
-    outline: none;
-    border-color: ${COLORS.primarySalmon};
-    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
-  }
-
-  &::placeholder {
-    color: ${COLORS.textTertiary};
-  }
-`;
-
-const ErrorMessage = styled.div`
-  background: ${COLORS.error}15;
-  border: 1px solid ${COLORS.error}30;
-  color: ${COLORS.error};
-  padding: 0.75rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-`;
-
-const GenerateButton = styled.button`
-  width: 100%;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primarySalmon} 0%,
-    ${COLORS.accentSalmon} 100%
-  );
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.875rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-
-  &:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px ${COLORS.primarySalmon}30;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const LoadingSpinner = styled.div`
-  width: 16px;
-  height: 16px;
-  border: 2px solid transparent;
-  border-top: 2px solid currentColor;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-`;
-
-const GeneratedSection = styled.div`
-  border-top: 1px solid ${COLORS.border};
-  padding-top: 1.5rem;
-  animation: slideIn 0.3s ease;
-
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-`;
-
-const SectionTitle = styled.h4`
-  color: ${COLORS.textPrimary};
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-`;
-
-const ContentPreview = styled.div`
-  margin-bottom: 1rem;
-`;
-
-const ContentLabel = styled.div`
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: ${COLORS.textSecondary};
-  margin-bottom: 0.5rem;
-`;
-
-const ContentBox = styled.div`
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 6px;
-  padding: 0.75rem;
-  color: ${COLORS.textPrimary};
-  line-height: 1.5;
-  font-size: 0.875rem;
-`;
-
-const TagsPreview = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-`;
-
-const TagPreview = styled.span`
-  background: ${COLORS.primarySalmon}20;
-  color: ${COLORS.primarySalmon};
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-`;
-
-const ButtonRow = styled.div`
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-`;
-
-const SecondaryButton = styled.button`
-  flex: 1;
-  background: ${COLORS.elevatedBackground};
-  color: ${COLORS.textSecondary};
-  border: 1px solid ${COLORS.border};
-  border-radius: 6px;
-  padding: 0.75rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${COLORS.border};
-    color: ${COLORS.textPrimary};
-  }
-`;
-
-const ApplyButton = styled.button`
-  flex: 2;
-  background: ${COLORS.primaryMint};
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-
-  &:hover {
-    background: ${COLORS.accentMint};
-    transform: translateY(-1px);
-  }
-`;
-
-// Filter Modal Styled Components
-const FilterModalContent = styled(ModalContent)`
-  max-width: 600px;
-`;
-
-const FilterPreviewSection = styled.div`
-  padding: 0;
-`;
-
-const MainPreview = styled.div`
-  padding: 0;
-  background: ${COLORS.background};
-  border-bottom: 1px solid ${COLORS.border};
-`;
-
-const FiltersGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  gap: 8px;
-  padding: 16px;
-  max-height: 200px;
-  overflow-y: auto;
-`;
-
-const FilterOption = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  opacity: ${(props) => (props.active ? 1 : 0.7)};
-
-  &:hover {
-    opacity: 1;
-    background: ${COLORS.elevatedBackground};
-  }
-`;
-
-const FilterThumbnail = styled.div`
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 2px solid
-    ${(props) => (props.active ? COLORS.primarySalmon : COLORS.border)};
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  &.filter-warm img {
-    filter: saturate(1.5) sepia(0.2) contrast(1.1);
-  }
-
-  &.filter-cool img {
-    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
-  }
-
-  &.filter-grayscale img {
-    filter: grayscale(1);
-  }
-
-  &.filter-vintage img {
-    filter: sepia(0.4) saturate(1.3) contrast(1.2);
-  }
-
-  &.filter-clarendon img {
-    filter: contrast(1.2) saturate(1.35);
-  }
-
-  &.filter-gingham img {
-    filter: brightness(1.05) hue-rotate(-10deg) sepia(0.2);
-  }
-
-  &.filter-moon img {
-    filter: grayscale(1) brightness(1.1) contrast(1.1);
-  }
-
-  &.filter-lark img {
-    filter: brightness(1.1) contrast(0.9) saturate(1.1);
-  }
-`;
-
-const FilterName = styled.span`
-  margin-top: 8px;
-  font-size: 12px;
-  font-weight: ${(props) => (props.active ? "600" : "400")};
-  color: ${(props) =>
-    props.active ? COLORS.primarySalmon : COLORS.textSecondary};
-`;
-
-const FilterActionBar = styled.div`
-  display: flex;
-  gap: 12px;
-  padding: 16px;
-  border-top: 1px solid ${COLORS.border};
-`;
-
-// AI Content Generator Modal Component
 const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
   const [formData, setFormData] = useState({
     description: "",
@@ -1223,9 +163,11 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
     { value: "minimalist", label: "Clean & Minimal" },
   ];
 
+  if (!isOpen) return null;
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((p) => ({ ...p, [name]: value }));
     setError("");
   };
 
@@ -1234,10 +176,8 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
       setError("Please provide a description for your content");
       return;
     }
-
     setIsGenerating(true);
     setError("");
-
     try {
       const { data } = await axios.post(
         "/api/admin/ai-content/generate",
@@ -1248,10 +188,8 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
       );
       setGeneratedContent(data?.data);
       toast.success("Content generated successfully!");
-    } catch (error) {
-      setError(
-        error.message || "Failed to generate content. Please try again."
-      );
+    } catch (err) {
+      setError(err.message || "Failed to generate content. Please try again.");
       toast.error("Failed to generate content");
     } finally {
       setIsGenerating(false);
@@ -1284,8 +222,6 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
     });
     setError("");
   };
-
-  if (!isOpen) return null;
 
   return (
     <ModalOverlay onClick={handleClose}>
@@ -1418,7 +354,6 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
   );
 };
 
-// Filter Selection Modal Component
 const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
   const [selectedFilter, setSelectedFilter] = useState(
     mediaItem?.filter || "none"
@@ -1430,12 +365,12 @@ const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
     }
   }, [mediaItem]);
 
+  if (!isOpen || !mediaItem) return null;
+
   const handleApplyFilter = () => {
     onApplyFilter(selectedFilter);
     onClose();
   };
-
-  if (!isOpen || !mediaItem) return null;
 
   return (
     <ModalOverlay onClick={onClose}>
@@ -1506,7 +441,6 @@ const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
   );
 };
 
-// Media Item Component with drag & drop reordering
 const MediaItem = ({
   mediaItem,
   index,
@@ -1524,21 +458,12 @@ const MediaItem = ({
 
   useEffect(() => {
     const newSrc = getSafeImageSrc(mediaItem);
-    console.log(
-      "MediaItem effect - updating src:",
-      newSrc,
-      "for item:",
-      mediaItem.id
-    );
     setImageSrc(newSrc);
     setHasError(false);
     setIsLoading(!mediaItem.mediaUrl && !mediaItem.previewUrl);
   }, [mediaItem.mediaUrl, mediaItem.previewUrl]);
 
   const handleImageError = (e) => {
-    console.error("Image load error for:", mediaItem.id, "src:", e.target.src);
-
-    // Hide the broken image and show fallback
     e.target.style.display = "none";
     if (e.target.parentNode) {
       e.target.parentNode.classList.add("image-fallback");
@@ -1547,12 +472,10 @@ const MediaItem = ({
   };
 
   const handleImageLoad = () => {
-    console.log("Image loaded successfully for:", mediaItem.id);
     setIsLoading(false);
     setHasError(false);
   };
 
-  // Show processing state if no preview available yet
   if ((!imageSrc || imageSrc === PLACEHOLDER_IMG) && !mediaItem.mediaUrl) {
     return (
       <MediaItemContainer isDragging={isDragging} {...dragProps}>
@@ -1585,9 +508,9 @@ const MediaItem = ({
 
   return (
     <MediaItemContainer isDragging={isDragging} {...dragProps}>
-      <DragHandle className="drag-handle">
+      <div className="drag-handle">
         <FaGripVertical />
-      </DragHandle>
+      </div>
 
       <MediaContent>
         {mediaItem.mediaType === "video" ? (
@@ -1651,15 +574,12 @@ const MediaItem = ({
         </FilterBadge>
       )}
 
-      {/* Drag indicator */}
       <DragIndicator className="drag-indicator">{index + 1}</DragIndicator>
     </MediaItemContainer>
   );
 };
 
-// Main PostCreator Component
 function PostCreator({ initialData = null, isEditing = false }) {
-  // State management
   const [media, setMedia] = useState([]);
   const [title, setTitle] = useState(initialData?.title || "");
   const [caption, setCaption] = useState(initialData?.caption || "");
@@ -1676,16 +596,13 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedMediaForFilter, setSelectedMediaForFilter] = useState(null);
 
-  // Refs and hooks
   const navigate = useNavigate();
   const inputFileRef = useRef(null);
   const { startUpload, mountedRef } = useUploadManager(setMedia);
 
-  // Cleanup effect for blob URLs
   useEffect(() => {
     return () => {
       mountedRef.current = false;
-      // Only revoke blob URLs, not data URLs
       media.forEach((item) => {
         if (
           item.previewUrl &&
@@ -1694,21 +611,17 @@ function PostCreator({ initialData = null, isEditing = false }) {
         ) {
           try {
             URL.revokeObjectURL(item.previewUrl);
-          } catch (err) {
-            console.warn("Failed to revoke URL:", err);
-          }
+          } catch {}
         }
       });
     };
   }, []);
 
-  // Load existing media when editing
   useEffect(() => {
     if (isEditing && initialData?.media?.length > 0) {
       const existingMedia = initialData.media.map((item) => {
         const filter = item.filter || "none";
         const filterClass = filterToClass(filter);
-
         return {
           id:
             item._id ||
@@ -1719,19 +632,17 @@ function PostCreator({ initialData = null, isEditing = false }) {
           mediaUrl: item.mediaUrl,
           cloudinaryId: item.cloudinaryId,
           mediaType: item.mediaType,
-          filter: filter,
-          filterClass: filterClass,
+          filter,
+          filterClass,
           isExisting: true,
           uploading: false,
           error: false,
         };
       });
-
       setMedia(existingMedia);
     }
   }, [isEditing, initialData]);
 
-  // File drop handler
   const onDrop = useCallback(
     async (acceptedFiles) => {
       const uniqueFiles = acceptedFiles.filter((file) => {
@@ -1741,7 +652,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
             m.file?.size === file.size &&
             m.file?.lastModified === file.lastModified
         );
-
         if (isDuplicate) {
           toast.error(`File "${file.name}" is already added.`);
           return false;
@@ -1763,7 +673,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
             id,
             file,
             previewUrl,
-
             mediaType: isVideo ? "video" : "image",
             filter: "none",
             filterClass: "",
@@ -1777,36 +686,27 @@ function PostCreator({ initialData = null, isEditing = false }) {
 
       setMedia((prev) => [...prev, ...newItems]);
 
-      // Start uploads
       newItems.forEach((item) => {
-        startUpload(item.file, item.id, item.mediaType)
-          .then((result) => {
-            console.log(`Upload complete for ${item.id}:`, result);
-          })
-          .catch((error) => {
-            console.error(`Upload failed for ${item.id}:`, error);
-          });
+        startUpload(item.file, item.id, item.mediaType).catch((error) => {
+          console.error(`Upload failed for ${item.id}:`, error);
+        });
       });
     },
     [media, startUpload]
   );
 
-  // Configure dropzone
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp"],
       "video/*": [".mp4", ".mov", ".avi", ".webm"],
     },
     onDrop,
-    maxSize: 25 * 1024 * 1024, // 25MB
-    noClick: media.length > 0, // Disable click when media exists
+    maxSize: 25 * 1024 * 1024,
+    noClick: media.length > 0,
   });
 
-  // Media management functions
   const removeMedia = (indexToRemove) => {
     const itemToRemove = media[indexToRemove];
-
-    // Only revoke blob URLs, not data URLs
     if (
       itemToRemove?.previewUrl &&
       !itemToRemove.isExisting &&
@@ -1814,11 +714,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
     ) {
       try {
         URL.revokeObjectURL(itemToRemove.previewUrl);
-      } catch (err) {
-        console.warn("Failed to revoke URL:", err);
-      }
+      } catch {}
     }
-
     setMedia((current) =>
       current.filter((_, index) => index !== indexToRemove)
     );
@@ -1831,9 +728,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
 
   const applyFilter = (filterId) => {
     if (!selectedMediaForFilter) return;
-
     const filterClass = filterToClass(filterId);
-
     setMedia((currentMedia) =>
       currentMedia.map((item, index) =>
         index === selectedMediaForFilter.index
@@ -1852,28 +747,19 @@ function PostCreator({ initialData = null, isEditing = false }) {
     });
   };
 
-  // AI content handler
   const handleAIContentApply = (generatedContent) => {
-    if (generatedContent.title) {
-      setTitle(generatedContent.title);
-    }
-
-    if (generatedContent.caption) {
-      setCaption(generatedContent.caption);
-    }
-
+    if (generatedContent.title) setTitle(generatedContent.title);
+    if (generatedContent.caption) setCaption(generatedContent.caption);
     if (generatedContent.tags && generatedContent.tags.length > 0) {
       const availableSlots = 5 - tags.length;
       const newTags = generatedContent.tags.slice(0, availableSlots);
       setTags((prev) => [...prev, ...newTags]);
-
       toast.success(`Content applied with ${newTags.length} tags!`);
     } else {
       toast.success("Content applied!");
     }
   };
 
-  // Tag management
   const addTag = (tagText = null) => {
     const tagToAdd = tagText || currentTag.trim();
     if (!tagToAdd || tags.includes(tagToAdd)) return;
@@ -1888,9 +774,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const handleTagInputKeyDown = (e) => {
     if (e.key === " " || e.key === "Enter") {
       e.preventDefault();
-      if (currentTag.trim()) {
-        addTag();
-      }
+      if (currentTag.trim()) addTag();
     } else if (e.key === "Backspace" && !currentTag && tags.length > 0) {
       setTags(tags.slice(0, -1));
     }
@@ -1900,9 +784,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
     const value = e.target.value;
     if (value.includes(" ")) {
       const tagText = value.split(" ")[0].trim();
-      if (tagText) {
-        addTag(tagText);
-      }
+      if (tagText) addTag(tagText);
     } else {
       setCurrentTag(value);
     }
@@ -1912,28 +794,23 @@ function PostCreator({ initialData = null, isEditing = false }) {
     setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
-  // Submit handler - FIXED to include filters and existing media
   const handleSubmit = async () => {
     if (media.length === 0) {
       toast.error("Please add at least one photo or video");
       return;
     }
-
     if (!title.trim()) {
       toast.error("Please add a title");
       return;
     }
-
     if (!caption.trim()) {
       toast.error("Please add a caption");
       return;
     }
-
     if (media.some((item) => item.uploading)) {
       toast.error("Please wait for uploads to complete");
       return;
     }
-
     const failedItems = media.filter((item) => item.error);
     if (failedItems.length > 0) {
       toast.error(
@@ -1941,7 +818,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
       );
       return;
     }
-
     const incompleteItems = media.filter(
       (item) => !item.mediaUrl || !item.cloudinaryId
     );
@@ -1955,38 +831,30 @@ function PostCreator({ initialData = null, isEditing = false }) {
     setIsSubmitting(true);
 
     try {
-      // Process ALL media items (new uploads AND existing media with potential filter changes)
       const mediaItems = media.map((item, index) => ({
         mediaUrl: item.mediaUrl,
         cloudinaryId: item.cloudinaryId,
         mediaType: item.mediaType || item.type,
-        filter: item.filter || "none", // Ensure filter is included
-        order: index, // Preserve the order from drag & drop
-        // Include the _id for existing media items
+        filter: item.filter || "none",
+        order: index,
         ...(item.isExisting && item._id && { _id: item._id }),
       }));
-
-      console.log("Submitting media with filters:", mediaItems);
 
       const payload = {
         title: title ?? "",
         caption: caption ?? "",
         content: content ?? "",
         tags: tags.join(","),
-        media: mediaItems, // Send ALL media items with their filters and order
+        media: mediaItems,
         location: location ?? "",
         date: eventDate,
       };
 
       let response;
-
       if (isEditing) {
-        // For editing, we need to handle existing media differently
-        // Send all media (existing + new) and let backend handle it
         response = await axios.put(`/api/posts/${initialData._id}`, payload);
         toast.success("Post updated successfully!");
       } else {
-        // For new posts, only send new media items
         const newMediaItems = media
           .filter((item) => !item.error && !item.isExisting)
           .map((item, index) => ({
@@ -1996,20 +864,15 @@ function PostCreator({ initialData = null, isEditing = false }) {
             filter: item.filter || "none",
             order: index,
           }));
-
-        const newPostPayload = {
+        response = await axios.post("/api/posts", {
           ...payload,
           media: newMediaItems,
-        };
-
-        console.log("Creating new post with media:", newMediaItems);
-        response = await axios.post("/api/posts", newPostPayload);
+        });
         toast.success("Post created successfully!");
       }
 
       navigate(`/post/${response.data.data._id}`);
     } catch (error) {
-      console.error("Error creating/updating post:", error);
       const errorMessage = error.response?.data?.message || "Please try again";
       toast.error(
         `Failed to ${isEditing ? "update" : "create"} post: ${errorMessage}`
@@ -2025,14 +888,10 @@ function PostCreator({ initialData = null, isEditing = false }) {
     fileInput.accept = "image/*,video/*";
     fileInput.multiple = true;
     fileInput.style.display = "none";
-
     fileInput.onchange = (e) => {
-      if (e.target.files?.length) {
-        onDrop(Array.from(e.target.files));
-      }
+      if (e.target.files?.length) onDrop(Array.from(e.target.files));
       document.body.removeChild(fileInput);
     };
-
     document.body.appendChild(fileInput);
     fileInput.click();
   };
@@ -2040,7 +899,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const handleFileInputChange = (e) => {
     if (e.target.files?.length) {
       onDrop(Array.from(e.target.files));
-      e.target.value = ""; // Reset input
+      e.target.value = "";
     }
   };
 
@@ -2060,7 +919,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
       </Header>
 
       <ContentSection>
-        {/* Media Upload/Display Section */}
         <MediaSection>
           {media.length === 0 ? (
             <DropArea {...getRootProps()} isDragActive={isDragActive}>
@@ -2077,9 +935,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (inputFileRef.current) {
-                    inputFileRef.current.click();
-                  }
+                  if (inputFileRef.current) inputFileRef.current.click();
                 }}
               >
                 <FaPlus /> Select from device
@@ -2128,7 +984,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
           )}
         </MediaSection>
 
-        {/* Post Details Form */}
         <PostDetailsSection>
           <SectionHeader>
             <h3>Post Details</h3>
@@ -2228,7 +1083,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
         </PostDetailsSection>
       </ContentSection>
 
-      {/* Action Bar */}
       <ActionBar>
         <PostButton
           onClick={handleSubmit}
@@ -2244,7 +1098,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
         </PostButton>
       </ActionBar>
 
-      {/* Modals */}
       <AIContentModal
         isOpen={showAIModal}
         onClose={() => setShowAIModal(false)}
