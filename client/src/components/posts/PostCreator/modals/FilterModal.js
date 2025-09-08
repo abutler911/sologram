@@ -13,7 +13,7 @@ import {
   FilterActionBar,
   SecondaryButton,
   ApplyButton,
-} from "../PostCreator.styles";
+} from "../../PostCreator.styles";
 import { FaTimes, FaCheck } from "react-icons/fa";
 // Adjust the path below if your folder layout differs:
 import { FILTERS } from "../../../../lib/media";

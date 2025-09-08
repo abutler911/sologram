@@ -21,7 +21,7 @@ import {
   MediaSection,
   ActionBar,
   PostButton,
-} from "./PostCreator.styles";
+} from "../PostCreator.styles";
 
 import UploadSection from "./media/UploadSection";
 import AIContentModal from "./modals/AIContentModal";

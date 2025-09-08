@@ -25,7 +25,7 @@ import {
   ButtonRow,
   SecondaryButton,
   ApplyButton,
-} from "../PostCreator.styles";
+} from "../../PostCreator.styles";
 import { FaTimes, FaMagic } from "react-icons/fa";
 
 export default function AIContentModal({ isOpen, onClose, onApplyContent }) {

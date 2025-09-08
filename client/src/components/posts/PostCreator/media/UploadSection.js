@@ -11,7 +11,7 @@ import {
   UploadButton,
   MediaGrid,
   AddMoreButton,
-} from "../PostCreator.styles";
+} from "../../PostCreator.styles";
 
 function UploadSection({
   media,

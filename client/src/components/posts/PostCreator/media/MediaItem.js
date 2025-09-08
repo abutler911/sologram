@@ -18,7 +18,7 @@ import {
   ActionButton,
   FilterBadge,
   DragIndicator,
-} from "../PostCreator.styles";
+} from "../../PostCreator.styles";
 import { FILTERS } from "../../../lib/media";
 import { getSafeImageSrc } from "../utils/preview";
 

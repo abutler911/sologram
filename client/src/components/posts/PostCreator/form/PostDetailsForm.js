@@ -15,7 +15,7 @@ import {
   Tag,
   TagRemoveButton,
   CharCount,
-} from "../PostCreator.styles";
+} from "../../PostCreator.styles";
 import {
   FaRobot,
   FaCalendarDay,
