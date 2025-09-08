@@ -13,7 +13,6 @@ import { toast } from "react-hot-toast";
 import {
   FaImage,
   FaVideo,
-  FaCamera,
   FaTimes,
   FaPlus,
   FaFilter,
@@ -28,23 +27,13 @@ import {
 } from "react-icons/fa";
 import { COLORS } from "../../theme";
 import { useUploadManager } from "../../hooks/useUploadManager";
+import MediaGridSortable from "./MediaGridSortable";
+import { filterToClass, fileToMediaType, FILTERS } from "../../lib/media";
 import { AuthContext } from "../../context/AuthContext";
 
 // Constants
 const PLACEHOLDER_IMG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='sans-serif' fill='%23999999'%3EImage Not Available%3C/text%3E%3C/svg%3E";
-
-const FILTERS = [
-  { id: "none", name: "Normal", className: "" },
-  { id: "clarendon", name: "Clarendon", className: "filter-clarendon" },
-  { id: "gingham", name: "Gingham", className: "filter-gingham" },
-  { id: "moon", name: "Moon", className: "filter-moon" },
-  { id: "lark", name: "Lark", className: "filter-lark" },
-  { id: "warm", name: "Warm", className: "filter-warm" },
-  { id: "cool", name: "Cool", className: "filter-cool" },
-  { id: "bw", name: "B&W", className: "filter-grayscale" },
-  { id: "vintage", name: "Vintage", className: "filter-vintage" },
-];
 
 // Utility Functions
 const isMobileDevice = () => {
@@ -1250,25 +1239,14 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
     setError("");
 
     try {
-      const response = await fetch(
-        "https://sologram-api.onrender.com/api/admin/ai-content/generate",
+      const { data } = await axios.post(
+        "/api/admin/ai-content/generate",
+        formData,
         {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to generate content");
-      }
-
-      setGeneratedContent(data.data);
+      setGeneratedContent(data?.data);
       toast.success("Content generated successfully!");
     } catch (error) {
       setError(
@@ -1574,40 +1552,10 @@ const MediaItem = ({
     setHasError(false);
   };
 
-  const handleDragStart = (e) => {
-    e.dataTransfer.setData("text/plain", index.toString());
-    e.dataTransfer.effectAllowed = "move";
-    // Add a small delay to allow the drag to start properly
-    setTimeout(() => {
-      if (dragProps.onDragStart) {
-        dragProps.onDragStart(e, index);
-      }
-    }, 0);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
-    const toIndex = index;
-
-    if (fromIndex !== toIndex && onReorder) {
-      onReorder(fromIndex, toIndex);
-    }
-  };
-
   // Show processing state if no preview available yet
   if ((!imageSrc || imageSrc === PLACEHOLDER_IMG) && !mediaItem.mediaUrl) {
     return (
-      <MediaItemContainer
-        isDragging={isDragging}
-        draggable={false}
-        {...dragProps}
-      >
+      <MediaItemContainer isDragging={isDragging} {...dragProps}>
         <MediaContent className="processing-state">
           <ProcessingOverlay>
             <ProcessingText>
@@ -1636,14 +1584,7 @@ const MediaItem = ({
   }
 
   return (
-    <MediaItemContainer
-      isDragging={isDragging}
-      draggable={!mediaItem.uploading && !mediaItem.error}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      {...dragProps}
-    >
+    <MediaItemContainer isDragging={isDragging} {...dragProps}>
       <DragHandle className="drag-handle">
         <FaGripVertical />
       </DragHandle>
@@ -1658,7 +1599,6 @@ const MediaItem = ({
             playsInline
             muted
             preload="metadata"
-            loading="lazy"
           />
         ) : (
           <StoryStyleImage
@@ -1735,13 +1675,11 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const [showAIModal, setShowAIModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedMediaForFilter, setSelectedMediaForFilter] = useState(null);
-  const [draggedIndex, setDraggedIndex] = useState(null);
 
   // Refs and hooks
   const navigate = useNavigate();
   const inputFileRef = useRef(null);
   const { startUpload, mountedRef } = useUploadManager(setMedia);
-  const { user } = useContext(AuthContext);
 
   // Cleanup effect for blob URLs
   useEffect(() => {
@@ -1769,8 +1707,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
     if (isEditing && initialData?.media?.length > 0) {
       const existingMedia = initialData.media.map((item) => {
         const filter = item.filter || "none";
-        const filterClass =
-          FILTERS.find((f) => f.id === filter)?.className || "";
+        const filterClass = filterToClass(filter);
 
         return {
           id:
@@ -1819,14 +1756,14 @@ function PostCreator({ initialData = null, isEditing = false }) {
           const id = `media_${Date.now()}_${Math.random()
             .toString(36)
             .substring(2, 8)}`;
-          const isVideo = file.type.startsWith("video/");
+          const isVideo = fileToMediaType(file) === "video";
           const previewUrl = await createSafeBlobUrl(file);
 
           return {
             id,
             file,
             previewUrl,
-            type: isVideo ? "video" : "image",
+
             mediaType: isVideo ? "video" : "image",
             filter: "none",
             filterClass: "",
@@ -1842,7 +1779,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
 
       // Start uploads
       newItems.forEach((item) => {
-        startUpload(item.file, item.id, item.type)
+        startUpload(item.file, item.id, item.mediaType)
           .then((result) => {
             console.log(`Upload complete for ${item.id}:`, result);
           })
@@ -1895,7 +1832,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const applyFilter = (filterId) => {
     if (!selectedMediaForFilter) return;
 
-    const filterClass = FILTERS.find((f) => f.id === filterId)?.className || "";
+    const filterClass = filterToClass(filterId);
 
     setMedia((currentMedia) =>
       currentMedia.map((item, index) =>
@@ -2107,25 +2044,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
     }
   };
 
-  // Drag and drop handlers for reordering
-  const handleDragStart = (e, index) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDrop = (e, dropIndex) => {
-    e.preventDefault();
-    if (draggedIndex !== null && draggedIndex !== dropIndex) {
-      reorderMedia(draggedIndex, dropIndex);
-    }
-    setDraggedIndex(null);
-  };
-
   const isFormValid =
     media.length > 0 &&
     title.trim() &&
@@ -2177,23 +2095,27 @@ function PostCreator({ initialData = null, isEditing = false }) {
             </DropArea>
           ) : (
             <MediaGrid>
-              {media.map((item, index) => (
-                <MediaItem
-                  key={item.id}
-                  mediaItem={item}
-                  index={index}
-                  onRemove={removeMedia}
-                  onFilter={openFilterModal}
-                  onReorder={reorderMedia}
-                  isDragging={false}
-                />
-              ))}
-
-              <AddMoreButton onClick={addMoreMedia}>
-                <FaPlus />
-                <span>Add more</span>
-              </AddMoreButton>
-
+              <MediaGridSortable
+                items={media}
+                onReorder={reorderMedia}
+                renderItem={(item, index) => (
+                  <MediaItem
+                    key={item.id}
+                    mediaItem={item}
+                    index={index}
+                    onRemove={removeMedia}
+                    onFilter={openFilterModal}
+                    onReorder={reorderMedia}
+                    isDragging={false}
+                  />
+                )}
+                AddMoreButton={
+                  <AddMoreButton onClick={addMoreMedia}>
+                    <FaPlus />
+                    <span>Add more</span>
+                  </AddMoreButton>
+                }
+              />
               <input
                 type="file"
                 ref={inputFileRef}

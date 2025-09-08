@@ -1,119 +1,123 @@
-import { useRef } from "react";
+// client/src/hooks/useUploadManager.js
+import { useEffect, useRef, useState, useCallback } from "react";
 import axios from "axios";
-import { toast } from "react-hot-toast";
 
-export const useUploadManager = (setMedia) => {
+export function useUploadManager(setMedia, { concurrency = 3 } = {}) {
   const mountedRef = useRef(true);
-  const uploadQueue = useRef([]);
-  const activeUploads = useRef(0);
-  const MAX_CONCURRENT_UPLOADS = 3;
+  const queueRef = useRef([]);
+  const inFlightRef = useRef(new Map());
+  const [active, setActive] = useState(0);
 
-  const uploadFile = async (file, id, fileType, onProgress) => {
-    const isVideo = fileType === "video" || file.type.startsWith("video/");
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("fileType", isVideo ? "video" : "image");
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const preset =
+    import.meta.env.MODE === "production"
+      ? import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+      : import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET_DEV ||
+        import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
-    const response = await axios.post("/api/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-      onUploadProgress: (event) => {
-        if (event.lengthComputable && onProgress) {
-          const percent = Math.round((event.loaded * 100) / event.total);
-          onProgress(percent);
-        }
-      },
-      timeout: isVideo ? 300000 : 60000,
-    });
+  // Keep UI in sync
+  const updateItem = useCallback(
+    (id, patch) => {
+      setMedia((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, ...patch } : m))
+      );
+    },
+    [setMedia]
+  );
 
-    if (response.data?.success) {
-      return {
-        mediaUrl: response.data.mediaUrl,
-        cloudinaryId: response.data.cloudinaryId,
-        mediaType: response.data.mediaType || (isVideo ? "video" : "image"),
-      };
-    }
+  const pump = useCallback(() => {
+    if (!mountedRef.current) return;
+    if (active >= concurrency) return;
 
-    throw new Error(response.data?.message || "Upload failed");
-  };
+    const next = queueRef.current.shift();
+    if (!next) return;
 
-  const processQueue = () => {
-    if (
-      uploadQueue.current.length === 0 ||
-      activeUploads.current >= MAX_CONCURRENT_UPLOADS
-    )
-      return;
+    setActive((a) => a + 1);
 
-    const next = uploadQueue.current.shift();
-    activeUploads.current++;
+    const { id, file, mediaType, resolve, reject } = next;
+    const source = axios.CancelToken.source();
+    inFlightRef.current.set(id, source);
 
-    uploadFile(next.file, next.id, next.fileType, next.onProgress)
-      .then((result) => {
-        setMedia((prev) =>
-          prev.map((item) =>
-            item.id === next.id
-              ? {
-                  ...item,
-                  uploading: false,
-                  mediaUrl: result.mediaUrl,
-                  cloudinaryId: result.cloudinaryId,
-                  mediaType: result.mediaType,
-                  type: result.mediaType,
-                }
-              : item
-          )
-        );
-        toast.success(`Uploaded: ${next.file.name}`);
-        next.resolve(result);
+    const form = new FormData();
+    form.append("file", file);
+    form.append("upload_preset", preset);
+    form.append("tags", import.meta.env.MODE === "production" ? "prod" : "dev");
+
+    updateItem(id, { uploading: true, progress: 1, error: false });
+
+    axios
+      .post(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, form, {
+        cancelToken: source.token,
+        onUploadProgress: (e) => {
+          const pct = e.total ? Math.round((e.loaded / e.total) * 100) : 50;
+          updateItem(id, { progress: pct });
+        },
       })
-      .catch((error) => {
-        setMedia((prev) =>
-          prev.map((item) =>
-            item.id === next.id
-              ? {
-                  ...item,
-                  uploading: false,
-                  error: true,
-                  errorMessage: error.message || "Upload failed",
-                }
-              : item
-          )
-        );
-        toast.error(`Upload failed: ${error.message}`);
-        next.reject(error);
+      .then(({ data }) => {
+        if (!mountedRef.current) return;
+        updateItem(id, {
+          uploading: false,
+          progress: 100,
+          mediaUrl: data.secure_url,
+          cloudinaryId: data.public_id,
+          mediaType:
+            mediaType || (data.resource_type === "video" ? "video" : "image"),
+          error: false,
+        });
+        resolve({ url: data.secure_url, publicId: data.public_id });
+      })
+      .catch((err) => {
+        if (!mountedRef.current) return;
+        console.error("Upload error:", err);
+        updateItem(id, { uploading: false, error: true });
+        reject(err);
       })
       .finally(() => {
-        activeUploads.current--;
-        processQueue(); // process the next file
+        inFlightRef.current.delete(id);
+        setActive((a) => a - 1);
+        // continue pumping
+        setTimeout(pump, 0);
       });
-  };
+  }, [active, concurrency, preset, cloudName, updateItem]);
 
-  const startUpload = (file, id, fileType = null) => {
-    const detectedType =
-      fileType || (file.type.startsWith("video/") ? "video" : "image");
+  const startUpload = useCallback(
+    (file, id, mediaType) => {
+      return new Promise((resolve, reject) => {
+        queueRef.current.push({ file, id, mediaType, resolve, reject });
+        pump();
+      });
+    },
+    [pump]
+  );
 
-    const onProgress = (percent) => {
-      setMedia((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, progress: percent } : item
-        )
-      );
+  const cancelUpload = useCallback(
+    (id) => {
+      const token = inFlightRef.current.get(id);
+      if (token) {
+        token.cancel("Cancelled by user");
+        inFlightRef.current.delete(id);
+        updateItem(id, { uploading: false, error: true });
+        setActive((a) => Math.max(0, a - 1));
+        setTimeout(pump, 0);
+      } else {
+        // If not in-flight, remove from queue if present
+        const idx = queueRef.current.findIndex((q) => q.id === id);
+        if (idx >= 0) queueRef.current.splice(idx, 1);
+      }
+    },
+    [updateItem, pump]
+  );
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      // cancel any in-flight
+      for (const [, token] of inFlightRef.current) token.cancel("Unmount");
+      inFlightRef.current.clear();
+      queueRef.current = [];
     };
+  }, []);
 
-    return new Promise((resolve, reject) => {
-      uploadQueue.current.push({
-        file,
-        id,
-        fileType: detectedType,
-        onProgress,
-        resolve,
-        reject,
-      });
-
-      processQueue(); // trigger processing
-    });
-  };
-
-  return { startUpload, mountedRef };
-};
+  return { startUpload, cancelUpload, mountedRef, activeCount: active };
+}
