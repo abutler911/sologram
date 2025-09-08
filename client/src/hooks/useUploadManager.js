@@ -8,14 +8,30 @@ export function useUploadManager(setMedia, { concurrency = 3 } = {}) {
   const inFlightRef = useRef(new Map());
   const [active, setActive] = useState(0);
 
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const preset =
-    import.meta.env.MODE === "production"
-      ? import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
-      : import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET_DEV ||
-        import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+  // CRA or Vite
+  const ENV =
+    (typeof import.meta !== "undefined" && import.meta.env) ||
+    process.env ||
+    {};
 
-  // Keep UI in sync
+  const CLOUDINARY_CLOUD_NAME =
+    ENV.VITE_CLOUDINARY_CLOUD_NAME || ENV.REACT_APP_CLOUDINARY_CLOUD_NAME;
+
+  const CLOUDINARY_UPLOAD_PRESET =
+    ENV.VITE_CLOUDINARY_UPLOAD_PRESET || ENV.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
+
+  const APP_MODE = (ENV.MODE || ENV.NODE_ENV || "development").toLowerCase();
+
+  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+    console.warn(
+      "Missing Cloudinary env vars. Set REACT_APP_* (CRA) or VITE_* (Vite).",
+      {
+        CLOUDINARY_CLOUD_NAME: !!CLOUDINARY_CLOUD_NAME,
+        CLOUDINARY_UPLOAD_PRESET: !!CLOUDINARY_UPLOAD_PRESET,
+      }
+    );
+  }
+
   const updateItem = useCallback(
     (id, patch) => {
       setMedia((prev) =>
@@ -26,8 +42,7 @@ export function useUploadManager(setMedia, { concurrency = 3 } = {}) {
   );
 
   const pump = useCallback(() => {
-    if (!mountedRef.current) return;
-    if (active >= concurrency) return;
+    if (!mountedRef.current || active >= concurrency) return;
 
     const next = queueRef.current.shift();
     if (!next) return;
@@ -35,24 +50,30 @@ export function useUploadManager(setMedia, { concurrency = 3 } = {}) {
     setActive((a) => a + 1);
 
     const { id, file, mediaType, resolve, reject } = next;
-    const source = axios.CancelToken.source();
-    inFlightRef.current.set(id, source);
+
+    // axios v1+ cancellation
+    const controller = new AbortController();
+    inFlightRef.current.set(id, controller);
 
     const form = new FormData();
     form.append("file", file);
-    form.append("upload_preset", preset);
-    form.append("tags", import.meta.env.MODE === "production" ? "prod" : "dev");
+    form.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    form.append("tags", APP_MODE === "production" ? "prod" : "dev");
 
     updateItem(id, { uploading: true, progress: 1, error: false });
 
     axios
-      .post(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, form, {
-        cancelToken: source.token,
-        onUploadProgress: (e) => {
-          const pct = e.total ? Math.round((e.loaded / e.total) * 100) : 50;
-          updateItem(id, { progress: pct });
-        },
-      })
+      .post(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`,
+        form,
+        {
+          signal: controller.signal,
+          onUploadProgress: (e) => {
+            const pct = e.total ? Math.round((e.loaded / e.total) * 100) : 50;
+            updateItem(id, { progress: pct });
+          },
+        }
+      )
       .then(({ data }) => {
         if (!mountedRef.current) return;
         updateItem(id, {
@@ -68,6 +89,7 @@ export function useUploadManager(setMedia, { concurrency = 3 } = {}) {
       })
       .catch((err) => {
         if (!mountedRef.current) return;
+        if (err.name === "CanceledError") return;
         console.error("Upload error:", err);
         updateItem(id, { uploading: false, error: true });
         reject(err);
@@ -75,32 +97,36 @@ export function useUploadManager(setMedia, { concurrency = 3 } = {}) {
       .finally(() => {
         inFlightRef.current.delete(id);
         setActive((a) => a - 1);
-        // continue pumping
         setTimeout(pump, 0);
       });
-  }, [active, concurrency, preset, cloudName, updateItem]);
+  }, [
+    active,
+    concurrency,
+    CLOUDINARY_UPLOAD_PRESET,
+    CLOUDINARY_CLOUD_NAME,
+    APP_MODE,
+    updateItem,
+  ]);
 
   const startUpload = useCallback(
-    (file, id, mediaType) => {
-      return new Promise((resolve, reject) => {
+    (file, id, mediaType) =>
+      new Promise((resolve, reject) => {
         queueRef.current.push({ file, id, mediaType, resolve, reject });
         pump();
-      });
-    },
+      }),
     [pump]
   );
 
   const cancelUpload = useCallback(
     (id) => {
-      const token = inFlightRef.current.get(id);
-      if (token) {
-        token.cancel("Cancelled by user");
+      const controller = inFlightRef.current.get(id);
+      if (controller) {
+        controller.abort();
         inFlightRef.current.delete(id);
         updateItem(id, { uploading: false, error: true });
         setActive((a) => Math.max(0, a - 1));
         setTimeout(pump, 0);
       } else {
-        // If not in-flight, remove from queue if present
         const idx = queueRef.current.findIndex((q) => q.id === id);
         if (idx >= 0) queueRef.current.splice(idx, 1);
       }
@@ -112,8 +138,7 @@ export function useUploadManager(setMedia, { concurrency = 3 } = {}) {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      // cancel any in-flight
-      for (const [, token] of inFlightRef.current) token.cancel("Unmount");
+      for (const [, controller] of inFlightRef.current) controller.abort();
       inFlightRef.current.clear();
       queueRef.current = [];
     };
