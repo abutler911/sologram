@@ -159,10 +159,24 @@ exports.createPost = async (req, res) => {
 
     const postUrl = `${
       process.env.APP_PUBLIC_URL || "https://thesologram.com"
-    }/post/${newPost._id}`;
-    notifyFamilySms("post", { title: newPost.title, url: postUrl }).catch((e) =>
-      console.error("[SMS notify error]", e?.message || e)
-    );
+    }/l/${newPost._id}`;
+
+    notifyFamilySms("post", { title: newPost.title, url: postUrl })
+      .then((out) =>
+        console.table(
+          out.map(
+            ({ name, phone, success, textId, error, firstAttemptHadLink }) => ({
+              name,
+              phone,
+              success,
+              textId,
+              error,
+              firstAttemptHadLink,
+            })
+          )
+        )
+      )
+      .catch((e) => console.error("[SMS notify error]", e?.message || e));
 
     try {
       const users = await User.find({});

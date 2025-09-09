@@ -24,6 +24,7 @@ const requestIdMiddleware = require("./middleware/requestId");
 const cookieParser = require("cookie-parser");
 const errorHandler = require("./middleware/errorHandler");
 const AppError = require("./utils/AppError");
+const linksRouter = require("./routes/links");
 
 // ----------- Background Jobs -----------
 const {
@@ -94,6 +95,7 @@ app.use(requestIdMiddleware); // attach unique request ID
 app.use(cookieParser()); // parse cookies
 app.use(express.json({ limit: "300mb" }));
 app.use(express.urlencoded({ extended: true, limit: "300mb" }));
+app.use(linksRouter);
 
 // ----------- Rate Limiting for Auth -----------
 const authLimiter = rateLimit({
