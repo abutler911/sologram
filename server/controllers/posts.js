@@ -2,6 +2,8 @@ const Post = require("../models/Post");
 const Like = require("../models/Like");
 const { cloudinary } = require("../config/cloudinary");
 const { sendEmail } = require("../utils/sendEmail");
+const { notifyFamilySms } = require("../services/notify/notifyFamilySms");
+
 const User = require("../models/User");
 const {
   buildNewPostEmail,
@@ -154,6 +156,10 @@ exports.createPost = async (req, res) => {
     };
 
     const newPost = await Post.create(postData);
+
+    notifyFamilySms("post", { title: newPost.title }).catch((e) => {
+      console.error("[SMS notify error]", e?.message || e);
+    });
 
     try {
       const users = await User.find({});
