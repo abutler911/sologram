@@ -4,7 +4,10 @@ import axios from "axios";
 
 export function useUploadManager(
   setMedia,
-  { concurrency = 3, folder = "" } = {}
+  {
+    concurrency = 3,
+    folder = process.env.REACT_APP_CLOUDINARY_BASE_FOLDER || "sologram",
+  } = {}
 ) {
   const mountedRef = useRef(true);
   const queueRef = useRef([]);
