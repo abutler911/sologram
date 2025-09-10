@@ -443,7 +443,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [eventDate, setEventDate] = useState(() =>
-    toLocalDateInput(initialData?.date)
+    toLocalDateInput(initialData?.eventDate)
   );
   const [showAIModal, setShowAIModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);

@@ -3,6 +3,10 @@ const Like = require("../models/Like");
 const { cloudinary } = require("../config/cloudinary");
 const { sendEmail } = require("../utils/sendEmail");
 const { notifyFamilySms } = require("../services/notify/notifyFamilySms");
+const {
+  noonUTCFromInputDateStr,
+  todayNoonUTC,
+} = require("../utils/dateHelpers");
 
 const User = require("../models/User");
 const {
@@ -140,7 +144,7 @@ exports.createPost = async (req, res) => {
       };
     });
 
-    const eventDate = date ? new Date(date) : new Date();
+    const eventDate = date ? noonUTCFromInputDateStr(date) : todayNoonUTC();
 
     const postData = {
       title,
@@ -305,9 +309,11 @@ exports.updatePost = async (req, res) => {
     post.updatedAt = new Date();
 
     if (date) {
-      const eventDate = new Date(date);
-      post.eventDate = eventDate;
-      post.createdAt = eventDate; // for feed sorting
+      const safe = noonUTCFromInputDateStr(date);
+      if (safe) {
+        post.eventDate = safe;
+        post.createdAt = safe;
+      }
     }
 
     await post.save();
