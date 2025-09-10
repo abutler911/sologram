@@ -6,6 +6,7 @@ const {
 } = require("../utils/emailTemplates/storyPostedTemplate");
 const { sendEmail } = require("../utils/sendEmail");
 const User = require("../models/User");
+const { notifyFamilySms } = require("../services/notify/notifyFamilySms");
 
 const handleServerError = (res, err, customMessage = "Server Error") => {
   console.error(`Error in ${customMessage}:`, {
@@ -144,6 +145,26 @@ exports.createStory = async (req, res) => {
       media,
       expiresAt,
     });
+
+    const base = process.env.APP_PUBLIC_URL || "https://thesologram.com";
+    const storyUrl = `${base}/story/${story._id}`;
+
+    notifyFamilySms("story", { title: story.title, url: storyUrl })
+      .then((out) =>
+        console.table(
+          out.map(
+            ({ name, phone, success, textId, error, firstAttemptHadLink }) => ({
+              name,
+              phone,
+              success,
+              textId,
+              error,
+              firstAttemptHadLink,
+            })
+          )
+        )
+      )
+      .catch((e) => console.error("[SMS notify error]", e?.message || e));
     const users = await User.find({});
 
     for (const user of users) {

@@ -217,11 +217,20 @@ const CloudinaryGallery = () => {
 
       // Convert date filters to ISO strings for the API
       const apiFilters = { ...filters };
+      // build UTC ISO bounds from a local YYYY-MM-DD string
+      const toUTCISOFromLocal = (yyyyMmDd, endOfDay = false) => {
+        if (!yyyyMmDd) return null;
+        const t = endOfDay ? "T23:59:59.999" : "T00:00:00.000";
+        // Important: no 'Z' here → interpreted as LOCAL time, then we toISOString()
+        const dt = new Date(`${yyyyMmDd}${t}`);
+        return dt.toISOString();
+      };
+
       if (apiFilters.startDate) {
-        apiFilters.startDate = new Date(apiFilters.startDate).toISOString();
+        apiFilters.startDate = toUTCISOFromLocal(apiFilters.startDate, false);
       }
       if (apiFilters.endDate) {
-        apiFilters.endDate = new Date(apiFilters.endDate).toISOString();
+        apiFilters.endDate = toUTCISOFromLocal(apiFilters.endDate, true);
       }
 
       const response = await axios.get("/api/admin/cloudinary", {

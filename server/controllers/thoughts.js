@@ -5,6 +5,7 @@ const {
 } = require("../utils/emailTemplates/thoughtPostedTemplate");
 const { sendEmail } = require("../utils/sendEmail");
 const User = require("../models/User");
+const { notifyFamilySms } = require("../services/notify/notifyFamilySms");
 
 const randomEmoji = () => {
   const emojis = ["💭", "🧠", "🔥", "🤔", "✨"];
@@ -90,6 +91,25 @@ exports.createThought = async (req, res) => {
     }
 
     const thought = await Thought.create(thoughtData);
+    const base = process.env.APP_PUBLIC_URL || "https://thesologram.com";
+    const thoughtUrl = `${base}/thought/${thought._id}`;
+
+    notifyFamilySms("thought", { content: thought.content, url: thoughtUrl })
+      .then((out) =>
+        console.table(
+          out.map(
+            ({ name, phone, success, textId, error, firstAttemptHadLink }) => ({
+              name,
+              phone,
+              success,
+              textId,
+              error,
+              firstAttemptHadLink,
+            })
+          )
+        )
+      )
+      .catch((e) => console.error("[SMS notify error]", e?.message || e));
 
     const users = await User.find({});
 
