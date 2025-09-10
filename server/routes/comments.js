@@ -1,251 +1,328 @@
-// routes/comments.js - Express.js routes for comment functionality
-
 const express = require("express");
-const router = express.Router();
-const { protect } = require("../middleware/auth"); // Your auth middleware
-const Comment = require("../models/Comment"); // Comment model
-const Post = require("../models/Post"); // Post model
-const User = require("../models/User"); // User model
+const mongoose = require("mongoose");
+const rateLimit = require("express-rate-limit");
+const sanitizeHtml = require("sanitize-html");
+const { protect } = require("../middleware/auth");
+const Comment = require("../models/Comment");
+const Post = require("../models/Post");
 
-// GET /api/comments/posts/:postId - Get all comments for a post
+const router = express.Router();
+
+const isValidId = (id) => mongoose.isValidObjectId(id);
+const clean = (s = "") =>
+  sanitizeHtml(String(s), { allowedTags: [], allowedAttributes: {} }).trim();
+const parsePaging = (req, defaults = { page: 1, limit: 50, max: 100 }) => {
+  const page = Math.max(1, parseInt(req.query.page || defaults.page, 10) || 1);
+  const limit = Math.min(
+    defaults.max,
+    Math.max(
+      1,
+      parseInt(req.query.limit || defaults.limit, 10) || defaults.limit
+    )
+  );
+  return { page, limit };
+};
+
+const createCommentLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 10,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 router.get("/posts/:postId", async (req, res) => {
   try {
     const { postId } = req.params;
-    const { page = 1, limit = 50 } = req.query;
-
-    // Check if post exists
-    const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+    if (!isValidId(postId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid post ID" });
     }
 
-    // Get comments with pagination
-    const comments = await Comment.find({ postId })
-      .populate("author", "name username avatar")
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .lean();
+    const postExists = await Post.exists({ _id: postId });
+    if (!postExists) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Post not found" });
+    }
 
-    // Add hasLiked field for authenticated users
-    const userId = req.user?.id;
-    const commentsWithLikeStatus = comments.map((comment) => ({
-      ...comment,
-      hasLiked: userId ? comment.likes.includes(userId) : false,
-      likes: comment.likes.length,
+    const { page, limit } = parsePaging(req, { page: 1, limit: 50, max: 100 });
+
+    const [total, comments] = await Promise.all([
+      Comment.countDocuments({ postId, isDeleted: false }),
+      Comment.find({ postId, isDeleted: false })
+        .populate("author", "name username avatar")
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .skip((page - 1) * limit)
+        .lean(),
+    ]);
+
+    const uid = req.user?.id?.toString();
+    const mapped = comments.map((c) => ({
+      ...c,
+      hasLiked: uid ? c.likes.some((id) => id.toString() === uid) : false,
+      likes: c.likes.length,
     }));
 
     res.json({
-      comments: commentsWithLikeStatus,
-      total: await Comment.countDocuments({ postId }),
-      page: parseInt(page),
-      totalPages: Math.ceil((await Comment.countDocuments({ postId })) / limit),
+      success: true,
+      data: {
+        comments: mapped,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      },
     });
-  } catch (error) {
-    console.error("Error fetching comments:", error);
-    res.status(500).json({ message: "Server error" });
+  } catch (e) {
+    console.error("Error fetching comments:", e);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-// POST /api/comments/posts/:postId - Add a new comment
-router.post("/posts/:postId", protect, async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const { text, parentId } = req.body;
-    const userId = req.user.id;
+router.post(
+  "/posts/:postId",
+  protect,
+  createCommentLimiter,
+  async (req, res) => {
+    try {
+      const { postId } = req.params;
+      const { text, parentId } = req.body;
+      const userId = req.user.id;
 
-    // Validate input
-    if (!text || text.trim().length === 0) {
-      return res.status(400).json({ message: "Comment text is required" });
-    }
-
-    if (text.trim().length > 500) {
-      return res
-        .status(400)
-        .json({ message: "Comment is too long (max 500 characters)" });
-    }
-
-    // Check if post exists
-    const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-
-    // If it's a reply, check if parent comment exists
-    if (parentId) {
-      const parentComment = await Comment.findById(parentId);
-      if (!parentComment || parentComment.postId.toString() !== postId) {
-        return res.status(400).json({ message: "Invalid parent comment" });
+      if (!isValidId(postId)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid post ID" });
       }
-    }
 
-    // Create new comment
-    const comment = new Comment({
-      text: text.trim(),
-      author: userId,
-      postId,
-      parentId: parentId || null,
-      createdAt: new Date(),
-      likes: [],
-      replies: [],
-    });
+      const safeText = clean(text);
+      if (!safeText) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Comment text is required" });
+      }
+      if (safeText.length > 500) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Comment is too long (max 500)" });
+      }
 
-    await comment.save();
+      const post = await Post.findById(postId).select("_id author");
+      if (!post) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Post not found" });
+      }
 
-    // Update post comment count
-    await Post.findByIdAndUpdate(postId, {
-      $inc: { commentCount: 1 },
-    });
+      let parent = null;
+      if (parentId) {
+        if (!isValidId(parentId)) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Invalid parent comment ID" });
+        }
+        parent = await Comment.findById(parentId).select("_id postId");
+        if (!parent || parent.postId.toString() !== postId) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Invalid parent comment" });
+        }
+      }
 
-    // If it's a reply, add to parent's replies array
-    if (parentId) {
-      await Comment.findByIdAndUpdate(parentId, {
-        $push: { replies: comment._id },
+      const comment = await Comment.create({
+        text: safeText,
+        author: userId,
+        postId,
+        parentId: parent ? parent._id : null,
       });
+
+      if (parent) {
+        await Comment.updateOne(
+          { _id: parent._id },
+          { $addToSet: { replies: comment._id } }
+        );
+      }
+
+      await comment.populate("author", "name username avatar");
+
+      res.status(201).json({
+        success: true,
+        data: {
+          ...comment.toObject(),
+          hasLiked: false,
+          likes: 0,
+        },
+      });
+    } catch (e) {
+      console.error("Error creating comment:", e);
+      res.status(500).json({ success: false, message: "Server error" });
     }
-
-    // Populate author info before sending response
-    await comment.populate("author", "name username avatar");
-
-    // Return comment with proper format
-    const responseComment = {
-      ...comment.toObject(),
-      hasLiked: false,
-      likes: 0,
-    };
-
-    res.status(201).json(responseComment);
-  } catch (error) {
-    console.error("Error creating comment:", error);
-    res.status(500).json({ message: "Server error" });
   }
-});
+);
 
-// POST /api/comments/:commentId/like - Like/unlike a comment
 router.post("/:commentId/like", protect, async (req, res) => {
   try {
     const { commentId } = req.params;
     const userId = req.user.id;
 
-    const comment = await Comment.findById(commentId).populate(
-      "author",
-      "name username avatar"
+    if (!isValidId(commentId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid comment ID" });
+    }
+
+    const add = await Comment.updateOne(
+      { _id: commentId, likes: { $ne: userId } },
+      { $addToSet: { likes: userId } }
     );
-    if (!comment) {
-      return res.status(404).json({ message: "Comment not found" });
-    }
 
-    const hasLiked = comment.likes.includes(userId);
-
-    if (hasLiked) {
-      // Unlike the comment
-      comment.likes = comment.likes.filter((id) => id.toString() !== userId);
+    let hasLiked;
+    if (add.modifiedCount === 1) {
+      hasLiked = true;
     } else {
-      // Like the comment
-      comment.likes.push(userId);
+      await Comment.updateOne({ _id: commentId }, { $pull: { likes: userId } });
+      hasLiked = false;
     }
 
-    await comment.save();
+    const fresh = await Comment.findById(commentId)
+      .populate("author", "name username avatar")
+      .lean();
 
-    // Return updated comment
-    const responseComment = {
-      ...comment.toObject(),
-      hasLiked: !hasLiked,
-      likes: comment.likes.length,
-    };
+    if (!fresh) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Comment not found" });
+    }
 
-    res.json(responseComment);
-  } catch (error) {
-    console.error("Error liking comment:", error);
-    res.status(500).json({ message: "Server error" });
+    res.json({
+      success: true,
+      data: {
+        ...fresh,
+        hasLiked,
+        likes: fresh.likes.length,
+      },
+    });
+  } catch (e) {
+    console.error("Error liking comment:", e);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-// DELETE /api/comments/:commentId - Delete a comment
 router.delete("/:commentId", protect, async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { commentId } = req.params;
     const userId = req.user.id;
 
-    const comment = await Comment.findById(commentId);
-    if (!comment) {
-      return res.status(404).json({ message: "Comment not found" });
+    if (!isValidId(commentId)) {
+      await session.abortTransaction();
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid comment ID" });
     }
 
-    // Check if user owns the comment or the post
-    const post = await Post.findById(comment.postId);
+    const comment = await Comment.findById(commentId).session(session);
+    if (!comment) {
+      await session.abortTransaction();
+      return res
+        .status(404)
+        .json({ success: false, message: "Comment not found" });
+    }
+
+    const post = await Post.findById(comment.postId)
+      .select("author")
+      .session(session);
     const canDelete =
-      comment.author.toString() === userId || post.author.toString() === userId;
+      comment.author.toString() === userId ||
+      post?.author?.toString() === userId;
 
     if (!canDelete) {
+      await session.abortTransaction();
       return res
         .status(403)
-        .json({ message: "Not authorized to delete this comment" });
+        .json({ success: false, message: "Not authorized" });
     }
 
-    // Delete all replies first
-    await Comment.deleteMany({ parentId: commentId });
+    const repliesToDelete = await Comment.countDocuments({
+      parentId: commentId,
+    }).session(session);
 
-    // Remove from parent's replies array if it's a reply
+    await Comment.deleteMany({ parentId: commentId }).session(session);
+    await Comment.deleteOne({ _id: commentId }).session(session);
+
+    await Post.updateOne(
+      { _id: comment.postId },
+      { $inc: { commentCount: -(repliesToDelete + 1) } }
+    ).session(session);
+
     if (comment.parentId) {
-      await Comment.findByIdAndUpdate(comment.parentId, {
-        $pull: { replies: commentId },
-      });
+      await Comment.updateOne(
+        { _id: comment.parentId },
+        { $pull: { replies: comment._id } }
+      ).session(session);
     }
 
-    // Delete the comment
-    await Comment.findByIdAndDelete(commentId);
-
-    // Update post comment count
-    const deletedCount = await Comment.countDocuments({
-      $or: [{ _id: commentId }, { parentId: commentId }],
-    });
-
-    await Post.findByIdAndUpdate(comment.postId, {
-      $inc: { commentCount: -(deletedCount + 1) },
-    });
-
-    res.json({ message: "Comment deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting comment:", error);
-    res.status(500).json({ message: "Server error" });
+    await session.commitTransaction();
+    res.json({ success: true, message: "Comment deleted successfully" });
+  } catch (e) {
+    await session.abortTransaction();
+    console.error("Error deleting comment:", e);
+    res.status(500).json({ success: false, message: "Server error" });
+  } finally {
+    session.endSession();
   }
 });
 
-// GET /api/comments/:commentId/replies - Get replies for a comment
 router.get("/:commentId/replies", async (req, res) => {
   try {
     const { commentId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
-
-    const parentComment = await Comment.findById(commentId);
-    if (!parentComment) {
-      return res.status(404).json({ message: "Comment not found" });
+    if (!isValidId(commentId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid comment ID" });
     }
 
-    const replies = await Comment.find({ parentId: commentId })
-      .populate("author", "name username avatar")
-      .sort({ createdAt: 1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .lean();
+    const parentExists = await Comment.exists({ _id: commentId });
+    if (!parentExists) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Comment not found" });
+    }
 
-    // Add hasLiked field for authenticated users
-    const userId = req.user?.id;
-    const repliesWithLikeStatus = replies.map((reply) => ({
-      ...reply,
-      hasLiked: userId ? reply.likes.includes(userId) : false,
-      likes: reply.likes.length,
+    const { page, limit } = parsePaging(req, { page: 1, limit: 20, max: 100 });
+
+    const [total, replies] = await Promise.all([
+      Comment.countDocuments({ parentId: commentId, isDeleted: false }),
+      Comment.find({ parentId: commentId, isDeleted: false })
+        .populate("author", "name username avatar")
+        .sort({ createdAt: 1 })
+        .limit(limit)
+        .skip((page - 1) * limit)
+        .lean(),
+    ]);
+
+    const uid = req.user?.id?.toString();
+    const mapped = replies.map((r) => ({
+      ...r,
+      hasLiked: uid ? r.likes.some((id) => id.toString() === uid) : false,
+      likes: r.likes.length,
     }));
 
     res.json({
-      replies: repliesWithLikeStatus,
-      total: await Comment.countDocuments({ parentId: commentId }),
-      page: parseInt(page),
+      success: true,
+      data: {
+        replies: mapped,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      },
     });
-  } catch (error) {
-    console.error("Error fetching replies:", error);
-    res.status(500).json({ message: "Server error" });
+  } catch (e) {
+    console.error("Error fetching replies:", e);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 

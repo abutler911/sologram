@@ -37,6 +37,7 @@
     "node-cron": "^3.0.3",
     "openai": "^4.103.0",
     "recharts": "^2.15.2",
+    "sanitize-html": "^2.17.0",
     "twilio": "^5.5.0",
     "uuid": "^11.1.0",
     "winston": "^3.17.0"
