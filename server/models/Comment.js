@@ -1,3 +1,4 @@
+// models/Comment.js
 const mongoose = require("mongoose");
 
 const commentSchema = new mongoose.Schema(
@@ -50,18 +51,11 @@ commentSchema.index({ createdAt: -1 });
 commentSchema.virtual("likeCount").get(function () {
   return Array.isArray(this.likes) ? this.likes.length : 0;
 });
-
 commentSchema.virtual("replyCount").get(function () {
   return Array.isArray(this.replies) ? this.replies.length : 0;
 });
 
-commentSchema.methods.hasUserLiked = function (userId) {
-  const uid = userId?.toString();
-  return (
-    Array.isArray(this.likes) && this.likes.some((id) => id.toString() === uid)
-  );
-};
-
+// Validate one-level replies and same post
 commentSchema.pre("validate", async function (next) {
   if (!this.parentId) return next();
   try {
@@ -83,5 +77,4 @@ commentSchema.pre("validate", async function (next) {
   }
 });
 
-const Comment = mongoose.model("Comment", commentSchema);
-module.exports = Comment;
+module.exports = mongoose.model("Comment", commentSchema);

@@ -1,3 +1,4 @@
+// routes/comments.js
 const express = require("express");
 const mongoose = require("mongoose");
 const rateLimit = require("express-rate-limit");
@@ -11,6 +12,7 @@ const router = express.Router();
 const isValidId = (id) => mongoose.isValidObjectId(id);
 const clean = (s = "") =>
   sanitizeHtml(String(s), { allowedTags: [], allowedAttributes: {} }).trim();
+
 const parsePaging = (req, defaults = { page: 1, limit: 50, max: 100 }) => {
   const page = Math.max(1, parseInt(req.query.page || defaults.page, 10) || 1);
   const limit = Math.min(
@@ -31,7 +33,15 @@ const createCommentLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-router.get("/posts/:postId", async (req, res) => {
+// helper to normalize author on response
+const safeAuthor = (a) =>
+  a || { _id: null, name: "Unknown", username: "", avatar: null };
+
+// -----------------------------
+// LIST COMMENTS FOR A POST
+// GET /api/posts/:postId/comments
+// -----------------------------
+router.get("/posts/:postId/comments", async (req, res) => {
   try {
     const { postId } = req.params;
     if (!isValidId(postId)) {
@@ -49,7 +59,7 @@ router.get("/posts/:postId", async (req, res) => {
 
     const { page, limit } = parsePaging(req, { page: 1, limit: 50, max: 100 });
 
-    const [total, comments] = await Promise.all([
+    const [total, items] = await Promise.all([
       Comment.countDocuments({ postId, isDeleted: false }),
       Comment.find({ postId, isDeleted: false })
         .populate("author", "name username avatar")
@@ -60,26 +70,21 @@ router.get("/posts/:postId", async (req, res) => {
     ]);
 
     const uid = req.user?.id?.toString();
-    const mapped = comments.map((c) => ({
+    const comments = items.map((c) => ({
       ...c,
-      author: c.author || {
-        _id: null,
-        name: "Unknown",
-        username: "",
-        avatar: null,
-      },
-      hasLiked: uid ? c.likes.some((id) => id.toString() === uid) : false,
-      likes: c.likes.length,
+      author: safeAuthor(c.author),
+      hasLiked: uid
+        ? (c.likes || []).some((id) => id.toString() === uid)
+        : false,
+      likes: Array.isArray(c.likes) ? c.likes.length : 0,
     }));
 
     res.json({
       success: true,
-      data: {
-        comments: mapped,
-        total,
-        page,
-        totalPages: Math.ceil(total / limit),
-      },
+      comments,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
     });
   } catch (e) {
     console.error("Error fetching comments:", e);
@@ -87,8 +92,12 @@ router.get("/posts/:postId", async (req, res) => {
   }
 });
 
+// -----------------------------
+// CREATE COMMENT (OR REPLY)
+// POST /api/posts/:postId/comments
+// -----------------------------
 router.post(
-  "/posts/:postId",
+  "/posts/:postId/comments",
   protect,
   createCommentLimiter,
   async (req, res) => {
@@ -115,7 +124,7 @@ router.post(
           .json({ success: false, message: "Comment is too long (max 500)" });
       }
 
-      const post = await Post.findById(postId).select("_id author");
+      const post = await Post.findById(postId).select("_id");
       if (!post) {
         return res
           .status(404)
@@ -129,11 +138,19 @@ router.post(
             .status(400)
             .json({ success: false, message: "Invalid parent comment ID" });
         }
-        parent = await Comment.findById(parentId).select("_id postId");
+        parent = await Comment.findById(parentId).select("_id postId parentId");
         if (!parent || parent.postId.toString() !== postId) {
           return res
             .status(400)
             .json({ success: false, message: "Invalid parent comment" });
+        }
+        if (parent.parentId) {
+          return res
+            .status(400)
+            .json({
+              success: false,
+              message: "Only one-level replies allowed",
+            });
         }
       }
 
@@ -144,6 +161,9 @@ router.post(
         parentId: parent ? parent._id : null,
       });
 
+      // keep post commentCount authoritative — count all comments incl. replies
+      await Post.updateOne({ _id: postId }, { $inc: { commentCount: 1 } });
+
       if (parent) {
         await Comment.updateOne(
           { _id: parent._id },
@@ -153,14 +173,14 @@ router.post(
 
       await comment.populate("author", "name username avatar");
 
-      res.status(201).json({
-        success: true,
-        data: {
-          ...comment.toObject(),
-          hasLiked: false,
-          likes: 0,
-        },
-      });
+      const out = {
+        ...comment.toObject(),
+        author: safeAuthor(comment.author),
+        hasLiked: false,
+        likes: 0,
+      };
+
+      res.status(201).json({ success: true, comment: out });
     } catch (e) {
       console.error("Error creating comment:", e);
       res.status(500).json({ success: false, message: "Server error" });
@@ -168,7 +188,11 @@ router.post(
   }
 );
 
-router.post("/:commentId/like", protect, async (req, res) => {
+// -----------------------------
+// TOGGLE LIKE
+// POST /api/comments/:commentId/like
+// -----------------------------
+router.post("/comments/:commentId/like", protect, async (req, res) => {
   try {
     const { commentId } = req.params;
     const userId = req.user.id;
@@ -179,17 +203,14 @@ router.post("/:commentId/like", protect, async (req, res) => {
         .json({ success: false, message: "Invalid comment ID" });
     }
 
+    // toggle via addToSet then pull if already there
     const add = await Comment.updateOne(
       { _id: commentId, likes: { $ne: userId } },
       { $addToSet: { likes: userId } }
     );
 
-    let hasLiked;
-    if (add.modifiedCount === 1) {
-      hasLiked = true;
-    } else {
+    if (add.modifiedCount !== 1) {
       await Comment.updateOne({ _id: commentId }, { $pull: { likes: userId } });
-      hasLiked = false;
     }
 
     const fresh = await Comment.findById(commentId)
@@ -202,29 +223,26 @@ router.post("/:commentId/like", protect, async (req, res) => {
         .json({ success: false, message: "Comment not found" });
     }
 
-    const safeAuthor = fresh.author || {
-      _id: null,
-      name: "Unknown",
-      username: "",
-      avatar: null,
+    const likedNow = (fresh.likes || []).some((id) => id.toString() === userId);
+    const comment = {
+      ...fresh,
+      author: safeAuthor(fresh.author),
+      hasLiked: likedNow,
+      likes: Array.isArray(fresh.likes) ? fresh.likes.length : 0,
     };
 
-    res.json({
-      success: true,
-      data: {
-        ...fresh,
-        author: safeAuthor,
-        hasLiked,
-        likes: (fresh.likes || []).length,
-      },
-    });
+    res.json({ success: true, comment });
   } catch (e) {
     console.error("Error liking comment:", e);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-router.delete("/:commentId", protect, async (req, res) => {
+// -----------------------------
+// DELETE COMMENT (+ direct replies)
+// DELETE /api/comments/:commentId
+// -----------------------------
+router.delete("/comments/:commentId", protect, async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -246,14 +264,9 @@ router.delete("/:commentId", protect, async (req, res) => {
         .json({ success: false, message: "Comment not found" });
     }
 
-    const post = await Post.findById(comment.postId)
-      .select("author")
-      .session(session);
-    const canDelete =
-      comment.author.toString() === userId ||
-      post?.author?.toString() === userId;
-
-    if (!canDelete) {
+    const isOwner = comment.author.toString() === userId;
+    const isAdmin = req.user?.role === "admin";
+    if (!isOwner && !isAdmin) {
       await session.abortTransaction();
       return res
         .status(403)
@@ -280,7 +293,7 @@ router.delete("/:commentId", protect, async (req, res) => {
     }
 
     await session.commitTransaction();
-    res.json({ success: true, message: "Comment deleted successfully" });
+    res.json({ success: true, message: "Comment deleted" });
   } catch (e) {
     await session.abortTransaction();
     console.error("Error deleting comment:", e);
@@ -290,7 +303,11 @@ router.delete("/:commentId", protect, async (req, res) => {
   }
 });
 
-router.get("/:commentId/replies", async (req, res) => {
+// -----------------------------
+// LIST REPLIES
+// GET /api/comments/:commentId/replies
+// -----------------------------
+router.get("/comments/:commentId/replies", async (req, res) => {
   try {
     const { commentId } = req.params;
     if (!isValidId(commentId)) {
@@ -299,8 +316,8 @@ router.get("/:commentId/replies", async (req, res) => {
         .json({ success: false, message: "Invalid comment ID" });
     }
 
-    const parentExists = await Comment.exists({ _id: commentId });
-    if (!parentExists) {
+    const exists = await Comment.exists({ _id: commentId });
+    if (!exists) {
       return res
         .status(404)
         .json({ success: false, message: "Comment not found" });
@@ -308,7 +325,7 @@ router.get("/:commentId/replies", async (req, res) => {
 
     const { page, limit } = parsePaging(req, { page: 1, limit: 20, max: 100 });
 
-    const [total, replies] = await Promise.all([
+    const [total, items] = await Promise.all([
       Comment.countDocuments({ parentId: commentId, isDeleted: false }),
       Comment.find({ parentId: commentId, isDeleted: false })
         .populate("author", "name username avatar")
@@ -319,26 +336,21 @@ router.get("/:commentId/replies", async (req, res) => {
     ]);
 
     const uid = req.user?.id?.toString();
-    const mapped = replies.map((r) => ({
+    const comments = items.map((r) => ({
       ...r,
-      author: r.author || {
-        _id: null,
-        name: "Unknown",
-        username: "",
-        avatar: null,
-      },
-      hasLiked: uid ? r.likes.some((id) => id.toString() === uid) : false,
-      likes: r.likes.length,
+      author: safeAuthor(r.author),
+      hasLiked: uid
+        ? (r.likes || []).some((id) => id.toString() === uid)
+        : false,
+      likes: Array.isArray(r.likes) ? r.likes.length : 0,
     }));
 
     res.json({
       success: true,
-      data: {
-        replies: mapped,
-        total,
-        page,
-        totalPages: Math.ceil(total / limit),
-      },
+      comments,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
     });
   } catch (e) {
     console.error("Error fetching replies:", e);
