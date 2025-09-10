@@ -62,6 +62,12 @@ router.get("/posts/:postId", async (req, res) => {
     const uid = req.user?.id?.toString();
     const mapped = comments.map((c) => ({
       ...c,
+      author: c.author || {
+        _id: null,
+        name: "Unknown",
+        username: "",
+        avatar: null,
+      },
       hasLiked: uid ? c.likes.some((id) => id.toString() === uid) : false,
       likes: c.likes.length,
     }));
@@ -196,12 +202,20 @@ router.post("/:commentId/like", protect, async (req, res) => {
         .json({ success: false, message: "Comment not found" });
     }
 
+    const safeAuthor = fresh.author || {
+      _id: null,
+      name: "Unknown",
+      username: "",
+      avatar: null,
+    };
+
     res.json({
       success: true,
       data: {
         ...fresh,
+        author: safeAuthor,
         hasLiked,
-        likes: fresh.likes.length,
+        likes: (fresh.likes || []).length,
       },
     });
   } catch (e) {
@@ -307,6 +321,12 @@ router.get("/:commentId/replies", async (req, res) => {
     const uid = req.user?.id?.toString();
     const mapped = replies.map((r) => ({
       ...r,
+      author: r.author || {
+        _id: null,
+        name: "Unknown",
+        username: "",
+        avatar: null,
+      },
       hasLiked: uid ? r.likes.some((id) => id.toString() === uid) : false,
       likes: r.likes.length,
     }));
