@@ -23,6 +23,18 @@ router.get("/", getPosts);
 router.get("/search", searchPosts);
 router.get("/:id", getPost);
 
+router.get("/posts/:id/comments/count", async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Adjust filter as needed (e.g., exclude soft-deleted)
+    const count = await Comment.countDocuments({ postId: id });
+    res.json({ count });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Failed to get comment count" });
+  }
+});
+
 // Protected routes (require authentication)
 router.post("/", protect, postCreationLimiter, createPost);
 router.put("/:id", protect, updatePost);

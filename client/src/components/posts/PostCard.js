@@ -112,13 +112,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [comments, setComments] = useState([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
-  const [commentCount, setCommentCount] = useState(
-    getCommentCountFromPost(post)
-  );
-  useEffect(() => {
-    // if the post prop changes (or server rehydrates), resync our display value
-    setCommentCount(getCommentCountFromPost(post));
-  }, [post._id, post.commentsCount, post.commentCount, post?.comments?.length]);
+  const [commentCount, setCommentCount] = useState(0);
 
   const hasMultipleMedia = post.media && post.media.length > 1;
   const formattedDate = format(new Date(post.createdAt), "MMM d, yyyy");
@@ -131,34 +125,8 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   }, [isAuthenticated, post._id, checkLikeStatus]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !window.IntersectionObserver) return;
-
-    const options = {
-      threshold: 0.1,
-      rootMargin: "100px 0px",
-    };
-
-    const handleIntersection = (entries) => {
-      const [entry] = entries;
-      if (entry.isIntersecting) {
-        requestAnimationFrame(() => {
-          setIsVisible(true);
-        });
-      }
-    };
-
-    const observer = new IntersectionObserver(handleIntersection, options);
-
-    if (cardRef.current && !isVisible) {
-      observer.observe(cardRef.current);
-    }
-
-    return () => {
-      if (observer) {
-        observer.disconnect();
-      }
-    };
-  }, [isVisible]);
+    if (isVisible) fetchCommentCount();
+  }, [isVisible, fetchCommentCount, post?._id]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -174,7 +142,59 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   }, []);
 
   // Comment handling functions
+  const fetchCommentCount = useCallback(async () => {
+    if (!post?._id) return;
+    try {
+      const baseURL = process.env.REACT_APP_API_URL || "";
+      const countUrl = baseURL
+        ? `${baseURL}/api/posts/${post._id}/comments/count`
+        : `/api/posts/${post._id}/comments/count`;
 
+      // Try the lightweight count endpoint first
+      const res = await fetch(countUrl, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const serverCount = Number.isFinite(data.count)
+          ? data.count
+          : Number.isFinite(data.total)
+          ? data.total
+          : 0;
+        setCommentCount(serverCount);
+        return;
+      }
+
+      // Fallback: fetch list and count locally if /count doesn't exist
+      const listUrl = baseURL
+        ? `${baseURL}/api/posts/${post._id}/comments`
+        : `/api/posts/${post._id}/comments`;
+      const res2 = await fetch(listUrl, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+        credentials: "include",
+      });
+      if (res2.ok) {
+        const data2 = await res2.json();
+        const list =
+          (Array.isArray(data2.comments) && data2.comments) ||
+          (Array.isArray(data2.data) && data2.data) ||
+          [];
+        setCommentCount(list.length);
+      }
+    } catch (e) {
+      console.error("fetchCommentCount error:", e);
+    }
+  }, [post?._id]);
   const fetchComments = useCallback(async () => {
     if (!post._id) return;
 
@@ -240,6 +260,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
           const newComment = data.comment || data;
           setComments((prev) => [newComment, ...prev]);
           setCommentCount((prev) => prev + 1);
+          fetchCommentCount();
           return newComment;
         } else {
           throw new Error("Failed to add comment");
@@ -249,7 +270,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         throw error;
       }
     },
-    [post._id]
+    [post._id, fetchCommentCount]
   );
 
   const handleLikeComment = useCallback(
@@ -285,35 +306,39 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     [isAuthenticated]
   );
 
-  const handleDeleteComment = useCallback(async (commentId) => {
-    try {
-      const baseURL = process.env.REACT_APP_API_URL || "";
-      const url = baseURL
-        ? `${baseURL}/api/comments/${commentId}`
-        : `/api/comments/${commentId}`;
+  const handleDeleteComment = useCallback(
+    async (commentId) => {
+      try {
+        const baseURL = process.env.REACT_APP_API_URL || "";
+        const url = baseURL
+          ? `${baseURL}/api/comments/${commentId}`
+          : `/api/comments/${commentId}`;
 
-      const response = await fetch(url, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      });
+        const response = await fetch(url, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        });
 
-      if (response.ok) {
-        setComments((prev) =>
-          prev.filter((comment) => comment._id !== commentId)
-        );
-        setCommentCount((prev) => Math.max(0, prev - 1));
-        toast.success("Comment deleted");
-      } else {
-        throw new Error("Failed to delete comment");
+        if (response.ok) {
+          setComments((prev) =>
+            prev.filter((comment) => comment._id !== commentId)
+          );
+          setCommentCount((prev) => Math.max(0, prev - 1));
+          fetchCommentCount();
+          toast.success("Comment deleted");
+        } else {
+          throw new Error("Failed to delete comment");
+        }
+      } catch (error) {
+        console.error("Error deleting comment:", error);
+        toast.error("Failed to delete comment");
       }
-    } catch (error) {
-      console.error("Error deleting comment:", error);
-      toast.error("Failed to delete comment");
-    }
-  }, []);
+    },
+    [fetchCommentCount]
+  );
 
   const handleLocationClick = useCallback((location) => {
     const encodedLocation = encodeURIComponent(location);
