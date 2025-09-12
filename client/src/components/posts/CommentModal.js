@@ -1,3 +1,4 @@
+// components/CommentModal/CommentModal.js
 import React, {
   useState,
   useCallback,
@@ -24,54 +25,16 @@ import { COLORS } from "../../theme";
 import authorImg from "../../assets/andy.jpg";
 import { createPortal } from "react-dom";
 
+const AVATAR_FALLBACK = authorImg;
 const AUTHOR_IMAGE = authorImg;
 const AUTHOR_NAME = "Andrew";
 
-// Animation keyframes
-const fadeIn = keyframes`
-  0% { opacity: 0; }
-  100% { opacity: 1; }
-`;
+const fadeIn = keyframes`0%{opacity:0}100%{opacity:1}`;
+const slideUp = keyframes`0%{transform:translateY(100%);opacity:0}100%{transform:translateY(0);opacity:1}`;
+const slideDown = keyframes`0%{transform:translateY(0);opacity:1}100%{transform:translateY(100%);opacity:0}`;
+const scaleIn = keyframes`0%{transform:scale(0.8) translateY(20px);opacity:0}100%{transform:scale(1) translateY(0);opacity:1}`;
+const spin = keyframes`0%{transform:rotate(0)}100%{transform:rotate(360deg)}`;
 
-const slideUp = keyframes`
-  0% { 
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  100% { 
-    transform: translateY(0);
-    opacity: 1;
-  }
-`;
-
-const slideDown = keyframes`
-  0% { 
-    transform: translateY(0);
-    opacity: 1;
-  }
-  100% { 
-    transform: translateY(100%);
-    opacity: 0;
-  }
-`;
-
-const scaleIn = keyframes`
-  0% { 
-    transform: scale(0.8) translateY(20px); 
-    opacity: 0; 
-  }
-  100% { 
-    transform: scale(1) translateY(0); 
-    opacity: 1; 
-  }
-`;
-
-const spin = keyframes`
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-`;
-
-// Enhanced Comment Modal Component with Vanilla JS Swipe-to-Close
 export const CommentModal = ({
   isOpen,
   onClose,
@@ -101,52 +64,37 @@ export const CommentModal = ({
     velocityTracker: [],
   });
 
-  // Swipe gesture handling
   const handleTouchStart = useCallback((e) => {
-    const touch = e.touches[0];
+    const t = e.touches[0];
     dragRef.current = {
-      startY: touch.clientY,
-      currentY: touch.clientY,
+      startY: t.clientY,
+      currentY: t.clientY,
       startTime: Date.now(),
-      velocityTracker: [{ y: touch.clientY, time: Date.now() }],
+      velocityTracker: [{ y: t.clientY, time: Date.now() }],
     };
     setIsDragging(true);
-
-    // Prevent default to avoid scroll issues
-    if (modalRef.current) {
-      modalRef.current.style.transition = "none";
-    }
+    if (modalRef.current) modalRef.current.style.transition = "none";
   }, []);
 
   const handleTouchMove = useCallback(
     (e) => {
       if (!isDragging) return;
-
-      const touch = e.touches[0];
-      const currentY = touch.clientY;
-      const deltaY = Math.max(0, currentY - dragRef.current.startY); // Only allow downward movement
-
+      const t = e.touches[0];
+      const currentY = t.clientY;
+      const deltaY = Math.max(0, currentY - dragRef.current.startY);
       dragRef.current.currentY = currentY;
       dragRef.current.velocityTracker.push({ y: currentY, time: Date.now() });
-
-      // Keep only recent velocity data (last 100ms)
       const now = Date.now();
       dragRef.current.velocityTracker = dragRef.current.velocityTracker.filter(
-        (point) => now - point.time < 100
+        (p) => now - p.time < 100
       );
-
       setDragY(deltaY);
-
-      // Update modal position with elastic resistance
       if (modalRef.current) {
         const resistance = Math.min(deltaY / window.innerHeight, 0.5);
         const opacity = Math.max(0.3, 1 - resistance * 1.5);
-
         modalRef.current.style.transform = `translateY(${deltaY}px)`;
         modalRef.current.style.opacity = opacity;
       }
-
-      // Prevent default scrolling
       e.preventDefault();
     },
     [isDragging]
@@ -154,36 +102,23 @@ export const CommentModal = ({
 
   const handleTouchEnd = useCallback(() => {
     if (!isDragging) return;
-
     setIsDragging(false);
-
-    // Calculate velocity
-    const velocityData = dragRef.current.velocityTracker;
+    const v = dragRef.current.velocityTracker;
     let velocity = 0;
-
-    if (velocityData.length >= 2) {
-      const recent = velocityData[velocityData.length - 1];
-      const previous = velocityData[velocityData.length - 2];
-      const timeDiff = recent.time - previous.time;
-      const yDiff = recent.y - previous.y;
-      velocity = timeDiff > 0 ? yDiff / timeDiff : 0;
+    if (v.length >= 2) {
+      const a = v[v.length - 1];
+      const b = v[v.length - 2];
+      const dt = a.time - b.time;
+      velocity = dt > 0 ? (a.y - b.y) / dt : 0;
     }
-
     const modalHeight = modalRef.current?.offsetHeight || window.innerHeight;
-    const threshold = modalHeight * 0.3; // 30% of modal height
-    const velocityThreshold = 0.5; // pixels per millisecond
-
-    // Determine if should close
-    const shouldClose =
-      dragY > threshold || (dragY > 50 && velocity > velocityThreshold);
-
-    if (shouldClose) {
-      handleClose();
-    } else {
-      // Snap back to original position
+    const threshold = modalHeight * 0.3;
+    const shouldClose = dragY > threshold || (dragY > 50 && velocity > 0.5);
+    if (shouldClose) handleClose();
+    else {
       if (modalRef.current) {
         modalRef.current.style.transition =
-          "all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+          "all 0.3s cubic-bezier(0.25,0.46,0.45,0.94)";
         modalRef.current.style.transform = "translateY(0px)";
         modalRef.current.style.opacity = "1";
       }
@@ -191,7 +126,6 @@ export const CommentModal = ({
     }
   }, [isDragging, dragY]);
 
-  // Mouse events for desktop
   const handleMouseDown = useCallback((e) => {
     dragRef.current = {
       startY: e.clientY,
@@ -200,33 +134,24 @@ export const CommentModal = ({
       velocityTracker: [{ y: e.clientY, time: Date.now() }],
     };
     setIsDragging(true);
-
-    if (modalRef.current) {
-      modalRef.current.style.transition = "none";
-    }
+    if (modalRef.current) modalRef.current.style.transition = "none";
   }, []);
 
   const handleMouseMove = useCallback(
     (e) => {
       if (!isDragging) return;
-
       const currentY = e.clientY;
       const deltaY = Math.max(0, currentY - dragRef.current.startY);
-
       dragRef.current.currentY = currentY;
       dragRef.current.velocityTracker.push({ y: currentY, time: Date.now() });
-
       const now = Date.now();
       dragRef.current.velocityTracker = dragRef.current.velocityTracker.filter(
-        (point) => now - point.time < 100
+        (p) => now - p.time < 100
       );
-
       setDragY(deltaY);
-
       if (modalRef.current) {
         const resistance = Math.min(deltaY / window.innerHeight, 0.5);
         const opacity = Math.max(0.3, 1 - resistance * 1.5);
-
         modalRef.current.style.transform = `translateY(${deltaY}px)`;
         modalRef.current.style.opacity = opacity;
       }
@@ -236,33 +161,23 @@ export const CommentModal = ({
 
   const handleMouseUp = useCallback(() => {
     if (!isDragging) return;
-
     setIsDragging(false);
-
-    const velocityData = dragRef.current.velocityTracker;
+    const v = dragRef.current.velocityTracker;
     let velocity = 0;
-
-    if (velocityData.length >= 2) {
-      const recent = velocityData[velocityData.length - 1];
-      const previous = velocityData[velocityData.length - 2];
-      const timeDiff = recent.time - previous.time;
-      const yDiff = recent.y - previous.y;
-      velocity = timeDiff > 0 ? yDiff / timeDiff : 0;
+    if (v.length >= 2) {
+      const a = v[v.length - 1];
+      const b = v[v.length - 2];
+      const dt = a.time - b.time;
+      velocity = dt > 0 ? (a.y - b.y) / dt : 0;
     }
-
     const modalHeight = modalRef.current?.offsetHeight || window.innerHeight;
     const threshold = modalHeight * 0.3;
-    const velocityThreshold = 0.5;
-
-    const shouldClose =
-      dragY > threshold || (dragY > 50 && velocity > velocityThreshold);
-
-    if (shouldClose) {
-      handleClose();
-    } else {
+    const shouldClose = dragY > threshold || (dragY > 50 && velocity > 0.5);
+    if (shouldClose) handleClose();
+    else {
       if (modalRef.current) {
         modalRef.current.style.transition =
-          "all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+          "all 0.3s cubic-bezier(0.25,0.46,0.45,0.94)";
         modalRef.current.style.transform = "translateY(0px)";
         modalRef.current.style.opacity = "1";
       }
@@ -270,32 +185,24 @@ export const CommentModal = ({
     }
   }, [isDragging, dragY]);
 
-  // Auto-resize textarea
   const adjustTextareaHeight = useCallback(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = "auto";
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
-    }
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 120) + "px";
   }, []);
+  useEffect(() => adjustTextareaHeight(), [newComment, adjustTextareaHeight]);
 
   useEffect(() => {
-    adjustTextareaHeight();
-  }, [newComment, adjustTextareaHeight]);
-
-  // Handle clicks outside actions menu
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (actionsRef.current && !actionsRef.current.contains(event.target)) {
+    const onDown = (e) => {
+      if (actionsRef.current && !actionsRef.current.contains(e.target)) {
         setShowActions(null);
       }
     };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
-  // Add global mouse event listeners for drag
   useEffect(() => {
     if (isDragging) {
       document.addEventListener("mousemove", handleMouseMove, {
@@ -303,7 +210,6 @@ export const CommentModal = ({
       });
       document.addEventListener("mouseup", handleMouseUp);
       document.body.style.userSelect = "none";
-
       return () => {
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
@@ -312,37 +218,26 @@ export const CommentModal = ({
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
-  // Handle modal open/close with body scroll prevention
   useEffect(() => {
-    if (isOpen) {
-      const scrollY = window.scrollY;
-
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = "100%";
-      document.body.style.overflow = "hidden";
-
-      setTimeout(() => textareaRef.current?.focus(), 300);
-
-      const handleEscape = (e) => {
-        if (e.key === "Escape") {
-          handleClose();
-        }
-      };
-      document.addEventListener("keydown", handleEscape);
-
-      return () => {
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.width = "";
-        document.body.style.overflow = "";
-        window.scrollTo(0, scrollY);
-        document.removeEventListener("keydown", handleEscape);
-      };
-    }
+    if (!isOpen) return;
+    const scrollY = window.scrollY;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
+    setTimeout(() => textareaRef.current?.focus(), 300);
+    const onEsc = (e) => e.key === "Escape" && handleClose();
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+      window.scrollTo(0, scrollY);
+      document.removeEventListener("keydown", onEsc);
+    };
   }, [isOpen]);
 
-  // Handle close with animation
   const handleClose = () => {
     setIsClosing(true);
     if (modalRef.current) {
@@ -350,7 +245,6 @@ export const CommentModal = ({
       modalRef.current.style.transform = "translateY(100%)";
       modalRef.current.style.opacity = "0";
     }
-
     setTimeout(() => {
       setIsClosing(false);
       setDragY(0);
@@ -361,7 +255,6 @@ export const CommentModal = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newComment.trim() || isSubmitting || !isAuthenticated) return;
-
     setIsSubmitting(true);
     try {
       await onAddComment({
@@ -369,21 +262,22 @@ export const CommentModal = ({
         parentId: replyingTo?.id || null,
         postId: post._id,
       });
-
       setNewComment("");
       setReplyingTo(null);
       toast.success("Comment added!");
-    } catch (error) {
+    } catch (err) {
       toast.error("Failed to add comment");
-      console.error("Comment submission error:", error);
+      console.error("Comment submission error:", err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleReply = (comment) => {
-    setReplyingTo(comment);
-    setNewComment(`@${comment.author.username || comment.author.name} `);
+    const a = comment?.author || {};
+    const handle = a.username || a.name || "user";
+    setReplyingTo({ id: comment._id, author: a });
+    setNewComment(`@${handle} `);
     textareaRef.current?.focus();
   };
 
@@ -400,9 +294,7 @@ export const CommentModal = ({
   };
 
   const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
-      handleClose();
-    }
+    if (e.target === e.currentTarget) handleClose();
   };
 
   if (!isOpen && !isClosing) return null;
@@ -418,10 +310,7 @@ export const CommentModal = ({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Enhanced Drag Handle */}
         <DragHandle onMouseDown={handleMouseDown} isDragging={isDragging} />
-
-        {/* Header */}
         <ModalHeader>
           <HeaderTitle>Comments</HeaderTitle>
           <CloseButton onClick={handleClose}>
@@ -430,7 +319,6 @@ export const CommentModal = ({
         </ModalHeader>
 
         <ModalContent>
-          {/* Post Preview */}
           <PostPreview>
             <PostAuthor>
               <AuthorAvatar src={AUTHOR_IMAGE} alt={AUTHOR_NAME} />
@@ -445,7 +333,6 @@ export const CommentModal = ({
             {post.caption && <PostCaption>{post.caption}</PostCaption>}
           </PostPreview>
 
-          {/* Comments List */}
           <CommentsContainer>
             {isLoading ? (
               <LoadingState>
@@ -462,101 +349,107 @@ export const CommentModal = ({
               </EmptyState>
             ) : (
               <CommentsList>
-                {comments.map((comment, index) => (
-                  <CommentItem
-                    key={comment._id}
-                    style={{
-                      animationDelay: `${index * 0.05}s`,
-                    }}
-                  >
-                    <CommentAvatar
-                      src={comment.author.avatar || AUTHOR_IMAGE}
-                      alt={comment.author.name}
-                    />
-                    <CommentContent>
-                      <CommentHeader>
-                        <CommentAuthorInfo>
-                          <CommentAuthor>{comment.author.name}</CommentAuthor>
-                          {comment.author.username && (
-                            <CommentUsername>
-                              @{comment.author.username}
-                            </CommentUsername>
-                          )}
-                        </CommentAuthorInfo>
-                        <CommentTime>
-                          {formatDistanceToNow(new Date(comment.createdAt), {
-                            addSuffix: true,
-                          })}
-                        </CommentTime>
-                        {isAuthenticated && (
-                          <CommentActions ref={actionsRef}>
-                            <ActionsButton
-                              onClick={() =>
-                                setShowActions(
-                                  showActions === comment._id
-                                    ? null
-                                    : comment._id
-                                )
-                              }
-                            >
-                              <FaEllipsisH />
-                            </ActionsButton>
-                            {showActions === comment._id && (
-                              <ActionsMenu>
-                                <ActionItem
-                                  onClick={() => handleReply(comment)}
-                                >
-                                  <FaReply /> Reply
-                                </ActionItem>
-                                {(user?.id === comment.author._id ||
-                                  user?.id === post.authorId) && (
-                                  <ActionItem
-                                    onClick={() => onDeleteComment(comment._id)}
-                                    destructive
-                                  >
-                                    <FaTrash /> Delete
-                                  </ActionItem>
-                                )}
-                                <ActionItem>
-                                  <FaFlag /> Report
-                                </ActionItem>
-                              </ActionsMenu>
+                {comments.map((comment, index) => {
+                  const a = comment.author || {};
+                  const avatarSrc = a.avatar || AVATAR_FALLBACK;
+                  const authorName = a.name || "Unknown";
+                  const authorUsername = a.username;
+
+                  return (
+                    <CommentItem
+                      key={comment._id}
+                      style={{ animationDelay: `${index * 0.05}s` }}
+                    >
+                      <CommentAvatar src={avatarSrc} alt={authorName} />
+                      <CommentContent>
+                        <CommentHeader>
+                          <CommentAuthorInfo>
+                            <CommentAuthor>{authorName}</CommentAuthor>
+                            {authorUsername && (
+                              <CommentUsername>
+                                @{authorUsername}
+                              </CommentUsername>
                             )}
-                          </CommentActions>
-                        )}
-                      </CommentHeader>
-                      <CommentText>{comment.text}</CommentText>
-                      <CommentFooter>
-                        <LikeButton
-                          onClick={() => onLikeComment(comment._id)}
-                          liked={comment.hasLiked}
-                          disabled={!isAuthenticated}
-                        >
-                          {comment.hasLiked ? <FaHeart /> : <FaRegHeart />}
-                          {comment.likes > 0 && (
-                            <LikeCount>{comment.likes}</LikeCount>
+                          </CommentAuthorInfo>
+                          <CommentTime>
+                            {formatDistanceToNow(new Date(comment.createdAt), {
+                              addSuffix: true,
+                            })}
+                          </CommentTime>
+                          {isAuthenticated && (
+                            <CommentActions ref={actionsRef}>
+                              <ActionsButton
+                                onClick={() =>
+                                  setShowActions(
+                                    showActions === comment._id
+                                      ? null
+                                      : comment._id
+                                  )
+                                }
+                              >
+                                <FaEllipsisH />
+                              </ActionsButton>
+                              {showActions === comment._id && (
+                                <ActionsMenu>
+                                  <ActionItem
+                                    onClick={() => handleReply(comment)}
+                                  >
+                                    <FaReply /> Reply
+                                  </ActionItem>
+                                  {user?.id === a?._id && (
+                                    <ActionItem
+                                      onClick={() =>
+                                        onDeleteComment(comment._id)
+                                      }
+                                      destructive
+                                    >
+                                      <FaTrash /> Delete
+                                    </ActionItem>
+                                  )}
+                                  <ActionItem>
+                                    <FaFlag /> Report
+                                  </ActionItem>
+                                </ActionsMenu>
+                              )}
+                            </CommentActions>
                           )}
-                        </LikeButton>
-                        <ReplyButton onClick={() => handleReply(comment)}>
-                          Reply
-                        </ReplyButton>
-                      </CommentFooter>
-                    </CommentContent>
-                  </CommentItem>
-                ))}
+                        </CommentHeader>
+
+                        <CommentText>{comment.text}</CommentText>
+
+                        <CommentFooter>
+                          <LikeButton
+                            onClick={() => onLikeComment(comment._id)}
+                            liked={comment.hasLiked}
+                            disabled={!isAuthenticated}
+                          >
+                            {comment.hasLiked ? <FaHeart /> : <FaRegHeart />}
+                            {comment.likes > 0 && (
+                              <LikeCount>{comment.likes}</LikeCount>
+                            )}
+                          </LikeButton>
+                          <ReplyButton onClick={() => handleReply(comment)}>
+                            Reply
+                          </ReplyButton>
+                        </CommentFooter>
+                      </CommentContent>
+                    </CommentItem>
+                  );
+                })}
               </CommentsList>
             )}
           </CommentsContainer>
         </ModalContent>
 
-        {/* Comment Input */}
         {isAuthenticated ? (
           <CommentInputContainer>
             {replyingTo && (
               <ReplyIndicator>
                 <ReplyText>
                   Replying to @
-                  {replyingTo.author.username || replyingTo.author.name}
+                  {replyingTo?.author?.username ||
+                    replyingTo?.author?.name ||
+                    "user"}
                 </ReplyText>
                 <CancelReply onClick={cancelReply}>
                   <FaTimes />
@@ -581,7 +474,6 @@ export const CommentModal = ({
                 <SubmitButton
                   type="submit"
                   disabled={!newComment.trim() || isSubmitting}
-                  isSubmitting={isSubmitting}
                 >
                   {isSubmitting ? <SubmittingSpinner /> : <FaPaperPlane />}
                 </SubmitButton>
@@ -601,23 +493,17 @@ export const CommentModal = ({
   );
 };
 
-// Updated Comment Button
-export const CommentButton = ({ postId, commentCount = 0, onClick }) => {
-  return (
-    <CommentButtonWrapper onClick={onClick}>
-      <CommentIcon />
-      {commentCount > 0 && <CommentCount>{commentCount}</CommentCount>}
-    </CommentButtonWrapper>
-  );
-};
+export const CommentButton = ({ postId, commentCount = 0, onClick }) => (
+  <CommentButtonWrapper onClick={onClick}>
+    <CommentIcon />
+    {commentCount > 0 && <CommentCount>{commentCount}</CommentCount>}
+  </CommentButtonWrapper>
+);
 
-// Styled Components with Enhanced Drag Behavior
+// ---- styles (unchanged except minor polish) ----
 const ModalOverlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   width: 100vw;
   height: 100vh;
   background-color: rgba(0, 0, 0, 0.6);
@@ -625,13 +511,11 @@ const ModalOverlay = styled.div`
   backdrop-filter: blur(4px);
   animation: ${fadeIn} 0.3s ease-out;
   pointer-events: auto;
-
-  ${(props) =>
-    props.isClosing &&
+  ${(p) =>
+    p.isClosing &&
     css`
       animation: ${fadeIn} 0.3s ease-out reverse;
     `}
-
   @supports (-webkit-touch-callout: none) {
     height: -webkit-fill-available;
   }
@@ -652,16 +536,14 @@ const ModalContainer = styled.div`
   flex-direction: column;
   z-index: 10000;
   animation: ${slideUp} 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  cursor: ${(props) => (props.isDragging ? "grabbing" : "grab")};
-  user-select: ${(props) => (props.isDragging ? "none" : "auto")};
+  cursor: ${(p) => (p.isDragging ? "grabbing" : "grab")};
+  user-select: ${(p) => (p.isDragging ? "none" : "auto")};
   touch-action: none;
-
-  ${(props) =>
-    props.isClosing &&
+  ${(p) =>
+    p.isClosing &&
     css`
       animation: ${slideDown} 0.3s ease-out;
     `}
-
   @supports (-webkit-touch-callout: none) {
     height: -webkit-fill-available;
     max-height: -webkit-fill-available;
@@ -674,17 +556,15 @@ const DragHandle = styled.div`
   background-color: ${COLORS.textTertiary};
   border-radius: 2px;
   margin: 8px auto 0;
-  opacity: ${(props) => (props.isDragging ? 1 : 0.5)};
+  opacity: ${(p) => (p.isDragging ? 1 : 0.5)};
   flex-shrink: 0;
   cursor: grab;
   transition: all 0.2s ease;
-  transform: ${(props) => (props.isDragging ? "scaleY(1.5)" : "scaleY(1)")};
-
+  transform: ${(p) => (p.isDragging ? "scaleY(1.5)" : "scaleY(1)")};
   &:hover {
     opacity: 0.8;
     transform: scaleY(1.5);
   }
-
   &:active {
     cursor: grabbing;
     opacity: 1;
@@ -723,13 +603,11 @@ const CloseButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-
   &:hover {
     background-color: ${COLORS.buttonHover};
     color: ${COLORS.textPrimary};
     transform: scale(1.1);
   }
-
   &:active {
     transform: scale(0.95);
   }
@@ -741,13 +619,11 @@ const PostPreview = styled.div`
   background-color: ${COLORS.background}20;
   flex-shrink: 0;
 `;
-
 const PostAuthor = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 8px;
 `;
-
 const AuthorAvatar = styled.img`
   width: 32px;
   height: 32px;
@@ -755,23 +631,19 @@ const AuthorAvatar = styled.img`
   object-fit: cover;
   margin-right: 12px;
 `;
-
 const PostInfo = styled.div`
   display: flex;
   flex-direction: column;
 `;
-
 const AuthorName = styled.span`
   font-weight: 600;
   color: ${COLORS.textPrimary};
   font-size: 14px;
 `;
-
 const PostDate = styled.span`
   color: ${COLORS.textTertiary};
   font-size: 12px;
 `;
-
 const PostTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
@@ -779,7 +651,6 @@ const PostTitle = styled.h3`
   margin: 0 0 8px 0;
   line-height: 1.3;
 `;
-
 const PostCaption = styled.p`
   color: ${COLORS.textSecondary};
   font-size: 14px;
@@ -793,7 +664,6 @@ const ModalContent = styled.div`
   flex-direction: column;
   overflow: hidden;
 `;
-
 const CommentsContainer = styled.div`
   flex: 1;
   overflow-y: auto;
@@ -801,7 +671,6 @@ const CommentsContainer = styled.div`
   -webkit-overflow-scrolling: touch;
   will-change: scroll-position;
 `;
-
 const LoadingState = styled.div`
   display: flex;
   flex-direction: column;
@@ -810,7 +679,6 @@ const LoadingState = styled.div`
   padding: 40px 20px;
   color: ${COLORS.textSecondary};
 `;
-
 const LoadingSpinner = styled.div`
   width: 24px;
   height: 24px;
@@ -820,11 +688,9 @@ const LoadingSpinner = styled.div`
   animation: ${spin} 1s linear infinite;
   margin-bottom: 12px;
 `;
-
 const LoadingText = styled.span`
   font-size: 14px;
 `;
-
 const EmptyState = styled.div`
   display: flex;
   flex-direction: column;
@@ -834,31 +700,26 @@ const EmptyState = styled.div`
   color: ${COLORS.textSecondary};
   text-align: center;
 `;
-
 const EmptyIcon = styled.div`
   font-size: 48px;
   margin-bottom: 16px;
   opacity: 0.6;
 `;
-
 const EmptyTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
   color: ${COLORS.textPrimary};
   margin: 0 0 8px 0;
 `;
-
 const EmptySubtitle = styled.p`
   font-size: 14px;
   color: ${COLORS.textSecondary};
   margin: 0;
 `;
-
 const CommentsList = styled.div`
   min-height: min-content;
   padding-bottom: 20px;
 `;
-
 const CommentItem = styled.div`
   display: flex;
   padding: 16px 20px;
@@ -866,16 +727,13 @@ const CommentItem = styled.div`
   transition: background-color 0.2s ease;
   animation: ${scaleIn} 0.3s ease-out;
   animation-fill-mode: both;
-
   &:hover {
     background-color: ${COLORS.background}20;
   }
-
   &:last-child {
     border-bottom: none;
   }
 `;
-
 const CommentAvatar = styled.img`
   width: 32px;
   height: 32px;
@@ -884,12 +742,10 @@ const CommentAvatar = styled.img`
   margin-right: 12px;
   flex-shrink: 0;
 `;
-
 const CommentContent = styled.div`
   flex: 1;
   min-width: 0;
 `;
-
 const CommentHeader = styled.div`
   display: flex;
   align-items: center;
@@ -897,7 +753,6 @@ const CommentHeader = styled.div`
   position: relative;
   gap: 8px;
 `;
-
 const CommentAuthorInfo = styled.div`
   display: flex;
   align-items: center;
@@ -905,14 +760,12 @@ const CommentAuthorInfo = styled.div`
   flex: 1;
   min-width: 0;
 `;
-
 const CommentAuthor = styled.span`
   font-weight: 600;
   color: ${COLORS.textPrimary};
   font-size: 14px;
   white-space: nowrap;
 `;
-
 const CommentUsername = styled.span`
   color: ${COLORS.textTertiary};
   font-size: 12px;
@@ -920,19 +773,16 @@ const CommentUsername = styled.span`
   white-space: nowrap;
   opacity: 0.8;
 `;
-
 const CommentTime = styled.span`
   color: ${COLORS.textTertiary};
   font-size: 12px;
   white-space: nowrap;
   margin-left: auto;
 `;
-
 const CommentActions = styled.div`
   position: relative;
   margin-left: auto;
 `;
-
 const ActionsButton = styled.button`
   background: none;
   border: none;
@@ -943,22 +793,18 @@ const ActionsButton = styled.button`
   transition: all 0.2s ease;
   opacity: 0;
   transform: scale(0.9);
-
   ${CommentItem}:hover & {
     opacity: 1;
     transform: scale(1);
   }
-
   &:hover {
     background-color: ${COLORS.buttonHover};
     color: ${COLORS.textSecondary};
   }
-
   &:active {
     transform: scale(0.9);
   }
 `;
-
 const ActionsMenu = styled.div`
   position: absolute;
   right: 0;
@@ -972,40 +818,33 @@ const ActionsMenu = styled.div`
   border: 1px solid ${COLORS.divider};
   animation: ${scaleIn} 0.2s ease-out;
 `;
-
 const ActionItem = styled.button`
   width: 100%;
   padding: 12px 16px;
   border: none;
   background: none;
-  color: ${(props) =>
-    props.destructive ? COLORS.heartRed : COLORS.textPrimary};
+  color: ${(p) => (p.destructive ? COLORS.heartRed : COLORS.textPrimary)};
   text-align: left;
   font-size: 13px;
   cursor: pointer;
   display: flex;
   align-items: center;
   transition: all 0.2s ease;
-
   svg {
     margin-right: 8px;
     font-size: 12px;
   }
-
   &:hover {
-    background-color: ${(props) =>
-      props.destructive ? COLORS.heartRed + "15" : COLORS.buttonHover};
+    background-color: ${(p) =>
+      p.destructive ? COLORS.heartRed + "15" : COLORS.buttonHover};
   }
-
   &:active {
     transform: scale(0.98);
   }
-
   &:not(:last-child) {
     border-bottom: 1px solid ${COLORS.divider};
   }
 `;
-
 const CommentText = styled.p`
   color: ${COLORS.textPrimary};
   font-size: 14px;
@@ -1013,44 +852,37 @@ const CommentText = styled.p`
   margin: 0 0 8px 0;
   word-break: break-word;
 `;
-
 const CommentFooter = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
 `;
-
 const LikeButton = styled.button`
   background: none;
   border: none;
-  color: ${(props) => (props.liked ? COLORS.heartRed : COLORS.textTertiary)};
-  cursor: ${(props) => (props.disabled ? "default" : "pointer")};
+  color: ${(p) => (p.liked ? COLORS.heartRed : COLORS.textTertiary)};
+  cursor: ${(p) => (p.disabled ? "default" : "pointer")};
   font-size: 12px;
   display: flex;
   align-items: center;
   gap: 4px;
   transition: all 0.2s ease;
   padding: 4px 0;
-
   &:hover:not(:disabled) {
     color: ${COLORS.heartRed};
     transform: scale(1.05);
   }
-
   &:active:not(:disabled) {
     transform: scale(0.9);
   }
-
   &:disabled {
     opacity: 0.5;
   }
 `;
-
 const LikeCount = styled.span`
   font-size: 12px;
   font-weight: 500;
 `;
-
 const ReplyButton = styled.button`
   background: none;
   border: none;
@@ -1060,16 +892,13 @@ const ReplyButton = styled.button`
   font-weight: 500;
   padding: 4px 0;
   transition: all 0.2s ease;
-
   &:hover {
     color: ${COLORS.textSecondary};
   }
-
   &:active {
     transform: scale(0.95);
   }
 `;
-
 const CommentInputContainer = styled.div`
   border-top: 1px solid ${COLORS.divider}30;
   background-color: ${COLORS.cardBackground};
@@ -1077,7 +906,6 @@ const CommentInputContainer = styled.div`
   bottom: 0;
   flex-shrink: 0;
 `;
-
 const ReplyIndicator = styled.div`
   display: flex;
   align-items: center;
@@ -1087,13 +915,11 @@ const ReplyIndicator = styled.div`
   border-bottom: 1px solid ${COLORS.divider}20;
   animation: ${scaleIn} 0.2s ease-out;
 `;
-
 const ReplyText = styled.span`
   color: ${COLORS.accentMint};
   font-size: 12px;
   font-weight: 500;
 `;
-
 const CancelReply = styled.button`
   background: none;
   border: none;
@@ -1102,24 +928,20 @@ const CancelReply = styled.button`
   padding: 4px;
   border-radius: 4px;
   transition: all 0.2s ease;
-
   &:hover {
     background-color: ${COLORS.buttonHover};
     color: ${COLORS.textPrimary};
   }
-
   &:active {
     transform: scale(0.9);
   }
 `;
-
 const CommentForm = styled.form`
   display: flex;
   align-items: flex-end;
   padding: 16px 20px;
   gap: 12px;
 `;
-
 const UserAvatar = styled.img`
   width: 32px;
   height: 32px;
@@ -1127,14 +949,12 @@ const UserAvatar = styled.img`
   object-fit: cover;
   flex-shrink: 0;
 `;
-
 const InputWrapper = styled.div`
   flex: 1;
   display: flex;
   align-items: flex-end;
   gap: 12px;
 `;
-
 const CommentTextarea = styled.textarea`
   flex: 1;
   border: 1px solid ${COLORS.divider};
@@ -1149,25 +969,21 @@ const CommentTextarea = styled.textarea`
   font-family: inherit;
   min-height: 40px;
   max-height: 120px;
-
   &:focus {
     border-color: ${COLORS.accentMint};
     box-shadow: 0 0 0 3px ${COLORS.accentMint}20;
   }
-
   &::placeholder {
     color: ${COLORS.textTertiary};
   }
-
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
 `;
-
 const SubmitButton = styled.button`
-  background-color: ${(props) =>
-    props.disabled ? COLORS.buttonHover : COLORS.accentMint};
+  background-color: ${(p) =>
+    p.disabled ? COLORS.buttonHover : COLORS.accentMint};
   border: none;
   border-radius: 50%;
   width: 40px;
@@ -1175,21 +991,18 @@ const SubmitButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
+  cursor: ${(p) => (p.disabled ? "not-allowed" : "pointer")};
   color: white;
   transition: all 0.2s ease;
   flex-shrink: 0;
-
   &:hover:not(:disabled) {
     background-color: ${COLORS.primaryMint};
     transform: scale(1.05);
   }
-
   &:active:not(:disabled) {
     transform: scale(0.95);
   }
 `;
-
 const SubmittingSpinner = styled.div`
   width: 16px;
   height: 16px;
@@ -1198,7 +1011,6 @@ const SubmittingSpinner = styled.div`
   border-radius: 50%;
   animation: ${spin} 1s linear infinite;
 `;
-
 const AuthPrompt = styled.div`
   padding: 16px 20px;
   text-align: center;
@@ -1206,23 +1018,19 @@ const AuthPrompt = styled.div`
   background-color: ${COLORS.background}20;
   flex-shrink: 0;
 `;
-
 const AuthPromptText = styled.p`
   color: ${COLORS.textSecondary};
   font-size: 14px;
   margin: 0;
-
   a {
     color: ${COLORS.accentMint};
     text-decoration: none;
     font-weight: 600;
-
     &:hover {
       text-decoration: underline;
     }
   }
 `;
-
 const CommentButtonWrapper = styled.button`
   color: ${COLORS.textTertiary};
   font-size: 1.5rem;
@@ -1235,19 +1043,15 @@ const CommentButtonWrapper = styled.button`
   border: none;
   padding: 0;
   text-decoration: none;
-
   &:hover {
     transform: scale(1.15);
     color: ${COLORS.textSecondary};
   }
-
   &:active {
     transform: scale(0.9);
   }
 `;
-
 const CommentIcon = styled(FaComment)``;
-
 const CommentCount = styled.span`
   font-size: 0.8rem;
   color: ${COLORS.textSecondary};

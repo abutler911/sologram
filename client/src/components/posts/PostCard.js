@@ -169,8 +169,8 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     try {
       const baseURL = process.env.REACT_APP_API_URL || "";
       const url = baseURL
-        ? `${baseURL}/api/comments/posts/${post._id}`
-        : `/api/comments/posts/${post._id}`;
+        ? `${baseURL}/api/posts/${post._id}/comments`
+        : `/api/posts/${post._id}/comments`;
 
       const response = await fetch(url, {
         headers: {
@@ -214,7 +214,8 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         });
 
         if (response.ok) {
-          const newComment = await response.json();
+          const data = await response.json();
+          const newComment = data.comment || data;
           setComments((prev) => [newComment, ...prev]);
           setCommentCount((prev) => prev + 1);
           return newComment;
@@ -248,11 +249,10 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         });
 
         if (response.ok) {
-          const updatedComment = await response.json();
+          const data = await response.json();
+          const updated = data.comment || data;
           setComments((prev) =>
-            prev.map((comment) =>
-              comment._id === commentId ? updatedComment : comment
-            )
+            prev.map((c) => (c._id === commentId ? updated : c))
           );
         }
       } catch (error) {

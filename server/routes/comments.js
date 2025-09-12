@@ -33,15 +33,25 @@ const createCommentLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// helper to normalize author on response
 const safeAuthor = (a) =>
-  a || { _id: null, name: "Unknown", username: "", avatar: null };
+  a
+    ? {
+        _id: a._id,
+        name:
+          [a.firstName, a.lastName].filter(Boolean).join(" ") ||
+          a.username ||
+          "Unknown",
+        username: a.username || "",
+        avatar: a.profileImage || null,
+      }
+    : { _id: null, name: "Unknown", username: "", avatar: null };
 
 // -----------------------------
 // LIST COMMENTS FOR A POST
 // GET /api/posts/:postId/comments
 // -----------------------------
-router.get("/posts/:postId/comments", async (req, res) => {
+const optionalAuth = require("../middleware/optionalAuth");
+router.get("/posts/:postId/comments", optionalAuth, async (req, res) => {
   try {
     const { postId } = req.params;
     if (!isValidId(postId)) {
@@ -62,7 +72,7 @@ router.get("/posts/:postId/comments", async (req, res) => {
     const [total, items] = await Promise.all([
       Comment.countDocuments({ postId, isDeleted: false }),
       Comment.find({ postId, isDeleted: false })
-        .populate("author", "name username avatar")
+        .populate("author", "firstName lastName username profileImage")
         .sort({ createdAt: -1 })
         .limit(limit)
         .skip((page - 1) * limit)
@@ -145,12 +155,10 @@ router.post(
             .json({ success: false, message: "Invalid parent comment" });
         }
         if (parent.parentId) {
-          return res
-            .status(400)
-            .json({
-              success: false,
-              message: "Only one-level replies allowed",
-            });
+          return res.status(400).json({
+            success: false,
+            message: "Only one-level replies allowed",
+          });
         }
       }
 
@@ -171,7 +179,10 @@ router.post(
         );
       }
 
-      await comment.populate("author", "name username avatar");
+      await comment.populate(
+        "author",
+        "firstName lastName username profileImage"
+      );
 
       const out = {
         ...comment.toObject(),
@@ -214,7 +225,7 @@ router.post("/comments/:commentId/like", protect, async (req, res) => {
     }
 
     const fresh = await Comment.findById(commentId)
-      .populate("author", "name username avatar")
+      .populate("author", "firstName lastName username profileImage")
       .lean();
 
     if (!fresh) {
@@ -328,7 +339,7 @@ router.get("/comments/:commentId/replies", async (req, res) => {
     const [total, items] = await Promise.all([
       Comment.countDocuments({ parentId: commentId, isDeleted: false }),
       Comment.find({ parentId: commentId, isDeleted: false })
-        .populate("author", "name username avatar")
+        .populate("author", "firstName lastName username profileImage")
         .sort({ createdAt: 1 })
         .limit(limit)
         .skip((page - 1) * limit)

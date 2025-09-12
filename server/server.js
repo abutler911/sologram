@@ -120,7 +120,7 @@ app.use("/api/thoughts", thoughtsRoutes);
 app.use("/api/admin/cloudinary", cloudinaryRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/admin/ai-content", aiContentRoutes);
-app.use("/api/comments", commentRoutes);
+app.use("/api", commentRoutes);
 
 // ----------- Lightweight Health Check -----------
 app.get("/health", (req, res) => {
