@@ -402,45 +402,50 @@ const AppNav = ({ onSearch, onClearSearch }) => {
 
       {/* Mobile bottom bar + FAB */}
       <BottomDock>
-        <DockLink to="/" $active={isActive("/")} aria-label="Home">
-          <FaHome />
-          <span>Home</span>
-        </DockLink>
-        <DockLink
-          to="/thoughts"
-          $active={isActive("/thoughts")}
-          aria-label="Thoughts"
-        >
-          <FaLightbulb />
-          <span>Thoughts</span>
-        </DockLink>
-        <FabShell>
-          {canCreate ? (
-            <Fab onClick={() => setMoreOpen(true)} aria-label="Create or more">
-              <FaPlus />
-            </Fab>
-          ) : (
-            <Fab as={Link} to="/login" aria-label="Login">
-              <FaSignInAlt />
-            </Fab>
-          )}
-        </FabShell>
-        <DockLink
-          to="/collections"
-          $active={isActive("/collections")}
-          aria-label="Collections"
-        >
-          <FaFolder />
-          <span>Collections</span>
-        </DockLink>
-        <DockLink
-          to="/profile"
-          $active={isActive("/profile")}
-          aria-label="Profile"
-        >
-          <FaUser />
-          <span>Profile</span>
-        </DockLink>
+        <BottomDockInner>
+          <DockLink to="/" $active={isActive("/")} aria-label="Home">
+            <FaHome />
+            <span>Home</span>
+          </DockLink>
+          <DockLink
+            to="/thoughts"
+            $active={isActive("/thoughts")}
+            aria-label="Thoughts"
+          >
+            <FaLightbulb />
+            <span>Thoughts</span>
+          </DockLink>
+          <FabShell>
+            {canCreate ? (
+              <Fab
+                onClick={() => setMoreOpen(true)}
+                aria-label="Create or more"
+              >
+                <FaPlus />
+              </Fab>
+            ) : (
+              <Fab as={Link} to="/login" aria-label="Login">
+                <FaSignInAlt />
+              </Fab>
+            )}
+          </FabShell>
+          <DockLink
+            to="/collections"
+            $active={isActive("/collections")}
+            aria-label="Collections"
+          >
+            <FaFolder />
+            <span>Collections</span>
+          </DockLink>
+          <DockLink
+            to="/profile"
+            $active={isActive("/profile")}
+            aria-label="Profile"
+          >
+            <FaUser />
+            <span>Profile</span>
+          </DockLink>
+        </BottomDockInner>
       </BottomDock>
 
       {/* Mobile More / Create sheet */}
@@ -531,6 +536,8 @@ const AppBar = styled.header`
   position: sticky;
   top: 0;
   z-index: 1000;
+  width: 100%;
+  overflow-x: clip; /* prevents 0.5px rounding from creating a scroll */
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   background: linear-gradient(
@@ -548,9 +555,15 @@ const BarInner = styled.div`
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 16px;
-  max-width: 1200px;
+  width: 100%;
+  max-width: 470px; /* match feed column on mobile */
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 12px; /* smaller mobile padding */
+  box-sizing: border-box;
+  @media (min-width: 960px) {
+    max-width: 1200px; /* expand on desktop */
+    padding: 0 16px;
+  }
 `;
 
 const Logo = styled(Link)`
@@ -832,14 +845,10 @@ const ClearBtn = styled.button`
 const rise = keyframes`from{transform:translateY(16px); opacity:0} to{transform:translateY(0); opacity:1}`;
 const BottomDock = styled.nav`
   position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
   bottom: 0;
-  width: min(100%, var(--app-max-width, 470px)); /* same max as main */
-  height: 72px;
   z-index: 1000;
-
-  display: none;
   background: linear-gradient(
     180deg,
     ${COLORS.cardBackground}e6,
@@ -847,19 +856,25 @@ const BottomDock = styled.nav`
   );
   backdrop-filter: blur(16px);
   border-top: 1px solid ${COLORS.border};
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
+  @media (min-width: 960px) {
+    display: none;
+  }
+`;
 
-  /* safe-area breathing room on iOS */
+const BottomDockInner = styled.div`
+  box-sizing: border-box;
+  height: 72px;
+  width: 100%;
+  max-width: 470px; /* match the feed column */
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
   padding-left: max(8px, env(safe-area-inset-left));
   padding-right: max(8px, env(safe-area-inset-right));
   padding-bottom: env(safe-area-inset-bottom);
-
-  @media (max-width: 959px) {
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-  }
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 `;
 
 const DockLink = styled(Link)`
