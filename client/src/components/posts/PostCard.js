@@ -125,10 +125,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   }, [isAuthenticated, post._id, checkLikeStatus]);
 
   useEffect(() => {
-    if (isVisible) fetchCommentCount();
-  }, [isVisible, fetchCommentCount, post?._id]);
-
-  useEffect(() => {
     const handleClickOutside = (event) => {
       if (actionsRef.current && !actionsRef.current.contains(event.target)) {
         setShowActions(false);
@@ -195,6 +191,11 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
       console.error("fetchCommentCount error:", e);
     }
   }, [post?._id]);
+
+  useEffect(() => {
+    if (isVisible) fetchCommentCount();
+  }, [isVisible, fetchCommentCount, post?._id]);
+
   const fetchComments = useCallback(async () => {
     if (!post._id) return;
 
