@@ -23,12 +23,20 @@ router.get("/", getPosts);
 router.get("/search", searchPosts);
 router.get("/:id", getPost);
 
-router.get("/posts/:id/comments/count", async (req, res) => {
+router.get("/:id/comments/count", async (req, res) => {
   try {
     const { id } = req.params;
-    // Adjust filter as needed (e.g., exclude soft-deleted)
-    const count = await Comment.countDocuments({ postId: id });
-    res.json({ count });
+    // If you want to validate ObjectId, uncomment the next 3 lines:
+    // const { isValidObjectId } = require("mongoose");
+    // if (!isValidObjectId(id)) return res.status(400).json({ message: "Invalid post id" });
+
+    // Only count non-deleted comments
+    const count = await Comment.countDocuments({
+      postId: id,
+      isDeleted: false,
+    });
+    // Always return 200 with a number (0 if none)
+    return res.status(200).json({ count });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Failed to get comment count" });
