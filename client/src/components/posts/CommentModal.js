@@ -747,25 +747,40 @@ const CommentContent = styled.div`
   min-width: 0;
 `;
 const CommentHeader = styled.div`
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto; /* name | time | actions */
+  align-items: baseline;
+  gap: 4px 8px;
   margin-bottom: 4px;
-  position: relative;
-  gap: 8px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: minmax(0, 1fr) auto; /* name | actions */
+    /* time drops to its own line below */
+  }
 `;
+
 const CommentAuthorInfo = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 1;
-  min-width: 0;
+  min-width: 0; /* allow shrinking */
+  overflow: hidden; /* enable ellipsis inside */
+
+  /* keep the two bits on one line but allow truncation */
+  & > span {
+    min-width: 0;
+  }
 `;
 const CommentAuthor = styled.span`
   font-weight: 600;
   color: ${COLORS.textPrimary};
   font-size: 14px;
   white-space: nowrap;
+  overflow: hidden; /* key for ellipsis */
+  text-overflow: ellipsis; /* key for ellipsis */
+  max-width: 100%;
 `;
+
 const CommentUsername = styled.span`
   color: ${COLORS.textTertiary};
   font-size: 12px;
@@ -777,11 +792,17 @@ const CommentTime = styled.span`
   color: ${COLORS.textTertiary};
   font-size: 12px;
   white-space: nowrap;
-  margin-left: auto;
+  justify-self: end; /* sit to the right on wide screens */
+
+  @media (max-width: 480px) {
+    grid-column: 1 / -1; /* take full width on its own line */
+    justify-self: start; /* left align under the name */
+    margin-top: 2px;
+  }
 `;
 const CommentActions = styled.div`
   position: relative;
-  margin-left: auto;
+  /* remove margin-left:auto; grid will handle placement */
 `;
 const ActionsButton = styled.button`
   background: none;
@@ -793,16 +814,23 @@ const ActionsButton = styled.button`
   transition: all 0.2s ease;
   opacity: 0;
   transform: scale(0.9);
+
   ${CommentItem}:hover & {
     opacity: 1;
     transform: scale(1);
   }
+
   &:hover {
     background-color: ${COLORS.buttonHover};
     color: ${COLORS.textSecondary};
   }
   &:active {
     transform: scale(0.9);
+  }
+
+  @media (max-width: 480px) {
+    opacity: 1; /* no hover on mobile—keep it visible */
+    transform: none;
   }
 `;
 const ActionsMenu = styled.div`
