@@ -36,7 +36,8 @@ import {
   FaImages,
   FaFolder,
   FaHome,
-  FaRobot, // Add this for AI icon
+  FaRobot,
+  FaArchive,
 } from "react-icons/fa";
 
 import { AuthContext } from "../../context/AuthContext";
@@ -149,6 +150,8 @@ const Header = ({ onSearch, onClearSearch }) => {
 
   // Check if user is admin
   const isAdmin = user?.role === "admin";
+  const canCreate =
+    isAuthenticated && (user?.role === "admin" || user?.role === "creator");
 
   return (
     <HeaderWrapper>
@@ -186,6 +189,30 @@ const Header = ({ onSearch, onClearSearch }) => {
               <FaFolder />
               <span>Collections</span>
             </NavItem>
+            {/* Creator/Admin quick actions on desktop */}
+            {canCreate && (
+              <>
+                <NavItem to="/create" active={isActivePath("/create")}>
+                  <FaCamera />
+                  <span>New Post</span>
+                </NavItem>
+                <NavItem
+                  to="/create-story"
+                  active={isActivePath("/create-story")}
+                >
+                  <FaImages />
+                  <span>New Story</span>
+                </NavItem>
+                <NavItem
+                  to="/story-archive"
+                  active={isActivePath("/story-archive")}
+                >
+                  <FaArchive />
+                  <span>Story Archive</span>
+                </NavItem>
+              </>
+            )}
+
             {/* Admin-only AI Content Generator link */}
             {isAdmin && (
               <NavItem
@@ -257,6 +284,22 @@ const Header = ({ onSearch, onClearSearch }) => {
                     <UserMenuItem to="/profile">
                       <FaUser /> <span>Profile</span>
                     </UserMenuItem>
+                    {/* Quick create + archive in user menu */}
+                    {canCreate && (
+                      <>
+                        <UserMenuItem to="/create">
+                          <FaCamera /> <span>New Post</span>
+                        </UserMenuItem>
+                        <UserMenuItem to="/create-story">
+                          <FaImages /> <span>New Story</span>
+                        </UserMenuItem>
+                        <UserMenuItem to="/story-archive">
+                          <FaArchive /> <span>Story Archive</span>
+                        </UserMenuItem>
+                        <MenuDivider />
+                      </>
+                    )}
+
                     {/* Admin-only menu item */}
                     {isAdmin && (
                       <UserMenuItem to="/admin/ai-content">
