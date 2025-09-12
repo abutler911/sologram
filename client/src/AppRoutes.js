@@ -1,11 +1,12 @@
 import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import PrivateRoute from "./components/PrivateRoute";
+import AppNav from "./components/navigation/AppNav";
 
 // Import static components used in multiple routes
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
-import BottomNavigation from "./components/layout/BottomNavigation";
+
 import LoadingSpinner from "./components/common/LoadingSpinner";
 
 // ✅ MOVE ALL LAZY IMPORTS OUTSIDE THE COMPONENT
@@ -51,13 +52,11 @@ const AIContentGenerator = React.lazy(() =>
 
 const LoadingFallback = () => <LoadingSpinner />;
 
-// Layout component to avoid repetition
 const StandardLayout = ({ children, headerProps }) => (
   <>
-    <Header {...headerProps} />
+    <AppNav {...headerProps} />
     <main className="main-content">{children}</main>
     <Footer />
-    <BottomNavigation />
   </>
 );
 

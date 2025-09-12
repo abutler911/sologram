@@ -1,8 +1,8 @@
 import React, { lazy, Suspense } from "react";
 import PropTypes from "prop-types";
-import Header from "./Header";
+import AppNav from "../navigation/AppNav";
 import Footer from "./Footer";
-import BottomNavigation from "./BottomNavigation";
+
 import styled from "styled-components";
 import { COLORS } from "../../theme";
 import LoadingSpinner from "../common/LoadingSpinner";
@@ -20,15 +20,19 @@ const MainLayout = ({
   customFooter = null,
   customBanner = null,
   isLoading = false,
+  onSearch,
+  onClearSearch,
 }) => {
   return (
     <LayoutWrapper>
-      {customHeader || <Header />}
+      {!noNav &&
+        (customHeader || (
+          <AppNav onSearch={onSearch} onClearSearch={onClearSearch} />
+        ))}
       <main aria-label="Main Content">
         {isLoading ? <LoadingSpinner /> : children}
       </main>
       {!noFooter && (customFooter || <Footer />)}
-      {!noNav && <BottomNavigation />}
       <Suspense fallback={<div>Loading...</div>}>
         <InstallPrompt />
         <FloatingActionButtonAdjuster />
@@ -84,6 +88,8 @@ MainLayout.propTypes = {
   customFooter: PropTypes.node,
   customBanner: PropTypes.node,
   isLoading: PropTypes.bool,
+  onSearch: PropTypes.func,
+  onClearSearch: PropTypes.func,
 };
 
 export default MainLayout;
