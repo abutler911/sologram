@@ -106,7 +106,12 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [comments, setComments] = useState([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
-  const [commentCount, setCommentCount] = useState(post.commentCount || 0);
+  const [commentCount, setCommentCount] = useState(
+    post.commentsCount ?? post.commentCount ?? 0
+  );
+  useEffect(() => {
+    setCommentCount(post.commentsCount ?? post.commentCount ?? 0);
+  }, [post.commentsCount, post.commentCount]);
 
   const hasMultipleMedia = post.media && post.media.length > 1;
   const formattedDate = format(new Date(post.createdAt), "MMM d, yyyy");
@@ -763,7 +768,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
             <CommentButton
               onClick={handleOpenComments}
-              aria-label="View comments"
+              aria-label="Open comments"
             >
               <FaComment />
               {commentCount > 0 && <CommentCount>{commentCount}</CommentCount>}

@@ -313,6 +313,23 @@ const Home = forwardRef((props, ref) => {
     );
   };
 
+  const bumpComments = useCallback((postId, delta) => {
+    setPosts((prev) =>
+      prev.map((p) =>
+        p._id === postId
+          ? {
+              ...p,
+              // support multiple API shapes
+              commentsCount: (p.commentsCount ?? p.commentCount ?? 0) + delta,
+              commentCount: (p.commentCount ?? p.commentsCount ?? 0) + delta,
+            }
+          : p
+      )
+    );
+  }, []);
+
+  const handleCommentAdded = (postId) => bumpComments(postId, +1);
+  const handleCommentDeleted = (postId) => bumpComments(postId, -1);
   return (
     <>
       <PageWrapper>
@@ -340,6 +357,8 @@ const Home = forwardRef((props, ref) => {
               lastPostElementRef={lastPostElementRef}
               onPostDelete={handlePostDelete}
               onPostLike={handlePostLike}
+              onCommentAdded={handleCommentAdded}
+              onCommentDeleted={handleCommentDeleted}
               isPWA={isPWA}
             />
           ) : loading ? (
