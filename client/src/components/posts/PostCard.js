@@ -76,6 +76,12 @@ const fontFaceStyles = css`
     font-display: swap;
   }
 `;
+function getCommentCountFromPost(p = {}) {
+  const a = Number.isFinite(p?.commentsCount) ? p.commentsCount : null;
+  const b = Number.isFinite(p?.commentCount) ? p.commentCount : null;
+  const c = Array.isArray(p?.comments) ? p.comments.length : null;
+  return a ?? b ?? c ?? 0;
+}
 
 const FullscreenModalComponent = ({ onClick, children }) => (
   <FullscreenModal onClick={onClick}>{children}</FullscreenModal>
@@ -107,11 +113,12 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const [comments, setComments] = useState([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [commentCount, setCommentCount] = useState(
-    post.commentsCount ?? post.commentCount ?? 0
+    getCommentCountFromPost(post)
   );
   useEffect(() => {
-    setCommentCount(post.commentsCount ?? post.commentCount ?? 0);
-  }, [post.commentsCount, post.commentCount]);
+    // if the post prop changes (or server rehydrates), resync our display value
+    setCommentCount(getCommentCountFromPost(post));
+  }, [post._id, post.commentsCount, post.commentCount, post?.comments?.length]);
 
   const hasMultipleMedia = post.media && post.media.length > 1;
   const formattedDate = format(new Date(post.createdAt), "MMM d, yyyy");
@@ -167,6 +174,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   }, []);
 
   // Comment handling functions
+
   const fetchComments = useCallback(async () => {
     if (!post._id) return;
 
@@ -186,7 +194,16 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
       if (response.ok) {
         const data = await response.json();
-        setComments(data.comments || []);
+
+        const list = Array.isArray(data.comments) ? data.comments : [];
+        setComments(list);
+        // prefer explicit server count if present; else compute from list
+        const serverCount = Number.isFinite(data.count)
+          ? data.count
+          : Number.isFinite(data.total)
+          ? data.total
+          : list.length;
+        setCommentCount(serverCount);
       }
     } catch (error) {
       console.error("Error fetching comments:", error);
