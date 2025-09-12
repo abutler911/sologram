@@ -89,7 +89,7 @@ const FullscreenModalComponent = ({ onClick, children }) => (
 
 const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const cardRef = useRef(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const [post, setPost] = useState(initialPost);
   const { isAuthenticated } = useContext(AuthContext);
   const { showDeleteModal } = useDeleteModal();
@@ -196,6 +196,24 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     if (isVisible) fetchCommentCount();
   }, [isVisible, fetchCommentCount, post?._id]);
 
+  useEffect(() => {
+    if (!cardRef.current || typeof window === "undefined") return;
+    if (!("IntersectionObserver" in window)) {
+      setIsVisible(true);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          obs.disconnect(); // don't toggle back to false later
+        }
+      },
+      { threshold: 0.1, rootMargin: "120px 0px" }
+    );
+    obs.observe(cardRef.current);
+    return () => obs.disconnect();
+  }, []);
   const fetchComments = useCallback(async () => {
     if (!post._id) return;
 
@@ -601,14 +619,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   );
 
   return (
-    <CardWrapper
-      ref={cardRef}
-      className={isVisible ? "visible" : ""}
-      style={{
-        opacity: isVisible ? 1 : 0,
-        transform: isVisible ? "translateY(0)" : "translateY(20px)",
-      }}
-    >
+    <CardWrapper ref={cardRef} className={isVisible ? "visible" : ""}>
       <Card>
         <CardHeader aria-label="Post header">
           <UserInfo>
