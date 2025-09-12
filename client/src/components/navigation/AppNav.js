@@ -197,7 +197,10 @@ const AppNav = ({ onSearch, onClearSearch }) => {
             <span className="mark">
               <FaCamera />
             </span>
-            <span className="word">SoloGram</span>
+            <span className="brand">
+              <span className="word">SoloGram</span>
+              <span className="tagline">One Voice. Infinite Moments.</span>
+            </span>
           </Logo>
 
           {/* Desktop primary nav */}
@@ -540,6 +543,7 @@ const AppBar = styled.header`
 
 const BarInner = styled.div`
   height: 64px;
+  min-height: 68px;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -567,11 +571,30 @@ const Logo = styled(Link)`
     );
     color: white;
   }
+  .brand {
+    display: flex;
+    flex-direction: column;
+  }
   .word {
+    font-family: "Mystery Quest", cursive;
     color: ${COLORS.textPrimary};
-    font-weight: 800;
+    font-size: 1.6rem;
+    line-height: 1.05;
     letter-spacing: 0.2px;
-    font-size: 1.1rem;
+  }
+  .tagline {
+    font-family: "Inter", sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: ${COLORS.primaryMint};
+    margin-top: 2px;
+    opacity: 0.95;
+    display: none;
+  }
+  @media (min-width: 960px) {
+    .tagline {
+      display: block;
+    }
   }
 `;
 
