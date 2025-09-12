@@ -57,16 +57,20 @@ const LayoutWrapper = styled.div`
   }
 
   main {
+    --app-max-width: 470px;
+
     width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     margin: 0; /* Remove top margin */
     padding: 0; /* Remove all padding for seamless transition */
+    box-sizing: border-box;
 
-    /* Only add side padding to direct children if needed */
-    & > div:not(:last-child) {
-      padding: 0 1rem;
+    > * {
+      width: min(100%, var(--app-max-width));
+      margin-left: auto;
+      margin-right: auto;
     }
 
     /* Special handling for home feed - no padding */

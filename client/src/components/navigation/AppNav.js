@@ -832,12 +832,14 @@ const ClearBtn = styled.button`
 const rise = keyframes`from{transform:translateY(16px); opacity:0} to{transform:translateY(0); opacity:1}`;
 const BottomDock = styled.nav`
   position: fixed;
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
   bottom: 0;
+  width: min(100%, var(--app-max-width, 470px)); /* same max as main */
   height: 72px;
-  display: none;
   z-index: 1000;
+
+  display: none;
   background: linear-gradient(
     180deg,
     ${COLORS.cardBackground}e6,
@@ -845,13 +847,21 @@ const BottomDock = styled.nav`
   );
   backdrop-filter: blur(16px);
   border-top: 1px solid ${COLORS.border};
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+
+  /* safe-area breathing room on iOS */
+  padding-left: max(8px, env(safe-area-inset-left));
+  padding-right: max(8px, env(safe-area-inset-right));
+  padding-bottom: env(safe-area-inset-bottom);
+
   @media (max-width: 959px) {
     display: flex;
     align-items: center;
     justify-content: space-around;
-    padding: 0 8px;
   }
 `;
+
 const DockLink = styled(Link)`
   display: flex;
   flex-direction: column;
