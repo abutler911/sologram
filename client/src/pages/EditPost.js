@@ -1,51 +1,26 @@
-// pages/EditPost.js
-import React, { useState, useEffect, lazy, Suspense } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import styled from "styled-components";
-import { FaEdit } from "react-icons/fa";
-import axios from "axios";
-import { toast } from "react-hot-toast";
-import { COLORS } from "../theme";
-// Import LoadingSpinner component
-import LoadingSpinner from "../components/common/LoadingSpinner";
+// client/src/pages/EditPost.js
+import React, { lazy, Suspense } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
+import { FaEdit } from 'react-icons/fa';
+import { COLORS } from '../theme';
+import { usePost } from '../hooks/queries/usePosts';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 
-// 🎯 KEY CHANGE: Lazy load PostCreator instead of direct import
-const PostCreator = lazy(() => import("../components/posts/PostCreator"));
+// Lazy load PostCreator
+const PostCreator = lazy(() => import('../components/posts/PostCreator'));
 
 const EditPost = () => {
   const { id } = useParams();
-  const [post, setPost] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { data: post, isLoading, error } = usePost(id);
 
-  // Fetch post data
-  useEffect(() => {
-    const fetchPost = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(`/api/posts/${id}`);
-        setPost(response.data.data);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching post:", err);
-        setError(
-          "Failed to load post. It may have been deleted or does not exist."
-        );
-        toast.error("Failed to load post");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPost();
-  }, [id]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <PageWrapper>
         <Container>
           <LoadingContainer>
-            <LoadingSpinner text="Loading post" size="50px" />
+            <LoadingSpinner text='Loading post' size='50px' />
           </LoadingContainer>
         </Container>
       </PageWrapper>
@@ -57,7 +32,10 @@ const EditPost = () => {
       <PageWrapper>
         <Container>
           <ErrorContainer>
-            <ErrorMessage>{error || "Post not found"}</ErrorMessage>
+            <ErrorMessage>
+              {error?.message ||
+                'Failed to load post. It may have been deleted or does not exist.'}
+            </ErrorMessage>
             <BackButton onClick={() => navigate(-1)}>Go Back</BackButton>
           </ErrorContainer>
         </Container>
@@ -76,11 +54,10 @@ const EditPost = () => {
           <HeaderSubtitle>Update and refine your content</HeaderSubtitle>
         </PageHeader>
 
-        {/* 🎯 KEY CHANGE: Wrap PostCreator in Suspense for lazy loading */}
         <Suspense
           fallback={
             <LoadingContainer>
-              <LoadingSpinner text="Loading editor" size="40px" />
+              <LoadingSpinner text='Loading editor' size='40px' />
             </LoadingContainer>
           }
         >
@@ -134,7 +111,6 @@ const HeaderSubtitle = styled.p`
   color: ${COLORS.textTertiary};
 `;
 
-// Loading styles
 const LoadingContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -143,7 +119,6 @@ const LoadingContainer = styled.div`
   min-height: 400px;
 `;
 
-// Error styles
 const ErrorContainer = styled.div`
   display: flex;
   flex-direction: column;
