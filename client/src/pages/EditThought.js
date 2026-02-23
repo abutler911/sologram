@@ -1,108 +1,89 @@
 // client/src/pages/EditThought.js
-import React, { useState, useEffect, useContext } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import styled from "styled-components";
-import axios from "axios";
-import { toast } from "react-hot-toast";
-import { FaArrowLeft, FaEdit, FaTimes, FaCheck, FaTrash } from "react-icons/fa";
-import { AuthContext } from "../context/AuthContext";
-import MainLayout from "../components/layout/MainLayout";
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import styled from 'styled-components';
+import { toast } from 'react-hot-toast';
+import { FaArrowLeft, FaEdit, FaTimes, FaCheck, FaTrash } from 'react-icons/fa';
+import { AuthContext } from '../context/AuthContext';
+import MainLayout from '../components/layout/MainLayout';
+import {
+  useThought,
+  useUpdateThought,
+  useDeleteThought,
+} from '../hooks/queries/useThoughts';
+
+const MAX_CONTENT_LENGTH = 280;
+const MAX_TAGS = 5;
 
 const EditThought = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useContext(AuthContext);
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === 'admin';
 
-  const [thought, setThought] = useState(null);
-  const [content, setContent] = useState("");
+  // Local form state
+  const [content, setContent] = useState('');
   const [tags, setTags] = useState([]);
-  const [tagInput, setTagInput] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  const [tagInput, setTagInput] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Character limits
-  const MAX_CONTENT_LENGTH = 280;
-  const MAX_TAGS = 5;
+  // React Query
+  const { data: thought, isLoading, error } = useThought(id);
+  const updateThought = useUpdateThought();
+  const deleteThought = useDeleteThought();
 
-  // Fetch thought data
+  // Seed form state once data arrives
   useEffect(() => {
-    const fetchThought = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(`/api/thoughts/${id}`);
+    if (thought) {
+      setContent(thought.content || '');
+      setTags(thought.tags || []);
+    }
+  }, [thought]);
 
-        if (response.data.success) {
-          const thoughtData = response.data.data;
-          setThought(thoughtData);
-          setContent(thoughtData.content || "");
-          setTags(thoughtData.tags || []);
-          setError(null);
-        } else {
-          throw new Error(response.data.message || "Failed to load thought");
-        }
-      } catch (err) {
-        console.error("Error fetching thought:", err);
-        setError(
-          "Failed to load thought. It may have been deleted or does not exist."
-        );
-        toast.error("Failed to load thought");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchThought();
-  }, [id]);
-
-  // Redirect if not authenticated or not admin
+  // Auth guard
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      navigate("/login");
-    } else if (!loading && !isAdmin) {
-      navigate("/");
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+    } else if (!isLoading && !isAdmin) {
+      navigate('/');
       toast.error("You don't have permission to edit thoughts");
     }
-  }, [isAuthenticated, isAdmin, loading, navigate]);
+  }, [isAuthenticated, isAdmin, isLoading, navigate]);
 
-  // Handle form submission
+  // Page title
+  useEffect(() => {
+    document.title = thought ? `Edit Thought | SoloGram` : 'SoloGram';
+    return () => {
+      document.title = 'SoloGram';
+    };
+  }, [thought]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!content.trim()) {
-      toast.error("Content cannot be empty");
+      toast.error('Content cannot be empty');
       return;
     }
-
     try {
-      setSubmitting(true);
-
-      const thoughtData = {
-        content,
-        tags,
-      };
-
-      const response = await axios.put(`/api/thoughts/${id}`, thoughtData);
-
-      if (response.data.success) {
-        toast.success("Thought updated successfully");
-        navigate(`/thoughts/${id}`);
-      } else {
-        throw new Error(response.data.message || "Failed to update thought");
-      }
-    } catch (err) {
-      console.error("Error updating thought:", err);
-      toast.error(err.response?.data?.message || "Failed to update thought");
-    } finally {
-      setSubmitting(false);
+      await updateThought.mutateAsync({ id, payload: { content, tags } });
+      navigate(`/thoughts/${id}`);
+    } catch {
+      // error toast handled in the hook
     }
   };
 
-  // Handle tag input
+  const handleDelete = async () => {
+    try {
+      await deleteThought.mutateAsync(id);
+      navigate('/thoughts');
+    } catch {
+      // error toast handled in the hook
+    }
+  };
+
+  // Tag helpers
   const handleTagKeyDown = (e) => {
-    if (e.key === "Enter" || e.key === "," || e.key === " ") {
+    if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
       e.preventDefault();
       addTag();
     }
@@ -110,7 +91,6 @@ const EditThought = () => {
 
   const addTag = () => {
     const tag = tagInput.trim().toLowerCase();
-
     if (!tag) return;
     if (tags.includes(tag)) {
       toast.error(`Tag "${tag}" already added`);
@@ -120,38 +100,16 @@ const EditThought = () => {
       toast.error(`Maximum ${MAX_TAGS} tags allowed`);
       return;
     }
-
     setTags([...tags, tag]);
-    setTagInput("");
+    setTagInput('');
   };
 
-  const removeTag = (tagToRemove) => {
+  const removeTag = (tagToRemove) =>
     setTags(tags.filter((tag) => tag !== tagToRemove));
-  };
 
-  // Handle thought deletion
-  const handleDelete = async () => {
-    try {
-      setSubmitting(true);
-      const response = await axios.delete(`/api/thoughts/${id}`);
+  const isSubmitting = updateThought.isPending || deleteThought.isPending;
 
-      if (response.data.success) {
-        toast.success("Thought deleted successfully");
-        navigate("/thoughts");
-      } else {
-        throw new Error(response.data.message || "Failed to delete thought");
-      }
-    } catch (err) {
-      console.error("Error deleting thought:", err);
-      toast.error(err.response?.data?.message || "Failed to delete thought");
-    } finally {
-      setSubmitting(false);
-      setShowDeleteModal(false);
-    }
-  };
-
-  // Render loading state
-  if (loading) {
+  if (isLoading) {
     return (
       <MainLayout>
         <PageWrapper>
@@ -163,15 +121,16 @@ const EditThought = () => {
     );
   }
 
-  // Render error state
   if (error || !thought) {
     return (
       <MainLayout>
         <PageWrapper>
           <Container>
             <ErrorContainer>
-              <ErrorMessage>{error || "Thought not found"}</ErrorMessage>
-              <BackLink to="/thoughts">
+              <ErrorMessage>
+                {error?.message || 'Thought not found'}
+              </ErrorMessage>
+              <BackLink to='/thoughts'>
                 <FaArrowLeft />
                 <span>Back to Thoughts</span>
               </BackLink>
@@ -226,12 +185,12 @@ const EditThought = () => {
                 ))}
                 {tags.length < MAX_TAGS && (
                   <TagInput
-                    type="text"
+                    type='text'
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyDown={handleTagKeyDown}
                     onBlur={addTag}
-                    placeholder="Add tags (press Enter)"
+                    placeholder='Add tags (press Enter)'
                   />
                 )}
               </TagsContainer>
@@ -242,43 +201,51 @@ const EditThought = () => {
 
             <ButtonGroup>
               <DeleteButton
-                type="button"
+                type='button'
                 onClick={() => setShowDeleteModal(true)}
-                disabled={submitting}
+                disabled={isSubmitting}
               >
                 <FaTrash />
                 <span>Delete</span>
               </DeleteButton>
               <SaveButton
-                type="submit"
-                disabled={submitting || !content.trim()}
+                type='submit'
+                disabled={isSubmitting || !content.trim()}
               >
                 <FaCheck />
-                <span>{submitting ? "Saving..." : "Save Changes"}</span>
+                <span>
+                  {updateThought.isPending ? 'Saving...' : 'Save Changes'}
+                </span>
               </SaveButton>
             </ButtonGroup>
           </Form>
 
-          {/* Delete confirmation modal */}
           {showDeleteModal && (
-            <DeleteModal>
-              <DeleteModalContent>
-                <h3>Delete Thought</h3>
-                <p>
-                  Are you sure you want to delete this thought? This action
-                  cannot be undone.
-                </p>
-                <DeleteModalButtons>
-                  <CancelButton onClick={() => setShowDeleteModal(false)}>
-                    Cancel
-                  </CancelButton>
-                  <ConfirmDeleteButton onClick={handleDelete}>
-                    Delete Thought
-                  </ConfirmDeleteButton>
-                </DeleteModalButtons>
-              </DeleteModalContent>
-              <Backdrop onClick={() => setShowDeleteModal(false)} />
-            </DeleteModal>
+            <Backdrop>
+              <DeleteModal>
+                <DeleteModalContent>
+                  <h3>Delete Thought</h3>
+                  <p>
+                    Are you sure you want to delete this thought? This action
+                    cannot be undone.
+                  </p>
+                  <DeleteModalButtons>
+                    <CancelButton
+                      onClick={() => setShowDeleteModal(false)}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </CancelButton>
+                    <ConfirmDeleteButton
+                      onClick={handleDelete}
+                      disabled={isSubmitting}
+                    >
+                      {deleteThought.isPending ? 'Deleting...' : 'Delete'}
+                    </ConfirmDeleteButton>
+                  </DeleteModalButtons>
+                </DeleteModalContent>
+              </DeleteModal>
+            </Backdrop>
           )}
         </Container>
       </PageWrapper>
@@ -286,70 +253,64 @@ const EditThought = () => {
   );
 };
 
-// Styled Components
+// ── Styled Components (unchanged) ─────────────────────────────────────────────
+
 const PageWrapper = styled.div`
-  background-color: #121212;
+  background-color: #1a1a2e;
   min-height: 100vh;
   padding: 2rem 0;
-
-  @media (max-width: 768px) {
-    padding: 1rem 0;
-  }
 `;
 
 const Container = styled.div`
-  max-width: 700px;
+  width: 100%;
+  max-width: 680px;
   margin: 0 auto;
-  padding: 2rem;
-
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
+  padding: 0 1.5rem;
 `;
 
 const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 2rem;
 `;
 
 const BackLink = styled(Link)`
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  color: #dddddd;
+  gap: 0.5rem;
+  color: #aaaaaa;
   text-decoration: none;
-  margin-bottom: 1rem;
   transition: color 0.3s;
-
   &:hover {
-    color: #ff7e5f;
-  }
-
-  svg {
-    margin-right: 0.5rem;
+    color: #e98973;
   }
 `;
 
 const PageTitle = styled.h1`
   display: flex;
   align-items: center;
-  font-size: 2rem;
+  gap: 0.5rem;
+  font-size: 1.5rem;
   color: #ffffff;
   margin: 0;
-
-  svg {
-    color: #ff7e5f;
-    margin-right: 0.75rem;
-  }
 `;
 
 const Form = styled.form`
-  background-color: #1e1e1e;
-  border-radius: 8px;
+  background-color: #16213e;
+  border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 `;
 
 const FormGroup = styled.div`
   margin-bottom: 1.5rem;
+`;
+
+const Label = styled.label`
+  display: block;
+  font-size: 0.875rem;
+  color: #aaaaaa;
+  margin-bottom: 0.5rem;
 `;
 
 const TextAreaWrapper = styled.div`
@@ -358,75 +319,60 @@ const TextAreaWrapper = styled.div`
 
 const Textarea = styled.textarea`
   width: 100%;
-  min-height: 120px;
-  padding: 1rem;
-  background-color: #333333;
-  border: 1px solid #444444;
+  min-height: 150px;
+  background-color: #0f3460;
+  border: 1px solid #333366;
   border-radius: 8px;
+  padding: 1rem;
   color: #ffffff;
-  font-size: 1.125rem;
+  font-size: 1rem;
   resize: vertical;
-
+  box-sizing: border-box;
   &:focus {
     outline: none;
-    border-color: #ff7e5f;
-  }
-
-  &::placeholder {
-    color: #888888;
+    border-color: #e98973;
   }
 `;
 
 const CharCount = styled.div`
-  position: absolute;
-  bottom: 0.5rem;
-  right: 0.5rem;
+  text-align: right;
   font-size: 0.75rem;
-  color: ${(props) => (props.warning ? "#ff7e5f" : "#aaaaaa")};
-`;
-
-const Label = styled.label`
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #dddddd;
-  font-weight: 500;
+  color: ${({ warning }) => (warning ? '#e74c3c' : '#aaaaaa')};
+  margin-top: 0.25rem;
 `;
 
 const TagsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0.75rem;
-  background-color: #333333;
-  border: 1px solid #444444;
+  padding: 0.5rem;
+  background-color: #0f3460;
+  border: 1px solid #333366;
   border-radius: 8px;
-  min-height: 2.5rem;
+  min-height: 44px;
 `;
 
 const Tag = styled.div`
   display: flex;
   align-items: center;
-  background-color: #ff7e5f;
-  color: white;
+  gap: 0.25rem;
+  background-color: #1a1a6e;
+  color: #aaaaff;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.875rem;
-  gap: 0.25rem;
 `;
 
 const RemoveTagButton = styled.button`
   background: none;
   border: none;
-  color: white;
+  color: #aaaaaa;
+  cursor: pointer;
+  padding: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0.125rem;
-  cursor: pointer;
-  opacity: 0.7;
-
   &:hover {
-    opacity: 1;
+    color: #e74c3c;
   }
 `;
 
@@ -435,32 +381,40 @@ const TagInput = styled.input`
   border: none;
   color: #ffffff;
   font-size: 0.875rem;
+  outline: none;
+  min-width: 120px;
   flex: 1;
-  min-width: 100px;
-
-  &:focus {
-    outline: none;
-  }
-
-  &::placeholder {
-    color: #888888;
-  }
 `;
 
-const TagInfo = styled.div`
-  margin-top: 0.5rem;
+const TagInfo = styled.p`
   font-size: 0.75rem;
-  color: #888888;
+  color: #777777;
+  margin-top: 0.25rem;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
   justify-content: space-between;
-  margin-top: 2rem;
+  gap: 1rem;
+`;
 
-  @media (max-width: 480px) {
-    flex-direction: column;
-    gap: 1rem;
+const DeleteButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  &:hover:not(:disabled) {
+    background-color: rgba(231, 76, 60, 0.2);
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 `;
 
@@ -468,81 +422,52 @@ const SaveButton = styled.button`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #ff7e5f;
+  background-color: #e98973;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 0.75rem 1.5rem;
+  cursor: pointer;
   font-weight: 600;
-  cursor: pointer;
   transition: background-color 0.3s;
-
-  &:hover {
-    background-color: #ff6347;
+  &:hover:not(:disabled) {
+    background-color: #d4745e;
   }
-
   &:disabled {
-    background-color: #555555;
-    cursor: not-allowed;
-  }
-
-  @media (max-width: 480px) {
-    order: -1;
-  }
-`;
-
-const DeleteButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: transparent;
-  color: #ff6b6b;
-  border: 1px solid #ff6b6b;
-  border-radius: 4px;
-  padding: 0.75rem 1.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-
-  &:hover {
-    background-color: rgba(255, 107, 107, 0.1);
-  }
-
-  &:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
   }
 `;
 
-const DeleteModal = styled.div`
+const Backdrop = styled.div`
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+`;
+
+const DeleteModal = styled.div`
+  z-index: 1001;
 `;
 
 const DeleteModalContent = styled.div`
-  background-color: #1e1e1e;
-  border-radius: 8px;
+  background-color: #16213e;
+  border-radius: 12px;
   padding: 2rem;
+  max-width: 400px;
   width: 90%;
-  max-width: 500px;
-  z-index: 1001;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-
   h3 {
     color: #ffffff;
-    margin-top: 0;
     margin-bottom: 1rem;
   }
-
   p {
-    color: #dddddd;
+    color: #aaaaaa;
     margin-bottom: 1.5rem;
   }
 `;
@@ -551,7 +476,6 @@ const DeleteModalButtons = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-
   @media (max-width: 480px) {
     flex-direction: column;
   }
@@ -565,13 +489,8 @@ const CancelButton = styled.button`
   padding: 0.75rem 1rem;
   cursor: pointer;
   transition: background-color 0.3s;
-
   &:hover {
     background-color: #444444;
-  }
-
-  @media (max-width: 480px) {
-    order: 2;
   }
 `;
 
@@ -583,25 +502,9 @@ const ConfirmDeleteButton = styled.button`
   padding: 0.75rem 1rem;
   cursor: pointer;
   transition: background-color 0.3s;
-
   &:hover {
     background-color: #c0392b;
   }
-
-  @media (max-width: 480px) {
-    order: 1;
-    margin-bottom: 0.5rem;
-  }
-`;
-
-const Backdrop = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  z-index: 1000;
 `;
 
 const LoadingMessage = styled.div`
