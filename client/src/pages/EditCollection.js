@@ -1,53 +1,33 @@
-import React, { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import styled from "styled-components";
-import { FaArrowLeft, FaTrash } from "react-icons/fa";
-import axios from "axios";
-import { toast } from "react-hot-toast";
-import CollectionForm from "../components/collections/CollectionForm";
+// client/src/pages/EditCollection.js
+import React, { useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
+import { FaArrowLeft, FaTrash } from 'react-icons/fa';
+import { COLORS } from '../theme';
+import {
+  useCollection,
+  useDeleteCollection,
+} from '../hooks/queries/useCollections';
+import CollectionForm from '../components/collections/CollectionForm';
 
 const EditCollection = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [collection, setCollection] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  useEffect(() => {
-    const fetchCollection = async () => {
-      try {
-        setLoading(true);
-
-        const response = await axios.get(`/api/collections/${id}`);
-        setCollection(response.data.data);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching collection:", err);
-        setError(
-          "Failed to load collection. It may have been deleted or does not exist."
-        );
-        toast.error("Failed to load collection");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCollection();
-  }, [id]);
+  const { data: collection, isLoading, error } = useCollection(id);
+  const deleteCollection = useDeleteCollection();
 
   const handleDeleteCollection = async () => {
     try {
-      await axios.delete(`/api/collections/${id}`);
-      toast.success("Collection deleted successfully");
-      navigate("/collections");
-    } catch (err) {
-      console.error("Error deleting collection:", err);
-      toast.error("Failed to delete collection");
+      await deleteCollection.mutateAsync(id);
+      navigate('/collections');
+    } catch {
+      setShowDeleteModal(false);
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <PageWrapper>
         <Container>
@@ -62,8 +42,10 @@ const EditCollection = () => {
       <PageWrapper>
         <Container>
           <ErrorContainer>
-            <ErrorMessage>{error || "Collection not found"}</ErrorMessage>
-            <BackLink to="/collections">
+            <ErrorMessage>
+              {error?.message || 'Collection not found'}
+            </ErrorMessage>
+            <BackLink to='/collections'>
               <FaArrowLeft />
               <span>Back to Collections</span>
             </BackLink>
@@ -81,7 +63,6 @@ const EditCollection = () => {
             <FaArrowLeft />
             <span>Back to Collection</span>
           </BackLink>
-
           <DeleteButton onClick={() => setShowDeleteModal(true)}>
             <FaTrash />
             <span>Delete Collection</span>
@@ -102,8 +83,13 @@ const EditCollection = () => {
                 <CancelButton onClick={() => setShowDeleteModal(false)}>
                   Cancel
                 </CancelButton>
-                <ConfirmDeleteButton onClick={handleDeleteCollection}>
-                  Delete Collection
+                <ConfirmDeleteButton
+                  onClick={handleDeleteCollection}
+                  disabled={deleteCollection.isPending}
+                >
+                  {deleteCollection.isPending
+                    ? 'Deleting...'
+                    : 'Delete Collection'}
                 </ConfirmDeleteButton>
               </DeleteModalButtons>
             </DeleteModalContent>
@@ -115,21 +101,18 @@ const EditCollection = () => {
   );
 };
 
-const PageWrapper = styled.div`
-  background-color: #121212;
-  min-height: 100vh;
-  padding: 2rem 0;
+// ── Styled Components ─────────────────────────────────────────────────────────
 
-  @media (max-width: 768px) {
-    padding: 1rem 0;
-  }
+const PageWrapper = styled.div`
+  background-color: ${COLORS.background};
+  min-height: 100vh;
+  padding: 1rem 0;
 `;
 
 const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-
   @media (max-width: 768px) {
     padding: 1rem;
   }
@@ -140,48 +123,34 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
 `;
 
 const BackLink = styled(Link)`
   display: inline-flex;
   align-items: center;
-  color: #dddddd;
+  gap: 0.5rem;
+  color: ${COLORS.textSecondary};
   text-decoration: none;
   transition: color 0.3s;
-
   &:hover {
-    color: #ff7e5f;
-  }
-
-  svg {
-    margin-right: 0.5rem;
+    color: ${COLORS.accentPurple};
   }
 `;
 
 const DeleteButton = styled.button`
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  background-color: #e74c3c;
-  color: white;
-  border: none;
+  gap: 0.5rem;
+  background-color: transparent;
+  color: ${COLORS.error};
+  border: 1px solid ${COLORS.error};
   border-radius: 4px;
   padding: 0.5rem 1rem;
-  font-size: 0.9rem;
   cursor: pointer;
-  transition: background-color 0.3s;
-
+  transition: all 0.3s;
   &:hover {
-    background-color: #c0392b;
-  }
-
-  svg {
-    margin-right: 0.5rem;
+    background-color: ${COLORS.error};
+    color: white;
   }
 `;
 
@@ -189,7 +158,7 @@ const LoadingMessage = styled.div`
   text-align: center;
   padding: 4rem 0;
   font-size: 1.125rem;
-  color: #aaaaaa;
+  color: ${COLORS.textTertiary};
 `;
 
 const ErrorContainer = styled.div`
@@ -198,8 +167,8 @@ const ErrorContainer = styled.div`
 `;
 
 const ErrorMessage = styled.div`
-  background-color: rgba(248, 215, 218, 0.2);
-  color: #ff6b6b;
+  background-color: rgba(244, 67, 54, 0.1);
+  color: ${COLORS.error};
   padding: 1rem;
   border-radius: 4px;
   margin-bottom: 2rem;
@@ -218,22 +187,20 @@ const DeleteModal = styled.div`
 `;
 
 const DeleteModalContent = styled.div`
-  background-color: #1e1e1e;
+  background-color: ${COLORS.cardBackground};
   border-radius: 8px;
   padding: 2rem;
   width: 90%;
   max-width: 500px;
   z-index: 1001;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-
+  box-shadow: 0 4px 12px ${COLORS.shadow};
   h3 {
-    color: #ffffff;
+    color: ${COLORS.textPrimary};
     margin-top: 0;
     margin-bottom: 1rem;
   }
-
   p {
-    color: #dddddd;
+    color: ${COLORS.textSecondary};
     margin-bottom: 1.5rem;
   }
 `;
@@ -242,46 +209,38 @@ const DeleteModalButtons = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-
   @media (max-width: 480px) {
     flex-direction: column;
   }
 `;
 
 const CancelButton = styled.button`
-  background-color: #333333;
-  color: #dddddd;
-  border: none;
+  background-color: ${COLORS.elevatedBackground};
+  color: ${COLORS.textSecondary};
+  border: 1px solid ${COLORS.border};
   border-radius: 4px;
   padding: 0.75rem 1rem;
   cursor: pointer;
   transition: background-color 0.3s;
-
   &:hover {
-    background-color: #444444;
-  }
-
-  @media (max-width: 480px) {
-    order: 2;
+    background-color: ${COLORS.buttonHover};
   }
 `;
 
 const ConfirmDeleteButton = styled.button`
-  background-color: #e74c3c;
+  background-color: ${COLORS.error};
   color: white;
   border: none;
   border-radius: 4px;
   padding: 0.75rem 1rem;
   cursor: pointer;
   transition: background-color 0.3s;
-
   &:hover {
     background-color: #c0392b;
   }
-
-  @media (max-width: 480px) {
-    order: 1;
-    margin-bottom: 0.5rem;
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 `;
 
