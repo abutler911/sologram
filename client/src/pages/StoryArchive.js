@@ -8,14 +8,22 @@ import {
   FaArchive,
   FaExclamationTriangle,
   FaRedoAlt,
+  FaPlay,
 } from 'react-icons/fa';
-import { COLORS, THEME } from '../theme';
+import { COLORS } from '../theme';
 import { useDeleteModal } from '../context/DeleteModalContext';
 import {
   useArchivedStories,
   useDeleteArchivedStory,
 } from '../hooks/queries/useStories';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+
+const getThumbnailUrl = (media) => {
+  if (media.mediaType === 'image') return media.mediaUrl;
+  return media.mediaUrl
+    .replace('/video/upload/', '/video/upload/so_1,f_jpg/')
+    .replace(/\.(mp4|mov|avi|webm)$/i, '.jpg');
+};
 
 const StoryArchive = () => {
   const { showDeleteModal } = useDeleteModal();
@@ -89,11 +97,18 @@ const StoryArchive = () => {
               <StoryCard key={story._id}>
                 <StoryThumbnail>
                   {story.media && story.media.length > 0 ? (
-                    <StoryImage
-                      src={story.media[0].mediaUrl}
-                      alt={story.title}
-                      loading='lazy'
-                    />
+                    <>
+                      <StoryImage
+                        src={getThumbnailUrl(story.media[0])}
+                        alt={story.title}
+                        loading='lazy'
+                      />
+                      {story.media[0].mediaType === 'video' && (
+                        <VideoBadge>
+                          <FaPlay />
+                        </VideoBadge>
+                      )}
+                    </>
                   ) : (
                     <NoImagePlaceholder>
                       <FaArchive />
@@ -145,7 +160,7 @@ const StoryArchive = () => {
   );
 };
 
-// ── Styled Components (unchanged) ─────────────────────────────────────────────
+// ── Styled Components ─────────────────────────────────────────────────────────
 
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
@@ -264,6 +279,23 @@ const NoImagePlaceholder = styled.div`
   height: 100%;
   font-size: 2rem;
   color: ${COLORS.textTertiary};
+`;
+
+const VideoBadge = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  pointer-events: none;
 `;
 
 const MediaCount = styled.div`
