@@ -92,6 +92,7 @@ const StoryArchive = () => {
                     <StoryImage
                       src={story.media[0].mediaUrl}
                       alt={story.title}
+                      loading='lazy'
                     />
                   ) : (
                     <NoImagePlaceholder>
