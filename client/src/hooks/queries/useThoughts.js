@@ -1,8 +1,25 @@
 // client/src/hooks/queries/useThoughts.js
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useQuery,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { toast } from 'react-hot-toast';
 
+// Infinite scroll — used by Thoughts page
+export const useInfiniteThoughts = (searchQuery = '') =>
+  useInfiniteQuery({
+    queryKey: ['thoughts', 'infinite', searchQuery],
+    queryFn: ({ pageParam = 1 }) => api.getThoughts(pageParam, searchQuery),
+    getNextPageParam: (lastPage) =>
+      lastPage.currentPage < lastPage.totalPages
+        ? lastPage.currentPage + 1
+        : undefined,
+  });
+
+// Single-page query — available for other consumers
 export const useThoughts = (page = 1, searchQuery = '') =>
   useQuery({
     queryKey: ['thoughts', page, searchQuery],
