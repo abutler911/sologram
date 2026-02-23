@@ -11,6 +11,9 @@ export const api = {
   getPosts: (page = 1, limit = 6) =>
     axios.get('/api/posts', { params: { page, limit } }).then((r) => r.data),
 
+  searchPosts: (query) =>
+    axios.get('/api/posts/search', { params: { query } }).then((r) => r.data),
+
   getPost: (id) => axios.get(`/api/posts/${id}`).then((r) => r.data.data),
 
   createPost: (payload) =>
