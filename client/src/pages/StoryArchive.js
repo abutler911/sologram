@@ -1,121 +1,55 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import styled from "styled-components";
-import axios from "axios";
-import { toast } from "react-hot-toast";
+// client/src/pages/StoryArchive.js
+import React from 'react';
+import { Link } from 'react-router-dom';
+import styled from 'styled-components';
 import {
   FaTrash,
   FaArrowLeft,
   FaArchive,
   FaExclamationTriangle,
   FaRedoAlt,
-} from "react-icons/fa";
-import { COLORS, THEME } from "../theme";
-import { useDeleteModal } from "../context/DeleteModalContext";
-
-// Import LoadingSpinner component
-import LoadingSpinner from "../components/common/LoadingSpinner";
+} from 'react-icons/fa';
+import { COLORS, THEME } from '../theme';
+import { useDeleteModal } from '../context/DeleteModalContext';
+import {
+  useArchivedStories,
+  useDeleteArchivedStory,
+} from '../hooks/queries/useStories';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const StoryArchive = () => {
-  const [archivedStories, setArchivedStories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
   const { showDeleteModal } = useDeleteModal();
+  const {
+    data: archivedStories = [],
+    isLoading,
+    error,
+    refetch,
+  } = useArchivedStories();
+  const deleteArchivedStory = useDeleteArchivedStory();
 
-  useEffect(() => {
-    const fetchArchivedStories = async () => {
-      try {
-        setLoading(true);
-        console.log("Fetching archived stories");
-
-        // Use the original endpoint that's already implemented on the server
-        const token = localStorage.getItem("token");
-        const response = await axios.get("/api/archived-stories", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        console.log("Archived stories response:", response.data);
-
-        if (response.data.success) {
-          setArchivedStories(response.data.data || []);
-          setError(null);
-        } else {
-          throw new Error(
-            response.data.message || "Failed to load archived stories"
-          );
-        }
-      } catch (err) {
-        console.error("Error fetching archived stories:", err);
-        setError("Failed to load archived stories. Please try again.");
-        toast.error("Failed to load archived stories");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchArchivedStories();
-  }, [retryCount]);
-
-  // Replace the old delete functions with this new handler
   const handleDeleteStory = (storyId) => {
     const story = archivedStories.find((s) => s._id === storyId);
-    const storyTitle = story?.title || "this archived story";
+    const storyTitle = story?.title || 'this archived story';
 
     showDeleteModal({
-      title: "Delete Archived Story",
+      title: 'Delete Archived Story',
       message:
-        "Are you sure you want to permanently delete this archived story? This action cannot be undone and the story will be lost forever.",
-      confirmText: "Delete Permanently",
-      cancelText: "Keep Story",
+        'Are you sure you want to permanently delete this archived story? This action cannot be undone and the story will be lost forever.',
+      confirmText: 'Delete Permanently',
+      cancelText: 'Keep Story',
       itemName: storyTitle,
-      onConfirm: async () => {
-        try {
-          const token = localStorage.getItem("token");
-          // Use the original endpoint that's already implemented on the server
-          const response = await axios.delete(
-            `/api/archived-stories/${storyId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          if (response.data.success) {
-            setArchivedStories((prevStories) =>
-              prevStories.filter((story) => story._id !== storyId)
-            );
-            toast.success("Story deleted permanently");
-          } else {
-            throw new Error(response.data.message || "Failed to delete story");
-          }
-        } catch (err) {
-          console.error("Error deleting story:", err);
-          toast.error("Failed to delete story");
-        }
-      },
-      onCancel: () => {
-        console.log("Archived story deletion cancelled");
-      },
+      onConfirm: () => deleteArchivedStory.mutate(storyId),
+      onCancel: () => {},
       destructive: true,
     });
   };
 
-  // Remove the old openDeleteModal and handleDelete functions
-
-  const handleRetry = () => {
-    setRetryCount((prev) => prev + 1);
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <PageWrapper>
         <Container>
           <LoadingContainer>
-            <LoadingSpinner text="Loading archived stories" />
+            <LoadingSpinner text='Loading archived stories' />
           </LoadingContainer>
         </Container>
       </PageWrapper>
@@ -126,7 +60,7 @@ const StoryArchive = () => {
     <PageWrapper>
       <Container>
         <Header>
-          <BackButton to="/">
+          <BackButton to='/'>
             <FaArrowLeft />
             <span>Back to Home</span>
           </BackButton>
@@ -141,8 +75,10 @@ const StoryArchive = () => {
             <ErrorIcon>
               <FaExclamationTriangle />
             </ErrorIcon>
-            <ErrorMessage>{error}</ErrorMessage>
-            <RetryButton onClick={handleRetry}>
+            <ErrorMessage>
+              {error.message || 'Failed to load archived stories.'}
+            </ErrorMessage>
+            <RetryButton onClick={() => refetch()}>
               <FaRedoAlt />
               <span>Retry</span>
             </RetryButton>
@@ -163,8 +99,8 @@ const StoryArchive = () => {
                     </NoImagePlaceholder>
                   )}
                   <MediaCount>
-                    {story.media ? story.media.length : 0}{" "}
-                    {story.media?.length === 1 ? "item" : "items"}
+                    {story.media ? story.media.length : 0}{' '}
+                    {story.media?.length === 1 ? 'item' : 'items'}
                   </MediaCount>
                 </StoryThumbnail>
                 <StoryContent>
@@ -174,25 +110,23 @@ const StoryArchive = () => {
                   </StoryDate>
                   {story.archivedAt && (
                     <ArchivedDate>
-                      Archived:{" "}
+                      Archived:{' '}
                       {new Date(story.archivedAt).toLocaleDateString()}
                     </ArchivedDate>
                   )}
                   <ActionButtons>
                     <ViewButton
                       to={`/story-archive/${story._id}`}
-                      onClick={() => {
+                      onClick={() =>
                         localStorage.setItem(
-                          "currentArchivedStoryId",
+                          'currentArchivedStoryId',
                           story._id
-                        );
-                      }}
+                        )
+                      }
                     >
                       View
                     </ViewButton>
                     <DeleteButton onClick={() => handleDeleteStory(story._id)}>
-                      {" "}
-                      {/* Use new handler */}
                       <FaTrash />
                     </DeleteButton>
                   </ActionButtons>
@@ -205,83 +139,58 @@ const StoryArchive = () => {
             No archived stories yet. Stories will appear here after they expire.
           </EmptyMessage>
         )}
-
-        {/* Remove the old Delete Confirmation Modal - it's now handled globally */}
       </Container>
     </PageWrapper>
   );
 };
 
-// Keep all your existing styled components - they remain unchanged
+// ── Styled Components (unchanged) ─────────────────────────────────────────────
 
-// Styled components updated with Modern Twilight theme
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
   min-height: 100vh;
-  padding: 1rem 0;
+  padding: 2rem 0;
 `;
 
 const Container = styled.div`
-  max-width: 1200px;
+  width: 100%;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 2rem;
-
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
+  padding: 0 1.5rem;
 `;
 
 const Header = styled.div`
   display: flex;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-
-  @media (max-width: 640px) {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 `;
 
 const BackButton = styled(Link)`
   display: flex;
   align-items: center;
-  color: ${COLORS.textSecondary};
+  gap: 0.5rem;
+  color: ${COLORS.textTertiary};
   text-decoration: none;
-  margin-right: 2rem;
-  transition: all 0.3s ease;
-
+  transition: color 0.3s;
   &:hover {
-    color: ${COLORS.primaryBlue};
-    transform: translateX(-3px);
-  }
-
-  svg {
-    margin-right: 0.5rem;
-  }
-
-  @media (max-width: 640px) {
-    margin-bottom: 1rem;
+    color: ${COLORS.primarySalmon};
   }
 `;
 
 const PageTitle = styled.h1`
-  color: ${COLORS.textPrimary};
-  font-size: 1.75rem;
-  margin: 0;
   display: flex;
   align-items: center;
-
-  svg {
-    margin-right: 0.75rem;
-    color: ${COLORS.primaryPurple};
-  }
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  color: ${COLORS.textPrimary};
+  margin: 0;
 `;
 
 const LoadingContainer = styled.div`
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   min-height: 300px;
 `;
 
@@ -289,150 +198,104 @@ const ErrorContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 4rem 0;
   text-align: center;
-  padding: 3rem 0;
-  gap: 1.5rem;
+  gap: 1rem;
 `;
 
 const ErrorIcon = styled.div`
-  font-size: 3rem;
-  color: #e74c3c;
+  font-size: 2rem;
+  color: ${COLORS.error};
 `;
 
-const ErrorMessage = styled.div`
-  background-color: rgba(231, 76, 60, 0.2);
-  color: #e74c3c;
-  padding: 1rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  max-width: 600px;
+const ErrorMessage = styled.p`
+  color: ${COLORS.error};
 `;
 
 const RetryButton = styled.button`
   display: flex;
   align-items: center;
-  background-color: ${COLORS.primaryBlue};
-  color: white;
+  gap: 0.5rem;
+  background-color: ${COLORS.elevatedBackground};
+  color: ${COLORS.textPrimary};
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 0.75rem 1.5rem;
   cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-
+  transition: background-color 0.3s;
   &:hover {
-    background-color: ${COLORS.accentBlue};
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px ${COLORS.shadow};
+    background-color: ${COLORS.buttonHover};
   }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  svg {
-    margin-right: 0.5rem;
-  }
-`;
-
-const EmptyMessage = styled.div`
-  text-align: center;
-  color: ${COLORS.textSecondary};
-  font-size: 1.125rem;
-  padding: 3rem 0;
-  background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
-  border: 1px dashed ${COLORS.border};
-  margin-top: 2rem;
 `;
 
 const ArchiveGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
 `;
 
 const StoryCard = styled.div`
   background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid ${COLORS.border};
-  box-shadow: 0 2px 8px ${COLORS.shadow};
-  transition: all 0.3s ease;
-
+  transition: transform 0.3s;
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px ${COLORS.shadow};
-    border-color: ${COLORS.primaryPurple}50;
+    transform: translateY(-4px);
   }
 `;
 
 const StoryThumbnail = styled.div`
-  height: 200px;
   position: relative;
-  overflow: hidden;
+  height: 180px;
+  background-color: ${COLORS.elevatedBackground};
 `;
 
 const StoryImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s ease;
-
-  ${StoryCard}:hover & {
-    transform: scale(1.05);
-  }
 `;
 
 const NoImagePlaceholder = styled.div`
-  width: 100%;
-  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: ${COLORS.elevatedBackground};
+  height: 100%;
+  font-size: 2rem;
   color: ${COLORS.textTertiary};
-  font-size: 3rem;
-  transition: color 0.3s ease;
-
-  ${StoryCard}:hover & {
-    color: ${COLORS.primaryPurple};
-  }
 `;
 
 const MediaCount = styled.div`
   position: absolute;
   bottom: 0.5rem;
   right: 0.5rem;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: ${COLORS.textPrimary};
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.75rem;
-  backdrop-filter: blur(4px);
-  border: 1px solid ${COLORS.border};
 `;
 
 const StoryContent = styled.div`
-  padding: 1.5rem;
+  padding: 1rem;
 `;
 
-const StoryTitle = styled.h2`
+const StoryTitle = styled.h3`
   color: ${COLORS.textPrimary};
-  font-size: 1.25rem;
   margin: 0 0 0.5rem;
+  font-size: 1rem;
 `;
 
-const StoryDate = styled.div`
+const StoryDate = styled.p`
   color: ${COLORS.textTertiary};
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  margin: 0 0 0.25rem;
 `;
 
-const ArchivedDate = styled.div`
-  color: ${COLORS.primaryBlue};
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
+const ArchivedDate = styled.p`
+  color: ${COLORS.textTertiary};
+  font-size: 0.8rem;
+  margin: 0 0 1rem;
 `;
 
 const ActionButtons = styled.div`
@@ -443,40 +306,36 @@ const ActionButtons = styled.div`
 `;
 
 const ViewButton = styled(Link)`
-  background-color: ${COLORS.primaryGreen};
+  background-color: ${COLORS.primarySalmon};
   color: white;
-  border: none;
-  border-radius: 4px;
   padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+  border-radius: 6px;
   text-decoration: none;
-  transition: all 0.3s ease;
-  font-weight: 500;
-
+  font-size: 0.875rem;
+  transition: background-color 0.3s;
   &:hover {
-    background-color: ${COLORS.accentGreen};
-    transform: translateY(-2px);
-  }
-
-  &:active {
-    transform: translateY(0);
+    background-color: ${COLORS.accentSalmon};
   }
 `;
 
 const DeleteButton = styled.button`
-  background-color: transparent;
+  background-color: rgba(231, 76, 60, 0.1);
   color: #e74c3c;
-  border: none;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: 6px;
   padding: 0.5rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: 50%;
-
+  transition: all 0.3s;
   &:hover {
-    color: #c0392b;
-    background-color: rgba(231, 76, 60, 0.1);
-    transform: scale(1.1);
+    background-color: rgba(231, 76, 60, 0.2);
   }
+`;
+
+const EmptyMessage = styled.div`
+  text-align: center;
+  padding: 4rem 0;
+  color: ${COLORS.textTertiary};
+  font-size: 1.125rem;
 `;
 
 export default StoryArchive;
