@@ -11,25 +11,19 @@
     />
     <meta name="robots" content="index, follow" />
     <meta name="author" content="Andy" />
-    <link rel="canonical" href="https://sologram.netlify.app/" />
+    <link rel="canonical" href="https://thesologram.com/" />
 
     <!-- Social Meta -->
     <meta property="og:title" content="SoloGram" />
     <meta property="og:description" content="One Voice. Infinite Moments." />
-    <meta
-      property="og:image"
-      content="https://sologram.netlify.app/cover.png"
-    />
-    <meta property="og:url" content="https://sologram.netlify.app/" />
+    <meta property="og:image" content="https://thesologram.com/cover.png" />
+    <meta property="og:url" content="https://thesologram.com/" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en_US" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="SoloGram" />
     <meta name="twitter:description" content="One Voice. Infinite Moments." />
-    <meta
-      name="twitter:image"
-      content="https://sologram.netlify.app/cover.png"
-    />
+    <meta name="twitter:image" content="https://thesologram.com/cover.png" />
     <meta name="twitter:creator" content="@YourTwitterHandle" />
 
     <!-- Preconnects -->
@@ -38,7 +32,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- CONSERVATIVE Font Loading - Only optimize the least critical one -->
+    <!-- Google Fonts -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
       rel="stylesheet"
@@ -47,7 +41,7 @@
       href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
       rel="stylesheet"
     />
-    <!-- Only make Mystery Quest non-blocking since it's likely least used -->
+    <!-- Mystery Quest loads non-blocking — not in the critical path -->
     <link
       href="https://fonts.googleapis.com/css2?family=Mystery+Quest&display=swap"
       rel="stylesheet"
@@ -61,25 +55,21 @@
       />
     </noscript>
 
-    <!-- Keep original local font loading -->
-    <link
-      rel="preload"
-      href="/fonts/Autography.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="/fonts/Paradise Signature.otf"
-      as="font"
-      type="font/opentype"
-      crossorigin
-    />
+    <!--
+      Local fonts (Autography, Paradise Signature) are declared via @font-face
+      in PostCard.js and loaded on demand by the browser. Preloading them here
+      caused two separate warnings:
+        • Paradise Signature — "ignored due to unknown type value" (font/opentype
+          is not a valid preload type; correct value is font/otf, but OTF preload
+          support is inconsistent across browsers)
+        • Autography — "preloaded but not used within a few seconds" (the @font-face
+          CSS loads after the preload fires, confusing the browser)
+      Both warnings were noise with no performance benefit. The @font-face
+      declarations in CSS handle loading correctly without any preload hints.
+    -->
 
-    <!-- Minimal critical CSS only for font-display -->
+    <!-- Minimal critical CSS -->
     <style>
-      /* Add font-display swap to prevent invisible text */
       @supports (font-display: swap) {
         * {
           font-display: swap;
@@ -112,51 +102,52 @@
 
     <!-- Service Worker -->
     <script>
-      // Proper service worker registration
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", function () {
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
           navigator.serviceWorker
-            .register("/sw.js")
+            .register('/sw.js')
             .then(function (registration) {
-              console.log("SW registered: ", registration);
+              console.log('SW registered: ', registration);
             })
-            .catch(function (registrationError) {
-              console.log("SW registration failed: ", registrationError);
+            .catch(function (err) {
+              console.log('SW registration failed: ', err);
             });
         });
       }
     </script>
 
-    <!-- Keep Google Analytics as original - it was working before -->
+    <!--
+      Google Analytics — silently ignored when blocked by an ad blocker.
+      The error event listener suppresses the console noise; GA simply
+      won't track those sessions.
+    -->
     <script>
-      // Gracefully handle GA blocking
       window.addEventListener(
-        "error",
+        'error',
         function (e) {
           if (
             e.target &&
             e.target.src &&
-            e.target.src.includes("googletagmanager")
+            e.target.src.includes('googletagmanager')
           ) {
-            console.log("Google Analytics blocked (likely by ad blocker)");
-            // Optional: Send to your own analytics
+            e.stopPropagation();
+            // Silently ignore — ad blocker present, no action needed
           }
         },
         true
       );
     </script>
-    <!-- Google Tag Manager -->
     <script
       async
       src="https://www.googletagmanager.com/gtag/js?id=G-VG8RGGQQWZ"
     ></script>
-    <script nonce="abc123">
+    <script>
       window.dataLayer = window.dataLayer || [];
       function gtag() {
         dataLayer.push(arguments);
       }
-      gtag("js", new Date());
-      gtag("config", "G-VG8RGGQQWZ");
+      gtag('js', new Date());
+      gtag('config', 'G-VG8RGGQQWZ');
     </script>
   </body>
 </html>

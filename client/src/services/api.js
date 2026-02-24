@@ -27,7 +27,7 @@ export const api = {
   likePost: (id) => axios.post(`/api/posts/${id}/like`).then((r) => r.data),
 
   checkLikeStatus: (id) =>
-    axios.get(`/api/posts/${id}/like`).then((r) => r.data),
+    axios.get(`/api/posts/${id}/likes/check`).then((r) => r.data),
 
   batchCheckLikes: (postIds) =>
     axios.post('/api/posts/likes/check-batch', { postIds }).then((r) => r.data),
