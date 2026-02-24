@@ -85,8 +85,22 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
         <Route path='/about' element={<About />} />
         <Route path='/privacy' element={<Privacy />} />
         <Route path='/terms' element={<Terms />} />
-        <Route path='/collections' element={<CollectionsList />} />
-        <Route path='/collections/:id' element={<CollectionDetail />} />
+        <Route
+          path='/collections'
+          element={
+            <StandardLayout>
+              <CollectionsList />
+            </StandardLayout>
+          }
+        />
+        <Route
+          path='/collections/:id'
+          element={
+            <StandardLayout>
+              <CollectionDetail />
+            </StandardLayout>
+          }
+        />
         <Route path='/thoughts' element={<Thoughts />} />
 
         {/* Private */}
