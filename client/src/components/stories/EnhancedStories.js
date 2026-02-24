@@ -4,45 +4,44 @@ import React, {
   useRef,
   useCallback,
   useContext,
-} from "react";
-import styled, { keyframes, css } from "styled-components";
-import { FaTimes, FaTrash, FaPlus } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
-import axios from "axios";
-import { AuthContext } from "../../context/AuthContext";
-import { useDeleteModal } from "../../context/DeleteModalContext";
-import { COLORS, THEME } from "../../theme";
+} from 'react';
+import styled, { keyframes, css } from 'styled-components';
+import { FaTimes, FaTrash, FaPlus } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+import { AuthContext } from '../../context/AuthContext';
+import { useDeleteModal } from '../../context/DeleteModalContext';
+import { COLORS, THEME } from '../../theme';
+import { useStories, useDeleteStory } from '../../hooks/queries/useStories';
 
 const EnhancedStories = ({ isPWA = false }) => {
-  // State
-  const [stories, setStories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // ── Data ────────────────────────────────────────────────────────────────────
+  const { data: stories = [], isLoading: loading, error } = useStories();
+  const { mutate: deleteStory } = useDeleteStory();
+
+  // ── UI state ────────────────────────────────────────────────────────────────
   const [activeStory, setActiveStory] = useState(null);
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(10);
-  const [deleting, setDeleting] = useState(false);
   const [localIsPWA, setLocalIsPWA] = useState(
-    window.matchMedia("(display-mode: standalone)").matches
+    window.matchMedia('(display-mode: standalone)').matches
   );
 
-  // References and hooks
   const storiesRef = useRef(null);
   const { user, isAuthenticated } = useContext(AuthContext);
   const { showDeleteModal } = useDeleteModal();
-  const isAdmin = isAuthenticated && user && user.role === "admin";
+  const isAdmin = isAuthenticated && user && user.role === 'admin';
   const navigate = useNavigate();
 
-  // PWA detection
+  // ── PWA detection ────────────────────────────────────────────────────────────
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
     const handleChange = (e) => setLocalIsPWA(e.matches);
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  // Define nextStoryItem as useCallback
+  // ── Story progression ────────────────────────────────────────────────────────
   const nextStoryItem = useCallback(() => {
     if (activeStory && activeStoryIndex < activeStory.media.length - 1) {
       setActiveStoryIndex((prev) => prev + 1);
@@ -53,40 +52,7 @@ const EnhancedStories = ({ isPWA = false }) => {
     }
   }, [activeStory, activeStoryIndex]);
 
-  // Fetch stories when component mounts
   useEffect(() => {
-    const fetchStories = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get("/api/stories");
-
-        if (response.data.success) {
-          const now = new Date();
-          const activeStories = response.data.data.filter(
-            (story) => new Date(story.expiresAt) > now
-          );
-
-          // Sort stories to prioritize unwatched stories from friends
-          const sortedStories = sortStoriesByPriority(activeStories);
-          setStories(sortedStories);
-          setError(null);
-        } else {
-          throw new Error(response.data.message || "Failed to fetch stories");
-        }
-      } catch (error) {
-        console.error("Error fetching stories:", error);
-        setError("Unable to load stories. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStories();
-  }, []);
-
-  // Handle story auto-progression timer
-  useEffect(() => {
-    let timer;
     let animationFrameId;
 
     if (activeStory) {
@@ -96,7 +62,7 @@ const EnhancedStories = ({ isPWA = false }) => {
       }
 
       const currentMedia = activeStory.media[activeStoryIndex];
-      const isVideo = currentMedia && currentMedia.mediaType === "video";
+      const isVideo = currentMedia && currentMedia.mediaType === 'video';
 
       if (!isVideo) {
         const startTime = Date.now();
@@ -105,9 +71,7 @@ const EnhancedStories = ({ isPWA = false }) => {
         const animate = () => {
           const elapsedTime = Date.now() - startTime;
           const progress = Math.min(elapsedTime / duration, 1);
-
           setTimeLeft(10 - progress * 10);
-
           if (progress < 1) {
             animationFrameId = requestAnimationFrame(animate);
           } else {
@@ -120,46 +84,37 @@ const EnhancedStories = ({ isPWA = false }) => {
     }
 
     return () => {
-      clearTimeout(timer);
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
     };
   }, [activeStory, activeStoryIndex, nextStoryItem]);
 
-  // Handle body scroll lock when story is open
+  // ── Body scroll lock ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (activeStory) {
-      document.body.style.overflow = "hidden";
-
+      document.body.style.overflow = 'hidden';
       if (localIsPWA || isPWA) {
-        document.body.style.paddingTop = "env(safe-area-inset-top, 0)";
+        document.body.style.paddingTop = 'env(safe-area-inset-top, 0)';
       }
     } else {
-      document.body.style.overflow = "";
-      document.body.style.paddingTop = "";
+      document.body.style.overflow = '';
+      document.body.style.paddingTop = '';
     }
-
     return () => {
-      document.body.style.overflow = "";
-      document.body.style.paddingTop = "";
+      document.body.style.overflow = '';
+      document.body.style.paddingTop = '';
     };
   }, [activeStory, localIsPWA, isPWA]);
 
-  // Utility functions
+  // ── Utilities ────────────────────────────────────────────────────────────────
   const sortStoriesByPriority = (storiesData) => {
     if (!user) return storiesData;
-
     return [...storiesData].sort((a, b) => {
       if (a.userId === user._id) return -1;
       if (b.userId === user._id) return 1;
-
       const aIsUnwatched = !a.viewers?.includes(user._id);
       const bIsUnwatched = !b.viewers?.includes(user._id);
-
       if (aIsUnwatched && !bIsUnwatched) return -1;
       if (!aIsUnwatched && bIsUnwatched) return 1;
-
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
   };
@@ -194,162 +149,91 @@ const EnhancedStories = ({ isPWA = false }) => {
   const handleDeleteStory = () => {
     if (!activeStory || !isAdmin) return;
 
-    const storyTitle = activeStory.title || "this story";
+    const storyTitle = activeStory.title || 'this story';
     const expirationTime = getExpirationTime(activeStory);
 
     showDeleteModal({
-      title: "Delete Story",
+      title: 'Delete Story',
       message:
-        "Are you sure you want to delete this story? This action cannot be undone and the story will be permanently removed from all viewers.",
-      confirmText: "Delete Story",
-      cancelText: "Keep Story",
+        'Are you sure you want to delete this story? This action cannot be undone and the story will be permanently removed from all viewers.',
+      confirmText: 'Delete Story',
+      cancelText: 'Keep Story',
       itemName: `${storyTitle} (expires in ${expirationTime})`,
-      onConfirm: async () => {
-        setDeleting(true);
-        try {
-          const token = localStorage.getItem("token");
-          const response = await axios.delete(
-            `/api/stories/${activeStory._id}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          if (response.data.success) {
-            setStories((prevStories) =>
-              prevStories.filter((story) => story._id !== activeStory._id)
-            );
-
-            closeStory();
-            toast.success("Story deleted successfully");
-          } else {
-            throw new Error(response.data.message || "Failed to delete story");
-          }
-        } catch (error) {
-          console.error("Error deleting story:", error);
-          toast.error("Failed to delete story. Please try again.");
-        } finally {
-          setDeleting(false);
-        }
-      },
-      onCancel: () => {
-        console.log("Story deletion cancelled");
+      onConfirm: () => {
+        deleteStory(activeStory._id, {
+          onSuccess: () => closeStory(),
+        });
       },
       destructive: true,
     });
   };
 
   const getExpirationTime = (story) => {
-    if (!story || !story.expiresAt) return "Unknown";
-
-    const expiresAt = new Date(story.expiresAt);
-    const now = new Date();
-
-    const diffMs = expiresAt - now;
-
-    if (diffMs <= 0) {
-      return "Expiring...";
-    }
-
+    if (!story?.expiresAt) return 'Unknown';
+    const diffMs = new Date(story.expiresAt) - new Date();
+    if (diffMs <= 0) return 'Expiring...';
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (diffHours > 0) {
-      return `${diffHours}h ${diffMinutes}m`;
-    } else {
-      return `${diffMinutes}m`;
-    }
+    return diffHours > 0 ? `${diffHours}h ${diffMinutes}m` : `${diffMinutes}m`;
   };
 
   const getThumbnailUrl = (media) => {
-    if (!media) return "/placeholder-image.jpg";
-
-    if (media.mediaType === "image") {
-      return media.mediaUrl;
-    } else if (media.mediaType === "video") {
+    if (!media) return '/placeholder-image.jpg';
+    if (media.mediaType === 'image') return media.mediaUrl;
+    if (media.mediaType === 'video') {
       const url = media.mediaUrl;
-
-      if (url && url.includes("cloudinary.com")) {
-        const urlParts = url.split("/");
-        const uploadIndex = urlParts.findIndex((part) => part === "upload");
-
+      if (url?.includes('cloudinary.com')) {
+        const urlParts = url.split('/');
+        const uploadIndex = urlParts.findIndex((part) => part === 'upload');
         if (uploadIndex !== -1) {
-          urlParts.splice(uploadIndex + 1, 0, "w_400,h_400,c_fill,g_auto,so_1");
-
+          urlParts.splice(uploadIndex + 1, 0, 'w_400,h_400,c_fill,g_auto,so_1');
           const filename = urlParts[urlParts.length - 1];
-          const extension = filename.split(".").pop();
-
-          const videoExtensions = ["mp4", "mov", "avi", "webm"];
-          if (videoExtensions.includes(extension.toLowerCase())) {
+          const extension = filename.split('.').pop();
+          if (['mp4', 'mov', 'avi', 'webm'].includes(extension.toLowerCase())) {
             urlParts[urlParts.length - 1] = filename.replace(
               `.${extension}`,
-              ".jpg"
+              '.jpg'
             );
           }
-
-          return urlParts.join("/");
+          return urlParts.join('/');
         }
       }
-
-      return "/video-thumbnail-placeholder.jpg";
+      return '/video-thumbnail-placeholder.jpg';
     }
-
     return media.mediaUrl;
   };
 
-  const handleCreateStory = () => {
-    navigate("/create-story");
-  };
+  // ── Filter + sort active stories (client-side, same logic as before) ─────────
+  const activeStories = sortStoriesByPriority(
+    stories.filter((s) => new Date(s.expiresAt) > new Date())
+  );
 
-  // Render loading state
+  // ── Render ───────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <StoriesContainer isPWA={localIsPWA || isPWA}>
         <StoriesWrapper>
           {Array(5)
             .fill(0)
-            .map((_, index) => (
-              <StoryItemSkeleton key={index} />
+            .map((_, i) => (
+              <StoryItemSkeleton key={i} />
             ))}
         </StoriesWrapper>
       </StoriesContainer>
     );
   }
 
-  // Render error state
   if (error) {
     return (
       <StoriesContainer isPWA={localIsPWA || isPWA}>
-        <ErrorMessage>{error}</ErrorMessage>
+        <ErrorMessage>
+          Unable to load stories. Please try again later.
+        </ErrorMessage>
       </StoriesContainer>
     );
   }
 
-  // Render empty state
-  if (stories.length === 0 && !isAuthenticated) {
-    return null;
-  }
-
-  if (stories.length === 0 && isAuthenticated) {
-    return (
-      <StoriesContainer isPWA={localIsPWA || isPWA}>
-        <ScrollableContainer>
-          <StoriesWrapper ref={storiesRef}>
-            <CreateStoryItem onClick={handleCreateStory}>
-              <CreateStoryAvatarWrapper>
-                <CreateStoryButton>
-                  <FaPlus />
-                </CreateStoryButton>
-              </CreateStoryAvatarWrapper>
-              <CreateStoryLabel>Your Story</CreateStoryLabel>
-            </CreateStoryItem>
-          </StoriesWrapper>
-        </ScrollableContainer>
-      </StoriesContainer>
-    );
-  }
+  if (activeStories.length === 0 && !isAuthenticated) return null;
 
   return (
     <>
@@ -357,7 +241,7 @@ const EnhancedStories = ({ isPWA = false }) => {
         <ScrollableContainer>
           <StoriesWrapper ref={storiesRef}>
             {isAuthenticated && (
-              <CreateStoryItem onClick={handleCreateStory}>
+              <CreateStoryItem onClick={() => navigate('/create-story')}>
                 <CreateStoryAvatarWrapper>
                   <CreateStoryButton>
                     <FaPlus />
@@ -367,12 +251,11 @@ const EnhancedStories = ({ isPWA = false }) => {
               </CreateStoryItem>
             )}
 
-            {stories.map((story, index) => {
-              const firstMedia = story.media && story.media[0];
+            {activeStories.map((story) => {
+              const firstMedia = story.media?.[0];
               const thumbnailUrl = firstMedia
                 ? getThumbnailUrl(firstMedia)
-                : "/placeholder-image.jpg";
-              const username = story.username || "Andrew";
+                : '/placeholder-image.jpg';
               const isOwnStory = user && story.userId === user._id;
               const isViewed = user && story.viewers?.includes(user._id);
 
@@ -386,15 +269,15 @@ const EnhancedStories = ({ isPWA = false }) => {
                   <StoryAvatarWrapper viewed={isViewed} isOwn={isOwnStory}>
                     <StoryAvatar
                       src={thumbnailUrl}
-                      alt={story.title || "Story"}
-                      loading="lazy"
+                      alt={story.title || 'Story'}
+                      loading='lazy'
                       onError={(e) => {
-                        e.target.style.display = "none";
-                        e.target.parentNode.classList.add("image-fallback");
+                        e.target.style.display = 'none';
+                        e.target.parentNode.classList.add('image-fallback');
                       }}
                     />
                   </StoryAvatarWrapper>
-                  <StoryUsername>{username}</StoryUsername>
+                  <StoryUsername>{story.username || 'Andrew'}</StoryUsername>
                 </StoryItem>
               );
             })}
@@ -402,7 +285,6 @@ const EnhancedStories = ({ isPWA = false }) => {
         </ScrollableContainer>
       </StoriesContainer>
 
-      {/* Story Viewer Modal */}
       {activeStory && (
         <StoryModal>
           <ProgressBarContainer>
@@ -411,10 +293,9 @@ const EnhancedStories = ({ isPWA = false }) => {
                 index < activeStoryIndex
                   ? 1
                   : index === activeStoryIndex &&
-                    activeStory.media[index].mediaType !== "video"
+                    activeStory.media[index].mediaType !== 'video'
                   ? (10 - timeLeft) / 10
                   : 0;
-
               return (
                 <ProgressBarBackground key={index} complete={progress >= 1}>
                   <ProgressFill progress={progress} complete={progress >= 1} />
@@ -425,7 +306,7 @@ const EnhancedStories = ({ isPWA = false }) => {
 
           <StoryHeader>
             <StoryHeaderContent>
-              <div className="story-user">{activeStory.title || "Story"}</div>
+              <div className='story-user'>{activeStory.title || 'Story'}</div>
               <StoryTimestamp>{getExpirationTime(activeStory)}</StoryTimestamp>
             </StoryHeaderContent>
           </StoryHeader>
@@ -434,12 +315,10 @@ const EnhancedStories = ({ isPWA = false }) => {
             <CloseButton onClick={closeStory}>
               <FaTimes />
             </CloseButton>
-
             {isAdmin && (
               <DeleteButton
                 onClick={handleDeleteStory}
-                disabled={deleting}
-                title="Delete this story"
+                title='Delete this story'
               >
                 <FaTrash />
               </DeleteButton>
@@ -447,7 +326,7 @@ const EnhancedStories = ({ isPWA = false }) => {
           </ControlsBar>
 
           <StoryContent>
-            {activeStory.media[activeStoryIndex].mediaType === "video" ? (
+            {activeStory.media[activeStoryIndex].mediaType === 'video' ? (
               <StoryVideo
                 src={activeStory.media[activeStoryIndex].mediaUrl}
                 controls
@@ -464,8 +343,8 @@ const EnhancedStories = ({ isPWA = false }) => {
           </StoryContent>
 
           <StoryNavigation>
-            <NavArea onClick={handlePrev} side="left" />
-            <NavArea onClick={handleNext} side="right" />
+            <NavArea onClick={handlePrev} side='left' />
+            <NavArea onClick={handleNext} side='right' />
           </StoryNavigation>
         </StoryModal>
       )}
@@ -473,16 +352,13 @@ const EnhancedStories = ({ isPWA = false }) => {
   );
 };
 
+// ── Styled Components (unchanged) ─────────────────────────────────────────────
+
 const shimmer = keyframes`
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 `;
 
-// SoloGram Dark Theme Styled Components
 const StoriesContainer = styled.section`
   background-color: ${COLORS.background};
   border-radius: 0;
@@ -492,11 +368,9 @@ const StoriesContainer = styled.section`
   position: relative;
   z-index: 1;
   border-bottom: 1px solid ${COLORS.divider};
-
   @media (max-width: 768px) {
     padding: 8px 0 10px;
   }
-
   @media (max-width: 480px) {
     padding: 6px 0 8px;
   }
@@ -518,16 +392,13 @@ const StoriesWrapper = styled.div`
   padding: 4px 16px;
   position: relative;
   z-index: 1;
-
   &::-webkit-scrollbar {
     display: none;
   }
-
   @media (max-width: 768px) {
     gap: 10px;
     padding: 4px 12px;
   }
-
   @media (max-width: 480px) {
     gap: 8px;
     padding: 4px 8px;
@@ -544,16 +415,13 @@ const StoryItem = styled.div`
   transition: transform 0.2s ease, opacity 0.2s ease;
   position: relative;
   z-index: 2;
-
   &:hover {
     transform: translateY(-2px);
     opacity: 0.9;
   }
-
   @media (max-width: 768px) {
     width: 64px;
   }
-
   @media (max-width: 480px) {
     width: 62px;
   }
@@ -576,29 +444,25 @@ const StoryAvatarWrapper = styled.div`
   z-index: 2;
   box-shadow: ${(props) =>
     props.isOwn || !props.viewed
-      ? `0 0 0 1px ${COLORS.background}, 0 2px 8px rgba(0, 0, 0, 0.3)`
-      : "none"};
-
+      ? `0 0 0 1px ${COLORS.background}, 0 2px 8px rgba(0,0,0,0.3)`
+      : 'none'};
   @media (max-width: 768px) {
     width: 56px;
     height: 56px;
   }
-
   @media (max-width: 480px) {
     width: 54px;
     height: 54px;
     margin-bottom: 4px;
   }
-
   &.image-fallback {
     display: flex;
     align-items: center;
     justify-content: center;
     background: ${COLORS.cardBackground};
-
     &:before {
-      content: "\\f03e";
-      font-family: "Font Awesome 5 Free";
+      content: '\\f03e';
+      font-family: 'Font Awesome 5 Free';
       font-weight: 900;
       font-size: 1.2rem;
       color: ${COLORS.textTertiary};
@@ -627,9 +491,8 @@ const StoryUsername = styled.span`
   text-overflow: ellipsis;
   max-width: 100%;
   font-weight: 400;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
     Arial, sans-serif;
-
   @media (max-width: 480px) {
     font-size: 11px;
   }
@@ -649,17 +512,14 @@ const CreateStoryAvatarWrapper = styled.div`
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-
   &:hover {
     border-color: ${COLORS.primaryBlueGray};
     background: ${COLORS.elevatedBackground};
   }
-
   @media (max-width: 768px) {
     width: 56px;
     height: 56px;
   }
-
   @media (max-width: 480px) {
     width: 54px;
     height: 54px;
@@ -678,12 +538,10 @@ const CreateStoryButton = styled.div`
   color: ${COLORS.textPrimary};
   font-size: 14px;
   transition: all 0.3s ease;
-
   &:hover {
     background: ${COLORS.primaryMint};
     transform: scale(1.1);
   }
-
   @media (max-width: 480px) {
     width: 22px;
     height: 22px;
@@ -700,9 +558,8 @@ const CreateStoryLabel = styled.span`
   text-overflow: ellipsis;
   max-width: 100%;
   font-weight: 400;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
     Arial, sans-serif;
-
   @media (max-width: 480px) {
     font-size: 11px;
   }
@@ -714,9 +571,8 @@ const StoryItemSkeleton = styled.div`
   align-items: center;
   flex: 0 0 auto;
   width: 66px;
-
   &:before {
-    content: "";
+    content: '';
     width: 62px;
     height: 62px;
     border-radius: 50%;
@@ -730,9 +586,8 @@ const StoryItemSkeleton = styled.div`
     background-size: 200% 100%;
     animation: ${shimmer} 1.5s infinite;
   }
-
   &:after {
-    content: "";
+    content: '';
     width: 40px;
     height: 10px;
     border-radius: 4px;
@@ -745,25 +600,20 @@ const StoryItemSkeleton = styled.div`
     background-size: 200% 100%;
     animation: ${shimmer} 1.5s infinite;
   }
-
   @media (max-width: 768px) {
     width: 64px;
-
     &:before {
       width: 56px;
       height: 56px;
     }
   }
-
   @media (max-width: 480px) {
     width: 62px;
-
     &:before {
       width: 54px;
       height: 54px;
       margin-bottom: 4px;
     }
-
     &:after {
       height: 8px;
     }
@@ -776,11 +626,10 @@ const ErrorMessage = styled.div`
   text-align: center;
   padding: 12px 0;
   font-size: 14px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
     Arial, sans-serif;
 `;
 
-// Story Viewer Modal Components
 const StoryModal = styled.div`
   position: fixed;
   top: 0;
@@ -794,7 +643,6 @@ const StoryModal = styled.div`
   touch-action: none;
   width: 100vw;
   height: 100vh;
-
   @supports (padding-top: env(safe-area-inset-top)) {
     padding-top: env(safe-area-inset-top, 0);
     padding-bottom: env(safe-area-inset-bottom, 0);
@@ -811,7 +659,6 @@ const ProgressBarContainer = styled.div`
   top: 0;
   left: 0;
   right: 0;
-
   @supports (padding-top: env(safe-area-inset-top)) {
     padding-top: calc(12px + env(safe-area-inset-top, 0));
   }
@@ -828,7 +675,7 @@ const ProgressBarBackground = styled.div`
 
 const ProgressFill = styled.div`
   height: 100%;
-  width: ${(props) => (props.complete ? "100%" : `${props.progress * 100}%`)};
+  width: ${(props) => (props.complete ? '100%' : `${props.progress * 100}%`)};
   background: linear-gradient(
     45deg,
     ${COLORS.primaryBlueGray},
@@ -855,7 +702,6 @@ const StoryHeader = styled.div`
     rgba(18, 18, 18, 0) 100%
   );
   pointer-events: none;
-
   @supports (padding-top: env(safe-area-inset-top)) {
     padding-top: calc(16px + env(safe-area-inset-top, 0));
   }
@@ -865,13 +711,12 @@ const StoryHeaderContent = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-
   .story-user {
     font-size: 14px;
     color: ${COLORS.textPrimary};
     font-weight: 600;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
       Helvetica, Arial, sans-serif;
   }
 `;
@@ -881,7 +726,7 @@ const StoryTimestamp = styled.span`
   font-size: 12px;
   font-weight: normal;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
     Arial, sans-serif;
 `;
 
@@ -892,7 +737,6 @@ const ControlsBar = styled.div`
   z-index: 10;
   display: flex;
   gap: 12px;
-
   @supports (padding-top: env(safe-area-inset-top)) {
     top: calc(16px + env(safe-area-inset-top, 0));
   }
@@ -912,7 +756,6 @@ const CloseButton = styled.button`
   border-radius: 50%;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-
   &:hover {
     background: rgba(30, 30, 30, 0.9);
     border-color: ${COLORS.primaryBlueGray};
@@ -934,12 +777,10 @@ const DeleteButton = styled.button`
   border-radius: 50%;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-
   &:hover {
     background: ${COLORS.error};
     transform: scale(1.05);
   }
-
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -992,7 +833,6 @@ const NavArea = styled.div`
   -webkit-tap-highlight-color: transparent;
   outline: none;
   user-select: none;
-
   &:focus {
     outline: none;
   }
