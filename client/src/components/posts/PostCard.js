@@ -99,8 +99,17 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     setIsLoadingComments(true);
     try {
       const data = await api.getComments(post._id);
-      setComments(Array.isArray(data.comments) ? data.comments : []);
-      if (data.count !== undefined) setCommentCount(data.count);
+      // Ensure we support different API response structures
+      const list = Array.isArray(data.comments)
+        ? data.comments
+        : Array.isArray(data)
+        ? data
+        : [];
+      setComments(list);
+
+      // Update count from server if available
+      const serverCount = data.count ?? data.total ?? list.length;
+      setCommentCount(serverCount);
     } catch (err) {
       toast.error('Failed to load comments');
     } finally {
@@ -119,6 +128,8 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
         const data = await api.addComment(post._id, commentData);
         const newComment = data.comment || data;
         setComments((prev) => [newComment, ...prev]);
+
+        // SYNC: Update parent count state
         setCommentCount((prev) => prev + 1);
         return newComment;
       } catch (err) {
@@ -133,6 +144,8 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     try {
       await api.deleteComment(commentId);
       setComments((prev) => prev.filter((c) => c._id !== commentId));
+
+      // SYNC: Update parent count state
       setCommentCount((prev) => Math.max(0, prev - 1));
       toast.success('Comment removed');
     } catch (err) {
@@ -146,11 +159,13 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
       try {
         const data = await api.likeComment(commentId);
         const updated = data.comment || data;
+
+        // SYNC: Update specific comment in array
         setComments((prev) =>
           prev.map((c) => (c._id === commentId ? updated : c))
         );
       } catch (err) {
-        toast.error('Failed to like comment');
+        console.error('Like error:', err);
       }
     },
     [isAuthenticated]
@@ -254,10 +269,10 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
               {showActions && (
                 <Dropdown>
                   <Link to={`/edit/${post._id}`}>
-                    <FaEdit /> Edit
+                    <FaEdit /> Edit Post
                   </Link>
                   <button onClick={() => {}} className='warn'>
-                    <FaTrash /> Delete
+                    <FaTrash /> Delete Post
                   </button>
                 </Dropdown>
               )}
@@ -278,9 +293,10 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
                       height: 1080,
                       crop: 'fill',
                     })}
+                    loading={i === 0 ? 'eager' : 'lazy'}
                   />
                 ) : (
-                  <PostVid src={m.mediaUrl} controls />
+                  <PostVid src={m.mediaUrl} controls preload='metadata' />
                 )}
               </MediaSlide>
             ))}
@@ -356,7 +372,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
 });
 
 // ─── STYLED COMPONENTS ───
-// (All previous styles remain the same below)
 
 const CardWrapper = styled.div`
   ${fontFaceStyles}
@@ -377,6 +392,7 @@ const Card = styled.div`
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: 0 15px 45px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 `;
 
 const CardHeader = styled.div`
@@ -488,13 +504,16 @@ const Dropdown = styled.div`
   border: 1px solid ${COLORS.border};
   border-radius: 8px;
   z-index: 50;
-  min-width: 140px;
+  min-width: 160px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  animation: ${fadeIn} 0.2s ease-out;
+
   a,
   button {
-    padding: 12px;
+    padding: 12px 16px;
     border: none;
     background: none;
     color: ${COLORS.textPrimary};
@@ -504,7 +523,7 @@ const Dropdown = styled.div`
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     &:hover {
       background: rgba(255, 255, 255, 0.05);
     }
@@ -606,6 +625,7 @@ const CaptionText = styled.p`
   color: ${COLORS.textSecondary};
   margin-bottom: 20px;
   font-weight: 400;
+  white-space: pre-wrap;
 `;
 
 const TagBox = styled.div`
