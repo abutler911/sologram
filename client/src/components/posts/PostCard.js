@@ -536,7 +536,10 @@ const Title = styled.h2`
   font-size: 1.5rem;
   font-weight: 800;
   color: ${COLORS.textPrimary};
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  line-height: 1.1; /* Tight header */
+  letter-spacing: -0.04em; /* Premium "Apple-esque" feel */
+
   &:hover {
     color: ${COLORS.primaryMint};
   }
@@ -544,9 +547,11 @@ const Title = styled.h2`
 
 const CaptionText = styled.p`
   font-size: 0.95rem;
-  line-height: 1.6;
+  line-height: 1.6; /* Keep this! Excellent for reading comfort */
   color: ${COLORS.textSecondary};
   margin-bottom: 20px;
+  font-weight: 400;
+  letter-spacing: 0.01em; /* Makes body text slightly more legible */
 `;
 
 const TagBox = styled.div`
