@@ -1,24 +1,36 @@
-import React, { lazy, Suspense } from "react";
-import PropTypes from "prop-types";
-import AppNav from "../navigation/AppNav";
-import Footer from "./Footer";
+import React, { lazy, Suspense } from 'react';
+import PropTypes from 'prop-types';
+import AppNav from '../navigation/AppNav';
+import Footer from './Footer';
+import styled from 'styled-components';
+import { COLORS } from '../../theme';
+import LoadingSpinner from '../common/LoadingSpinner';
 
-import styled from "styled-components";
-import { COLORS } from "../../theme";
-import LoadingSpinner from "../common/LoadingSpinner";
-
-const InstallPrompt = lazy(() => import("../pwa/InstallPrompt"));
+const InstallPrompt = lazy(() => import('../pwa/InstallPrompt'));
 const FloatingActionButtonAdjuster = lazy(() =>
-  import("./FloatingActionButtonAdjuster")
+  import('./FloatingActionButtonAdjuster')
 );
 
+/**
+ * MainLayout
+ *
+ * Handles the page shell: AppNav + main content area + Footer.
+ *
+ * Desktop (≥960px)
+ *   - AppNav renders a fixed left sidebar (72px at 960-1199px, 240px at 1200px+)
+ *   - The <main> area is offset with matching left margin so content never
+ *     slides under the sidebar.
+ *
+ * Mobile (<960px)
+ *   - AppNav renders a sticky top bar + fixed bottom tab bar (52px + safe area)
+ *   - The <main> area has bottom padding to clear the tab bar.
+ */
 const MainLayout = ({
   children,
   noNav = false,
   noFooter = false,
   customHeader = null,
   customFooter = null,
-  customBanner = null,
   isLoading = false,
   onSearch,
   onClearSearch,
@@ -29,17 +41,20 @@ const MainLayout = ({
         (customHeader || (
           <AppNav onSearch={onSearch} onClearSearch={onClearSearch} />
         ))}
-      <main aria-label="Main Content">
-        {isLoading ? <LoadingSpinner /> : children}
-      </main>
+
+      <ContentArea>{isLoading ? <LoadingSpinner /> : children}</ContentArea>
+
       {!noFooter && (customFooter || <Footer />)}
-      <Suspense fallback={<div>Loading...</div>}>
+
+      <Suspense fallback={null}>
         <InstallPrompt />
         <FloatingActionButtonAdjuster />
       </Suspense>
     </LayoutWrapper>
   );
 };
+
+// ── Styles ────────────────────────────────────────────────────────────────────
 
 const LayoutWrapper = styled.div`
   display: flex;
@@ -48,39 +63,60 @@ const LayoutWrapper = styled.div`
   background-color: ${COLORS.background};
   transition: background-color 0.3s ease-in-out;
   width: 100%;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
+  overflow-x: hidden;
+`;
 
-  @media (min-width: 768px) {
-    .bottom-navigation {
-      display: none;
-    }
+const ContentArea = styled.main`
+  /*
+   * Mobile — column flow, centred, max-width matches the feed column.
+   * Add bottom padding equal to the tab bar height so content is never
+   * hidden behind it.
+   */
+  --app-max-width: 470px;
+  --tab-bar-height: 52px; /* matches BottomBar height in AppNav */
+
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
+  padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom));
+
+  > * {
+    width: min(100%, var(--app-max-width));
+    margin-left: auto;
+    margin-right: auto;
   }
 
-  main {
-    --app-max-width: 470px;
+  /*
+   * Narrow desktop (960–1199px)
+   *   Sidebar is 72px wide.  Shift the feed to the right by that amount, then
+   *   re-centre within the remaining space so the single-column feed feels
+   *   naturally centred on screen.
+   */
+  @media (min-width: 960px) {
+    --sidebar-width: 72px;
 
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    margin: 0; /* Remove top margin */
-    padding: 0; /* Remove all padding for seamless transition */
-    box-sizing: border-box;
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    padding-bottom: 0; /* no bottom bar on desktop */
 
     > * {
-      width: min(100%, var(--app-max-width));
+      /* Re-centre within the remaining viewport width */
       margin-left: auto;
       margin-right: auto;
     }
+  }
 
-    /* Special handling for home feed - no padding */
-    &[data-page="home"] {
-      padding: 0;
+  /*
+   * Full desktop (≥1200px)
+   *   Sidebar expands to 240px.
+   */
+  @media (min-width: 1200px) {
+    --sidebar-width: 240px;
 
-      & > div {
-        padding: 0;
-      }
-    }
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
   }
 `;
 
@@ -90,7 +126,6 @@ MainLayout.propTypes = {
   noFooter: PropTypes.bool,
   customHeader: PropTypes.node,
   customFooter: PropTypes.node,
-  customBanner: PropTypes.node,
   isLoading: PropTypes.bool,
   onSearch: PropTypes.func,
   onClearSearch: PropTypes.func,

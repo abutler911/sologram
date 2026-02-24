@@ -7,36 +7,48 @@ import React, {
   useCallback,
 } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 import {
-  FaCamera,
-  FaChevronDown,
-  FaFolder,
   FaHome,
+  FaSearch,
+  FaPlus,
+  FaFolder,
+  FaFolderOpen,
+  FaUser,
+  FaCamera,
   FaImages,
   FaLightbulb,
   FaRobot,
-  FaSearch,
   FaSignInAlt,
   FaSignOutAlt,
   FaTimes,
-  FaUser,
   FaArchive,
-  FaPlus,
-  FaMagic,
   FaShieldAlt,
+  FaMagic,
+  FaChevronRight,
+  FaBars,
 } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
 import { COLORS } from '../../theme';
 
 /**
- * AppNav.jsx — Unified Navigation (Desktop + Mobile)
+ * AppNav — Instagram-style navigation
  *
- * - Top App Bar (desktop & tablet): logo, primary nav, create dropdown, search, user menu
- * - Mobile Bottom Tab Bar + center Create FAB + "More" sheet
- * - Role aware: `admin` gets AI + Gallery + dedicated Admin tab; `creator|admin` get Create actions
- * - Command Palette (⌘K / Ctrl+K)
- * - Search overlay that syncs with /?search= query param
+ * ─ Mobile  (<960px) ─────────────────────────────────────────────────────────
+ *   Top bar : Logo + right-side icons (archive, avatar)
+ *   Bottom  : 5-tab bar, icon-only — Home · Search · Create · Collections · Profile
+ *   Create  : Tap + → slide-up bottom sheet (2×2 grid)
+ *   Search  : Tap 🔍 → full-screen takeover
+ *
+ * ─ Desktop (≥960px) ─────────────────────────────────────────────────────────
+ *   Left sidebar: 240px (full) / 72px (1200px+ goes back to full for ultra-wide)
+ *   Sidebar items: logo · Home · Search · Thoughts · Collections · Create · Archive
+ *   Admin section: Gallery · AI Content
+ *   Bottom: username/avatar · Logout
+ *
+ * ─ Global ───────────────────────────────────────────────────────────────────
+ *   ⌘K / Ctrl+K  → command palette
+ *   Esc          → close any open overlay
  */
 
 const AppNav = ({ onSearch, onClearSearch }) => {
@@ -48,61 +60,36 @@ const AppNav = ({ onSearch, onClearSearch }) => {
   const canCreate =
     isAuthenticated && (user?.role === 'admin' || user?.role === 'creator');
 
-  // UI state
+  // ── overlay state ──────────────────────────────────────────────────────────
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
-  const [userOpen, setUserOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const searchInputRef = useRef(null);
-  const createRef = useRef(null);
-  const userRef = useRef(null);
 
-  // Sync search query with URL
+  // ── sync URL search param → local state ───────────────────────────────────
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const q = params.get('search') || '';
+    const q = new URLSearchParams(location.search).get('search') || '';
     setSearchQuery(q);
     if (location.pathname === '/' && q && onSearch) onSearch(q);
   }, [location, onSearch]);
 
-  // Close menus on route change
+  // ── close overlays on navigation ──────────────────────────────────────────
   useEffect(() => {
     setCreateOpen(false);
-    setUserOpen(false);
-    setMoreOpen(false);
+    setSearchOpen(false);
   }, [location.pathname]);
 
-  // Focus when search opens
+  // ── auto-focus search input ────────────────────────────────────────────────
   useEffect(() => {
-    if (searchOpen && searchInputRef.current) {
+    if (searchOpen)
       requestAnimationFrame(() => searchInputRef.current?.focus());
-    }
   }, [searchOpen]);
 
-  // Click outside handlers
+  // ── keyboard shortcuts ─────────────────────────────────────────────────────
   useEffect(() => {
-    const onDocClick = (e) => {
-      if (
-        createOpen &&
-        createRef.current &&
-        !createRef.current.contains(e.target)
-      ) {
-        setCreateOpen(false);
-      }
-      if (userOpen && userRef.current && !userRef.current.contains(e.target)) {
-        setUserOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [createOpen, userOpen]);
-
-  // Command palette hotkey
-  useEffect(() => {
-    const onKey = (e) => {
+    const handler = (e) => {
       const mod = navigator.platform.includes('Mac') ? e.metaKey : e.ctrlKey;
       if (mod && e.key.toLowerCase() === 'k') {
         e.preventDefault();
@@ -110,63 +97,68 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       }
       if (e.key === 'Escape') {
         setSearchOpen(false);
+        setCreateOpen(false);
         setPaletteOpen(false);
-        setMoreOpen(false);
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  // ── helpers ────────────────────────────────────────────────────────────────
   const isActive = useCallback(
     (path) =>
       path === '/'
-        ? location.pathname === '/' && !location.search.includes('search')
+        ? location.pathname === '/' && !location.search.includes('search=')
         : location.pathname.startsWith(path),
-    [location.pathname, location.search]
+    [location]
   );
 
-  // ---- Actions & Handlers ----
   const doLogout = () => {
     logout();
-    setUserOpen(false);
     navigate('/login');
   };
 
   const triggerSearch = (e) => {
     e?.preventDefault();
-    if (searchQuery.trim()) {
-      onSearch && onSearch(searchQuery);
+    const q = searchQuery.trim();
+    if (q) {
+      onSearch?.(q);
       if (location.pathname !== '/')
-        navigate(`/?search=${encodeURIComponent(searchQuery)}`);
-      setSearchOpen(false);
+        navigate(`/?search=${encodeURIComponent(q)}`);
     } else {
-      setSearchOpen(false);
-      onClearSearch && onClearSearch();
+      onClearSearch?.();
     }
+    setSearchOpen(false);
   };
 
   const clearSearch = () => {
     setSearchQuery('');
-    onClearSearch && onClearSearch();
+    onClearSearch?.();
     searchInputRef.current?.focus();
   };
 
-  // Command palette items
+  const goCreate = (to) => {
+    setCreateOpen(false);
+    navigate(to);
+  };
+
+  // avatar initials
+  const initials = user?.username
+    ? user.username.slice(0, 2).toUpperCase()
+    : '?';
+
+  // command palette items
   const paletteItems = useMemo(() => {
-    const items = [
+    const base = [
       { label: 'Home', icon: <FaHome />, to: '/' },
       { label: 'Thoughts', icon: <FaLightbulb />, to: '/thoughts' },
       { label: 'Collections', icon: <FaFolder />, to: '/collections' },
+      { label: 'Profile', icon: <FaUser />, to: '/profile' },
+      { label: 'Story Archive', icon: <FaArchive />, to: '/story-archive' },
     ];
-    if (isAdmin)
-      items.push({
-        label: 'Gallery',
-        icon: <FaImages />,
-        to: '/media-gallery',
-      });
-    if (canCreate) {
-      items.push(
+    if (canCreate)
+      base.push(
         { label: 'New Post', icon: <FaCamera />, to: '/create' },
         { label: 'New Story', icon: <FaImages />, to: '/create-story' },
         { label: 'New Thought', icon: <FaLightbulb />, to: '/thoughts/create' },
@@ -174,990 +166,1281 @@ const AppNav = ({ onSearch, onClearSearch }) => {
           label: 'New Collection',
           icon: <FaFolder />,
           to: '/collections/create',
-        },
-        { label: 'Story Archive', icon: <FaArchive />, to: '/story-archive' }
+        }
       );
-    }
     if (isAdmin)
-      items.push({
-        label: 'AI Content',
-        icon: <FaRobot />,
-        to: '/admin/ai-content',
-      });
-    items.push({ label: 'Profile', icon: <FaUser />, to: '/profile' });
-    return items;
-  }, [isAdmin, canCreate]);
+      base.push(
+        { label: 'Media Gallery', icon: <FaImages />, to: '/media-gallery' },
+        { label: 'AI Content', icon: <FaRobot />, to: '/admin/ai-content' }
+      );
+    return base;
+  }, [canCreate, isAdmin]);
 
-  // ---- Render ----
+  // ── render ─────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* Top App Bar */}
-      <AppBar>
-        <BarInner>
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/*  MOBILE TOP BAR                                                      */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      <TopBar>
+        <TopBarInner>
           <Logo to='/'>
-            <span className='mark'>
+            <LogoIcon>
               <FaCamera />
-            </span>
-            <span className='brand'>
-              <span className='word'>SoloGram</span>
-              <span className='tagline'>One Voice. Infinite Moments.</span>
-            </span>
+            </LogoIcon>
+            <LogoText>SoloGram</LogoText>
           </Logo>
 
-          {/* Desktop primary nav */}
-          <PrimaryNav>
-            <NavLinkEl to='/' $active={isActive('/')}>
-              <FaHome />
-              <span>Home</span>
-            </NavLinkEl>
-            <NavLinkEl to='/thoughts' $active={isActive('/thoughts')}>
-              <FaLightbulb />
-              <span>Thoughts</span>
-            </NavLinkEl>
-            <NavLinkEl to='/collections' $active={isActive('/collections')}>
-              <FaFolder />
-              <span>Collections</span>
-            </NavLinkEl>
-            {isAdmin && (
-              <NavLinkEl
-                to='/media-gallery'
-                $active={isActive('/media-gallery')}
-              >
-                <FaImages />
-                <span>Gallery</span>
-              </NavLinkEl>
-            )}
-            {isAdmin && (
-              <NavLinkEl
-                to='/admin/ai-content'
-                $active={isActive('/admin/ai-content')}
-              >
-                <FaRobot />
-                <span>AI</span>
-              </NavLinkEl>
-            )}
-          </PrimaryNav>
-
-          {/* Right actions */}
-          <RightCluster>
-            {/* Create dropdown */}
+          <TopBarActions>
             {canCreate && (
-              <CreateWrap ref={createRef}>
-                <CreateBtn
-                  onClick={() => setCreateOpen((s) => !s)}
-                  aria-haspopup='menu'
-                  aria-expanded={createOpen}
-                >
-                  <FaPlus /> <span>Create</span>{' '}
-                  <FaChevronDown className='chev' />
-                </CreateBtn>
-                {createOpen && (
-                  <Dropdown role='menu'>
-                    <DropItem
-                      as={Link}
-                      to='/create'
-                      onClick={() => setCreateOpen(false)}
-                    >
-                      <FaCamera /> New Post
-                    </DropItem>
-                    <DropItem
-                      as={Link}
-                      to='/create-story'
-                      onClick={() => setCreateOpen(false)}
-                    >
-                      <FaImages /> New Story
-                    </DropItem>
-                    <DropItem
-                      as={Link}
-                      to='/thoughts/create'
-                      onClick={() => setCreateOpen(false)}
-                    >
-                      <FaLightbulb /> New Thought
-                    </DropItem>
-                    <DropItem
-                      as={Link}
-                      to='/collections/create'
-                      onClick={() => setCreateOpen(false)}
-                    >
-                      <FaFolder /> New Collection
-                    </DropItem>
-                    <Divider />
-                    <DropItem
-                      as={Link}
-                      to='/story-archive'
-                      onClick={() => setCreateOpen(false)}
-                    >
-                      <FaArchive /> Story Archive
-                    </DropItem>
-                  </Dropdown>
-                )}
-              </CreateWrap>
+              <TopBarIconLink
+                to='/story-archive'
+                $active={isActive('/story-archive')}
+                title='Story Archive'
+              >
+                <FaArchive />
+              </TopBarIconLink>
             )}
-
-            {/* Search */}
-            <IconBtn aria-label='Search' onClick={() => setSearchOpen(true)}>
-              <FaSearch />
-            </IconBtn>
-
-            {/* User menu */}
             {isAuthenticated ? (
-              <UserWrap ref={userRef}>
-                <AvatarBtn
-                  onClick={() => setUserOpen((s) => !s)}
-                  aria-haspopup='menu'
-                  aria-expanded={userOpen}
-                >
-                  <FaUser />
-                </AvatarBtn>
-                {userOpen && (
-                  <Dropdown right role='menu'>
-                    <UserCard>
-                      <strong>{user?.username}</strong>
-                      <small>
-                        {user?.role === 'admin'
-                          ? 'Admin'
-                          : user?.role || 'User'}
-                      </small>
-                    </UserCard>
-                    <Divider />
-                    <DropItem
-                      as={Link}
-                      to='/profile'
-                      onClick={() => setUserOpen(false)}
-                    >
-                      <FaUser /> Profile
-                    </DropItem>
-                    {canCreate && (
-                      <>
-                        <DropItem
-                          as={Link}
-                          to='/story-archive'
-                          onClick={() => setUserOpen(false)}
-                        >
-                          <FaArchive /> Story Archive
-                        </DropItem>
-                      </>
-                    )}
-                    {isAdmin && (
-                      <DropItem
-                        as={Link}
-                        to='/admin/ai-content'
-                        onClick={() => setUserOpen(false)}
-                      >
-                        <FaRobot /> AI Content
-                      </DropItem>
-                    )}
-                    <Divider />
-                    <DropItem as='button' onClick={doLogout}>
-                      <FaSignOutAlt /> Logout
-                    </DropItem>
-                  </Dropdown>
-                )}
-              </UserWrap>
+              <AvatarButton
+                onClick={() => navigate('/profile')}
+                aria-label='Profile'
+              >
+                {initials}
+              </AvatarButton>
             ) : (
-              <IconLink to='/login' title='Login'>
+              <TopBarIconLink to='/login' title='Sign in'>
                 <FaSignInAlt />
-              </IconLink>
+              </TopBarIconLink>
             )}
-          </RightCluster>
-        </BarInner>
-      </AppBar>
+          </TopBarActions>
+        </TopBarInner>
+      </TopBar>
 
-      {/* Search overlay */}
-      {searchOpen && (
-        <SearchOverlay onClick={() => setSearchOpen(false)}>
-          <SearchCard onClick={(e) => e.stopPropagation()}>
-            <form onSubmit={triggerSearch}>
-              <SearchRow>
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/*  DESKTOP LEFT SIDEBAR                                                */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      <Sidebar>
+        <SideInner>
+          {/* Logo */}
+          <SideLogoLink to='/'>
+            <LogoIcon small>
+              <FaCamera />
+            </LogoIcon>
+            <SideLogoText>SoloGram</SideLogoText>
+          </SideLogoLink>
+
+          <SideDivider />
+
+          {/* Primary nav */}
+          <SideNav>
+            <SideNavLink to='/' $active={isActive('/')}>
+              <SideIcon>
+                <FaHome />
+              </SideIcon>
+              <SideLabel>Home</SideLabel>
+            </SideNavLink>
+
+            <SideNavButton onClick={() => setSearchOpen(true)}>
+              <SideIcon>
                 <FaSearch />
-                <input
-                  ref={searchInputRef}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder='Search posts and thoughts…'
-                  aria-label='Search'
-                />
+              </SideIcon>
+              <SideLabel>Search</SideLabel>
+            </SideNavButton>
+
+            <SideNavLink to='/thoughts' $active={isActive('/thoughts')}>
+              <SideIcon>
+                <FaLightbulb />
+              </SideIcon>
+              <SideLabel>Thoughts</SideLabel>
+            </SideNavLink>
+
+            <SideNavLink to='/collections' $active={isActive('/collections')}>
+              <SideIcon>
+                {isActive('/collections') ? <FaFolderOpen /> : <FaFolder />}
+              </SideIcon>
+              <SideLabel>Collections</SideLabel>
+            </SideNavLink>
+
+            {canCreate && (
+              <SideNavButton onClick={() => setCreateOpen(true)}>
+                <SideIcon>
+                  <FaPlus />
+                </SideIcon>
+                <SideLabel>Create</SideLabel>
+              </SideNavButton>
+            )}
+
+            {canCreate && (
+              <SideNavLink
+                to='/story-archive'
+                $active={isActive('/story-archive')}
+              >
+                <SideIcon>
+                  <FaArchive />
+                </SideIcon>
+                <SideLabel>Story Archive</SideLabel>
+              </SideNavLink>
+            )}
+          </SideNav>
+
+          <SideSpacer />
+
+          {/* Admin section */}
+          {isAdmin && (
+            <>
+              <SideSectionLabel>Admin</SideSectionLabel>
+              <SideNav>
+                <SideNavLink
+                  to='/media-gallery'
+                  $active={isActive('/media-gallery')}
+                >
+                  <SideIcon>
+                    <FaImages />
+                  </SideIcon>
+                  <SideLabel>Media Gallery</SideLabel>
+                </SideNavLink>
+                <SideNavLink
+                  to='/admin/ai-content'
+                  $active={isActive('/admin/ai-content')}
+                >
+                  <SideIcon>
+                    <FaRobot />
+                  </SideIcon>
+                  <SideLabel>AI Content</SideLabel>
+                </SideNavLink>
+              </SideNav>
+              <SideDivider />
+            </>
+          )}
+
+          {/* Profile + logout */}
+          <SideNav>
+            {isAuthenticated ? (
+              <>
+                <SideNavLink to='/profile' $active={isActive('/profile')}>
+                  <SideAvatar $active={isActive('/profile')}>
+                    {initials}
+                  </SideAvatar>
+                  <SideLabel>{user?.username || 'Profile'}</SideLabel>
+                </SideNavLink>
+                <SideNavButton onClick={doLogout} $danger>
+                  <SideIcon>
+                    <FaSignOutAlt />
+                  </SideIcon>
+                  <SideLabel>Logout</SideLabel>
+                </SideNavButton>
+              </>
+            ) : (
+              <SideNavLink to='/login'>
+                <SideIcon>
+                  <FaSignInAlt />
+                </SideIcon>
+                <SideLabel>Sign In</SideLabel>
+              </SideNavLink>
+            )}
+          </SideNav>
+
+          {/* ⌘K shortcut hint */}
+          <PaletteButton onClick={() => setPaletteOpen(true)}>
+            <FaMagic />
+            <PaletteButtonLabel>⌘K</PaletteButtonLabel>
+          </PaletteButton>
+        </SideInner>
+      </Sidebar>
+
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/*  MOBILE BOTTOM TAB BAR                                               */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      <BottomBar>
+        <BottomBarInner>
+          {/* Home */}
+          <BottomTab to='/' $active={isActive('/')}>
+            <BottomIcon $active={isActive('/')}>
+              <FaHome />
+            </BottomIcon>
+          </BottomTab>
+
+          {/* Search */}
+          <BottomTabButton
+            onClick={() => setSearchOpen(true)}
+            $active={searchOpen}
+          >
+            <BottomIcon $active={searchOpen}>
+              <FaSearch />
+            </BottomIcon>
+          </BottomTabButton>
+
+          {/* Create — center square */}
+          {canCreate ? (
+            <BottomTabButton
+              onClick={() => setCreateOpen(true)}
+              aria-label='Create'
+            >
+              <CreateSquare>
+                <FaPlus />
+              </CreateSquare>
+            </BottomTabButton>
+          ) : (
+            <BottomTab to='/login'>
+              <BottomIcon>
+                <FaSignInAlt />
+              </BottomIcon>
+            </BottomTab>
+          )}
+
+          {/* Collections */}
+          <BottomTab to='/collections' $active={isActive('/collections')}>
+            <BottomIcon $active={isActive('/collections')}>
+              {isActive('/collections') ? <FaFolderOpen /> : <FaFolder />}
+            </BottomIcon>
+          </BottomTab>
+
+          {/* Profile / Admin */}
+          {isAdmin ? (
+            <BottomTab
+              to='/media-gallery'
+              $active={isActive('/media-gallery') || isActive('/admin')}
+            >
+              <BottomIcon
+                $active={isActive('/media-gallery') || isActive('/admin')}
+              >
+                <FaShieldAlt />
+              </BottomIcon>
+            </BottomTab>
+          ) : isAuthenticated ? (
+            <BottomTab to='/profile' $active={isActive('/profile')}>
+              <BottomAvatarIcon $active={isActive('/profile')}>
+                {initials}
+              </BottomAvatarIcon>
+            </BottomTab>
+          ) : (
+            <BottomTab to='/login'>
+              <BottomIcon>
+                <FaUser />
+              </BottomIcon>
+            </BottomTab>
+          )}
+        </BottomBarInner>
+      </BottomBar>
+
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/*  SEARCH OVERLAY — full-screen mobile / centered card desktop         */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {searchOpen && (
+        <SearchOverlay>
+          <SearchCard>
+            <SearchRow>
+              <SearchBox>
+                <FaSearch />
+                <form
+                  onSubmit={triggerSearch}
+                  style={{ flex: 1, display: 'flex' }}
+                >
+                  <input
+                    ref={searchInputRef}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder='Search posts and thoughts…'
+                    autoComplete='off'
+                  />
+                </form>
                 {searchQuery && (
-                  <ClearBtn
-                    type='button'
-                    onClick={clearSearch}
-                    aria-label='Clear search'
-                  >
+                  <SearchClearBtn type='button' onClick={clearSearch}>
                     <FaTimes />
-                  </ClearBtn>
+                  </SearchClearBtn>
                 )}
-              </SearchRow>
-              <Tip>
-                Press Enter to search • Press Esc to close • ⌘/Ctrl+K for
-                Command Palette
-              </Tip>
-            </form>
+              </SearchBox>
+              <SearchCancelBtn
+                onClick={() => {
+                  setSearchOpen(false);
+                  clearSearch();
+                }}
+              >
+                Cancel
+              </SearchCancelBtn>
+            </SearchRow>
+
+            <SearchBody>
+              {searchQuery ? (
+                <SearchActiveHint>
+                  Press <kbd>↵</kbd> to search for &ldquo;{searchQuery}&rdquo;
+                </SearchActiveHint>
+              ) : (
+                <SearchEmptyState>
+                  <FaSearch />
+                  <p>Search posts, thoughts, and more</p>
+                  <SearchTip>⌘K opens command palette</SearchTip>
+                </SearchEmptyState>
+              )}
+            </SearchBody>
           </SearchCard>
         </SearchOverlay>
       )}
 
-      {/* Command palette */}
-      {paletteOpen && (
-        <Palette onClose={() => setPaletteOpen(false)} items={paletteItems} />
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/*  CREATE BOTTOM SHEET                                                 */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {createOpen && (
+        <SheetBackdrop onClick={() => setCreateOpen(false)}>
+          <CreateSheet onClick={(e) => e.stopPropagation()}>
+            <SheetHandle />
+            <SheetTitle>Create</SheetTitle>
+            <CreateGrid>
+              <CreateCard
+                onClick={() => goCreate('/create')}
+                $color={COLORS.primarySalmon}
+              >
+                <CreateCardIcon $color={COLORS.primarySalmon}>
+                  <FaCamera />
+                </CreateCardIcon>
+                <CreateCardName>Post</CreateCardName>
+                <CreateCardSub>Photo or video</CreateCardSub>
+              </CreateCard>
+
+              <CreateCard
+                onClick={() => goCreate('/create-story')}
+                $color={COLORS.primaryMint}
+              >
+                <CreateCardIcon $color={COLORS.primaryMint}>
+                  <FaImages />
+                </CreateCardIcon>
+                <CreateCardName>Story</CreateCardName>
+                <CreateCardSub>Gone in 24h</CreateCardSub>
+              </CreateCard>
+
+              <CreateCard
+                onClick={() => goCreate('/thoughts/create')}
+                $color={COLORS.primaryBlueGray}
+              >
+                <CreateCardIcon $color={COLORS.primaryBlueGray}>
+                  <FaLightbulb />
+                </CreateCardIcon>
+                <CreateCardName>Thought</CreateCardName>
+                <CreateCardSub>What's on your mind</CreateCardSub>
+              </CreateCard>
+
+              <CreateCard
+                onClick={() => goCreate('/collections/create')}
+                $color={COLORS.accentSalmon}
+              >
+                <CreateCardIcon $color={COLORS.accentSalmon}>
+                  <FaFolderOpen />
+                </CreateCardIcon>
+                <CreateCardName>Collection</CreateCardName>
+                <CreateCardSub>Group your posts</CreateCardSub>
+              </CreateCard>
+            </CreateGrid>
+          </CreateSheet>
+        </SheetBackdrop>
       )}
 
-      {/* Mobile bottom bar + FAB */}
-      <BottomDock>
-        <BottomDockInner>
-          <DockLink to='/' $active={isActive('/')} aria-label='Home'>
-            <FaHome />
-            <span>Home</span>
-          </DockLink>
-          <DockLink
-            to='/thoughts'
-            $active={isActive('/thoughts')}
-            aria-label='Thoughts'
-          >
-            <FaLightbulb />
-            <span>Thoughts</span>
-          </DockLink>
-          <FabShell>
-            {canCreate ? (
-              <Fab
-                onClick={() => setMoreOpen(true)}
-                aria-label='Create or more'
-              >
-                <FaPlus />
-              </Fab>
-            ) : (
-              <Fab as={Link} to='/login' aria-label='Login'>
-                <FaSignInAlt />
-              </Fab>
-            )}
-          </FabShell>
-          <DockLink
-            to='/collections'
-            $active={isActive('/collections')}
-            aria-label='Collections'
-          >
-            <FaFolder />
-            <span>Collections</span>
-          </DockLink>
-          {/* Admin gets a dedicated shield tab; regular users get Profile */}
-          {isAdmin ? (
-            <DockLink
-              to='/media-gallery'
-              $active={isActive('/media-gallery') || isActive('/admin')}
-              aria-label='Admin'
-            >
-              <FaShieldAlt />
-              <span>Admin</span>
-            </DockLink>
-          ) : (
-            <DockLink
-              to='/profile'
-              $active={isActive('/profile')}
-              aria-label='Profile'
-            >
-              <FaUser />
-              <span>Profile</span>
-            </DockLink>
-          )}
-        </BottomDockInner>
-      </BottomDock>
-
-      {/* Mobile More / Create sheet */}
-      {moreOpen && (
-        <Sheet onClose={() => setMoreOpen(false)}>
-          {canCreate && (
-            <>
-              <SheetTitle>Create</SheetTitle>
-              <SheetGrid>
-                <SheetItem
-                  as={Link}
-                  to='/create'
-                  onClick={() => setMoreOpen(false)}
-                >
-                  <FaCamera />
-                  Post
-                </SheetItem>
-                <SheetItem
-                  as={Link}
-                  to='/create-story'
-                  onClick={() => setMoreOpen(false)}
-                >
-                  <FaImages />
-                  Story
-                </SheetItem>
-                <SheetItem
-                  as={Link}
-                  to='/thoughts/create'
-                  onClick={() => setMoreOpen(false)}
-                >
-                  <FaLightbulb />
-                  Thought
-                </SheetItem>
-                <SheetItem
-                  as={Link}
-                  to='/collections/create'
-                  onClick={() => setMoreOpen(false)}
-                >
-                  <FaFolder />
-                  Collection
-                </SheetItem>
-              </SheetGrid>
-              <Divider style={{ marginTop: 8 }} />
-            </>
-          )}
-
-          <SheetTitle>Navigate</SheetTitle>
-          <SheetList>
-            <li>
-              <Link to='/' onClick={() => setMoreOpen(false)}>
-                <FaHome /> Home
-              </Link>
-            </li>
-            <li>
-              <Link to='/story-archive' onClick={() => setMoreOpen(false)}>
-                <FaArchive /> Story Archive
-              </Link>
-            </li>
-            {/* Admin gets Profile here (since the dock tab is Admin) + admin tools */}
-            {isAdmin ? (
-              <>
-                <li>
-                  <Link to='/profile' onClick={() => setMoreOpen(false)}>
-                    <FaUser /> Profile
-                  </Link>
-                </li>
-                <li>
-                  <Link to='/media-gallery' onClick={() => setMoreOpen(false)}>
-                    <FaImages /> Media Gallery
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to='/admin/ai-content'
-                    onClick={() => setMoreOpen(false)}
-                  >
-                    <FaRobot /> AI Content
-                  </Link>
-                </li>
-              </>
-            ) : (
-              <li>
-                <Link to='/profile' onClick={() => setMoreOpen(false)}>
-                  <FaUser /> Profile
-                </Link>
-              </li>
-            )}
-          </SheetList>
-        </Sheet>
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/*  COMMAND PALETTE                                                     */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {paletteOpen && (
+        <CommandPalette
+          items={paletteItems}
+          onClose={() => setPaletteOpen(false)}
+          navigate={navigate}
+        />
       )}
     </>
   );
 };
 
+// ── Command Palette component ─────────────────────────────────────────────────
+const CommandPalette = ({ items, onClose, navigate }) => {
+  const [q, setQ] = useState('');
+  const ref = useRef(null);
+
+  useEffect(() => {
+    ref.current?.focus();
+  }, []);
+  useEffect(() => {
+    const h = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [onClose]);
+
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    return s ? items.filter((i) => i.label.toLowerCase().includes(s)) : items;
+  }, [q, items]);
+
+  return (
+    <PaletteBackdrop onClick={onClose}>
+      <PalettePanel onClick={(e) => e.stopPropagation()}>
+        <PaletteInputRow>
+          <FaMagic />
+          <input
+            ref={ref}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder='Type a page or command…'
+          />
+          <PaletteKbd>Esc</PaletteKbd>
+        </PaletteInputRow>
+        <PaletteResults>
+          {filtered.map((item, i) => (
+            <PaletteRow
+              key={i}
+              onClick={() => {
+                navigate(item.to);
+                onClose();
+              }}
+            >
+              <PaletteRowIcon>{item.icon}</PaletteRowIcon>
+              <span>{item.label}</span>
+              <PaletteChevron>
+                <FaChevronRight />
+              </PaletteChevron>
+            </PaletteRow>
+          ))}
+          {!filtered.length && (
+            <PaletteEmpty>No results for &ldquo;{q}&rdquo;</PaletteEmpty>
+          )}
+        </PaletteResults>
+      </PalettePanel>
+    </PaletteBackdrop>
+  );
+};
+
 export default AppNav;
 
-/* ============================= Styles ============================= */
+// ─────────────────────────────────────────────────────────────────────────────
+// Keyframes
+// ─────────────────────────────────────────────────────────────────────────────
+const fadeIn = keyframes`from { opacity: 0 }             to { opacity: 1 }`;
+const slideUp = keyframes`from { transform: translateY(100%) } to { transform: translateY(0) }`;
+const popIn = keyframes`from { transform: scale(.95); opacity: 0 } to { transform: scale(1); opacity: 1 }`;
+const dropDown = keyframes`from { transform: translateY(-8px); opacity: 0 } to { transform: translateY(0); opacity: 1 }`;
 
-const AppBar = styled.header`
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  width: 100%;
-  overflow-x: clip;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  background: linear-gradient(
-    180deg,
-    ${COLORS.cardBackground}dd 0%,
-    ${COLORS.cardBackground} 65%
-  );
-  border-bottom: 1px solid ${COLORS.border};
-`;
-
-const BarInner = styled.div`
-  height: 64px;
-  min-height: 68px;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
-  max-width: 470px;
-  margin: 0 auto;
-  padding: 0 12px;
-  box-sizing: border-box;
-  @media (min-width: 960px) {
-    max-width: 1200px;
-    padding: 0 16px;
-  }
-`;
-
-const Logo = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  .mark {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: linear-gradient(
-      135deg,
-      ${COLORS.primarySalmon},
-      ${COLORS.accentSalmon}
-    );
-    color: white;
-  }
-  .brand {
-    display: flex;
-    flex-direction: column;
-  }
-  .word {
-    font-family: 'Mystery Quest', cursive;
-    color: ${COLORS.textPrimary};
-    font-size: 1.6rem;
-    line-height: 1.05;
-    letter-spacing: 0.2px;
-  }
-  .tagline {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: ${COLORS.primaryMint};
-    margin-top: 2px;
-    opacity: 0.95;
-    display: none;
-  }
-  @media (min-width: 960px) {
-    .tagline {
-      display: block;
-    }
-  }
-`;
-
-const PrimaryNav = styled.nav`
-  display: none;
-  align-items: center;
-  gap: 4px;
-  @media (min-width: 960px) {
-    display: flex;
-  }
-`;
-
-const NavLinkEl = styled(Link)`
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textSecondary)};
-  background: ${(p) =>
-    p.$active ? `${COLORS.primarySalmon}15` : 'transparent'};
-  border: 1px solid
-    ${(p) => (p.$active ? `${COLORS.primarySalmon}40` : 'transparent')};
-  transition: all 0.2s ease;
-  &:hover {
-    color: ${COLORS.primarySalmon};
-    background: ${COLORS.primarySalmon}10;
-  }
-  svg {
-    opacity: 0.9;
-  }
-`;
-
-const RightCluster = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const IconBtn = styled.button`
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid ${COLORS.border};
-  display: grid;
-  place-items: center;
-  background: ${COLORS.cardBackground};
-  color: ${COLORS.textSecondary};
-  cursor: pointer;
-  transition: all 0.2s ease;
-  &:hover {
-    color: ${COLORS.primarySalmon};
-    border-color: ${COLORS.primarySalmon}55;
-  }
-`;
-
-const IconLink = styled(Link)`
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid ${COLORS.border};
-  display: grid;
-  place-items: center;
-  background: ${COLORS.cardBackground};
-  color: ${COLORS.textSecondary};
-  &:hover {
-    color: ${COLORS.primarySalmon};
-    border-color: ${COLORS.primarySalmon}55;
-  }
-`;
-
-const CreateWrap = styled.div`
-  position: relative;
-`;
-
-const CreateBtn = styled.button`
-  height: 40px;
-  padding: 0 12px;
-  border-radius: 12px;
-  border: 1px solid ${COLORS.border};
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryMint}15,
-    ${COLORS.primaryBlueGray}10
-  );
-  color: ${COLORS.textPrimary};
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  .chev {
-    opacity: 0.6;
-  }
-  &:hover {
-    border-color: ${COLORS.primaryMint};
-    box-shadow: 0 2px 10px ${COLORS.primaryMint}25;
-  }
-`;
-
-const UserWrap = styled.div`
-  position: relative;
-`;
-
-const AvatarBtn = styled(IconBtn)`
-  display: inline-grid;
-  place-items: center;
-`;
-
-const Dropdown = styled.div`
-  position: absolute;
-  ${(p) => (p.right ? 'right: 0;' : 'left: 0;')};
-  top: 48px;
-  min-width: 220px;
-  background: ${COLORS.cardBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-  padding: 6px;
-  z-index: 1000;
-`;
-
-const DropItem = styled.a`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 10px;
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared atoms
+// ─────────────────────────────────────────────────────────────────────────────
+const LogoIcon = styled.div`
+  width: ${(p) => (p.small ? '28px' : '30px')};
+  height: ${(p) => (p.small ? '28px' : '30px')};
   border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: ${COLORS.textPrimary};
-  text-decoration: none;
-  cursor: pointer;
-  transition: background 0.15s ease;
-  &:hover {
-    background: ${COLORS.buttonHover};
-  }
-  svg {
-    opacity: 0.9;
-  }
-`;
-
-const Divider = styled.hr`
-  border: none;
-  height: 1px;
-  background: ${COLORS.border};
-  margin: 6px 4px;
-`;
-
-const UserCard = styled.div`
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  strong {
-    color: ${COLORS.textPrimary};
-  }
-  small {
-    color: ${COLORS.textTertiary};
-  }
-`;
-
-/* Search */
-const fadeIn = keyframes`from{opacity:0} to{opacity:1}`;
-const SearchOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(2px);
-  z-index: 1200;
-  animation: ${fadeIn} 0.12s ease;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 10vh;
-  padding-left: 12px;
-  padding-right: 12px;
-`;
-const SearchCard = styled.div`
-  width: 100%;
-  max-width: 720px;
-  background: ${COLORS.cardBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 16px;
-  padding: 14px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-`;
-const SearchRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid ${COLORS.border};
-  border-radius: 12px;
-  padding: 10px 12px;
-  background: ${COLORS.elevatedBackground};
-  input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    color: ${COLORS.textPrimary};
-    font-size: 1rem;
-    outline: none;
-  }
-  svg {
-    color: ${COLORS.textSecondary};
-  }
-`;
-const Tip = styled.div`
-  color: ${COLORS.textTertiary};
-  font-size: 0.8rem;
-  padding-top: 8px;
-  text-align: center;
-`;
-const ClearBtn = styled.button`
-  width: 34px;
-  height: 34px;
-  border: none;
-  border-radius: 10px;
   display: grid;
   place-items: center;
-  background: transparent;
-  color: ${COLORS.textSecondary};
-  cursor: pointer;
-  &:hover {
-    color: ${COLORS.textPrimary};
-    background: ${COLORS.buttonHover};
-  }
-`;
-
-/* Mobile bottom dock */
-const rise = keyframes`from{transform:translateY(16px); opacity:0} to{transform:translateY(0); opacity:1}`;
-const BottomDock = styled.nav`
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1000;
-  background: linear-gradient(
-    180deg,
-    ${COLORS.cardBackground}e6,
-    ${COLORS.cardBackground}
-  );
-  backdrop-filter: blur(16px);
-  border-top: 1px solid ${COLORS.border};
-  @media (min-width: 960px) {
-    display: none;
-  }
-`;
-
-const BottomDockInner = styled.div`
-  box-sizing: border-box;
-  height: 72px;
-  width: 100%;
-  max-width: 470px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding-left: max(8px, env(safe-area-inset-left));
-  padding-right: max(8px, env(safe-area-inset-right));
-  padding-bottom: env(safe-area-inset-bottom);
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-`;
-
-const DockLink = styled(Link)`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  text-decoration: none;
-  color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textTertiary)};
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 8px;
-  border-radius: 10px;
-  min-width: 62px;
-  &:hover {
-    color: ${COLORS.primarySalmon};
-    background: ${COLORS.primarySalmon}10;
-  }
-  svg {
-    font-size: 1.2rem;
-  }
-`;
-const FabShell = styled.div`
-  position: relative;
-  top: -22px;
-  animation: ${rise} 0.18s ease;
-`;
-const Fab = styled.button`
-  width: 56px;
-  height: 56px;
-  border-radius: 18px;
-  border: none;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  box-shadow: 0 8px 24px ${COLORS.primarySalmon}40;
-  font-size: 1.2rem;
-  color: #fff;
   background: linear-gradient(
     135deg,
     ${COLORS.primarySalmon},
     ${COLORS.accentSalmon}
   );
+  color: #fff;
+  font-size: ${(p) => (p.small ? '0.7rem' : '0.78rem')};
+  flex-shrink: 0;
 `;
 
-/* Mobile Sheet */
-const SheetOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(1px);
-  z-index: 1200;
-  animation: ${fadeIn} 0.12s ease;
-`;
-const slideUp = keyframes`from{transform:translateY(24px)} to{transform:translateY(0)}`;
-const SheetPanel = styled.div`
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: ${COLORS.cardBackground};
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-  border: 1px solid ${COLORS.border};
-  padding: 10px 12px 22px;
-  z-index: 1201;
-  animation: ${slideUp} 0.16s ease;
-`;
-const Grabber = styled.div`
-  width: 38px;
-  height: 4px;
-  border-radius: 999px;
-  background: ${COLORS.border};
-  margin: 6px auto 12px;
-`;
-const SheetTitle = styled.div`
-  color: ${COLORS.textSecondary};
-  font-weight: 700;
-  font-size: 0.9rem;
-  margin: 4px 6px 8px;
-`;
-const SheetGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  padding: 0 4px 8px;
-  @media (max-width: 420px) {
-    grid-template-columns: repeat(3, 1fr);
-  }
-`;
-const SheetItem = styled(Link)`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  text-decoration: none;
-  padding: 14px 8px;
-  border: 1px dashed ${COLORS.border};
-  border-radius: 12px;
+const LogoText = styled.span`
+  font-family: 'Mystery Quest', cursive;
+  font-size: 1.3rem;
   color: ${COLORS.textPrimary};
-  background: ${COLORS.elevatedBackground};
-  font-weight: 600;
-  &:hover {
-    border-color: ${COLORS.primaryMint};
-    background: ${COLORS.primaryMint}10;
-  }
-  svg {
-    font-size: 1.2rem;
-    opacity: 0.9;
-  }
-`;
-const SheetList = styled.ul`
-  list-style: none;
-  padding: 4px;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  li a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
-    border-radius: 10px;
-    text-decoration: none;
-    color: ${COLORS.textPrimary};
-  }
-  li a:hover {
-    background: ${COLORS.buttonHover};
-  }
+  line-height: 1;
+  letter-spacing: 0.3px;
 `;
 
-/* Simple Sheet + Palette components */
-const Sheet = ({ children, onClose }) => {
-  useEffect(() => {
-    const onEsc = (e) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onEsc);
-    return () => window.removeEventListener('keydown', onEsc);
-  }, [onClose]);
-  return (
-    <SheetOverlay onClick={onClose}>
-      <SheetPanel onClick={(e) => e.stopPropagation()}>
-        <Grabber />
-        {children}
-      </SheetPanel>
-    </SheetOverlay>
-  );
-};
-
-const PaletteWrap = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 1300;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 12vh;
-`;
-const PaletteCard = styled.div`
+// ─────────────────────────────────────────────────────────────────────────────
+// TOP BAR  (mobile only)
+// ─────────────────────────────────────────────────────────────────────────────
+const TopBar = styled.header`
+  position: sticky;
+  top: 0;
+  z-index: 300;
   width: 100%;
-  max-width: 680px;
-  background: ${COLORS.cardBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  background: ${COLORS.background}ee;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid ${COLORS.border};
+  @media (min-width: 960px) {
+    display: none;
+  }
 `;
-const PaletteSearch = styled.div`
+
+const TopBarInner = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 16px;
+  max-width: 470px;
+  margin: 0 auto;
+  box-sizing: border-box;
+`;
+
+const Logo = styled(Link)`
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px;
-  border-bottom: 1px solid ${COLORS.border};
-  input {
-    flex: 1;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: ${COLORS.textPrimary};
-    font-size: 1rem;
+  text-decoration: none;
+`;
+
+const TopBarActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const TopBarIconLink = styled(Link)`
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textSecondary)};
+  text-decoration: none;
+  transition: color 0.15s;
+  &:hover {
+    color: ${COLORS.primarySalmon};
   }
 `;
-const PaletteList = styled.div`
-  max-height: 420px;
-  overflow: auto;
-  padding: 6px;
+
+const AvatarButton = styled.button`
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid ${COLORS.primarySalmon};
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon}25,
+    ${COLORS.primaryMint}25
+  );
+  color: ${COLORS.textPrimary};
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+  &:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}28;
+  }
 `;
-const PaletteItem = styled.button`
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DESKTOP LEFT SIDEBAR
+// ─────────────────────────────────────────────────────────────────────────────
+
+/* Sidebar widths exposed as CSS custom props so MainLayout can consume them */
+const SIDEBAR_FULL = '240px';
+const SIDEBAR_NARROW = '72px';
+
+const Sidebar = styled.aside`
+  display: none;
+  @media (min-width: 960px) {
+    display: flex;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: ${SIDEBAR_NARROW}; /* narrow by default at 960-1200 */
+    z-index: 300;
+    background: ${COLORS.background};
+    border-right: 1px solid ${COLORS.border};
+  }
+  @media (min-width: 1200px) {
+    width: ${SIDEBAR_FULL}; /* full labels at 1200+ */
+  }
+`;
+
+const SideInner = styled.div`
+  display: flex;
+  flex-direction: column;
   width: 100%;
+  padding: 10px 0 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+`;
+
+const SideLogoLink = styled(Link)`
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
-  border: none;
-  background: transparent;
-  color: ${COLORS.textPrimary};
-  border-radius: 10px;
-  cursor: pointer;
-  text-align: left;
-  font-weight: 600;
+  text-decoration: none;
+  margin: 0 8px 4px;
+  padding: 10px;
+  border-radius: 12px;
+  height: 48px;
+  transition: background 0.15s;
   &:hover {
-    background: ${COLORS.buttonHover};
+    background: ${COLORS.elevatedBackground};
+  }
+  /* narrow — centre the icon */
+  justify-content: center;
+  @media (min-width: 1200px) {
+    justify-content: flex-start;
   }
 `;
 
-const Palette = ({ onClose, items }) => {
-  const navigate = useNavigate();
-  const [q, setQ] = useState('');
-  const inputRef = useRef(null);
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-  useEffect(() => {
-    const onEsc = (e) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onEsc);
-    return () => window.removeEventListener('keydown', onEsc);
-  }, [onClose]);
-  const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    if (!s) return items;
-    return items.filter((i) => i.label.toLowerCase().includes(s));
-  }, [q, items]);
-  return (
-    <PaletteWrap onClick={onClose}>
-      <PaletteCard onClick={(e) => e.stopPropagation()}>
-        <PaletteSearch>
-          <FaMagic style={{ color: COLORS.textSecondary }} />
-          <input
-            ref={inputRef}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder='Type a command or destination…'
-          />
-          <kbd style={{ color: COLORS.textTertiary, fontSize: '.8rem' }}>
-            Esc
-          </kbd>
-        </PaletteSearch>
-        <PaletteList>
-          {filtered.map((it, idx) => (
-            <PaletteItem
-              key={idx}
-              onClick={() => {
-                navigate(it.to);
-                onClose();
-              }}
-            >
-              {it.icon} <span>{it.label}</span>
-            </PaletteItem>
-          ))}
-          {filtered.length === 0 && (
-            <div style={{ padding: 12, color: COLORS.textTertiary }}>
-              No results
-            </div>
-          )}
-        </PaletteList>
-      </PaletteCard>
-    </PaletteWrap>
+const SideLogoText = styled(LogoText)`
+  display: none;
+  @media (min-width: 1200px) {
+    display: block;
+  }
+`;
+
+const SideDivider = styled.hr`
+  border: none;
+  height: 1px;
+  background: ${COLORS.border};
+  margin: 6px 12px;
+`;
+
+const SideNav = styled.nav`
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 8px;
+`;
+
+/* Shared shape for anchor + button sidebar rows */
+const sideItemBase = css`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  border: none;
+  width: 100%;
+  text-align: left;
+  position: relative;
+  transition: background 0.12s, color 0.12s;
+  justify-content: center; /* narrow: icon centred */
+
+  background: ${(p) =>
+    p.$active ? `${COLORS.primarySalmon}12` : 'transparent'};
+  color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textSecondary)};
+
+  /* Active bar */
+  ${(p) =>
+    p.$active &&
+    css`
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 52%;
+        background: ${COLORS.primarySalmon};
+        border-radius: 0 3px 3px 0;
+      }
+    `}
+
+  &:hover {
+    background: ${(p) =>
+      p.$active ? `${COLORS.primarySalmon}1a` : COLORS.elevatedBackground};
+    color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textPrimary)};
+  }
+
+  ${(p) =>
+    p.$danger &&
+    css`
+      color: ${COLORS.textTertiary};
+      &:hover {
+        color: ${COLORS.error};
+        background: ${COLORS.error}12;
+      }
+    `}
+
+  /* full: left-align */
+  @media (min-width: 1200px) {
+    justify-content: flex-start;
+    padding: 11px 12px;
+    &::before {
+      display: block;
+    }
+  }
+`;
+
+const SideNavLink = styled(Link)`
+  ${sideItemBase}
+`;
+const SideNavButton = styled.button`
+  ${sideItemBase}
+`;
+
+const SideIcon = styled.span`
+  font-size: 1.1rem;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  flex-shrink: 0;
+`;
+
+const SideLabel = styled.span`
+  white-space: nowrap;
+  display: none;
+  @media (min-width: 1200px) {
+    display: block;
+  }
+`;
+
+const SideAvatar = styled.div`
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid
+    ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textTertiary)};
+  background: ${(p) =>
+    p.$active
+      ? `linear-gradient(135deg, ${COLORS.primarySalmon}28, ${COLORS.primaryMint}28)`
+      : 'transparent'};
+  display: grid;
+  place-items: center;
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textTertiary)};
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+`;
+
+const SideSpacer = styled.div`
+  flex: 1;
+  min-height: 12px;
+`;
+
+const SideSectionLabel = styled.div`
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: ${COLORS.textTertiary};
+  padding: 6px 20px 2px;
+  display: none;
+  @media (min-width: 1200px) {
+    display: block;
+  }
+`;
+
+const PaletteButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px 8px 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px dashed ${COLORS.border};
+  background: transparent;
+  color: ${COLORS.textTertiary};
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  &:hover {
+    border-color: ${COLORS.primaryMint};
+    color: ${COLORS.primaryMint};
+    background: ${COLORS.primaryMint}0a;
+  }
+`;
+
+const PaletteButtonLabel = styled.span`
+  display: none;
+  @media (min-width: 1200px) {
+    display: block;
+  }
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MOBILE BOTTOM TAB BAR
+// ─────────────────────────────────────────────────────────────────────────────
+const BottomBar = styled.nav`
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
+  background: ${COLORS.background}f5;
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border-top: 1px solid ${COLORS.border};
+  padding-bottom: env(safe-area-inset-bottom);
+  @media (min-width: 960px) {
+    display: none;
+  }
+`;
+
+const BottomBarInner = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 52px;
+  max-width: 470px;
+  margin: 0 auto;
+  padding: 0 4px;
+`;
+
+const tabBase = css`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 52px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+`;
+const BottomTab = styled(Link)`
+  ${tabBase}
+`;
+const BottomTabButton = styled.button`
+  ${tabBase}
+`;
+
+const BottomIcon = styled.span`
+  font-size: 1.45rem;
+  display: grid;
+  place-items: center;
+  color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textTertiary)};
+  transition: color 0.14s, transform 0.14s;
+  ${(p) =>
+    p.$active &&
+    css`
+      transform: scale(1.12);
+    `}
+`;
+
+const BottomAvatarIcon = styled.div`
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: ${(p) =>
+    p.$active
+      ? `2px solid ${COLORS.primarySalmon}`
+      : `1.5px solid ${COLORS.textTertiary}`};
+  background: ${(p) =>
+    p.$active
+      ? `linear-gradient(135deg, ${COLORS.primarySalmon}28, ${COLORS.primaryMint}28)`
+      : 'transparent'};
+  display: grid;
+  place-items: center;
+  font-size: 0.56rem;
+  font-weight: 800;
+  color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textTertiary)};
+  letter-spacing: 0.5px;
+  transition: border-color 0.14s, color 0.14s;
+`;
+
+/* Center "+" create button — a flat rounded square (Instagram-style) */
+const CreateSquare = styled.div`
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
   );
-};
+  color: #fff;
+  font-size: 1rem;
+  box-shadow: 0 3px 12px ${COLORS.primarySalmon}45;
+  transition: transform 0.12s, box-shadow 0.12s;
+
+  ${BottomTabButton}:active & {
+    transform: scale(0.91);
+    box-shadow: 0 1px 6px ${COLORS.primarySalmon}30;
+  }
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SEARCH OVERLAY
+// ─────────────────────────────────────────────────────────────────────────────
+const SearchOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: ${COLORS.background};
+  display: flex;
+  flex-direction: column;
+  animation: ${fadeIn} 0.12s ease;
+
+  @media (min-width: 960px) {
+    /* Desktop: dim backdrop + centred card */
+    background: rgba(0, 0, 0, 0.52);
+    backdrop-filter: blur(5px);
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 10vh;
+  }
+`;
+
+const SearchCard = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+
+  @media (min-width: 960px) {
+    height: auto;
+    max-width: 580px;
+    background: ${COLORS.cardBackground};
+    border: 1px solid ${COLORS.border};
+    border-radius: 18px;
+    overflow: hidden;
+    animation: ${popIn} 0.16s ease;
+  }
+`;
+
+const SearchRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid ${COLORS.border};
+  background: ${COLORS.background};
+  @media (min-width: 960px) {
+    background: transparent;
+  }
+`;
+
+const SearchBox = styled.div`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 12px;
+  padding: 9px 12px;
+
+  svg {
+    color: ${COLORS.textTertiary};
+    flex-shrink: 0;
+  }
+
+  input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: ${COLORS.textPrimary};
+    font-size: 0.97rem;
+    width: 100%;
+    &::placeholder {
+      color: ${COLORS.textTertiary};
+    }
+  }
+`;
+
+const SearchClearBtn = styled.button`
+  background: none;
+  border: none;
+  color: ${COLORS.textTertiary};
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 0.82rem;
+  padding: 2px;
+  &:hover {
+    color: ${COLORS.textPrimary};
+  }
+`;
+
+const SearchCancelBtn = styled.button`
+  background: none;
+  border: none;
+  color: ${COLORS.primarySalmon};
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 4px 0;
+  &:hover {
+    opacity: 0.78;
+  }
+`;
+
+const SearchBody = styled.div`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+`;
+
+const SearchEmptyState = styled.div`
+  text-align: center;
+  color: ${COLORS.textTertiary};
+  svg {
+    font-size: 2.2rem;
+    opacity: 0.22;
+    display: block;
+    margin: 0 auto 14px;
+  }
+  p {
+    margin: 0 0 6px;
+    font-size: 0.95rem;
+    color: ${COLORS.textSecondary};
+  }
+`;
+
+const SearchTip = styled.div`
+  font-size: 0.72rem;
+  color: ${COLORS.textTertiary};
+`;
+
+const SearchActiveHint = styled.div`
+  color: ${COLORS.textSecondary};
+  font-size: 0.9rem;
+  text-align: center;
+  kbd {
+    background: ${COLORS.elevatedBackground};
+    border: 1px solid ${COLORS.border};
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.8rem;
+    margin-right: 4px;
+  }
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CREATE BOTTOM SHEET
+// ─────────────────────────────────────────────────────────────────────────────
+const SheetBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(0, 0, 0, 0.58);
+  backdrop-filter: blur(2px);
+  animation: ${fadeIn} 0.1s ease;
+  display: flex;
+  align-items: flex-end;
+  @media (min-width: 960px) {
+    align-items: center;
+    justify-content: center;
+  }
+`;
+
+const CreateSheet = styled.div`
+  width: 100%;
+  background: ${COLORS.cardBackground};
+  border-top-left-radius: 22px;
+  border-top-right-radius: 22px;
+  border: 1px solid ${COLORS.border};
+  border-bottom: none;
+  padding: 8px 16px calc(36px + env(safe-area-inset-bottom));
+  animation: ${slideUp} 0.22s cubic-bezier(0.34, 1.15, 0.64, 1);
+
+  @media (min-width: 960px) {
+    width: auto;
+    min-width: 380px;
+    max-width: 440px;
+    border-radius: 20px;
+    border: 1px solid ${COLORS.border};
+    padding: 16px 18px 22px;
+    animation: ${popIn} 0.18s ease;
+  }
+`;
+
+const SheetHandle = styled.div`
+  width: 34px;
+  height: 4px;
+  border-radius: 99px;
+  background: ${COLORS.border};
+  margin: 6px auto 16px;
+  @media (min-width: 960px) {
+    display: none;
+  }
+`;
+
+const SheetTitle = styled.p`
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.1px;
+  color: ${COLORS.textTertiary};
+  margin: 0 0 12px;
+`;
+
+const CreateGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+`;
+
+const CreateCard = styled.button`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 15px 14px;
+  background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.13s ease;
+
+  &:hover {
+    background: ${COLORS.buttonHover};
+    border-color: ${(p) => p.$color}45;
+    transform: translateY(-2px);
+  }
+  &:active {
+    transform: scale(0.97);
+  }
+`;
+
+const CreateCardIcon = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: ${(p) => p.$color}1a;
+  color: ${(p) => p.$color};
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+`;
+
+const CreateCardName = styled.span`
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: ${COLORS.textPrimary};
+`;
+
+const CreateCardSub = styled.span`
+  font-size: 0.7rem;
+  color: ${COLORS.textTertiary};
+  line-height: 1.3;
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMMAND PALETTE
+// ─────────────────────────────────────────────────────────────────────────────
+const PaletteBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 0;
+  animation: ${fadeIn} 0.1s ease;
+`;
+
+const PalettePanel = styled.div`
+  width: 100%;
+  max-width: 580px;
+  background: ${COLORS.cardBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.45);
+  animation: ${dropDown} 0.15s ease;
+`;
+
+const PaletteInputRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid ${COLORS.border};
+
+  svg {
+    color: ${COLORS.primarySalmon};
+    flex-shrink: 0;
+  }
+
+  input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: ${COLORS.textPrimary};
+    font-size: 1rem;
+    &::placeholder {
+      color: ${COLORS.textTertiary};
+    }
+  }
+`;
+
+const PaletteKbd = styled.kbd`
+  font-size: 0.72rem;
+  color: ${COLORS.textTertiary};
+  background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 5px;
+  padding: 2px 7px;
+`;
+
+const PaletteResults = styled.div`
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 6px;
+`;
+
+const PaletteRow = styled.button`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border: none;
+  background: none;
+  color: ${COLORS.textPrimary};
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  transition: background 0.1s;
+
+  &:hover {
+    background: ${COLORS.elevatedBackground};
+    ${/* inner elements */ ''}
+  }
+`;
+
+const PaletteRowIcon = styled.span`
+  width: 20px;
+  display: grid;
+  place-items: center;
+  color: ${COLORS.textSecondary};
+  font-size: 0.95rem;
+  flex-shrink: 0;
+
+  ${PaletteRow}:hover & {
+    color: ${COLORS.primarySalmon};
+  }
+`;
+
+const PaletteChevron = styled.span`
+  margin-left: auto;
+  color: ${COLORS.textTertiary};
+  font-size: 0.65rem;
+  opacity: 0;
+  transition: opacity 0.1s;
+  ${PaletteRow}:hover & {
+    opacity: 1;
+  }
+`;
+
+const PaletteEmpty = styled.div`
+  padding: 24px;
+  text-align: center;
+  color: ${COLORS.textTertiary};
+  font-size: 0.88rem;
+`;
