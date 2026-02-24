@@ -7,9 +7,9 @@ import React, {
   useRef,
   Suspense,
   lazy,
-} from "react";
-import { Link } from "react-router-dom";
-import styled, { keyframes, css } from "styled-components";
+} from 'react';
+import { Link } from 'react-router-dom';
+import styled, { keyframes, css } from 'styled-components';
 import {
   FaHeart,
   FaRegHeart,
@@ -21,22 +21,23 @@ import {
   FaEdit,
   FaTrash,
   FaExternalLinkAlt,
-} from "react-icons/fa";
-import { format } from "date-fns";
-import { toast } from "react-hot-toast";
-import { useSwipeable } from "react-swipeable";
-import { LikesContext } from "../../context/LikesContext";
-import { useDeleteModal } from "../../context/DeleteModalContext";
-import { AuthContext } from "../../context/AuthContext";
-import authorImg from "../../assets/andy.jpg";
-import { getTransformedImageUrl } from "../../utils/cloudinary";
+} from 'react-icons/fa';
+import { format } from 'date-fns';
+import { toast } from 'react-hot-toast';
+import { useSwipeable } from 'react-swipeable';
+import { LikesContext } from '../../context/LikesContext';
+import { useDeleteModal } from '../../context/DeleteModalContext';
+import { AuthContext } from '../../context/AuthContext';
+import authorImg from '../../assets/andy.jpg';
+import { getTransformedImageUrl } from '../../utils/cloudinary';
+import { api } from '../../services/api';
 
-import { COLORS } from "../../theme";
+import { COLORS } from '../../theme';
 const CommentModal = lazy(() =>
-  import("./CommentModal").then((module) => ({ default: module.CommentModal }))
+  import('./CommentModal').then((module) => ({ default: module.CommentModal }))
 );
 const AUTHOR_IMAGE = authorImg;
-const AUTHOR_NAME = "Andrew";
+const AUTHOR_NAME = 'Andrew';
 
 const fadeIn = keyframes`
   0% { opacity: 0; transform: translateY(12px); }
@@ -59,18 +60,18 @@ const pulse = keyframes`
 
 const fontFaceStyles = css`
   @font-face {
-    font-family: "ParadiseSignature";
-    src: url("/fonts/Paradise Signature.otf") format("opentype");
+    font-family: 'ParadiseSignature';
+    src: url('/fonts/Paradise Signature.otf') format('opentype');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
   }
 
   @font-face {
-    font-family: "Autography";
-    src: url("/fonts/Autography.woff2") format("woff2"),
-      url("/fonts/Autography.woff") format("woff"),
-      url("/fonts/Autography.ttf") format("truetype");
+    font-family: 'Autography';
+    src: url('/fonts/Autography.woff2') format('woff2'),
+      url('/fonts/Autography.woff') format('woff'),
+      url('/fonts/Autography.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -115,7 +116,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const [commentCount, setCommentCount] = useState(0);
 
   const hasMultipleMedia = post.media && post.media.length > 1;
-  const formattedDate = format(new Date(post.createdAt), "MMM d, yyyy");
+  const formattedDate = format(new Date(post.createdAt), 'MMM d, yyyy');
 
   // Check if the user has already liked this post using the LikesContext
   useEffect(() => {
@@ -131,9 +132,9 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -141,54 +142,10 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const fetchCommentCount = useCallback(async () => {
     if (!post?._id) return;
     try {
-      const baseURL = process.env.REACT_APP_API_URL || "";
-      const countUrl = baseURL
-        ? `${baseURL}/api/posts/${post._id}/comments/count`
-        : `/api/posts/${post._id}/comments/count`;
-
-      // Try the lightweight count endpoint first
-      const res = await fetch(countUrl, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const serverCount = Number.isFinite(data.count)
-          ? data.count
-          : Number.isFinite(data.total)
-          ? data.total
-          : 0;
-        setCommentCount(serverCount);
-        return;
-      }
-
-      // Fallback: fetch list and count locally if /count doesn't exist
-      const listUrl = baseURL
-        ? `${baseURL}/api/posts/${post._id}/comments`
-        : `/api/posts/${post._id}/comments`;
-      const res2 = await fetch(listUrl, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-        credentials: "include",
-      });
-      if (res2.ok) {
-        const data2 = await res2.json();
-        const list =
-          (Array.isArray(data2.comments) && data2.comments) ||
-          (Array.isArray(data2.data) && data2.data) ||
-          [];
-        setCommentCount(list.length);
-      }
+      const { count } = await api.getCommentCount(post._id);
+      if (Number.isFinite(count)) setCommentCount(count);
     } catch (e) {
-      console.error("fetchCommentCount error:", e);
+      // Non-critical — count stays at whatever it was
     }
   }, [post?._id]);
 
@@ -197,8 +154,8 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   }, [isVisible, fetchCommentCount, post?._id]);
 
   useEffect(() => {
-    if (!cardRef.current || typeof window === "undefined") return;
-    if (!("IntersectionObserver" in window)) {
+    if (!cardRef.current || typeof window === 'undefined') return;
+    if (!('IntersectionObserver' in window)) {
       setIsVisible(true);
       return;
     }
@@ -209,44 +166,27 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
           obs.disconnect(); // don't toggle back to false later
         }
       },
-      { threshold: 0.1, rootMargin: "120px 0px" }
+      { threshold: 0.1, rootMargin: '120px 0px' }
     );
     obs.observe(cardRef.current);
     return () => obs.disconnect();
   }, []);
   const fetchComments = useCallback(async () => {
     if (!post._id) return;
-
     setIsLoadingComments(true);
     try {
-      const baseURL = process.env.REACT_APP_API_URL || "";
-      const url = baseURL
-        ? `${baseURL}/api/posts/${post._id}/comments`
-        : `/api/posts/${post._id}/comments`;
-
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-
-        const list = Array.isArray(data.comments) ? data.comments : [];
-        setComments(list);
-        // prefer explicit server count if present; else compute from list
-        const serverCount = Number.isFinite(data.count)
-          ? data.count
-          : Number.isFinite(data.total)
-          ? data.total
-          : list.length;
-        setCommentCount(serverCount);
-      }
-    } catch (error) {
-      console.error("Error fetching comments:", error);
-      toast.error("Failed to load comments");
+      const data = await api.getComments(post._id);
+      const list = Array.isArray(data.comments) ? data.comments : [];
+      setComments(list);
+      const serverCount = Number.isFinite(data.count)
+        ? data.count
+        : Number.isFinite(data.total)
+        ? data.total
+        : list.length;
+      setCommentCount(serverCount);
+    } catch (err) {
+      console.error('Error fetching comments:', err);
+      toast.error('Failed to load comments');
     } finally {
       setIsLoadingComments(false);
     }
@@ -260,33 +200,15 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const handleAddComment = useCallback(
     async (commentData) => {
       try {
-        const baseURL = process.env.REACT_APP_API_URL || "";
-        const url = baseURL
-          ? `${baseURL}/api/posts/${post._id}/comments`
-          : `/api/posts/${post._id}/comments`;
-
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(commentData),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const newComment = data.comment || data;
-          setComments((prev) => [newComment, ...prev]);
-          setCommentCount((prev) => prev + 1);
-          fetchCommentCount();
-          return newComment;
-        } else {
-          throw new Error("Failed to add comment");
-        }
-      } catch (error) {
-        console.error("Error adding comment:", error);
-        throw error;
+        const data = await api.addComment(post._id, commentData);
+        const newComment = data.comment || data;
+        setComments((prev) => [newComment, ...prev]);
+        setCommentCount((prev) => prev + 1);
+        fetchCommentCount();
+        return newComment;
+      } catch (err) {
+        console.error('Error adding comment:', err);
+        throw err;
       }
     },
     [post._id, fetchCommentCount]
@@ -295,31 +217,15 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const handleLikeComment = useCallback(
     async (commentId) => {
       if (!isAuthenticated) return;
-
       try {
-        const baseURL = process.env.REACT_APP_API_URL || "";
-        const url = baseURL
-          ? `${baseURL}/api/comments/${commentId}/like`
-          : `/api/comments/${commentId}/like`;
-
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const updated = data.comment || data;
-          setComments((prev) =>
-            prev.map((c) => (c._id === commentId ? updated : c))
-          );
-        }
-      } catch (error) {
-        console.error("Error liking comment:", error);
-        toast.error("Failed to like comment");
+        const data = await api.likeComment(commentId);
+        const updated = data.comment || data;
+        setComments((prev) =>
+          prev.map((c) => (c._id === commentId ? updated : c))
+        );
+      } catch (err) {
+        console.error('Error liking comment:', err);
+        toast.error('Failed to like comment');
       }
     },
     [isAuthenticated]
@@ -328,32 +234,14 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const handleDeleteComment = useCallback(
     async (commentId) => {
       try {
-        const baseURL = process.env.REACT_APP_API_URL || "";
-        const url = baseURL
-          ? `${baseURL}/api/comments/${commentId}`
-          : `/api/comments/${commentId}`;
-
-        const response = await fetch(url, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (response.ok) {
-          setComments((prev) =>
-            prev.filter((comment) => comment._id !== commentId)
-          );
-          setCommentCount((prev) => Math.max(0, prev - 1));
-          fetchCommentCount();
-          toast.success("Comment deleted");
-        } else {
-          throw new Error("Failed to delete comment");
-        }
-      } catch (error) {
-        console.error("Error deleting comment:", error);
-        toast.error("Failed to delete comment");
+        await api.deleteComment(commentId);
+        setComments((prev) => prev.filter((c) => c._id !== commentId));
+        setCommentCount((prev) => Math.max(0, prev - 1));
+        fetchCommentCount();
+        toast.success('Comment deleted');
+      } catch (err) {
+        console.error('Error deleting comment:', err);
+        toast.error('Failed to delete comment');
       }
     },
     [fetchCommentCount]
@@ -367,8 +255,8 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
       window.open(
         `https://maps.apple.com/?q=${encodedLocation}`,
-        "_blank",
-        "noopener,noreferrer"
+        '_blank',
+        'noopener,noreferrer'
       );
     }
     // Detect Android devices
@@ -379,18 +267,18 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
       try {
         window.location.href = intent;
         setTimeout(() => {
-          window.open(fallback, "_blank", "noopener,noreferrer");
+          window.open(fallback, '_blank', 'noopener,noreferrer');
         }, 500);
       } catch (e) {
-        window.open(fallback, "_blank", "noopener,noreferrer");
+        window.open(fallback, '_blank', 'noopener,noreferrer');
       }
     }
     // Default to Google Maps web for desktop and other devices
     else {
       window.open(
         `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`,
-        "_blank",
-        "noopener,noreferrer"
+        '_blank',
+        'noopener,noreferrer'
       );
     }
   }, []);
@@ -486,7 +374,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         ...prevPost,
         likes: (prevPost.likes || 0) + 1,
       }));
-      if (typeof onLike === "function") {
+      if (typeof onLike === 'function') {
         onLike(post._id);
       }
     });
@@ -505,50 +393,50 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
   const handleDeletePost = useCallback(() => {
     const postPreview =
-      post.title || post.caption || post.content || "this post";
+      post.title || post.caption || post.content || 'this post';
     const truncatedPreview =
       postPreview.length > 50
-        ? postPreview.substring(0, 50) + "..."
+        ? postPreview.substring(0, 50) + '...'
         : postPreview;
 
     showDeleteModal({
-      title: "Delete Post",
+      title: 'Delete Post',
       message:
-        "Are you sure you want to delete this post? This action cannot be undone and all likes, comments, and interactions will be permanently lost.",
-      confirmText: "Delete Post",
-      cancelText: "Keep Post",
+        'Are you sure you want to delete this post? This action cannot be undone and all likes, comments, and interactions will be permanently lost.',
+      confirmText: 'Delete Post',
+      cancelText: 'Keep Post',
       itemName: truncatedPreview,
       onConfirm: async () => {
         try {
-          const token = localStorage.getItem("token");
+          const token = localStorage.getItem('token');
 
           if (!token) {
-            toast.error("Authentication required. Please log in again.");
+            toast.error('Authentication required. Please log in again.');
             return;
           }
 
-          const baseURL = process.env.REACT_APP_API_URL || "";
+          const baseURL = process.env.REACT_APP_API_URL || '';
           const url = baseURL
             ? `${baseURL}/api/posts/${post._id}`
             : `/api/posts/${post._id}`;
 
           const response = await fetch(url, {
-            method: "DELETE",
+            method: 'DELETE',
             headers: {
               Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
             },
-            credentials: "include",
+            credentials: 'include',
           });
 
           if (response.ok) {
-            if (typeof onDelete === "function") {
+            if (typeof onDelete === 'function') {
               onDelete(post._id);
             }
-            toast.success("Post deleted successfully");
+            toast.success('Post deleted successfully');
             window.location.reload();
           } else {
-            let errorMessage = "Delete failed";
+            let errorMessage = 'Delete failed';
             try {
               const errorData = await response.json();
               errorMessage = errorData.message || errorMessage;
@@ -563,8 +451,8 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
             throw new Error(errorMessage);
           }
         } catch (err) {
-          console.error("Error deleting post:", err);
-          toast.error(err.message || "Failed to delete post");
+          console.error('Error deleting post:', err);
+          toast.error(err.message || 'Failed to delete post');
         }
       },
       onCancel: () => {
@@ -619,19 +507,19 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   );
 
   return (
-    <CardWrapper ref={cardRef} className={isVisible ? "visible" : ""}>
+    <CardWrapper ref={cardRef} className={isVisible ? 'visible' : ''}>
       <Card>
-        <CardHeader aria-label="Post header">
+        <CardHeader aria-label='Post header'>
           <UserInfo>
             <UserAvatarImage
               src={AUTHOR_IMAGE}
               alt="Andrew's avatar"
-              width="44"
-              height="44"
-              loading="eager"
+              width='44'
+              height='44'
+              loading='eager'
             />
             <UsernameContainer>
-              <Username className="autography-font">{AUTHOR_NAME}</Username>
+              <Username className='autography-font'>{AUTHOR_NAME}</Username>
               <DateBadge>
                 <span>{formattedDate}</span>
               </DateBadge>
@@ -641,7 +529,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
             <ActionsContainer ref={actionsRef}>
               <ActionsButton
                 onClick={() => setShowActions(!showActions)}
-                aria-label="Post options"
+                aria-label='Post options'
               >
                 <FaEllipsisH />
               </ActionsButton>
@@ -675,39 +563,39 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
               <MediaTrack currentIndex={currentMediaIndex}>
                 {post.media.map((media, index) => (
                   <MediaItem key={index}>
-                    {media.mediaType === "image" ? (
+                    {media.mediaType === 'image' ? (
                       <PostImage
                         src={getTransformedImageUrl(media.mediaUrl, {
                           width: 1080,
                           height: 1080,
-                          crop: "fill",
-                          gravity: "auto",
-                          quality: "auto:good",
-                          format: "auto",
-                          dpr: "auto",
-                          effect: "improve:outdoor:10",
-                          color_adjustment: "saturation:10",
+                          crop: 'fill',
+                          gravity: 'auto',
+                          quality: 'auto:good',
+                          format: 'auto',
+                          dpr: 'auto',
+                          effect: 'improve:outdoor:10',
+                          color_adjustment: 'saturation:10',
                           sharpen: 15,
-                          flags: "progressive",
+                          flags: 'progressive',
                         })}
-                        sizes="100vw"
-                        alt={post.caption || "Post image"}
-                        width="614"
-                        height="614"
+                        sizes='100vw'
+                        alt={post.caption || 'Post image'}
+                        width='614'
+                        height='614'
                         loading={
                           index === 0 && currentMediaIndex === 0
-                            ? "eager"
-                            : "lazy"
+                            ? 'eager'
+                            : 'lazy'
                         }
                         fetchpriority={
                           index === 0 && currentMediaIndex === 0
-                            ? "high"
-                            : "auto"
+                            ? 'high'
+                            : 'auto'
                         }
-                        decoding="async"
+                        decoding='async'
                         className={media.filter}
                         onLoad={(e) => {
-                          e.target.classList.add("loaded");
+                          e.target.classList.add('loaded');
                           setIsLoading(false);
                         }}
                       />
@@ -715,7 +603,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                       <PostVideo
                         src={media.mediaUrl}
                         controls
-                        preload="metadata"
+                        preload='metadata'
                         className={media.filter}
                       />
                     )}
@@ -727,18 +615,18 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
             {hasMultipleMedia && (
               <>
                 <NavigationArrow
-                  className="prev"
+                  className='prev'
                   onClick={handlePrev}
                   disabled={currentMediaIndex === 0}
-                  aria-label="Previous image"
+                  aria-label='Previous image'
                 >
                   <FaChevronLeft />
                 </NavigationArrow>
                 <NavigationArrow
-                  className="next"
+                  className='next'
                   onClick={handleNext}
                   disabled={currentMediaIndex === post.media.length - 1}
-                  aria-label="Next image"
+                  aria-label='Next image'
                 >
                   <FaChevronRight />
                 </NavigationArrow>
@@ -777,10 +665,10 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
           <LocationBar
             onClick={() => handleLocationClick(post.location)}
             title={`Open "${post.location}" in maps`}
-            role="button"
+            role='button'
             tabIndex={0}
             onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
+              if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 handleLocationClick(post.location);
               }
@@ -804,7 +692,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                 disabled={isProcessing || hasLiked}
                 liked={hasLiked}
                 processing={isProcessing}
-                aria-label={hasLiked ? "Post liked" : "Like post"}
+                aria-label={hasLiked ? 'Post liked' : 'Like post'}
               >
                 {hasLiked ? (
                   <FaHeart />
@@ -822,7 +710,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
             <CommentButton
               onClick={handleOpenComments}
-              aria-label="Open comments"
+              aria-label='Open comments'
             >
               <FaComment />
               {commentCount > 0 && <CommentCount>{commentCount}</CommentCount>}
@@ -830,7 +718,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
           </ActionButtons>
 
           <LikesCount>
-            <strong>{post.likes}</strong> {post.likes === 1 ? "like" : "likes"}
+            <strong>{post.likes}</strong> {post.likes === 1 ? 'like' : 'likes'}
           </LikesCount>
         </CardActions>
 
@@ -885,21 +773,21 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                   {
                     width: 1200,
                     height: 1200,
-                    crop: "limit",
-                    quality: "auto:best",
-                    format: "auto",
-                    effect: "improve:outdoor:10",
-                    color_adjustment: "saturation:5",
+                    crop: 'limit',
+                    quality: 'auto:best',
+                    format: 'auto',
+                    effect: 'improve:outdoor:10',
+                    color_adjustment: 'saturation:5',
                   }
                 )}
-                alt={post.caption || "Fullscreen view"}
+                alt={post.caption || 'Fullscreen view'}
                 style={{
-                  transform: isZoomed ? "scale(2)" : "scale(1)",
-                  transition: "transform 0.3s ease",
+                  transform: isZoomed ? 'scale(2)' : 'scale(1)',
+                  transition: 'transform 0.3s ease',
                 }}
-                loading="eager"
+                loading='eager'
                 onError={(e) => {
-                  console.error("Image failed to load:", e);
+                  console.error('Image failed to load:', e);
                   e.target.src = post.media[fullscreenIndex].mediaUrl;
                 }}
               />
@@ -907,7 +795,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
               {post.media.length > 1 && (
                 <>
                   <FullscreenNavButton
-                    className="prev"
+                    className='prev'
                     onClick={(e) => {
                       e.stopPropagation();
                       if (fullscreenIndex > 0) {
@@ -915,13 +803,13 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                       }
                     }}
                     disabled={fullscreenIndex === 0}
-                    aria-label="Previous image"
+                    aria-label='Previous image'
                   >
                     <FaChevronLeft />
                   </FullscreenNavButton>
 
                   <FullscreenNavButton
-                    className="next"
+                    className='next'
                     onClick={(e) => {
                       e.stopPropagation();
                       if (fullscreenIndex < post.media.length - 1) {
@@ -929,7 +817,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                       }
                     }}
                     disabled={fullscreenIndex === post.media.length - 1}
-                    aria-label="Next image"
+                    aria-label='Next image'
                   >
                     <FaChevronRight />
                   </FullscreenNavButton>
@@ -964,7 +852,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                 e.stopPropagation();
                 closeFullscreen();
               }}
-              aria-label="Close fullscreen view"
+              aria-label='Close fullscreen view'
             >
               ×
             </CloseFullscreenButton>
@@ -1067,7 +955,7 @@ const ActionsContainer = styled.div`
 `;
 
 const Username = styled.span`
-  font-family: "Autography", -apple-system, BlinkMacSystemFont, "Segoe UI",
+  font-family: 'Autography', -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, Helvetica, Arial, sans-serif;
   font-size: 26px;
   font-weight: 400;
@@ -1179,7 +1067,7 @@ const MediaContainer = styled(Link)`
   border: none;
 
   &:before {
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
@@ -1193,7 +1081,7 @@ const MediaContainer = styled(Link)`
     );
     transform: translateX(-100%);
     animation: ${(props) =>
-      props.isLoading ? "loadingAnimation 1.5s infinite" : "none"};
+      props.isLoading ? 'loadingAnimation 1.5s infinite' : 'none'};
   }
 `;
 
@@ -1375,7 +1263,7 @@ const ProgressDot = styled.button`
   height: 8px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? COLORS.accentMint : "rgba(255, 255, 255, 0.5)"};
+    props.active ? COLORS.accentMint : 'rgba(255, 255, 255, 0.5)'};
   border: none;
   cursor: pointer;
   padding: 0;
@@ -1385,7 +1273,7 @@ const ProgressDot = styled.button`
   &:hover {
     transform: scale(1.2);
     background-color: ${(props) =>
-      props.active ? COLORS.accentMint : "rgba(255, 255, 255, 0.8)"};
+      props.active ? COLORS.accentMint : 'rgba(255, 255, 255, 0.8)'};
   }
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
@@ -1436,7 +1324,7 @@ const LikeButton = styled.button`
   color: ${(props) => (props.liked ? COLORS.heartRed : COLORS.textTertiary)};
   font-size: 1.5rem;
   cursor: ${(props) =>
-    props.disabled && !props.liked ? "default" : "pointer"};
+    props.disabled && !props.liked ? 'default' : 'pointer'};
   padding: 0;
   margin: 0;
   display: flex;
@@ -1445,14 +1333,14 @@ const LikeButton = styled.button`
 
   &:hover {
     transform: ${(props) =>
-      !props.disabled || props.liked ? "scale(1.15)" : "none"};
+      !props.disabled || props.liked ? 'scale(1.15)' : 'none'};
     color: ${(props) =>
-      !props.disabled && !props.liked ? COLORS.heartRed : ""};
+      !props.disabled && !props.liked ? COLORS.heartRed : ''};
   }
 
   &:active {
     transform: ${(props) =>
-      !props.disabled || props.liked ? "scale(0.9)" : "none"};
+      !props.disabled || props.liked ? 'scale(0.9)' : 'none'};
   }
 `;
 
@@ -1790,7 +1678,7 @@ const FullscreenProgressDot = styled.button`
   height: 10px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? COLORS.primaryMint : "rgba(255, 255, 255, 0.5)"};
+    props.active ? COLORS.primaryMint : 'rgba(255, 255, 255, 0.5)'};
   border: none;
   cursor: pointer;
   padding: 0;
@@ -1803,7 +1691,7 @@ const FullscreenProgressDot = styled.button`
   &:hover {
     transform: scale(1.2);
     background-color: ${(props) =>
-      props.active ? COLORS.accentMint : "rgba(255, 255, 255, 0.8)"};
+      props.active ? COLORS.accentMint : 'rgba(255, 255, 255, 0.8)'};
   }
 
   &:active {
@@ -1880,6 +1768,6 @@ const LocationIndicator = styled.div`
   }
 `;
 
-PostCard.displayName = "PostCard";
+PostCard.displayName = 'PostCard';
 
 export default PostCard;

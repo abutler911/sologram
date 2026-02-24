@@ -103,6 +103,10 @@ export const api = {
       .then((r) => r.data),
 
   // ── COMMENTS ───────────────────────────────────────────────────────
+  // Lightweight count — dedicated endpoint backed by a covered index
+  getCommentCount: (postId) =>
+    axios.get(`/api/posts/${postId}/comments/count`).then((r) => r.data),
+
   getComments: (postId) =>
     axios.get(`/api/posts/${postId}/comments`).then((r) => r.data),
 
