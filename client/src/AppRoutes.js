@@ -136,7 +136,9 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
           path='/story-archive/:id'
           element={
             <PrivateRoute>
-              <ArchivedStoryView />
+              <StandardLayout>
+                <ArchivedStoryView />
+              </StandardLayout>
             </PrivateRoute>
           }
         />
