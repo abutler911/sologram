@@ -1,10 +1,10 @@
 // client/src/components/posts/PostCreator.jsx
-import React, { useState, useCallback, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { useDropzone } from "react-dropzone";
-import axios from "axios";
-import { toast } from "react-hot-toast";
-import MediaItem from "./PostCreator/media/MediaItem";
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDropzone } from 'react-dropzone';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import MediaItem from './PostCreator/media/MediaItem';
 
 import {
   Container,
@@ -64,7 +64,7 @@ import {
   FilterThumbnail,
   FilterName,
   FilterActionBar,
-} from "./PostCreator.styles";
+} from './PostCreator.styles';
 
 import {
   FaImage,
@@ -78,10 +78,10 @@ import {
   FaRobot,
   FaMagic,
   FaCheck,
-} from "react-icons/fa";
-import { useUploadManager } from "../../hooks/useUploadManager";
-import MediaGridSortable from "./MediaGridSortable";
-import { filterToClass, fileToMediaType, FILTERS } from "../../lib/media";
+} from 'react-icons/fa';
+import { useUploadManager } from '../../hooks/useUploadManager';
+import MediaGridSortable from './MediaGridSortable';
+import { filterToClass, fileToMediaType, FILTERS } from '../../lib/media';
 
 const PLACEHOLDER_IMG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='sans-serif' fill='%23999999'%3EImage Not Available%3C/text%3E%3C/svg%3E";
@@ -90,7 +90,7 @@ const PLACEHOLDER_IMG =
 const toLocalDateInput = (dateLike) => {
   const d = dateLike ? new Date(dateLike) : new Date();
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-  return d.toISOString().split("T")[0];
+  return d.toISOString().split('T')[0];
 };
 
 const isMobileDevice = () =>
@@ -100,7 +100,7 @@ const isMobileDevice = () =>
 
 const createSafeBlobUrl = (file) => {
   try {
-    if (file.type.startsWith("image/")) {
+    if (file.type.startsWith('image/')) {
       if (isMobileDevice()) {
         return new Promise((resolve) => {
           const reader = new FileReader();
@@ -128,30 +128,30 @@ const getSafeImageSrc = (mediaItem) => {
 
 const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
   const [formData, setFormData] = useState({
-    description: "",
-    contentType: "general",
-    tone: "casual",
-    additionalContext: "",
+    description: '',
+    contentType: 'general',
+    tone: 'casual',
+    additionalContext: '',
   });
   const [generatedContent, setGeneratedContent] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   const contentTypes = [
-    { value: "general", label: "General Post" },
-    { value: "product", label: "Product Showcase" },
-    { value: "behind-scenes", label: "Behind the Scenes" },
-    { value: "educational", label: "Educational" },
-    { value: "lifestyle", label: "Lifestyle" },
-    { value: "announcement", label: "Announcement" },
+    { value: 'general', label: 'General Post' },
+    { value: 'product', label: 'Product Showcase' },
+    { value: 'behind-scenes', label: 'Behind the Scenes' },
+    { value: 'educational', label: 'Educational' },
+    { value: 'lifestyle', label: 'Lifestyle' },
+    { value: 'announcement', label: 'Announcement' },
   ];
 
   const tones = [
-    { value: "casual", label: "Casual & Friendly" },
-    { value: "professional", label: "Professional" },
-    { value: "playful", label: "Fun & Playful" },
-    { value: "inspirational", label: "Inspirational" },
-    { value: "minimalist", label: "Clean & Minimal" },
+    { value: 'casual', label: 'Casual & Friendly' },
+    { value: 'professional', label: 'Professional' },
+    { value: 'playful', label: 'Fun & Playful' },
+    { value: 'inspirational', label: 'Inspirational' },
+    { value: 'minimalist', label: 'Clean & Minimal' },
   ];
 
   if (!isOpen) return null;
@@ -159,29 +159,26 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((p) => ({ ...p, [name]: value }));
-    setError("");
+    setError('');
   };
 
   const handleGenerate = async () => {
     if (!formData.description.trim()) {
-      setError("Please provide a description for your content");
+      setError('Please provide a description for your content');
       return;
     }
     setIsGenerating(true);
-    setError("");
+    setError('');
     try {
       const { data } = await axios.post(
-        "/api/admin/ai-content/generate",
-        formData,
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
+        '/api/admin/ai-content/generate',
+        formData
       );
       setGeneratedContent(data?.data);
-      toast.success("Content generated successfully!");
+      toast.success('Content generated successfully!');
     } catch (err) {
-      setError(err.message || "Failed to generate content. Please try again.");
-      toast.error("Failed to generate content");
+      setError(err.message || 'Failed to generate content. Please try again.');
+      toast.error('Failed to generate content');
     } finally {
       setIsGenerating(false);
     }
@@ -193,12 +190,12 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
       onClose();
       setGeneratedContent(null);
       setFormData({
-        description: "",
-        contentType: "general",
-        tone: "casual",
-        additionalContext: "",
+        description: '',
+        contentType: 'general',
+        tone: 'casual',
+        additionalContext: '',
       });
-      setError("");
+      setError('');
     }
   };
 
@@ -206,12 +203,12 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
     onClose();
     setGeneratedContent(null);
     setFormData({
-      description: "",
-      contentType: "general",
-      tone: "casual",
-      additionalContext: "",
+      description: '',
+      contentType: 'general',
+      tone: 'casual',
+      additionalContext: '',
     });
-    setError("");
+    setError('');
   };
 
   return (
@@ -228,11 +225,11 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
           <FormGroup>
             <Label>Content Description *</Label>
             <Input
-              name="description"
+              name='description'
               value={formData.description}
               onChange={handleInputChange}
-              placeholder="Describe what your post is about..."
-              maxLength="500"
+              placeholder='Describe what your post is about...'
+              maxLength='500'
             />
             <CharCount>{formData.description.length}/500</CharCount>
           </FormGroup>
@@ -241,7 +238,7 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
             <FormGroup>
               <Label>Content Type</Label>
               <Select
-                name="contentType"
+                name='contentType'
                 value={formData.contentType}
                 onChange={handleInputChange}
               >
@@ -256,7 +253,7 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
             <FormGroup>
               <Label>Tone</Label>
               <Select
-                name="tone"
+                name='tone'
                 value={formData.tone}
                 onChange={handleInputChange}
               >
@@ -272,11 +269,11 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
           <FormGroup>
             <Label>Additional Context (Optional)</Label>
             <Input
-              name="additionalContext"
+              name='additionalContext'
               value={formData.additionalContext}
               onChange={handleInputChange}
-              placeholder="Any additional details..."
-              maxLength="200"
+              placeholder='Any additional details...'
+              maxLength='200'
             />
           </FormGroup>
 
@@ -347,12 +344,12 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
 
 const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
   const [selectedFilter, setSelectedFilter] = useState(
-    mediaItem?.filter || "none"
+    mediaItem?.filter || 'none'
   );
 
   useEffect(() => {
     if (mediaItem) {
-      setSelectedFilter(mediaItem.filter || "none");
+      setSelectedFilter(mediaItem.filter || 'none');
     }
   }, [mediaItem]);
 
@@ -375,13 +372,13 @@ const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
 
         <FilterPreviewSection>
           <MainPreview>
-            {mediaItem.mediaType === "video" ? (
+            {mediaItem.mediaType === 'video' ? (
               <video
                 src={getSafeImageSrc(mediaItem)}
                 className={
-                  FILTERS.find((f) => f.id === selectedFilter)?.className || ""
+                  FILTERS.find((f) => f.id === selectedFilter)?.className || ''
                 }
-                style={{ width: "100%", height: "300px", objectFit: "cover" }}
+                style={{ width: '100%', height: '300px', objectFit: 'cover' }}
                 controls
                 playsInline
               />
@@ -389,10 +386,10 @@ const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
               <img
                 src={getSafeImageSrc(mediaItem)}
                 className={
-                  FILTERS.find((f) => f.id === selectedFilter)?.className || ""
+                  FILTERS.find((f) => f.id === selectedFilter)?.className || ''
                 }
-                style={{ width: "100%", height: "300px", objectFit: "cover" }}
-                alt="Preview"
+                style={{ width: '100%', height: '300px', objectFit: 'cover' }}
+                alt='Preview'
               />
             )}
           </MainPreview>
@@ -434,12 +431,12 @@ const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
 
 function PostCreator({ initialData = null, isEditing = false }) {
   const [media, setMedia] = useState([]);
-  const [title, setTitle] = useState(initialData?.title || "");
-  const [caption, setCaption] = useState(initialData?.caption || "");
-  const [content, setContent] = useState(initialData?.content || "");
+  const [title, setTitle] = useState(initialData?.title || '');
+  const [caption, setCaption] = useState(initialData?.caption || '');
+  const [content, setContent] = useState(initialData?.content || '');
   const [tags, setTags] = useState(initialData?.tags || []);
-  const [currentTag, setCurrentTag] = useState("");
-  const [location, setLocation] = useState(initialData?.location || "");
+  const [currentTag, setCurrentTag] = useState('');
+  const [location, setLocation] = useState(initialData?.location || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [eventDate, setEventDate] = useState(() =>
@@ -465,7 +462,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
         if (
           item?.previewUrl &&
           !item.isExisting &&
-          item.previewUrl.startsWith("blob:")
+          item.previewUrl.startsWith('blob:')
         ) {
           try {
             URL.revokeObjectURL(item.previewUrl);
@@ -478,7 +475,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   useEffect(() => {
     if (isEditing && initialData?.media?.length > 0) {
       const existingMedia = initialData.media.map((item) => {
-        const filter = item.filter || "none";
+        const filter = item.filter || 'none';
         const filterClass = filterToClass(filter);
         return {
           id:
@@ -524,16 +521,16 @@ function PostCreator({ initialData = null, isEditing = false }) {
           const id = `media_${Date.now()}_${Math.random()
             .toString(36)
             .substring(2, 8)}`;
-          const isVideo = fileToMediaType(file) === "video";
+          const isVideo = fileToMediaType(file) === 'video';
           const previewUrl = await createSafeBlobUrl(file);
 
           return {
             id,
             file,
             previewUrl,
-            mediaType: isVideo ? "video" : "image",
-            filter: "none",
-            filterClass: "",
+            mediaType: isVideo ? 'video' : 'image',
+            filter: 'none',
+            filterClass: '',
             uploading: true,
             progress: 0,
             error: false,
@@ -555,8 +552,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     accept: {
-      "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp"],
-      "video/*": [".mp4", ".mov", ".avi", ".webm"],
+      'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
+      'video/*': ['.mp4', '.mov', '.avi', '.webm'],
     },
     onDrop,
 
@@ -571,7 +568,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
     if (
       itemToRemove?.previewUrl &&
       !itemToRemove.isExisting &&
-      itemToRemove.previewUrl.startsWith("blob:")
+      itemToRemove.previewUrl.startsWith('blob:')
     ) {
       try {
         URL.revokeObjectURL(itemToRemove.previewUrl);
@@ -617,7 +614,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
       setTags((prev) => [...prev, ...newTags]);
       toast.success(`Content applied with ${newTags.length} tags!`);
     } else {
-      toast.success("Content applied!");
+      toast.success('Content applied!');
     }
   };
 
@@ -625,26 +622,26 @@ function PostCreator({ initialData = null, isEditing = false }) {
     const tagToAdd = tagText || currentTag.trim();
     if (!tagToAdd || tags.includes(tagToAdd)) return;
     if (tags.length >= 5) {
-      toast.error("Maximum 5 tags allowed");
+      toast.error('Maximum 5 tags allowed');
       return;
     }
     setTags([...tags, tagToAdd]);
-    setCurrentTag("");
+    setCurrentTag('');
   };
 
   const handleTagInputKeyDown = (e) => {
-    if (e.key === " " || e.key === "Enter") {
+    if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       if (currentTag.trim()) addTag();
-    } else if (e.key === "Backspace" && !currentTag && tags.length > 0) {
+    } else if (e.key === 'Backspace' && !currentTag && tags.length > 0) {
       setTags(tags.slice(0, -1));
     }
   };
 
   const handleTagInputChange = (e) => {
     const value = e.target.value;
-    if (value.includes(" ")) {
-      const tagText = value.split(" ")[0].trim();
+    if (value.includes(' ')) {
+      const tagText = value.split(' ')[0].trim();
       if (tagText) addTag(tagText);
     } else {
       setCurrentTag(value);
@@ -657,19 +654,19 @@ function PostCreator({ initialData = null, isEditing = false }) {
 
   const handleSubmit = async () => {
     if (media.length === 0) {
-      toast.error("Please add at least one photo or video");
+      toast.error('Please add at least one photo or video');
       return;
     }
     if (!title.trim()) {
-      toast.error("Please add a title");
+      toast.error('Please add a title');
       return;
     }
     if (!caption.trim()) {
-      toast.error("Please add a caption");
+      toast.error('Please add a caption');
       return;
     }
     if (media.some((item) => item.uploading)) {
-      toast.error("Please wait for uploads to complete");
+      toast.error('Please wait for uploads to complete');
       return;
     }
     const failedItems = media.filter((item) => item.error);
@@ -696,25 +693,25 @@ function PostCreator({ initialData = null, isEditing = false }) {
         mediaUrl: item.mediaUrl,
         cloudinaryId: item.cloudinaryId,
         mediaType: item.mediaType || item.type,
-        filter: item.filter || "none",
+        filter: item.filter || 'none',
         order: index,
         ...(item.isExisting && item._id && { _id: item._id }),
       }));
 
       const payload = {
-        title: title ?? "",
-        caption: caption ?? "",
-        content: content ?? "",
-        tags: tags.join(","),
+        title: title ?? '',
+        caption: caption ?? '',
+        content: content ?? '',
+        tags: tags.join(','),
         media: mediaItems,
-        location: location ?? "",
+        location: location ?? '',
         date: eventDate,
       };
 
       let response;
       if (isEditing) {
         response = await axios.put(`/api/posts/${initialData._id}`, payload);
-        toast.success("Post updated successfully!");
+        toast.success('Post updated successfully!');
       } else {
         const newMediaItems = media
           .filter((item) => !item.error && !item.isExisting)
@@ -722,21 +719,21 @@ function PostCreator({ initialData = null, isEditing = false }) {
             mediaUrl: item.mediaUrl,
             cloudinaryId: item.cloudinaryId,
             mediaType: item.mediaType || item.type,
-            filter: item.filter || "none",
+            filter: item.filter || 'none',
             order: index,
           }));
-        response = await axios.post("/api/posts", {
+        response = await axios.post('/api/posts', {
           ...payload,
           media: newMediaItems,
         });
-        toast.success("Post created successfully!");
+        toast.success('Post created successfully!');
       }
 
       navigate(`/post/${response.data.data._id}`);
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Please try again";
+      const errorMessage = error.response?.data?.message || 'Please try again';
       toast.error(
-        `Failed to ${isEditing ? "update" : "create"} post: ${errorMessage}`
+        `Failed to ${isEditing ? 'update' : 'create'} post: ${errorMessage}`
       );
     } finally {
       setIsSubmitting(false);
@@ -753,7 +750,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
     <Container>
       <Header>
         <HeaderContent>
-          <h1>{isEditing ? "Edit Post" : "Create New Post"}</h1>
+          <h1>{isEditing ? 'Edit Post' : 'Create New Post'}</h1>
           <p>Share your moments with the world</p>
         </HeaderContent>
       </Header>
@@ -763,7 +760,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
           {media.length === 0 ? (
             <DropArea {...getRootProps()} isDragActive={isDragActive}>
               <input {...getInputProps()} />
-              <UploadIcon className="upload-icon">
+              <UploadIcon className='upload-icon'>
                 <FaImage />
                 <FaVideo />
               </UploadIcon>
@@ -772,7 +769,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 <p>Drag and drop or click to upload</p>
               </DropText>
               <UploadButton
-                type="button"
+                type='button'
                 onClick={(e) => {
                   e.stopPropagation();
                   open();
@@ -822,7 +819,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
             <FormInput
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Add a catchy title..."
+              placeholder='Add a catchy title...'
               maxLength={100}
             />
             <CharCount>{title.length}/100</CharCount>
@@ -833,7 +830,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
             <FormTextarea
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              placeholder="Write a caption that tells your story..."
+              placeholder='Write a caption that tells your story...'
               rows={4}
               maxLength={2200}
             />
@@ -846,7 +843,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
               <IconInput>
                 <FaCalendarDay />
                 <FormInput
-                  type="date"
+                  type='date'
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
                 />
@@ -860,7 +857,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 <FormInput
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Add location"
+                  placeholder='Add location'
                 />
               </IconInput>
             </FormGroup>
@@ -874,7 +871,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
                 value={currentTag}
                 onChange={handleTagInputChange}
                 onKeyDown={handleTagInputKeyDown}
-                placeholder="Type tags and press space to add..."
+                placeholder='Type tags and press space to add...'
                 maxLength={30}
               />
             </TagInput>
@@ -900,7 +897,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
               <FormInput
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Add any additional details (optional)"
+                placeholder='Add any additional details (optional)'
               />
             </IconInput>
           </FormGroup>
@@ -914,11 +911,11 @@ function PostCreator({ initialData = null, isEditing = false }) {
         >
           {isSubmitting
             ? isEditing
-              ? "Updating..."
-              : "Publishing..."
+              ? 'Updating...'
+              : 'Publishing...'
             : isEditing
-            ? "Update Post"
-            : "Publish Post"}
+            ? 'Update Post'
+            : 'Publish Post'}
         </PostButton>
       </ActionBar>
 

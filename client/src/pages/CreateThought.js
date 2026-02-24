@@ -1,9 +1,9 @@
 // client/src/pages/CreateThought.js
-import React, { useState, useContext, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import styled from "styled-components";
-import axios from "axios";
-import { toast } from "react-hot-toast";
+import React, { useState, useContext, useRef } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import styled from 'styled-components';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import {
   FaArrowLeft,
   FaTimes,
@@ -11,54 +11,54 @@ import {
   FaPaperPlane,
   FaRobot,
   FaMagic,
-} from "react-icons/fa";
-import { AuthContext } from "../context/AuthContext";
-import MainLayout from "../components/layout/MainLayout";
-import { COLORS } from "../theme";
+} from 'react-icons/fa';
+import { AuthContext } from '../context/AuthContext';
+import MainLayout from '../components/layout/MainLayout';
+import { COLORS } from '../theme';
 
 // AI Content Generator Modal Component
 const AIContentModal = ({ isOpen, onClose, onApplyContent, currentMood }) => {
   const [formData, setFormData] = useState({
-    description: "",
-    contentType: "general",
-    tone: "casual",
-    additionalContext: "",
+    description: '',
+    contentType: 'general',
+    tone: 'casual',
+    additionalContext: '',
   });
   const [generatedContent, setGeneratedContent] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   const contentTypes = [
-    { value: "general", label: "General Thought" },
-    { value: "reflection", label: "Personal Reflection" },
-    { value: "inspiration", label: "Inspiration" },
-    { value: "creative", label: "Creative Expression" },
-    { value: "observation", label: "Life Observation" },
-    { value: "gratitude", label: "Gratitude" },
+    { value: 'general', label: 'General Thought' },
+    { value: 'reflection', label: 'Personal Reflection' },
+    { value: 'inspiration', label: 'Inspiration' },
+    { value: 'creative', label: 'Creative Expression' },
+    { value: 'observation', label: 'Life Observation' },
+    { value: 'gratitude', label: 'Gratitude' },
   ];
 
   const tones = [
-    { value: "casual", label: "Casual & Friendly" },
-    { value: "thoughtful", label: "Thoughtful" },
-    { value: "playful", label: "Fun & Playful" },
-    { value: "inspirational", label: "Inspirational" },
-    { value: "minimalist", label: "Clean & Minimal" },
+    { value: 'casual', label: 'Casual & Friendly' },
+    { value: 'thoughtful', label: 'Thoughtful' },
+    { value: 'playful', label: 'Fun & Playful' },
+    { value: 'inspirational', label: 'Inspirational' },
+    { value: 'minimalist', label: 'Clean & Minimal' },
   ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setError("");
+    setError('');
   };
 
   const handleGenerate = async () => {
     if (!formData.description.trim()) {
-      setError("Please provide a description for your thought");
+      setError('Please provide a description for your thought');
       return;
     }
 
     setIsGenerating(true);
-    setError("");
+    setError('');
 
     try {
       // Add mood context to the request
@@ -68,28 +68,14 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent, currentMood }) => {
           `${formData.additionalContext} Current mood: ${currentMood}`.trim(),
       };
 
-      const response = await fetch(
-        "https://sologram-api.onrender.com/api/admin/ai-content/generate",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestData),
-        }
+      const { data } = await axios.post(
+        '/api/admin/ai-content/generate',
+        requestData
       );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to generate content");
-      }
-
       setGeneratedContent(data.data);
     } catch (error) {
       setError(
-        error.message || "Failed to generate content. Please try again."
+        error.message || 'Failed to generate content. Please try again.'
       );
     } finally {
       setIsGenerating(false);
@@ -119,11 +105,11 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent, currentMood }) => {
           <FormGroup>
             <Label>What's your thought about? *</Label>
             <Input
-              name="description"
+              name='description'
               value={formData.description}
               onChange={handleInputChange}
               placeholder="Describe what you want to share... (e.g., 'Reflection on morning coffee routine')"
-              maxLength="300"
+              maxLength='300'
             />
             <CharCount>{formData.description.length}/300</CharCount>
           </FormGroup>
@@ -132,7 +118,7 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent, currentMood }) => {
             <FormGroup>
               <Label>Content Type</Label>
               <Select
-                name="contentType"
+                name='contentType'
                 value={formData.contentType}
                 onChange={handleInputChange}
               >
@@ -147,7 +133,7 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent, currentMood }) => {
             <FormGroup>
               <Label>Tone</Label>
               <Select
-                name="tone"
+                name='tone'
                 value={formData.tone}
                 onChange={handleInputChange}
               >
@@ -163,11 +149,11 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent, currentMood }) => {
           <FormGroup>
             <Label>Additional Context (Optional)</Label>
             <Input
-              name="additionalContext"
+              name='additionalContext'
               value={formData.additionalContext}
               onChange={handleInputChange}
-              placeholder="Any specific details or style preferences..."
-              maxLength="150"
+              placeholder='Any specific details or style preferences...'
+              maxLength='150'
             />
           </FormGroup>
 
@@ -232,10 +218,10 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent, currentMood }) => {
 };
 
 const CreateThought = () => {
-  const [content, setContent] = useState("");
-  const [mood, setMood] = useState("creative");
+  const [content, setContent] = useState('');
+  const [mood, setMood] = useState('creative');
   const [tags, setTags] = useState([]);
-  const [currentTag, setCurrentTag] = useState("");
+  const [currentTag, setCurrentTag] = useState('');
   const [media, setMedia] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -245,14 +231,14 @@ const CreateThought = () => {
   const navigate = useNavigate();
 
   const moodOptions = [
-    { value: "inspired", label: "Inspired", emoji: "✨" },
-    { value: "reflective", label: "Reflective", emoji: "🌙" },
-    { value: "excited", label: "Excited", emoji: "🔥" },
-    { value: "creative", label: "Creative", emoji: "🎨" },
-    { value: "calm", label: "Calm", emoji: "🌊" },
-    { value: "curious", label: "Curious", emoji: "🔍" },
-    { value: "nostalgic", label: "Nostalgic", emoji: "📷" },
-    { value: "amused", label: "Amused", emoji: "😄" },
+    { value: 'inspired', label: 'Inspired', emoji: '✨' },
+    { value: 'reflective', label: 'Reflective', emoji: '🌙' },
+    { value: 'excited', label: 'Excited', emoji: '🔥' },
+    { value: 'creative', label: 'Creative', emoji: '🎨' },
+    { value: 'calm', label: 'Calm', emoji: '🌊' },
+    { value: 'curious', label: 'Curious', emoji: '🔍' },
+    { value: 'nostalgic', label: 'Nostalgic', emoji: '📷' },
+    { value: 'amused', label: 'Amused', emoji: '😄' },
   ];
 
   // Updated mood colors to match new theme
@@ -269,7 +255,7 @@ const CreateThought = () => {
 
   const handleAIContentApply = (generatedContent) => {
     // Apply the content
-    setContent(generatedContent.caption || generatedContent.title || "");
+    setContent(generatedContent.caption || generatedContent.title || '');
 
     // Add suggested tags (limit to available slots)
     if (generatedContent.tags && generatedContent.tags.length > 0) {
@@ -280,10 +266,10 @@ const CreateThought = () => {
       if (newTags.length > 0) {
         toast.success(`Applied content and added ${newTags.length} tags!`);
       } else {
-        toast.success("Content applied!");
+        toast.success('Content applied!');
       }
     } else {
-      toast.success("Content applied!");
+      toast.success('Content applied!');
     }
   };
 
@@ -292,7 +278,7 @@ const CreateThought = () => {
     if (!file) return;
 
     if (file.size > 25 * 1024 * 1024) {
-      toast.error("Image size should be less than 25MB");
+      toast.error('Image size should be less than 25MB');
       return;
     }
 
@@ -310,7 +296,7 @@ const CreateThought = () => {
     setMedia(null);
     setPreview(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
@@ -319,29 +305,29 @@ const CreateThought = () => {
 
     if (!tagToAdd || tags.includes(tagToAdd)) return;
     if (tags.length >= 5) {
-      toast.error("Maximum 5 tags allowed");
+      toast.error('Maximum 5 tags allowed');
       return;
     }
 
     setTags([...tags, tagToAdd]);
-    setCurrentTag("");
+    setCurrentTag('');
   };
 
   const handleTagInputKeyDown = (e) => {
-    if (e.key === " " || e.key === "Enter") {
+    if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       if (currentTag.trim()) {
         addTag();
       }
-    } else if (e.key === "Backspace" && !currentTag && tags.length > 0) {
+    } else if (e.key === 'Backspace' && !currentTag && tags.length > 0) {
       setTags(tags.slice(0, -1));
     }
   };
 
   const handleTagInputChange = (e) => {
     const value = e.target.value;
-    if (value.includes(" ")) {
-      const tagText = value.split(" ")[0].trim();
+    if (value.includes(' ')) {
+      const tagText = value.split(' ')[0].trim();
       if (tagText) {
         addTag(tagText);
       }
@@ -358,12 +344,12 @@ const CreateThought = () => {
     e.preventDefault();
 
     if (!content.trim()) {
-      toast.error("Please enter some content");
+      toast.error('Please enter some content');
       return;
     }
 
     if (content.length > 800) {
-      toast.error("Content must be 800 characters or less");
+      toast.error('Content must be 800 characters or less');
       return;
     }
 
@@ -371,33 +357,33 @@ const CreateThought = () => {
       setLoading(true);
 
       const formData = new FormData();
-      formData.append("content", content);
-      formData.append("mood", mood);
-      formData.append("tags", JSON.stringify(tags));
+      formData.append('content', content);
+      formData.append('mood', mood);
+      formData.append('tags', JSON.stringify(tags));
 
       if (media) {
-        formData.append("media", media);
+        formData.append('media', media);
       }
 
-      await axios.post("/api/thoughts", formData);
+      await axios.post('/api/thoughts', formData);
 
-      toast.success("Thought created successfully!");
-      navigate("/thoughts");
+      toast.success('Thought created successfully!');
+      navigate('/thoughts');
     } catch (err) {
-      console.error("Error creating thought:", err);
-      toast.error(err.response?.data?.message || "Failed to create thought");
+      console.error('Error creating thought:', err);
+      toast.error(err.response?.data?.message || 'Failed to create thought');
     } finally {
       setLoading(false);
     }
   };
 
-  if (!isAuthenticated || !user || !["admin", "creator"].includes(user.role)) {
+  if (!isAuthenticated || !user || !['admin', 'creator'].includes(user.role)) {
     return (
       <MainLayout>
         <AccessDenied>
           <h2>Access Denied</h2>
           <p>You must be logged in with permission to create thoughts.</p>
-          <BackLink to="/thoughts">Back to Thoughts</BackLink>
+          <BackLink to='/thoughts'>Back to Thoughts</BackLink>
         </AccessDenied>
       </MainLayout>
     );
@@ -407,7 +393,7 @@ const CreateThought = () => {
     <MainLayout>
       <PageWrapper>
         <Header>
-          <BackLink to="/thoughts">
+          <BackLink to='/thoughts'>
             <FaArrowLeft />
             <span>Back to Thoughts</span>
           </BackLink>
@@ -419,9 +405,9 @@ const CreateThought = () => {
             <ContentHeader>
               <Label>What's on your mind?</Label>
               <AIButton
-                type="button"
+                type='button'
                 onClick={() => setShowAIModal(true)}
-                title="Generate content with AI"
+                title='Generate content with AI'
               >
                 <FaRobot />
                 <span>AI Assist</span>
@@ -430,7 +416,7 @@ const CreateThought = () => {
             <ContentTextarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Share your thoughts..."
+              placeholder='Share your thoughts...'
               required
               maxLength={800}
             />
@@ -456,7 +442,7 @@ const CreateThought = () => {
                   selected={mood === option.value}
                   moodColor={moodColors[option.value]}
                   onClick={() => setMood(option.value)}
-                  type="button"
+                  type='button'
                 >
                   <span>{option.emoji}</span> {option.label}
                 </MoodOption>
@@ -464,14 +450,14 @@ const CreateThought = () => {
             </MoodOptions>
           </MoodSelector>
 
-          <FormGroup style={{ paddingTop: "0.5rem" }}>
+          <FormGroup style={{ paddingTop: '0.5rem' }}>
             <Label>Tags (optional)</Label>
             <TagInputWrapper>
               <TagInputField
                 value={currentTag}
                 onChange={handleTagInputChange}
                 onKeyDown={handleTagInputKeyDown}
-                placeholder="Type tags and press space to add..."
+                placeholder='Type tags and press space to add...'
                 maxLength={30}
               />
               {currentTag.trim() && (
@@ -499,7 +485,7 @@ const CreateThought = () => {
             <Label>Image (optional)</Label>
             {preview ? (
               <ImagePreview>
-                <img src={preview} alt="Preview" />
+                <img src={preview} alt='Preview' />
                 <RemoveImageButton onClick={removeImage}>
                   <FaTimes />
                 </RemoveImageButton>
@@ -507,14 +493,14 @@ const CreateThought = () => {
             ) : (
               <ImageUpload>
                 <input
-                  type="file"
+                  type='file'
                   ref={fileInputRef}
                   onChange={handleImageChange}
-                  accept="image/*"
-                  style={{ display: "none" }}
+                  accept='image/*'
+                  style={{ display: 'none' }}
                 />
                 <UploadButton
-                  type="button"
+                  type='button'
                   onClick={() => fileInputRef.current.click()}
                 >
                   <FaImage />
@@ -525,11 +511,11 @@ const CreateThought = () => {
           </FormGroup>
 
           <SubmitButton
-            type="submit"
+            type='submit'
             disabled={loading || !content.trim() || content.length > 800}
           >
             <FaPaperPlane />
-            <span>{loading ? "Posting..." : "Post Thought"}</span>
+            <span>{loading ? 'Posting...' : 'Post Thought'}</span>
           </SubmitButton>
         </FormContainer>
 
@@ -1052,7 +1038,7 @@ const TagsContainer = styled.div`
   align-content: flex-start;
 
   &:empty::before {
-    content: "Your tags will appear here...";
+    content: 'Your tags will appear here...';
     color: ${COLORS.textTertiary};
     font-size: 0.875rem;
     font-style: italic;
@@ -1236,7 +1222,7 @@ const ProgressBar = styled.div`
   margin-bottom: 0.5rem;
 
   &::after {
-    content: "${(props) => props.charCount}/800";
+    content: '${(props) => props.charCount}/800';
     position: absolute;
     top: -1.75rem;
     right: 0;
@@ -1246,11 +1232,11 @@ const ProgressBar = styled.div`
   }
 
   &::before {
-    content: "";
+    content: '';
     display: block;
     height: 100%;
     width: ${(props) =>
-      props.charCount > 800 ? "100%" : `${props.percentage}%`};
+      props.charCount > 800 ? '100%' : `${props.percentage}%`};
     background-color: ${(props) => {
       const c = props.charCount;
       const p = props.percentage;
@@ -1262,7 +1248,7 @@ const ProgressBar = styled.div`
     border-radius: 5px;
     transition: width 0.3s ease, background-color 0.3s ease;
     animation: ${(props) =>
-      props.charCount > 800 ? "pulseRed 1s infinite ease-in-out" : "none"};
+      props.charCount > 800 ? 'pulseRed 1s infinite ease-in-out' : 'none'};
   }
 
   @keyframes pulseRed {

@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import styled from "styled-components";
-import { toast } from "react-hot-toast";
+import React, { useState, useEffect, useContext, useRef } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
+import { toast } from 'react-hot-toast';
 import {
   FaArrowLeft,
   FaRobot,
@@ -13,9 +14,9 @@ import {
   FaMagic,
   FaTimes,
   FaCheck,
-} from "react-icons/fa";
-import { AuthContext } from "../../context/AuthContext";
-import { COLORS, THEME } from "../../theme";
+} from 'react-icons/fa';
+import { AuthContext } from '../../context/AuthContext';
+import { COLORS, THEME } from '../../theme';
 
 // Styled Components matching SoloGram design system
 const PageWrapper = styled.div`
@@ -533,10 +534,10 @@ const AIContentGenerator = () => {
   const textareaRef = useRef(null);
 
   const [formData, setFormData] = useState({
-    description: "",
-    contentType: "general",
-    tone: "casual",
-    additionalContext: "",
+    description: '',
+    contentType: 'general',
+    tone: 'casual',
+    additionalContext: '',
   });
 
   const [generatedContent, setGeneratedContent] = useState(null);
@@ -544,38 +545,38 @@ const AIContentGenerator = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [copiedStates, setCopiedStates] = useState({});
 
   const contentTypes = [
-    { value: "general", label: "General Post" },
-    { value: "product", label: "Product Showcase" },
-    { value: "behind-scenes", label: "Behind the Scenes" },
-    { value: "educational", label: "Educational" },
-    { value: "lifestyle", label: "Lifestyle" },
-    { value: "announcement", label: "Announcement" },
+    { value: 'general', label: 'General Post' },
+    { value: 'product', label: 'Product Showcase' },
+    { value: 'behind-scenes', label: 'Behind the Scenes' },
+    { value: 'educational', label: 'Educational' },
+    { value: 'lifestyle', label: 'Lifestyle' },
+    { value: 'announcement', label: 'Announcement' },
   ];
 
   const tones = [
-    { value: "casual", label: "Casual & Friendly" },
-    { value: "professional", label: "Professional" },
-    { value: "playful", label: "Fun & Playful" },
-    { value: "inspirational", label: "Inspirational" },
-    { value: "minimalist", label: "Clean & Minimal" },
+    { value: 'casual', label: 'Casual & Friendly' },
+    { value: 'professional', label: 'Professional' },
+    { value: 'playful', label: 'Fun & Playful' },
+    { value: 'inspirational', label: 'Inspirational' },
+    { value: 'minimalist', label: 'Clean & Minimal' },
   ];
 
   // Check auth on mount
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== "admin") {
-      toast.error("You need admin access to use this feature");
-      navigate("/", { replace: true });
+    if (!isAuthenticated || user?.role !== 'admin') {
+      toast.error('You need admin access to use this feature');
+      navigate('/', { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   }, [formData.description]);
@@ -589,25 +590,10 @@ const AIContentGenerator = () => {
 
   const fetchContentHistory = async () => {
     try {
-      const response = await fetch(
-        "https://sologram-api.onrender.com/api/admin/ai-content/history",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        console.warn("History API not available");
-        setContentHistory([]);
-        return;
-      }
-
-      const data = await response.json();
+      const { data } = await axios.get('/api/admin/ai-content/history');
       setContentHistory(data.data || []);
     } catch (error) {
-      console.error("Failed to fetch history:", error);
+      console.error('Failed to fetch history:', error);
       setContentHistory([]);
     }
   };
@@ -615,39 +601,25 @@ const AIContentGenerator = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setError("");
+    setError('');
   };
 
   const handleGenerate = async () => {
     if (!formData.description.trim()) {
-      setError("Please provide a description for your content");
+      setError('Please provide a description for your content');
       return;
     }
 
     setIsGenerating(true);
-    setError("");
+    setError('');
 
     try {
-      const response = await fetch(
-        "https://sologram-api.onrender.com/api/admin/ai-content/generate",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
+      const { data } = await axios.post(
+        '/api/admin/ai-content/generate',
+        formData
       );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to generate content");
-      }
-
       setGeneratedContent(data.data);
-      toast.success("Content generated successfully!", {
+      toast.success('Content generated successfully!', {
         style: {
           background: COLORS.cardBackground,
           color: COLORS.textPrimary,
@@ -656,9 +628,9 @@ const AIContentGenerator = () => {
       });
     } catch (error) {
       setError(
-        error.message || "Failed to generate content. Please try again."
+        error.message || 'Failed to generate content. Please try again.'
       );
-      toast.error("Failed to generate content", {
+      toast.error('Failed to generate content', {
         style: {
           background: COLORS.cardBackground,
           color: COLORS.error,
@@ -675,26 +647,12 @@ const AIContentGenerator = () => {
 
     setIsSaving(true);
     try {
-      const response = await fetch(
-        "https://sologram-api.onrender.com/api/admin/ai-content/save",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ...generatedContent,
-            originalDescription: formData.description,
-          }),
-        }
-      );
+      await axios.post('/api/admin/ai-content/save', {
+        ...generatedContent,
+        originalDescription: formData.description,
+      });
 
-      if (!response.ok) {
-        throw new Error("Failed to save content");
-      }
-
-      toast.success("Content saved to history!", {
+      toast.success('Content saved to history!', {
         style: {
           background: COLORS.cardBackground,
           color: COLORS.textPrimary,
@@ -706,7 +664,7 @@ const AIContentGenerator = () => {
         fetchContentHistory();
       }
     } catch (error) {
-      toast.error("Failed to save content", {
+      toast.error('Failed to save content', {
         style: {
           background: COLORS.cardBackground,
           color: COLORS.error,
@@ -750,12 +708,12 @@ const AIContentGenerator = () => {
   const handleUseContent = (content) => {
     const contentText = `Title: ${content.title}\n\nCaption: ${
       content.caption
-    }\n\nTags: ${content.tags?.map((tag) => `#${tag}`).join(" ") || ""}`;
+    }\n\nTags: ${content.tags?.map((tag) => `#${tag}`).join(' ') || ''}`;
 
     navigator.clipboard
       .writeText(contentText)
       .then(() => {
-        toast.success("Content copied to clipboard!", {
+        toast.success('Content copied to clipboard!', {
           style: {
             background: COLORS.cardBackground,
             color: COLORS.textPrimary,
@@ -764,30 +722,30 @@ const AIContentGenerator = () => {
         });
       })
       .catch(() => {
-        toast.error("Failed to copy content");
+        toast.error('Failed to copy content');
       });
   };
 
   const resetForm = () => {
     setFormData({
-      description: "",
-      contentType: "general",
-      tone: "casual",
-      additionalContext: "",
+      description: '',
+      contentType: 'general',
+      tone: 'casual',
+      additionalContext: '',
     });
     setGeneratedContent(null);
-    setError("");
+    setError('');
     setCopiedStates({});
   };
 
   const goBack = () => {
-    navigate("/");
+    navigate('/');
   };
 
   return (
     <PageWrapper>
       <AppHeader>
-        <BackButton onClick={goBack} aria-label="Go back">
+        <BackButton onClick={goBack} aria-label='Go back'>
           <FaArrowLeft />
         </BackButton>
         <HeaderTitle>
@@ -795,7 +753,7 @@ const AIContentGenerator = () => {
           AI Content Generator
         </HeaderTitle>
         <HeaderAction onClick={() => setShowHistory(!showHistory)}>
-          {showHistory ? "Hide" : "History"}
+          {showHistory ? 'Hide' : 'History'}
         </HeaderAction>
       </AppHeader>
 
@@ -811,12 +769,12 @@ const AIContentGenerator = () => {
               <Label>Content Description *</Label>
               <TextArea
                 ref={textareaRef}
-                name="description"
+                name='description'
                 value={formData.description}
                 onChange={handleInputChange}
                 placeholder="Describe what your post is about... (e.g., 'New product launch - innovative wireless headphones')"
-                rows="3"
-                maxLength="500"
+                rows='3'
+                maxLength='500'
                 required
               />
               <CharacterCount>
@@ -828,7 +786,7 @@ const AIContentGenerator = () => {
               <FormGroup>
                 <Label>Content Type</Label>
                 <Select
-                  name="contentType"
+                  name='contentType'
                   value={formData.contentType}
                   onChange={handleInputChange}
                 >
@@ -843,7 +801,7 @@ const AIContentGenerator = () => {
               <FormGroup>
                 <Label>Tone</Label>
                 <Select
-                  name="tone"
+                  name='tone'
                   value={formData.tone}
                   onChange={handleInputChange}
                 >
@@ -859,12 +817,12 @@ const AIContentGenerator = () => {
             <FormGroup>
               <Label>Additional Context (Optional)</Label>
               <TextArea
-                name="additionalContext"
+                name='additionalContext'
                 value={formData.additionalContext}
                 onChange={handleInputChange}
-                placeholder="Any additional details, target audience, or specific requirements..."
-                rows="2"
-                maxLength="200"
+                placeholder='Any additional details, target audience, or specific requirements...'
+                rows='2'
+                maxLength='200'
               />
             </FormGroup>
 
@@ -899,7 +857,7 @@ const AIContentGenerator = () => {
               </SecondaryButton>
               <HistoryToggle onClick={() => setShowHistory(!showHistory)}>
                 <FaHistory />
-                {showHistory ? "Hide History" : "Show History"}
+                {showHistory ? 'Hide History' : 'Show History'}
               </HistoryToggle>
             </ButtonRow>
           </CardBody>
@@ -918,12 +876,12 @@ const AIContentGenerator = () => {
                   <ContentLabel>Title</ContentLabel>
                   <CopyButton
                     onClick={() =>
-                      handleCopyField(generatedContent.title, "Title")
+                      handleCopyField(generatedContent.title, 'Title')
                     }
-                    className={copiedStates.Title ? "copied" : ""}
+                    className={copiedStates.Title ? 'copied' : ''}
                   >
                     {copiedStates.Title ? <FaCheck /> : <FaCopy />}
-                    {copiedStates.Title ? "Copied!" : "Copy"}
+                    {copiedStates.Title ? 'Copied!' : 'Copy'}
                   </CopyButton>
                 </ContentHeader>
                 <ContentBox>{generatedContent.title}</ContentBox>
@@ -934,12 +892,12 @@ const AIContentGenerator = () => {
                   <ContentLabel>Caption</ContentLabel>
                   <CopyButton
                     onClick={() =>
-                      handleCopyField(generatedContent.caption, "Caption")
+                      handleCopyField(generatedContent.caption, 'Caption')
                     }
-                    className={copiedStates.Caption ? "copied" : ""}
+                    className={copiedStates.Caption ? 'copied' : ''}
                   >
                     {copiedStates.Caption ? <FaCheck /> : <FaCopy />}
-                    {copiedStates.Caption ? "Copied!" : "Copy"}
+                    {copiedStates.Caption ? 'Copied!' : 'Copy'}
                   </CopyButton>
                 </ContentHeader>
                 <ContentBox>{generatedContent.caption}</ContentBox>
@@ -953,14 +911,14 @@ const AIContentGenerator = () => {
                       handleCopyField(
                         generatedContent.tags
                           ?.map((tag) => `#${tag}`)
-                          .join(" ") || "",
-                        "Tags"
+                          .join(' ') || '',
+                        'Tags'
                       )
                     }
-                    className={copiedStates.Tags ? "copied" : ""}
+                    className={copiedStates.Tags ? 'copied' : ''}
                   >
                     {copiedStates.Tags ? <FaCheck /> : <FaCopy />}
-                    {copiedStates.Tags ? "Copied!" : "Copy"}
+                    {copiedStates.Tags ? 'Copied!' : 'Copy'}
                   </CopyButton>
                 </ContentHeader>
                 <TagsContainer>
@@ -976,7 +934,7 @@ const AIContentGenerator = () => {
                   disabled={isSaving}
                 >
                   {isSaving ? <LoadingSpinner /> : <FaSave />}
-                  {isSaving ? "Saving..." : "Save"}
+                  {isSaving ? 'Saving...' : 'Save'}
                 </SecondaryButton>
                 <PrimaryButton
                   onClick={() => handleUseContent(generatedContent)}
@@ -1001,10 +959,10 @@ const AIContentGenerator = () => {
                 <EmptyState>
                   <FaHistory
                     size={32}
-                    style={{ marginBottom: "12px", opacity: 0.5 }}
+                    style={{ marginBottom: '12px', opacity: 0.5 }}
                   />
                   <p>No content history yet</p>
-                  <p style={{ fontSize: "0.85rem", marginTop: "4px" }}>
+                  <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>
                     Generated content will appear here
                   </p>
                 </EmptyState>
@@ -1014,7 +972,7 @@ const AIContentGenerator = () => {
                     <HistoryItem key={item._id}>
                       <HistoryHeader>
                         <HistoryTitle>
-                          {item.generatedContent?.title || "Untitled"}
+                          {item.generatedContent?.title || 'Untitled'}
                         </HistoryTitle>
                         <HistoryDate>
                           {new Date(item.createdAt).toLocaleDateString()}
@@ -1029,7 +987,7 @@ const AIContentGenerator = () => {
                         {item.used && (
                           <HistoryTag
                             style={{
-                              background: COLORS.success + "20",
+                              background: COLORS.success + '20',
                               color: COLORS.success,
                             }}
                           >
