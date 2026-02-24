@@ -16,7 +16,6 @@ import { createPortal } from 'react-dom';
 
 const AVATAR_FALLBACK = authorImg;
 const AUTHOR_IMAGE = authorImg;
-const AUTHOR_NAME = 'Andrew Butler';
 
 // --- ANIMATIONS ---
 const fadeIn = keyframes`0%{opacity:0}100%{opacity:1}`;
@@ -74,20 +73,11 @@ export const CommentModal = ({
       });
       setNewComment('');
       setReplyingTo(null);
-      toast.success('Added to conversation');
     } catch (err) {
       toast.error('Failed to post');
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleReply = (comment) => {
-    const a = comment?.author || {};
-    const handle = a.username || a.name || 'user';
-    setReplyingTo({ id: comment._id, author: a });
-    setNewComment(`@${handle} `);
-    textareaRef.current?.focus();
   };
 
   if (!isOpen && !isClosing) return null;
@@ -100,19 +90,19 @@ export const CommentModal = ({
         isClosing={isClosing}
       >
         <DragHandle />
+
+        {/* NEW: Minimalist Header with just the Title */}
         <ModalHeader>
-          <HeaderTitle>Conversation</HeaderTitle>
+          <HeaderTitleArea>
+            <HeaderTitle>Conversation</HeaderTitle>
+            <HeaderSubtitle>{post.title || 'Sologram'}</HeaderSubtitle>
+          </HeaderTitleArea>
           <CloseButton onClick={handleClose}>
             <FaTimes />
           </CloseButton>
         </ModalHeader>
 
         <ModalContent>
-          <PostContext>
-            <PostTitle>{post.title || 'Post Content'}</PostTitle>
-            <PostCaption>{post.caption || post.content}</PostCaption>
-          </PostContext>
-
           <CommentsArea>
             {isLoading ? (
               <LoadingState>
@@ -128,7 +118,7 @@ export const CommentModal = ({
               <CommentsList>
                 {comments.map((comment) => {
                   const a = comment.author || {};
-                  // Branded check: If it's your comment, give it the Salmon Ring
+                  // Lock author check to your specific name or username
                   const isAuthor =
                     a.username === 'andy' || a.name === 'Andrew Butler';
                   return (
@@ -154,7 +144,12 @@ export const CommentModal = ({
                             {comment.hasLiked ? <FaHeart /> : <FaRegHeart />}
                             {comment.likes > 0 && <span>{comment.likes}</span>}
                           </LikeBtn>
-                          <ReplyBtn onClick={() => handleReply(comment)}>
+                          <ReplyBtn
+                            onClick={() => {
+                              setReplyingTo({ id: comment._id, author: a });
+                              setNewComment(`@${a.name || 'user'} `);
+                            }}
+                          >
                             Reply
                           </ReplyBtn>
                           {user?.id === a?._id && (
@@ -233,7 +228,7 @@ const ModalOverlay = styled.div`
 const ModalContainer = styled.div`
   width: 100%;
   max-width: 600px;
-  height: 85vh;
+  height: 80vh;
   background: ${COLORS.cardBackground};
   border-radius: 20px 20px 0 0;
   display: flex;
@@ -252,6 +247,7 @@ const DragHandle = styled.div`
   background: rgba(255, 255, 255, 0.1);
   margin: 12px auto;
   border-radius: 2px;
+  flex-shrink: 0;
 `;
 
 const ModalHeader = styled.header`
@@ -260,12 +256,27 @@ const ModalHeader = styled.header`
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+`;
+
+const HeaderTitleArea = styled.div`
+  display: flex;
+  flex-direction: column;
 `;
 
 const HeaderTitle = styled.h2`
   font-size: 1.1rem;
-  font-weight: 700;
+  font-weight: 800;
   color: ${COLORS.textPrimary};
+  letter-spacing: -0.02em;
+`;
+
+const HeaderSubtitle = styled.span`
+  font-size: 0.75rem;
+  color: ${COLORS.accentMint};
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 const CloseButton = styled.button`
@@ -274,9 +285,6 @@ const CloseButton = styled.button`
   color: ${COLORS.textTertiary};
   font-size: 1.2rem;
   cursor: pointer;
-  &:hover {
-    color: ${COLORS.primarySalmon};
-  }
 `;
 
 const ModalContent = styled.div`
@@ -286,28 +294,12 @@ const ModalContent = styled.div`
   flex-direction: column;
 `;
 
-const PostContext = styled.div`
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.02);
-`;
-
-const PostTitle = styled.h3`
-  font-size: 1rem;
-  color: ${COLORS.accentMint};
-  margin-bottom: 4px;
-  font-weight: 700;
-`;
-
-const PostCaption = styled.p`
-  font-size: 0.9rem;
-  color: ${COLORS.textSecondary};
-  line-height: 1.4;
-`;
+// Removed PostContext to maximize comment space
 
 const CommentsArea = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 20px;
+  -webkit-overflow-scrolling: touch;
 `;
 
 const CommentsList = styled.div`
@@ -316,34 +308,42 @@ const CommentsList = styled.div`
 `;
 
 const CommentItem = styled.div`
-  padding: 16px 20px;
+  padding: 20px;
   display: flex;
-  gap: 14px;
+  align-items: flex-start; /* CRITICAL: Aligns to top, prevents vertical stretching */
+  gap: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 `;
 
 const CommentAvatarContainer = styled.div`
   position: relative;
   flex-shrink: 0;
+  width: 40px; /* Locked width */
+  height: 40px; /* Locked height */
+
   ${(p) =>
     p.isAuthor &&
     css`
       &::after {
         content: '';
         position: absolute;
-        inset: -2px;
+        inset: -3px;
         border-radius: 50%;
         border: 2px solid ${COLORS.primarySalmon};
+        z-index: 1;
       }
     `}
 `;
 
 const CommentAvatar = styled.img`
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px; /* Force dimensions here too */
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid transparent;
+  display: block;
+  position: relative;
+  z-index: 2;
+  background: ${COLORS.cardBackground};
 `;
 
 const CommentBody = styled.div`
@@ -370,10 +370,10 @@ const TimeText = styled.span`
 `;
 
 const CommentText = styled.p`
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-size: 0.95rem;
+  line-height: 1.55;
   color: ${COLORS.textSecondary};
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   word-wrap: break-word;
 `;
 
@@ -392,12 +392,9 @@ const LikeBtn = styled.button`
   align-items: center;
   gap: 4px;
   cursor: pointer;
-  &:hover {
-    color: ${COLORS.primarySalmon};
-  }
   span {
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 700;
   }
 `;
 
@@ -416,15 +413,13 @@ const DeleteBtn = styled.button`
   color: rgba(255, 255, 255, 0.1);
   font-size: 0.75rem;
   cursor: pointer;
-  &:hover {
-    color: ${COLORS.primarySalmon};
-  }
 `;
 
 const InputSection = styled.div`
-  padding: 16px 20px env(safe-area-inset-bottom);
+  padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   background: ${COLORS.cardBackground};
+  flex-shrink: 0;
 `;
 
 const CommentForm = styled.form`
@@ -437,7 +432,7 @@ const UserAvatar = styled.img`
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1px solid ${COLORS.primarySalmon};
+  border: 1.5px solid ${COLORS.primarySalmon};
   flex-shrink: 0;
 `;
 
@@ -458,9 +453,6 @@ const CommentInput = styled.input`
   color: ${COLORS.textPrimary};
   font-size: 0.9rem;
   outline: none;
-  &::placeholder {
-    color: ${COLORS.textTertiary};
-  }
 `;
 
 const SubmitBtn = styled.button`
@@ -482,34 +474,32 @@ const SubmitBtn = styled.button`
 `;
 
 const LoadingSpinner = styled.div`
-  width: ${(p) => p.size || '24px'};
-  height: ${(p) => p.size || '24px'};
+  width: 24px;
+  height: 24px;
   border: 2px solid rgba(255, 255, 255, 0.1);
   border-top: 2px solid ${COLORS.primaryMint};
   border-radius: 50%;
   animation: ${spin} 0.8s linear infinite;
-  margin: 20px auto;
 `;
 
 const LoadingState = styled.div`
   display: flex;
   justify-content: center;
-  padding: 40px;
+  padding: 60px;
 `;
 
 const EmptyState = styled.div`
-  padding: 60px 40px;
+  padding: 80px 40px;
   text-align: center;
 `;
 const EmptyIcon = styled.div`
   font-size: 2.5rem;
   margin-bottom: 16px;
-  opacity: 0.5;
+  opacity: 0.3;
 `;
 const EmptyTitle = styled.h4`
   color: ${COLORS.textPrimary};
   margin-bottom: 4px;
-  font-size: 1.1rem;
 `;
 const EmptySubtitle = styled.p`
   color: ${COLORS.textTertiary};
@@ -519,14 +509,14 @@ const EmptySubtitle = styled.p`
 const ReplyIndicator = styled.div`
   display: flex;
   justify-content: space-between;
-  padding: 8px 12px;
-  background: rgba(0, 217, 184, 0.1);
-  border-radius: 8px;
-  margin-bottom: 8px;
+  padding: 8px 14px;
+  background: ${COLORS.primaryMint}15;
+  border-radius: 12px;
+  margin-bottom: 12px;
   span {
     font-size: 0.75rem;
     color: ${COLORS.primaryMint};
-    font-weight: 600;
+    font-weight: 700;
   }
   button {
     background: none;
