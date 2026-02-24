@@ -1,25 +1,24 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
-import { BrowserRouter as Router, useLocation } from "react-router-dom";
-import { Toaster, toast } from "react-hot-toast";
-import styled from "styled-components";
-import ReactGA from "react-ga4";
-import { HelmetProvider } from "react-helmet-async";
-import { AuthContext } from "./context/AuthContext";
-import { LikesProvider } from "./context/LikesContext";
-import { CommentsProvider } from "./context/CommentsContext";
-import { DeleteModalProvider } from "./context/DeleteModalContext";
-import ScrollToTop from "./components/ScrollToTop";
-import InstallPrompt from "./components/pwa/InstallPrompt";
-import FloatingActionButtonAdjuster from "./components/layout/FloatingActionButtonAdjuster";
-import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
-import AppRoutes from "./AppRoutes";
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import { BrowserRouter as Router, useLocation } from 'react-router-dom';
+import { Toaster, toast } from 'react-hot-toast';
+import styled from 'styled-components';
+import ReactGA from 'react-ga4';
+import { HelmetProvider } from 'react-helmet-async';
+import { AuthContext } from './context/AuthContext';
+import { LikesProvider } from './context/LikesContext';
+import { CommentsProvider } from './context/CommentsContext';
+import { DeleteModalProvider } from './context/DeleteModalContext';
+import ScrollToTop from './components/ScrollToTop';
+import InstallPrompt from './components/pwa/InstallPrompt';
+import DeleteConfirmationModal from './components/DeleteConfirmationModal';
+import AppRoutes from './AppRoutes';
 
 // Separate components for better organization
 const PageTracker = () => {
   const location = useLocation();
   useEffect(() => {
     ReactGA.send({
-      hitType: "pageview",
+      hitType: 'pageview',
       page: location.pathname + location.search,
     });
   }, [location]);
@@ -47,20 +46,20 @@ function App() {
     const handleOnline = () => setNetworkStatus(true);
     const handleOffline = () => setNetworkStatus(false);
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     // Handle offline/online notifications
-    if (networkStatus && localStorage.getItem("wasOffline") === "true") {
-      toast.success("You are back online");
-      localStorage.removeItem("wasOffline");
+    if (networkStatus && localStorage.getItem('wasOffline') === 'true') {
+      toast.success('You are back online');
+      localStorage.removeItem('wasOffline');
     } else if (!networkStatus) {
-      localStorage.setItem("wasOffline", "true");
+      localStorage.setItem('wasOffline', 'true');
     }
 
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, [networkStatus]);
 
@@ -78,13 +77,13 @@ function App() {
       <Router>
         <ScrollToTop />
         <PageTracker />
-        <div className="app">
+        <div className='app'>
           <LikesProvider>
             <CommentsProvider>
-              {" "}
+              {' '}
               {/* Add CommentsProvider here */}
               <DeleteModalProvider>
-                <Toaster position="top-right" />
+                <Toaster position='top-right' />
                 {!networkStatus && (
                   <OfflineIndicator>
                     You are currently offline. Some features may be limited.
@@ -97,11 +96,10 @@ function App() {
                   handleClearSearch={handleClearSearch}
                 />
                 <InstallPrompt />
-                <FloatingActionButtonAdjuster />
-                {/* Add the global delete modal */}
+
                 <DeleteConfirmationModal />
               </DeleteModalProvider>
-            </CommentsProvider>{" "}
+            </CommentsProvider>{' '}
             {/* Close CommentsProvider here */}
           </LikesProvider>
         </div>

@@ -7,9 +7,6 @@ import { COLORS } from '../../theme';
 import LoadingSpinner from '../common/LoadingSpinner';
 
 const InstallPrompt = lazy(() => import('../pwa/InstallPrompt'));
-const FloatingActionButtonAdjuster = lazy(() =>
-  import('./FloatingActionButtonAdjuster')
-);
 
 /**
  * MainLayout
@@ -48,7 +45,6 @@ const MainLayout = ({
 
       <Suspense fallback={null}>
         <InstallPrompt />
-        <FloatingActionButtonAdjuster />
       </Suspense>
     </LayoutWrapper>
   );
