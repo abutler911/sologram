@@ -29,8 +29,6 @@ import {
   usePinThought,
 } from '../hooks/queries/useThoughts';
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
 const moodEmojis = {
   inspired: '✨',
   reflective: '🌙',
@@ -48,8 +46,6 @@ const defaultUser = {
   avatar: null,
 };
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
 const Thoughts = () => {
   const { isAuthenticated, user } = useContext(AuthContext);
   const { showDeleteModal } = useDeleteModal();
@@ -59,12 +55,11 @@ const Thoughts = () => {
     isAuthenticated && (user?.role === 'admin' || user?.role === 'creator');
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeSearch, setActiveSearch] = useState(''); // submitted search
+  const [activeSearch, setActiveSearch] = useState('');
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [selectedMood, setSelectedMood] = useState('all');
   const [showRetweetModal, setShowRetweetModal] = useState(false);
 
-  // React Query
   const {
     data,
     isLoading,
@@ -78,7 +73,6 @@ const Thoughts = () => {
   const likeThought = useLikeThought();
   const pinThought = usePinThought();
 
-  // Flatten pages into single array
   const allThoughts =
     data?.pages.flatMap((page) =>
       page.data.map((thought) => ({
@@ -90,23 +84,18 @@ const Thoughts = () => {
       }))
     ) ?? [];
 
-  // IntersectionObserver sentinel — replaces scroll event listener
   const observer = useRef();
   const sentinelRef = useCallback(
     (node) => {
       if (isFetchingNextPage) return;
       if (observer.current) observer.current.disconnect();
       observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasNextPage) {
-          fetchNextPage();
-        }
+        if (entries[0].isIntersecting && hasNextPage) fetchNextPage();
       });
       if (node) observer.current.observe(node);
     },
     [isFetchingNextPage, hasNextPage, fetchNextPage]
   );
-
-  // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -120,9 +109,7 @@ const Thoughts = () => {
   };
 
   const handleLike = (id) => likeThought.mutate(id);
-
   const handleRetweet = () => setShowRetweetModal(true);
-
   const handlePin = (id) => pinThought.mutate(id);
 
   const handleDeleteThought = (thoughtId) => {
@@ -149,13 +136,10 @@ const Thoughts = () => {
   const formatDate = (dateString) =>
     format(new Date(dateString), 'MMM d, yyyy • h:mm a');
 
-  // Client-side mood filter
   const filteredThoughts =
     selectedMood === 'all'
       ? allThoughts
       : allThoughts.filter((t) => t.mood === selectedMood);
-
-  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <MainLayout>
@@ -345,25 +329,45 @@ const HeaderLeft = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  /* Prevent mood pills from overflowing the header */
+  min-width: 0;
+  flex: 1;
 `;
 
 const HeaderRight = styled.div`
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 `;
 
+/* CHANGED: gradient text instead of flat white */
 const PageTitle = styled.h1`
   font-size: 1.5rem;
   font-weight: 700;
-  color: ${COLORS.textPrimary};
   margin: 0;
+  background: linear-gradient(
+    90deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.primaryMint}
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 `;
 
+/* CHANGED: nowrap + horizontal scroll — no more orphaned emoji on row 2 */
 const MoodFilter = styled.div`
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 `;
 
 const MoodButton = styled.button`
@@ -377,9 +381,11 @@ const MoodButton = styled.button`
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
   &:hover {
     border-color: ${COLORS.primarySalmon};
-    color: ${COLORS.primarySalmon};
+    color: ${(props) => (props.active ? 'white' : COLORS.primarySalmon)};
   }
 `;
 
@@ -458,8 +464,7 @@ const CreateButton = styled(Link)`
   font-size: 0.875rem;
   font-weight: 600;
   transition: all 0.3s;
-  position: relative;
-  overflow: hidden;
+  white-space: nowrap;
   box-shadow: 0 4px 12px rgba(233, 137, 115, 0.3);
   &:hover {
     background-color: ${COLORS.accentSalmon};

@@ -77,6 +77,7 @@ const fontFaceStyles = css`
     font-display: swap;
   }
 `;
+
 function getCommentCountFromPost(p = {}) {
   const a = Number.isFinite(p?.commentsCount) ? p.commentsCount : null;
   const b = Number.isFinite(p?.commentCount) ? p.commentCount : null;
@@ -109,7 +110,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     useContext(LikesContext);
   const hasLiked = likedPosts[post?._id] || false;
 
-  // Comment-related state
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [comments, setComments] = useState([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
@@ -118,7 +118,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const hasMultipleMedia = post.media && post.media.length > 1;
   const formattedDate = format(new Date(post.createdAt), 'MMM d, yyyy');
 
-  // Check if the user has already liked this post using the LikesContext
   useEffect(() => {
     if (isAuthenticated && post._id) {
       checkLikeStatus(post._id);
@@ -131,21 +130,17 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         setShowActions(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Comment handling functions
   const fetchCommentCount = useCallback(async () => {
     if (!post?._id) return;
     try {
       const { count } = await api.getCommentCount(post._id);
       if (Number.isFinite(count)) setCommentCount(count);
     } catch (e) {
-      // Non-critical — count stays at whatever it was
+      // Non-critical
     }
   }, [post?._id]);
 
@@ -163,7 +158,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
-          obs.disconnect(); // don't toggle back to false later
+          obs.disconnect();
         }
       },
       { threshold: 0.1, rootMargin: '120px 0px' }
@@ -171,6 +166,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     obs.observe(cardRef.current);
     return () => obs.disconnect();
   }, []);
+
   const fetchComments = useCallback(async () => {
     if (!post._id) return;
     setIsLoadingComments(true);
@@ -250,31 +246,25 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const handleLocationClick = useCallback((location) => {
     const encodedLocation = encodeURIComponent(location);
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-
-    // Detect iOS devices
     if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
       window.open(
         `https://maps.apple.com/?q=${encodedLocation}`,
         '_blank',
         'noopener,noreferrer'
       );
-    }
-    // Detect Android devices
-    else if (/android/i.test(userAgent)) {
+    } else if (/android/i.test(userAgent)) {
       const intent = `intent://maps.google.com/maps?q=${encodedLocation}#Intent;scheme=https;package=com.google.android.apps.maps;end`;
       const fallback = `https://maps.google.com/maps?q=${encodedLocation}`;
-
       try {
         window.location.href = intent;
-        setTimeout(() => {
-          window.open(fallback, '_blank', 'noopener,noreferrer');
-        }, 500);
+        setTimeout(
+          () => window.open(fallback, '_blank', 'noopener,noreferrer'),
+          500
+        );
       } catch (e) {
         window.open(fallback, '_blank', 'noopener,noreferrer');
       }
-    }
-    // Default to Google Maps web for desktop and other devices
-    else {
+    } else {
       window.open(
         `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`,
         '_blank',
@@ -285,12 +275,9 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
   const handleTouchStart = useCallback(
     (e) => {
-      if (longPressTimeoutRef.current) {
+      if (longPressTimeoutRef.current)
         clearTimeout(longPressTimeoutRef.current);
-      }
-
       setIsPressing(true);
-
       longPressTimeoutRef.current = setTimeout(() => {
         setIsLongPressing(true);
         setShowFullscreen(true);
@@ -302,17 +289,12 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
   const handleTouchEnd = useCallback(
     (e) => {
-      if (isLongPressing) {
-        e.preventDefault();
-      }
-
+      if (isLongPressing) e.preventDefault();
       setIsPressing(false);
-
       if (longPressTimeoutRef.current) {
         clearTimeout(longPressTimeoutRef.current);
         longPressTimeoutRef.current = null;
       }
-
       setIsLongPressing(false);
     },
     [isLongPressing]
@@ -320,11 +302,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
   const TruncatedText = ({ text, maxLength, linkTo }) => {
     if (!text) return null;
-
-    if (text.length <= maxLength) {
-      return <span>{text}</span>;
-    }
-
+    if (text.length <= maxLength) return <span>{text}</span>;
     return (
       <>
         <span>{text.substring(0, maxLength)}...</span>
@@ -333,7 +311,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
     );
   };
 
-  const handleTouchMove = useCallback((e) => {
+  const handleTouchMove = useCallback(() => {
     if (longPressTimeoutRef.current) {
       clearTimeout(longPressTimeoutRef.current);
       longPressTimeoutRef.current = null;
@@ -343,14 +321,11 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
   const fullscreenSwipeHandlers = useSwipeable({
     onSwipedLeft: () => {
-      if (fullscreenIndex < post.media.length - 1) {
+      if (fullscreenIndex < post.media.length - 1)
         setFullscreenIndex(fullscreenIndex + 1);
-      }
     },
     onSwipedRight: () => {
-      if (fullscreenIndex > 0) {
-        setFullscreenIndex(fullscreenIndex - 1);
-      }
+      if (fullscreenIndex > 0) setFullscreenIndex(fullscreenIndex - 1);
     },
     preventDefaultTouchmoveEvent: !isZoomed,
     trackMouse: true,
@@ -368,25 +343,18 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
 
   const handleLike = useCallback(async () => {
     if (!isAuthenticated || isProcessing || hasLiked) return;
-
     likePost(post._id, () => {
       setPost((prevPost) => ({
         ...prevPost,
         likes: (prevPost.likes || 0) + 1,
       }));
-      if (typeof onLike === 'function') {
-        onLike(post._id);
-      }
+      if (typeof onLike === 'function') onLike(post._id);
     });
   }, [post._id, isProcessing, hasLiked, isAuthenticated, likePost, onLike]);
 
   const handleDoubleTapLike = useCallback(() => {
     if (!isAuthenticated) return;
-
-    if (!hasLiked) {
-      handleLike();
-    }
-
+    if (!hasLiked) handleLike();
     setIsDoubleTapLiking(true);
     setTimeout(() => setIsDoubleTapLiking(false), 700);
   }, [hasLiked, handleLike, isAuthenticated]);
@@ -398,7 +366,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
       postPreview.length > 50
         ? postPreview.substring(0, 50) + '...'
         : postPreview;
-
     showDeleteModal({
       title: 'Delete Post',
       message:
@@ -409,17 +376,14 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
       onConfirm: async () => {
         try {
           const token = localStorage.getItem('token');
-
           if (!token) {
             toast.error('Authentication required. Please log in again.');
             return;
           }
-
           const baseURL = process.env.REACT_APP_API_URL || '';
           const url = baseURL
             ? `${baseURL}/api/posts/${post._id}`
             : `/api/posts/${post._id}`;
-
           const response = await fetch(url, {
             method: 'DELETE',
             headers: {
@@ -428,11 +392,8 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
             },
             credentials: 'include',
           });
-
           if (response.ok) {
-            if (typeof onDelete === 'function') {
-              onDelete(post._id);
-            }
+            if (typeof onDelete === 'function') onDelete(post._id);
             toast.success('Post deleted successfully');
             window.location.reload();
           } else {
@@ -441,12 +402,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
               const errorData = await response.json();
               errorMessage = errorData.message || errorMessage;
             } catch (e) {
-              try {
-                const errorText = await response.text();
-                if (errorText) errorMessage = errorText;
-              } catch (e2) {
-                errorMessage = `Delete failed: ${response.status}`;
-              }
+              errorMessage = `Delete failed: ${response.status}`;
             }
             throw new Error(errorMessage);
           }
@@ -455,21 +411,17 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
           toast.error(err.message || 'Failed to delete post');
         }
       },
-      onCancel: () => {
-        setShowActions(false);
-      },
+      onCancel: () => setShowActions(false),
       destructive: true,
     });
-
     setShowActions(false);
   }, [post, onDelete, showDeleteModal]);
 
   const handleNext = useCallback(
     (e) => {
       if (e) e.preventDefault();
-      if (currentMediaIndex < post.media.length - 1) {
+      if (currentMediaIndex < post.media.length - 1)
         setCurrentMediaIndex((prev) => prev + 1);
-      }
     },
     [currentMediaIndex, post.media.length]
   );
@@ -477,9 +429,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   const handlePrev = useCallback(
     (e) => {
       if (e) e.preventDefault();
-      if (currentMediaIndex > 0) {
-        setCurrentMediaIndex((prev) => prev - 1);
-      }
+      if (currentMediaIndex > 0) setCurrentMediaIndex((prev) => prev - 1);
     },
     [currentMediaIndex]
   );
@@ -498,10 +448,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
         e.preventDefault();
         return;
       }
-
-      if (hasMultipleMedia) {
-        e.preventDefault();
-      }
+      if (hasMultipleMedia) e.preventDefault();
     },
     [isLongPressing, hasMultipleMedia]
   );
@@ -707,7 +654,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                 <FaHeart />
               </LikeIcon>
             )}
-
             <CommentButton
               onClick={handleOpenComments}
               aria-label='Open comments'
@@ -716,7 +662,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
               {commentCount > 0 && <CommentCount>{commentCount}</CommentCount>}
             </CommentButton>
           </ActionButtons>
-
           <LikesCount>
             <strong>{post.likes}</strong> {post.likes === 1 ? 'like' : 'likes'}
           </LikesCount>
@@ -754,8 +699,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
           )}
 
           <ViewPostLink to={`/post/${post._id}`}>
-            View Post
-            <ViewPostArrow>→</ViewPostArrow>
+            View Post<ViewPostArrow>→</ViewPostArrow>
           </ViewPostLink>
         </CardContent>
       </Card>
@@ -787,34 +731,28 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                 }}
                 loading='eager'
                 onError={(e) => {
-                  console.error('Image failed to load:', e);
                   e.target.src = post.media[fullscreenIndex].mediaUrl;
                 }}
               />
-
               {post.media.length > 1 && (
                 <>
                   <FullscreenNavButton
                     className='prev'
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (fullscreenIndex > 0) {
-                        setFullscreenIndex((prev) => prev - 1);
-                      }
+                      if (fullscreenIndex > 0) setFullscreenIndex((p) => p - 1);
                     }}
                     disabled={fullscreenIndex === 0}
                     aria-label='Previous image'
                   >
                     <FaChevronLeft />
                   </FullscreenNavButton>
-
                   <FullscreenNavButton
                     className='next'
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (fullscreenIndex < post.media.length - 1) {
-                        setFullscreenIndex((prev) => prev + 1);
-                      }
+                      if (fullscreenIndex < post.media.length - 1)
+                        setFullscreenIndex((p) => p + 1);
                     }}
                     disabled={fullscreenIndex === post.media.length - 1}
                     aria-label='Next image'
@@ -823,13 +761,11 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                   </FullscreenNavButton>
                 </>
               )}
-
               {post.media.length > 1 && (
                 <FullscreenIndicator>
                   {fullscreenIndex + 1} / {post.media.length}
                 </FullscreenIndicator>
               )}
-
               {post.media.length > 1 && (
                 <FullscreenProgressIndicator>
                   {post.media.map((_, index) => (
@@ -846,7 +782,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
                 </FullscreenProgressIndicator>
               )}
             </FullscreenWrapper>
-
             <CloseFullscreenButton
               onClick={(e) => {
                 e.stopPropagation();
@@ -878,62 +813,49 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
   );
 });
 
-// STYLED COMPONENTS
+// ── STYLED COMPONENTS ─────────────────────────────────────────────────────────
+
 const CardWrapper = styled.div`
   ${fontFaceStyles}
-  background-color: #1a1a1a;
   width: 100%;
   max-width: 600px;
   display: flex;
   justify-content: center;
   margin: 0 auto;
-  padding-bottom: 16px;
+  /* Clear bottom separator between cards */
+  border-bottom: 1px solid ${COLORS.divider};
   transition: opacity 0.5s ease;
   animation: ${fadeIn} 0.6s ease-out;
-  filter: none;
-  border-radius: 0;
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     width: 100%;
-    margin: 0 auto;
-    padding: 0 0 12px 0;
     max-width: 100%;
+    padding: 0;
   }
 `;
 
 const Card = styled.article`
   position: relative;
-  background-color: #1a1a1a;
-  border-radius: 0;
+  background-color: ${COLORS.cardBackground};
   overflow: visible;
   width: 100%;
   display: flex;
   flex-direction: column;
-  box-shadow: none;
-  transition: none;
-  border: 1px solid #2a2a2a;
+  /* Subtle border gives cards definition on desktop */
+  border: 1px solid rgba(255, 255, 255, 0.06);
 
-  &:before {
-    display: none;
-  }
-
-  &:hover {
-    transform: none;
-    box-shadow: none;
+  @media (max-width: 768px), screen and (display-mode: standalone) {
+    border-left: none;
+    border-right: none;
   }
 `;
+
 const CardHeader = styled.header`
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background-color: #1a1a1a;
-  position: relative;
-  border-bottom: none;
-
-  &:before {
-    display: none;
-  }
+  background-color: ${COLORS.cardBackground};
 
   @media (max-width: 768px), screen and (display-mode: standalone) {
     padding: 12px 16px;
@@ -963,11 +885,6 @@ const Username = styled.span`
   margin: 0;
   line-height: 1.1;
   color: ${COLORS.textPrimary};
-
-  &:hover {
-    color: ${COLORS.textPrimary};
-    text-shadow: none;
-  }
 `;
 
 const DateBadge = styled.div`
@@ -977,7 +894,6 @@ const DateBadge = styled.div`
   font-size: 0.7rem;
   margin-top: 2px;
   font-weight: normal;
-
   svg {
     display: none;
   }
@@ -997,7 +913,6 @@ const ActionsButton = styled.button`
   justify-content: center;
   width: 36px;
   height: 36px;
-
   &:hover {
     background-color: rgba(0, 0, 0, 0.2);
     color: ${COLORS.accentMint};
@@ -1033,23 +948,19 @@ const ActionItem = styled.button`
   align-items: center;
   text-decoration: none;
   transition: all 0.2s ease;
-
   svg {
     margin-right: 12px;
     font-size: 0.9rem;
     color: ${COLORS.textSecondary};
     transition: all 0.2s ease;
   }
-
   &:hover {
     background-color: ${COLORS.buttonHover};
     color: ${COLORS.accentMint};
-
     svg {
       color: ${COLORS.accentMint};
     }
   }
-
   &:not(:last-child) {
     border-bottom: 1px solid ${COLORS.divider};
   }
@@ -1065,7 +976,6 @@ const MediaContainer = styled(Link)`
   transition: opacity 0.2s ease;
   opacity: ${(props) => (props.isPressing ? 0.9 : 1)};
   border: none;
-
   &:before {
     content: '';
     position: absolute;
@@ -1118,42 +1028,27 @@ const PostImage = styled.img`
   object-fit: cover;
   transition: opacity 0.5s ease;
   opacity: 0;
-  border-radius: 0;
-  box-shadow: none;
-  transform: scale(1);
-
   &.loaded {
     opacity: 1;
-    transform: scale(1);
   }
-
-  ${MediaContainer}:hover & {
-    transform: scale(1);
-  }
-
   &.filter-warm {
     filter: saturate(1.2) sepia(0.15) contrast(1.05);
   }
-
   &.filter-cool {
     filter: saturate(0.9) hue-rotate(10deg) brightness(1.05);
   }
-
   &.filter-grayscale {
     filter: grayscale(0.9);
   }
-
   &.filter-vintage {
     filter: sepia(0.35) saturate(1.3) contrast(1.1);
   }
   &.filter-clarendon {
     filter: contrast(1.2) saturate(1.35);
   }
-
   &.filter-gingham {
     filter: brightness(1.05) sepia(0.2);
   }
-
   &.filter-moon {
     filter: grayscale(1) brightness(1.1) contrast(1.1);
   }
@@ -1163,19 +1058,15 @@ const PostVideo = styled.video`
   width: 100%;
   height: 100%;
   object-fit: cover;
-
   &.filter-warm {
     filter: saturate(1.1) sepia(0.15) contrast(1.05);
   }
-
   &.filter-cool {
     filter: saturate(0.95) hue-rotate(15deg) brightness(1.05);
   }
-
   &.filter-grayscale {
     filter: grayscale(0.8);
   }
-
   &.filter-vintage {
     filter: sepia(0.25) saturate(1.1) contrast(1.1);
   }
@@ -1199,43 +1090,34 @@ const NavigationArrow = styled.button`
   transition: all 0.2s ease;
   z-index: 2;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-
   &:hover {
     opacity: 1 !important;
     background-color: ${COLORS.primaryMint};
   }
-
   ${MediaContainer}:hover & {
     opacity: 0.9;
   }
-
   &.prev {
     left: 12px;
   }
-
   &.next {
     right: 12px;
   }
-
   &:disabled {
     opacity: 0.15;
     cursor: not-allowed;
     background-color: rgba(0, 0, 0, 0.4);
   }
-
   @media (max-width: 768px), screen and (display-mode: standalone) {
     opacity: 0.7;
     width: 36px;
     height: 36px;
-
     &:active {
       transform: translateY(-50%) scale(0.95);
     }
-
     &.prev {
       left: 8px;
     }
-
     &.next {
       right: 8px;
     }
@@ -1269,20 +1151,10 @@ const ProgressDot = styled.button`
   padding: 0;
   transition: all 0.2s ease;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
-
   &:hover {
     transform: scale(1.2);
     background-color: ${(props) =>
       props.active ? COLORS.accentMint : 'rgba(255, 255, 255, 0.8)'};
-  }
-
-  @media (max-width: 768px), screen and (display-mode: standalone) {
-    width: 8px;
-    height: 8px;
-
-    &:active {
-      transform: scale(0.9);
-    }
   }
 `;
 
@@ -1297,7 +1169,6 @@ const HeartAnimation = styled.div`
   animation: ${scaleIn} 1s ease forwards;
   z-index: 3;
   filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.7));
-
   @media (max-width: 768px), screen and (display-mode: standalone) {
     font-size: 90px;
   }
@@ -1306,7 +1177,6 @@ const HeartAnimation = styled.div`
 const CardActions = styled.div`
   padding: 12px 16px 4px;
   background-color: transparent;
-  border-bottom: none;
   display: flex;
   flex-direction: column;
 `;
@@ -1330,14 +1200,15 @@ const LikeButton = styled.button`
   display: flex;
   align-items: center;
   transition: all 0.2s ease;
-
+  /* Larger tap target on mobile */
+  min-width: 44px;
+  min-height: 44px;
   &:hover {
     transform: ${(props) =>
       !props.disabled || props.liked ? 'scale(1.15)' : 'none'};
     color: ${(props) =>
       !props.disabled && !props.liked ? COLORS.heartRed : ''};
   }
-
   &:active {
     transform: ${(props) =>
       !props.disabled || props.liked ? 'scale(0.9)' : 'none'};
@@ -1349,6 +1220,8 @@ const LikeIcon = styled.div`
   font-size: 1.5rem;
   display: flex;
   align-items: center;
+  min-width: 44px;
+  min-height: 44px;
 `;
 
 const CommentButton = styled.button`
@@ -1362,7 +1235,9 @@ const CommentButton = styled.button`
   background: none;
   border: none;
   padding: 0;
-
+  /* Larger tap target on mobile */
+  min-width: 44px;
+  min-height: 44px;
   &:hover {
     transform: scale(1.15);
     color: ${COLORS.textSecondary};
@@ -1379,17 +1254,16 @@ const LikesCount = styled.div`
   font-size: 0.9rem;
   color: ${COLORS.textPrimary};
   margin-bottom: 8px;
-
   strong {
     font-weight: 600;
   }
 `;
 
 const CardContent = styled.div`
-  padding: 0 16px 8px;
+  padding: 0 16px 12px;
   display: flex;
   flex-direction: column;
-  background-color: #1a1a1a;
+  background-color: ${COLORS.cardBackground};
 `;
 
 const PostTitle = styled.h2`
@@ -1404,7 +1278,6 @@ const PostTitle = styled.h2`
 const Content = styled.div`
   color: ${COLORS.textSecondary};
   font-size: 0.9rem;
-  font-weight: normal;
   line-height: 1.4;
   margin: 0 0 8px 0;
   word-break: break-word;
@@ -1413,7 +1286,6 @@ const Content = styled.div`
 const Caption = styled.div`
   color: ${COLORS.textSecondary};
   font-size: 0.9rem;
-  font-weight: normal;
   line-height: 1.4;
   margin: 0 0 8px 0;
   word-break: break-word;
@@ -1422,23 +1294,24 @@ const Caption = styled.div`
 const TagsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 14px 0 16px;
+  gap: 6px;
+  margin: 10px 0 12px;
 `;
 
+// ── CHANGED: font-size was 0.5rem (bug), now 0.75rem. Added mint left-border accent.
 const Tag = styled.span`
-  color: ${COLORS.textPrimary};
-  font-size: 0.5rem;
-  transition: all 0.2s ease;
-  font-weight: 400;
-  padding: 4px 10px;
+  color: ${COLORS.textSecondary};
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 3px 10px;
   border-radius: 4px;
-  background-color: ${COLORS.buttonHover};
-
+  background-color: ${COLORS.elevatedBackground};
+  border-left: 2px solid ${COLORS.primaryMint};
+  transition: all 0.2s ease;
   &:hover {
-    background-color: ${COLORS.primaryMint}30;
-    transform: translateY(-2px);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+    background-color: ${COLORS.primaryMint}20;
+    color: ${COLORS.accentMint};
+    transform: translateY(-1px);
   }
 `;
 
@@ -1451,7 +1324,6 @@ const ViewPostArrow = styled.span`
   transition: transform 0.3s ease;
   font-size: 16px;
   line-height: 1;
-
   ${ViewPostLink}:hover & {
     transform: translateX(4px);
   }
@@ -1500,7 +1372,6 @@ const FullscreenIndicator = styled.div`
   border-radius: 4px;
   font-size: 14px;
   font-weight: 500;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 `;
 
 const CloseFullscreenButton = styled.button`
@@ -1519,15 +1390,12 @@ const CloseFullscreenButton = styled.button`
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-
   -webkit-tap-highlight-color: transparent;
   outline: none;
-
   &:active {
     background-color: ${COLORS.primaryMint}80;
     transform: scale(0.95);
   }
-
   &:hover {
     background-color: ${COLORS.primaryMint};
     transform: scale(1.05);
@@ -1538,25 +1406,23 @@ const PostLink = styled(Link)`
   text-decoration: none;
   color: inherit;
   display: block;
-
   &:hover ${PostTitle} {
     color: ${COLORS.accentMint};
   }
 `;
 
+// ── CHANGED: salmon ring on avatar — gives every card a branded anchor point
 const UserAvatarImage = styled.img`
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
   margin-right: 12px;
-  border: none;
-  box-shadow: none;
-  transition: none;
-
+  border: 2px solid ${COLORS.primarySalmon};
+  box-shadow: 0 0 0 1px ${COLORS.background};
+  transition: border-color 0.2s ease;
   &:hover {
-    transform: none;
-    box-shadow: none;
+    border-color: ${COLORS.accentSalmon};
   }
 `;
 
@@ -1580,10 +1446,7 @@ const BurstHeart = styled.div`
 `;
 
 const burst = (index) => keyframes`
-  0% {
-    transform: scale(0) translate(0, 0);
-    opacity: 1;
-  }
+  0% { transform: scale(0) translate(0, 0); opacity: 1; }
   80% {
     transform: scale(1) translate(${
       Math.cos((index / 8) * 2 * Math.PI) * 40
@@ -1604,7 +1467,6 @@ const ReadMoreLink = styled(Link)`
   font-size: 0.8rem;
   text-decoration: none;
   margin-left: 4px;
-
   &:hover {
     color: ${COLORS.primarySalmon};
     text-decoration: underline;
@@ -1628,34 +1490,27 @@ const FullscreenNavButton = styled.button`
   opacity: 0.7;
   transition: all 0.2s ease;
   z-index: 10;
-
   -webkit-tap-highlight-color: transparent;
   outline: none;
-
   &:active {
     background-color: ${COLORS.primaryMint}80;
     transform: translateY(-50%) scale(0.95);
   }
-
   &:hover {
     opacity: 1;
     background-color: ${COLORS.primaryMint};
   }
-
   &.prev {
     left: 20px;
   }
-
   &.next {
     right: 20px;
   }
-
   &:disabled {
     opacity: 0.3;
     cursor: not-allowed;
     background-color: rgba(0, 0, 0, 0.3);
   }
-
   @media (max-width: 768px) {
     width: 40px;
     height: 40px;
@@ -1683,17 +1538,13 @@ const FullscreenProgressDot = styled.button`
   cursor: pointer;
   padding: 0;
   transition: all 0.2s ease;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
-
   -webkit-tap-highlight-color: transparent;
   outline: none;
-
   &:hover {
     transform: scale(1.2);
     background-color: ${(props) =>
       props.active ? COLORS.accentMint : 'rgba(255, 255, 255, 0.8)'};
   }
-
   &:active {
     transform: scale(0.9);
   }
@@ -1709,13 +1560,11 @@ const LocationBar = styled.div`
   transition: all 0.2s ease;
   cursor: pointer;
   user-select: none;
-
   &:hover {
     background-color: ${COLORS.primaryKhaki}25;
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
-
   &:active {
     transform: translateY(0);
     background-color: ${COLORS.primaryKhaki}35;
@@ -1730,7 +1579,6 @@ const LocationIcon = styled.div`
   color: ${COLORS.primarySalmon};
   font-size: 14px;
   transition: all 0.2s ease;
-
   ${LocationBar}:hover & {
     color: ${COLORS.accentSalmon};
     transform: scale(1.1);
@@ -1745,7 +1593,6 @@ const LocationText = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
   transition: color 0.2s ease;
-
   ${LocationBar}:hover & {
     color: ${COLORS.textPrimary};
   }
@@ -1761,7 +1608,6 @@ const LocationIndicator = styled.div`
   opacity: 0;
   transition: all 0.2s ease;
   transform: translateX(-4px);
-
   ${LocationBar}:hover & {
     opacity: 0.7;
     transform: translateX(0);
