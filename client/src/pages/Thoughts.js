@@ -1,591 +1,636 @@
-// client/src/pages/Thoughts.js
+// pages/Thoughts.js
 import React, {
   useState,
+  useEffect,
   useContext,
-  useRef,
   useCallback,
-  Suspense,
+  useRef,
 } from 'react';
-import { Link } from 'react-router-dom';
-import styled from 'styled-components';
-import { format } from 'date-fns';
-import {
-  FaSearch,
-  FaTimes,
-  FaRetweet,
-  FaPen,
-  FaLightbulb,
-} from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import styled, { keyframes } from 'styled-components';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import { FaSearch, FaTimes, FaPen } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
 import { useDeleteModal } from '../context/DeleteModalContext';
-import { COLORS } from '../theme';
 import MainLayout from '../components/layout/MainLayout';
-import LoadingSpinner from '../components/common/LoadingSpinner';
 import ThoughtCard from '../components/posts/ThoughtCard';
-import {
-  useInfiniteThoughts,
-  useDeleteThought,
-  useLikeThought,
-  usePinThought,
-} from '../hooks/queries/useThoughts';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import { COLORS } from '../theme';
+import { moodEmojis } from '../utils/themeConstants';
+import { format } from 'date-fns';
 
-const moodEmojis = {
-  inspired: '✨',
-  reflective: '🌙',
-  excited: '🔥',
-  creative: '🎨',
-  calm: '🌊',
-  curious: '🔍',
-  nostalgic: '📷',
-  amused: '😄',
-};
+/**
+ * Thoughts — Twitter/Threads-style feed
+ *
+ * Structure
+ *   ┌─ Sticky feed header ─────────────────────┐
+ *   │  SoloThoughts            🔍              │
+ *   │  [All] [✨] [🌙] [🔥] … (scrollable)    │
+ *   └──────────────────────────────────────────┘
+ *   ┌─ Compose row (admin/creator) ────────────┐
+ *   │  [A]  What are you thinking?   [Post]    │
+ *   └──────────────────────────────────────────┘
+ *     divider
+ *   ┌─ ThoughtCard (feed row) ─────────────────┐
+ *   │  …repeating…                             │
+ *   └──────────────────────────────────────────┘
+ */
 
-const defaultUser = {
-  username: 'Andrew',
-  handle: 'andrew',
-  avatar: null,
-};
+const MOODS = Object.keys(moodEmojis);
+
+const defaultUser = { username: 'Andrew', handle: 'andrew', avatar: null };
 
 const Thoughts = () => {
   const { isAuthenticated, user } = useContext(AuthContext);
   const { showDeleteModal } = useDeleteModal();
+  const navigate = useNavigate();
 
-  const isAdmin = isAuthenticated && user?.role === 'admin';
-  const canCreateThought =
+  const canCreate =
     isAuthenticated && (user?.role === 'admin' || user?.role === 'creator');
 
+  // ── Data state ─────────────────────────────────────────────────────────────
+  const [thoughts, setThoughts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
+  // ── Filter / search state ──────────────────────────────────────────────────
+  const [selectedMood, setSelectedMood] = useState('all');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
-  const [searchExpanded, setSearchExpanded] = useState(false);
-  const [selectedMood, setSelectedMood] = useState('all');
-  const [showRetweetModal, setShowRetweetModal] = useState(false);
 
-  const {
-    data,
-    isLoading,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-    error,
-  } = useInfiniteThoughts(activeSearch);
+  const searchRef = useRef(null);
 
-  const deleteThought = useDeleteThought();
-  const likeThought = useLikeThought();
-  const pinThought = usePinThought();
+  // ── Fetch ──────────────────────────────────────────────────────────────────
+  const fetchThoughts = useCallback(
+    async (reset = false) => {
+      try {
+        reset ? setLoading(true) : setLoadingMore(true);
 
-  const allThoughts =
-    data?.pages.flatMap((page) =>
-      page.data.map((thought) => ({
-        ...thought,
-        user: defaultUser,
-        userHasLiked: false,
-        comments: thought.comments || [],
-        shares: Math.floor(Math.random() * 10),
-      }))
-    ) ?? [];
+        const currentPage = reset ? 1 : page;
+        const url = activeSearch
+          ? `/api/thoughts/search?query=${activeSearch}&page=${currentPage}`
+          : `/api/thoughts?page=${currentPage}`;
 
-  const observer = useRef();
-  const sentinelRef = useCallback(
-    (node) => {
-      if (isFetchingNextPage) return;
-      if (observer.current) observer.current.disconnect();
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasNextPage) fetchNextPage();
-      });
-      if (node) observer.current.observe(node);
+        const { data } = await axios.get(url);
+
+        const incoming = data.data.map((t) => ({
+          ...t,
+          userHasLiked: false,
+          comments: t.comments || [],
+          shares: t.shares ?? 0,
+        }));
+
+        setThoughts((prev) =>
+          reset || currentPage === 1 ? incoming : [...prev, ...incoming]
+        );
+        setHasMore(currentPage < data.totalPages);
+        setError(null);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load thoughts. Please try again.');
+        toast.error('Failed to load thoughts');
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     },
-    [isFetchingNextPage, hasNextPage, fetchNextPage]
+    [page, activeSearch]
   );
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    setActiveSearch(searchQuery);
-    if (window.innerWidth <= 768) setSearchExpanded(false);
+  useEffect(() => {
+    fetchThoughts();
+  }, [fetchThoughts]);
+
+  // ── Infinite scroll ────────────────────────────────────────────────────────
+  useEffect(() => {
+    const onScroll = () => {
+      const nearBottom =
+        window.innerHeight + document.documentElement.scrollTop >=
+        document.documentElement.offsetHeight - 300;
+      if (nearBottom && !loading && !loadingMore && hasMore) {
+        setPage((p) => p + 1);
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [loading, loadingMore, hasMore]);
+
+  // ── Search focus ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (searchOpen) requestAnimationFrame(() => searchRef.current?.focus());
+  }, [searchOpen]);
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
+  const submitSearch = (e) => {
+    e?.preventDefault();
+    const q = searchQuery.trim();
+    setActiveSearch(q);
+    setPage(1);
+    setThoughts([]);
+    fetchThoughts(true);
+    if (window.innerWidth <= 768) setSearchOpen(false);
   };
 
   const clearSearch = () => {
     setSearchQuery('');
     setActiveSearch('');
+    setPage(1);
+    setThoughts([]);
+    fetchThoughts(true);
   };
 
-  const handleLike = (id) => likeThought.mutate(id);
-  const handleRetweet = () => setShowRetweetModal(true);
-  const handlePin = (id) => pinThought.mutate(id);
+  const handleLike = async (id) => {
+    try {
+      const { data } = await axios.put(`/api/thoughts/${id}/like`);
+      setThoughts((prev) =>
+        prev.map((t) =>
+          t._id === id
+            ? {
+                ...data.data,
+                userHasLiked: !t.userHasLiked,
+                comments: t.comments,
+                shares: t.shares,
+              }
+            : t
+        )
+      );
+    } catch {
+      toast.error('Failed to like thought');
+    }
+  };
 
-  const handleDeleteThought = (thoughtId) => {
-    const thought = allThoughts.find((t) => t._id === thoughtId);
-    const thoughtPreview =
-      thought?.content?.length > 50
-        ? thought.content.substring(0, 50) + '...'
-        : thought?.content || 'this thought';
+  const handlePin = async (id) => {
+    try {
+      const { data } = await axios.put(`/api/thoughts/${id}/pin`);
+      fetchThoughts(true);
+      toast.success(`Thought ${data.data.pinned ? 'pinned' : 'unpinned'}`);
+    } catch {
+      toast.error('Failed to update pin');
+    }
+  };
+
+  const handleDeleteThought = (id) => {
+    const thought = thoughts.find((t) => t._id === id);
+    const preview =
+      thought?.content?.slice(0, 50) +
+      (thought?.content?.length > 50 ? '…' : '');
 
     showDeleteModal({
       title: 'Delete Thought',
       message: thought?.pinned
         ? 'This is a pinned thought. Deleting it will remove it from your pinned collection. This action cannot be undone.'
-        : 'Are you sure you want to delete this thought? This action cannot be undone and all interactions will be lost.',
-      confirmText: 'Delete Thought',
-      cancelText: 'Keep Thought',
-      itemName: thoughtPreview,
-      onConfirm: () => deleteThought.mutate(thoughtId),
-      onCancel: () => {},
+        : 'Are you sure you want to delete this thought? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      itemName: preview,
       destructive: true,
+      onConfirm: async () => {
+        try {
+          await axios.delete(`/api/thoughts/${id}`);
+          setThoughts((prev) => prev.filter((t) => t._id !== id));
+          toast.success('Thought deleted');
+        } catch {
+          toast.error('Failed to delete thought');
+        }
+      },
     });
   };
 
   const formatDate = (dateString) =>
-    format(new Date(dateString), 'MMM d, yyyy • h:mm a');
+    format(new Date(dateString), 'MMM d, yyyy · h:mm a');
 
-  const filteredThoughts =
-    selectedMood === 'all'
-      ? allThoughts
-      : allThoughts.filter((t) => t.mood === selectedMood);
+  // ── Filtered thoughts ──────────────────────────────────────────────────────
+  const visible = thoughts.filter(
+    (t) => selectedMood === 'all' || t.mood === selectedMood
+  );
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────────────────────────────────────
   return (
     <MainLayout>
-      <PageWrapper>
-        <Header>
-          <HeaderLeft>
-            <PageTitle>SoloThoughts</PageTitle>
-            <MoodFilter>
-              <MoodButton
-                active={selectedMood === 'all'}
-                onClick={() => setSelectedMood('all')}
-                mood='all'
-              >
-                All
-              </MoodButton>
-              {Object.keys(moodEmojis).map((mood) => (
-                <MoodButton
-                  key={mood}
-                  active={selectedMood === mood}
-                  mood={mood}
-                  onClick={() => setSelectedMood(mood)}
-                >
-                  {moodEmojis[mood]}
-                </MoodButton>
-              ))}
-            </MoodFilter>
-          </HeaderLeft>
-
-          <HeaderRight>
-            <SearchContainer expanded={searchExpanded}>
-              {!searchExpanded ? (
-                <SearchIconButton onClick={() => setSearchExpanded(true)}>
-                  <FaSearch />
-                </SearchIconButton>
-              ) : (
-                <SearchForm onSubmit={handleSearchSubmit}>
+      <FeedWrapper>
+        {/* ══ Sticky feed header ══════════════════════════════════════════════ */}
+        <FeedHeader>
+          <FeedHeaderTop>
+            <FeedTitle>SoloThoughts</FeedTitle>
+            <HeaderActions>
+              {searchOpen ? (
+                <SearchForm onSubmit={submitSearch}>
                   <SearchInput
-                    autoFocus
+                    ref={searchRef}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder='Search thoughts...'
+                    placeholder='Search thoughts…'
                   />
                   {searchQuery && (
-                    <ClearButton type='button' onClick={clearSearch}>
+                    <SearchClear type='button' onClick={clearSearch}>
                       <FaTimes />
-                    </ClearButton>
+                    </SearchClear>
                   )}
-                  <SearchButton type='submit'>
-                    <FaSearch />
-                  </SearchButton>
-                  <SearchButton
-                    type='button'
-                    onClick={() => {
-                      setSearchExpanded(false);
-                      clearSearch();
-                    }}
-                  >
-                    <FaTimes />
-                  </SearchButton>
                 </SearchForm>
+              ) : (
+                <HeaderIconBtn
+                  onClick={() => setSearchOpen(true)}
+                  aria-label='Search'
+                >
+                  <FaSearch />
+                </HeaderIconBtn>
               )}
-            </SearchContainer>
+              {searchOpen && (
+                <CancelBtn
+                  type='button'
+                  onClick={() => {
+                    setSearchOpen(false);
+                    clearSearch();
+                  }}
+                >
+                  Cancel
+                </CancelBtn>
+              )}
+            </HeaderActions>
+          </FeedHeaderTop>
 
-            {canCreateThought && (
-              <CreateButton to='/thoughts/create'>
-                <FaPen />
-                <span>New Thought</span>
-              </CreateButton>
-            )}
-          </HeaderRight>
-        </Header>
+          {/* Mood tabs — scrollable, flush to bottom of header */}
+          <MoodTabs>
+            <MoodTab
+              $active={selectedMood === 'all'}
+              onClick={() => setSelectedMood('all')}
+            >
+              All
+            </MoodTab>
+            {MOODS.map((mood) => (
+              <MoodTab
+                key={mood}
+                $active={selectedMood === mood}
+                onClick={() => setSelectedMood(mood)}
+              >
+                {moodEmojis[mood]}{' '}
+                {mood.charAt(0).toUpperCase() + mood.slice(1)}
+              </MoodTab>
+            ))}
+          </MoodTabs>
+        </FeedHeader>
 
-        {activeSearch && (
-          <SearchResultsBanner>
-            Showing results for &ldquo;{activeSearch}&rdquo;
-            <ClearSearchLink onClick={clearSearch}>Clear</ClearSearchLink>
-          </SearchResultsBanner>
+        {/* ══ Compose row ═════════════════════════════════════════════════════ */}
+        {canCreate && (
+          <ComposeRow onClick={() => navigate('/thoughts/create')}>
+            <ComposeAvatar>
+              {defaultUser.username.charAt(0).toUpperCase()}
+            </ComposeAvatar>
+            <ComposePlaceholder>What are you thinking?</ComposePlaceholder>
+            <ComposeBtn type='button'>
+              <FaPen />
+              <span>Thought</span>
+            </ComposeBtn>
+          </ComposeRow>
         )}
 
-        <ThoughtsContainer>
-          {error ? (
-            <ErrorMessage>
-              Failed to load thoughts. Please try again.
-            </ErrorMessage>
-          ) : isLoading ? (
-            <LoadingSpinner text='Loading thoughts' />
-          ) : filteredThoughts.length > 0 ? (
-            <>
-              {filteredThoughts.map((thought, index) => {
-                const isLast = index === filteredThoughts.length - 1;
-                return (
-                  <Suspense
-                    key={thought._id}
-                    fallback={
-                      <div
-                        style={{
-                          height: '200px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#666',
-                        }}
-                      >
-                        Loading thought...
-                      </div>
-                    }
-                  >
-                    <div ref={isLast ? sentinelRef : null}>
-                      <ThoughtCard
-                        thought={thought}
-                        defaultUser={defaultUser}
-                        formatDate={formatDate}
-                        handleLike={handleLike}
-                        handleRetweet={handleRetweet}
-                        handlePin={handlePin}
-                        canCreateThought={canCreateThought}
-                        onDelete={handleDeleteThought}
-                      />
-                    </div>
-                  </Suspense>
-                );
-              })}
+        {/* ══ Feed ════════════════════════════════════════════════════════════ */}
+        {error ? (
+          <StatusBox>
+            <p>{error}</p>
+            <RetryBtn onClick={() => fetchThoughts(true)}>Try again</RetryBtn>
+          </StatusBox>
+        ) : loading ? (
+          <LoadingSpinner text='Loading thoughts' height='300px' />
+        ) : visible.length === 0 ? (
+          <StatusBox>
+            <EmptyIcon>💭</EmptyIcon>
+            <p>
+              {activeSearch
+                ? `No thoughts matching "${activeSearch}"`
+                : selectedMood !== 'all'
+                ? `No ${selectedMood} thoughts yet`
+                : 'No thoughts yet'}
+            </p>
+            {canCreate && (
+              <RetryBtn as={Link} to='/thoughts/create'>
+                Write your first thought
+              </RetryBtn>
+            )}
+          </StatusBox>
+        ) : (
+          <>
+            {visible.map((thought) => (
+              <ThoughtCard
+                key={thought._id}
+                thought={thought}
+                defaultUser={defaultUser}
+                formatDate={formatDate}
+                handleLike={handleLike}
+                handleRetweet={() => {}} // future: real repost
+                handlePin={handlePin}
+                canCreateThought={canCreate}
+                onDelete={handleDeleteThought}
+              />
+            ))}
 
-              {isFetchingNextPage && (
-                <LoadingMore>
-                  <LoadingSpinner
-                    size='30px'
-                    text='Loading more'
-                    textSize='0.875rem'
-                    height='80px'
-                  />
-                </LoadingMore>
-              )}
-            </>
-          ) : (
-            <EmptyState>
-              <FaLightbulb />
-              <p>
-                No thoughts found
-                {activeSearch && ` matching "${activeSearch}"`}
-                {selectedMood !== 'all' && ` with mood "${selectedMood}"`}.
-              </p>
-            </EmptyState>
-          )}
-        </ThoughtsContainer>
-      </PageWrapper>
+            {loadingMore && (
+              <LoadingSpinner
+                size='32px'
+                text='Loading more'
+                textSize='0.8rem'
+                height='80px'
+              />
+            )}
 
-      {showRetweetModal && (
-        <ModalOverlay>
-          <RetweetModal>
-            <ModalIcon>
-              <FaRetweet />
-            </ModalIcon>
-            <RetweetModalContent>
-              <h3>Echoed in the Cosmos!</h3>
-              <p>Your thought has been shared with the universe.</p>
-              <p>Ripples of your wisdom now travel through digital space.</p>
-            </RetweetModalContent>
-            <RetweetCloseButton onClick={() => setShowRetweetModal(false)}>
-              Amazing
-            </RetweetCloseButton>
-          </RetweetModal>
-        </ModalOverlay>
-      )}
+            {!hasMore && visible.length > 0 && (
+              <EndOfFeed>You've caught up ✦</EndOfFeed>
+            )}
+          </>
+        )}
+      </FeedWrapper>
     </MainLayout>
   );
 };
 
-// ── Styled Components ─────────────────────────────────────────────────────────
+export default Thoughts;
 
-const PageWrapper = styled.div`
-  max-width: 680px;
-  margin: 0 auto;
-  padding: 1.5rem 1rem;
+// ─────────────────────────────────────────────────────────────────────────────
+// Keyframes
+// ─────────────────────────────────────────────────────────────────────────────
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 `;
 
-const Header = styled.div`
+// ─────────────────────────────────────────────────────────────────────────────
+// Styles
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FeedWrapper = styled.div`
+  width: 100%;
+  min-height: 100vh;
+  background: ${COLORS.background};
+  animation: ${fadeUp} 0.2s ease both;
+`;
+
+/* ── Sticky feed header ── */
+const FeedHeader = styled.div`
+  position: sticky;
+  top: 52px; /* clears the mobile top bar (54px) */
+  z-index: 100;
+  background: ${COLORS.background}ee;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid ${COLORS.border};
+
+  @media (min-width: 960px) {
+    top: 0; /* no mobile top bar on desktop */
+  }
+`;
+
+const FeedHeaderTop = styled.div`
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
-  gap: 1rem;
-  flex-wrap: wrap;
+  padding: 14px 16px 10px;
+  gap: 10px;
 `;
 
-const HeaderLeft = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  /* Prevent mood pills from overflowing the header */
-  min-width: 0;
-  flex: 1;
-`;
-
-const HeaderRight = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-shrink: 0;
-`;
-
-/* CHANGED: gradient text instead of flat white */
-const PageTitle = styled.h1`
-  font-size: 1.5rem;
-  font-weight: 700;
+const FeedTitle = styled.h1`
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: ${COLORS.textPrimary};
   margin: 0;
-  background: linear-gradient(
-    90deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.primaryMint}
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-`;
-
-/* CHANGED: nowrap + horizontal scroll — no more orphaned emoji on row 2 */
-const MoodFilter = styled.div`
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0.5rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  padding-bottom: 2px;
-  &::-webkit-scrollbar {
-    display: none;
-  }
-`;
-
-const MoodButton = styled.button`
-  background-color: ${(props) =>
-    props.active ? COLORS.primarySalmon : COLORS.elevatedBackground};
-  color: ${(props) => (props.active ? 'white' : COLORS.textSecondary)};
-  border: 1px solid
-    ${(props) => (props.active ? COLORS.primarySalmon : COLORS.border)};
-  border-radius: 20px;
-  padding: 0.3rem 0.75rem;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  letter-spacing: -0.2px;
   flex-shrink: 0;
-  &:hover {
-    border-color: ${COLORS.primarySalmon};
-    color: ${(props) => (props.active ? 'white' : COLORS.primarySalmon)};
-  }
 `;
 
-const SearchContainer = styled.div`
+const HeaderActions = styled.div`
   display: flex;
   align-items: center;
-  transition: all 0.3s ease;
-  width: ${(props) => (props.expanded ? '250px' : 'auto')};
+  gap: 6px;
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 0;
 `;
 
-const SearchIconButton = styled.button`
-  background: none;
+const HeaderIconBtn = styled.button`
+  width: 34px;
+  height: 34px;
   border: none;
+  background: none;
   color: ${COLORS.textSecondary};
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.9rem;
   cursor: pointer;
-  padding: 0.5rem;
-  font-size: 1rem;
+  transition: background 0.12s, color 0.12s;
+  flex-shrink: 0;
   &:hover {
+    background: ${COLORS.elevatedBackground};
     color: ${COLORS.primarySalmon};
   }
 `;
 
 const SearchForm = styled.form`
+  flex: 1;
   display: flex;
   align-items: center;
-  background-color: ${COLORS.elevatedBackground};
+  gap: 8px;
+  background: ${COLORS.elevatedBackground};
   border: 1px solid ${COLORS.border};
-  border-radius: 20px;
-  padding: 0.25rem 0.5rem;
-  width: 100%;
-  gap: 0.25rem;
+  border-radius: 12px;
+  padding: 7px 12px;
+  min-width: 0;
 `;
 
 const SearchInput = styled.input`
+  flex: 1;
   background: none;
   border: none;
-  color: ${COLORS.textPrimary};
-  font-size: 0.875rem;
-  flex: 1;
   outline: none;
+  color: ${COLORS.textPrimary};
+  font-size: 0.93rem;
+  min-width: 0;
   &::placeholder {
     color: ${COLORS.textTertiary};
   }
 `;
 
-const SearchButton = styled.button`
-  background: none;
-  border: none;
-  color: ${COLORS.textSecondary};
-  cursor: pointer;
-  padding: 0.25rem;
-  font-size: 0.875rem;
-  &:hover {
-    color: ${COLORS.primarySalmon};
-  }
-`;
-
-const ClearButton = styled.button`
+const SearchClear = styled.button`
   background: none;
   border: none;
   color: ${COLORS.textTertiary};
   cursor: pointer;
-  padding: 0.25rem;
-  font-size: 0.75rem;
-`;
-
-const CreateButton = styled(Link)`
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: ${COLORS.primarySalmon};
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  transition: all 0.3s;
-  white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(233, 137, 115, 0.3);
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  padding: 0;
+  flex-shrink: 0;
   &:hover {
-    background-color: ${COLORS.accentSalmon};
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(233, 137, 115, 0.4);
+    color: ${COLORS.textPrimary};
   }
 `;
 
-const SearchResultsBanner = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background-color: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
-  color: ${COLORS.textSecondary};
-`;
-
-const ClearSearchLink = styled.button`
+const CancelBtn = styled.button`
   background: none;
   border: none;
   color: ${COLORS.primarySalmon};
+  font-size: 0.9rem;
+  font-weight: 700;
   cursor: pointer;
-  font-size: 0.875rem;
-  padding: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
   &:hover {
-    text-decoration: underline;
+    opacity: 0.75;
   }
 `;
 
-const ThoughtsContainer = styled.div`
+/* Mood tabs */
+const MoodTabs = styled.div`
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  border-top: 1px solid ${COLORS.border};
+`;
+
+const MoodTab = styled.button`
+  flex-shrink: 0;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: ${(p) => (p.$active ? 700 : 500)};
+  color: ${(p) => (p.$active ? COLORS.textPrimary : COLORS.textTertiary)};
+  cursor: pointer;
+  position: relative;
+  transition: color 0.12s;
+  white-space: nowrap;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 16px;
+    right: 16px;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+    background: ${COLORS.primarySalmon};
+    opacity: ${(p) => (p.$active ? 1 : 0)};
+    transition: opacity 0.12s;
+  }
+
+  &:hover {
+    color: ${COLORS.textPrimary};
+  }
+`;
+
+/* ── Compose row ── */
+const ComposeRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid ${COLORS.border};
+  cursor: pointer;
+  transition: background 0.12s;
+
+  &:hover {
+    background: ${COLORS.cardBackground}80;
+  }
+`;
+
+const ComposeAvatar = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
+  );
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+`;
+
+const ComposePlaceholder = styled.span`
+  flex: 1;
+  font-size: 1rem;
+  color: ${COLORS.textTertiary};
+  min-width: 0;
+`;
+
+const ComposeBtn = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: ${COLORS.primarySalmon};
+  color: #fff;
+  border: none;
+  border-radius: 99px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s, transform 0.1s;
+
+  &:hover {
+    background: ${COLORS.accentSalmon};
+    transform: scale(1.02);
+  }
+  &:active {
+    transform: scale(0.97);
+  }
+`;
+
+/* ── Status states ── */
+const StatusBox = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-`;
-
-const ErrorMessage = styled.div`
-  text-align: center;
-  padding: 2rem;
-  color: ${COLORS.error};
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 4rem 0;
-  color: ${COLORS.textTertiary};
-  svg {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.4;
-  }
-  p {
-    font-size: 1rem;
-  }
-`;
-
-const LoadingMore = styled.div`
-  display: flex;
-  justify-content: center;
-  padding: 1rem 0;
-`;
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-`;
-
-const RetweetModal = styled.div`
-  background-color: ${COLORS.cardBackground};
-  border-radius: 12px;
-  padding: 2rem;
-  max-width: 400px;
-  width: 90%;
+  gap: 12px;
+  padding: 60px 24px;
   text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  color: ${COLORS.textSecondary};
+  font-size: 0.95rem;
 `;
 
-const ModalIcon = styled.div`
-  font-size: 3rem;
-  color: ${COLORS.primarySalmon};
-  margin-bottom: 1rem;
+const EmptyIcon = styled.div`
+  font-size: 2.5rem;
+  opacity: 0.5;
 `;
 
-const RetweetModalContent = styled.div`
-  h3 {
-    color: ${COLORS.textPrimary};
-    margin: 0 0 0.75rem;
-    font-size: 1.25rem;
-  }
-  p {
-    color: ${COLORS.textSecondary};
-    margin: 0 0 0.5rem;
-    font-size: 0.9rem;
-  }
-`;
-
-const RetweetCloseButton = styled.button`
-  margin-top: 1.5rem;
-  background-color: ${COLORS.primarySalmon};
-  color: white;
+const RetryBtn = styled.button`
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 18px;
+  background: ${COLORS.primarySalmon};
+  color: #fff;
   border: none;
-  border-radius: 20px;
-  padding: 0.75rem 2rem;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: 99px;
+  font-size: 0.88rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.3s;
+  text-decoration: none;
+  transition: background 0.12s;
   &:hover {
-    background-color: ${COLORS.accentSalmon};
+    background: ${COLORS.accentSalmon};
   }
 `;
 
-export default Thoughts;
+const EndOfFeed = styled.div`
+  text-align: center;
+  padding: 32px 16px 64px;
+  color: ${COLORS.textTertiary};
+  font-size: 0.82rem;
+  letter-spacing: 0.5px;
+`;
