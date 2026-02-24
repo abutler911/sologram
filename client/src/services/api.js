@@ -23,7 +23,7 @@ export const api = {
 
   deletePost: (id) => axios.delete(`/api/posts/${id}`).then((r) => r.data),
 
-  // Updated to ensure it returns the new post object for immediate UI sync
+  // Returns updated post object for immediate like count/status sync
   likePost: (id) => axios.post(`/api/posts/${id}/like`).then((r) => r.data),
 
   checkLikeStatus: (id) =>
@@ -103,7 +103,6 @@ export const api = {
       .then((r) => r.data),
 
   // ── COMMENTS ───────────────────────────────────────────────────────
-  // Using covered index endpoints for Sologram performance
   getCommentCount: (postId) =>
     axios.get(`/api/posts/${postId}/comments/count`).then((r) => r.data),
 
@@ -113,7 +112,7 @@ export const api = {
   addComment: (postId, payload) =>
     axios.post(`/api/posts/${postId}/comments`, payload).then((r) => r.data),
 
-  // CRITICAL: Ensure this returns the full updated comment object { comment: { ... } }
+  // Returns the full updated comment object { comment: { ... } } for UI sync
   likeComment: (commentId) =>
     axios.post(`/api/comments/${commentId}/like`).then((r) => r.data),
 

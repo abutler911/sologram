@@ -42,14 +42,19 @@ export const CommentModal = ({
   const textareaRef = useRef(null);
   const modalRef = useRef(null);
 
+  // Lock body scroll and focus input
   useEffect(() => {
     if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    const timer = setTimeout(() => textareaRef.current?.focus(), 400);
+
     const onEsc = (e) => e.key === 'Escape' && handleClose();
     document.addEventListener('keydown', onEsc);
-    document.body.style.overflow = 'hidden';
+
     return () => {
-      document.removeEventListener('keydown', onEsc);
+      clearTimeout(timer);
       document.body.style.overflow = '';
+      document.removeEventListener('keydown', onEsc);
     };
   }, [isOpen]);
 
@@ -64,6 +69,7 @@ export const CommentModal = ({
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     if (!newComment.trim() || isSubmitting || !isAuthenticated) return;
+
     setIsSubmitting(true);
     try {
       await onAddComment({
@@ -73,11 +79,19 @@ export const CommentModal = ({
       });
       setNewComment('');
       setReplyingTo(null);
+      toast.success('Conversation updated');
     } catch (err) {
       toast.error('Failed to post');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleReply = (comment) => {
+    const a = comment?.author || {};
+    setReplyingTo({ id: comment._id, author: a });
+    setNewComment(`@${a.name || 'user'} `);
+    textareaRef.current?.focus();
   };
 
   if (!isOpen && !isClosing) return null;
@@ -117,13 +131,17 @@ export const CommentModal = ({
               <CommentsList>
                 {comments.map((comment) => {
                   const a = comment.author || {};
-                  // Branding logic: apply salmon ring if it's you
+                  // Branding logic for your comments
                   const isAuthor =
                     a.username === 'andy' || a.name === 'Andrew Butler';
+
                   return (
                     <CommentItem key={comment._id}>
                       <CommentAvatarContainer isAuthor={isAuthor}>
-                        <CommentAvatar src={a.avatar || AVATAR_FALLBACK} />
+                        <CommentAvatar
+                          src={a.avatar || AVATAR_FALLBACK}
+                          alt={a.name}
+                        />
                       </CommentAvatarContainer>
                       <CommentBody>
                         <CommentHead>
@@ -143,12 +161,7 @@ export const CommentModal = ({
                             {comment.hasLiked ? <FaHeart /> : <FaRegHeart />}
                             {comment.likes > 0 && <span>{comment.likes}</span>}
                           </LikeBtn>
-                          <ReplyBtn
-                            onClick={() => {
-                              setReplyingTo({ id: comment._id, author: a });
-                              setNewComment(`@${a.name || 'user'} `);
-                            }}
-                          >
+                          <ReplyBtn onClick={() => handleReply(comment)}>
                             Reply
                           </ReplyBtn>
                           {user?.id === a?._id && (
@@ -178,7 +191,7 @@ export const CommentModal = ({
             </ReplyIndicator>
           )}
           <CommentForm onSubmit={handleSubmit}>
-            <UserAvatar src={user?.avatar || AUTHOR_IMAGE} />
+            <UserAvatar src={user?.avatar || AUTHOR_IMAGE} alt='Your Avatar' />
             <InputWrapper>
               <CommentInput
                 ref={textareaRef}

@@ -99,16 +99,12 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     setIsLoadingComments(true);
     try {
       const data = await api.getComments(post._id);
-      // Ensure we support different API response structures
-      const list = Array.isArray(data.comments)
-        ? data.comments
-        : Array.isArray(data)
-        ? data
-        : [];
+      // Backend returns { success: true, comments: [...] }
+      const list = Array.isArray(data.comments) ? data.comments : [];
       setComments(list);
 
-      // Update count from server if available
-      const serverCount = data.count ?? data.total ?? list.length;
+      // Sync count from authoritative server data
+      const serverCount = data.total ?? data.count ?? list.length;
       setCommentCount(serverCount);
     } catch (err) {
       toast.error('Failed to load comments');
@@ -129,7 +125,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
         const newComment = data.comment || data;
         setComments((prev) => [newComment, ...prev]);
 
-        // SYNC: Update parent count state
+        // SYNC: Authoritative update to parent count state for main card UI
         setCommentCount((prev) => prev + 1);
         return newComment;
       } catch (err) {
@@ -145,7 +141,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
       await api.deleteComment(commentId);
       setComments((prev) => prev.filter((c) => c._id !== commentId));
 
-      // SYNC: Update parent count state
+      // SYNC: Authoritative update to parent count state
       setCommentCount((prev) => Math.max(0, prev - 1));
       toast.success('Comment removed');
     } catch (err) {
@@ -160,7 +156,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
         const data = await api.likeComment(commentId);
         const updated = data.comment || data;
 
-        // SYNC: Update specific comment in array
+        // SYNC: Immediatley update specific comment object within the array
         setComments((prev) =>
           prev.map((c) => (c._id === commentId ? updated : c))
         );
@@ -179,7 +175,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
       window.open(`https://maps.apple.com/?q=${encodedLocation}`, '_blank');
     } else {
       window.open(
-        `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`,
+        `http://googleusercontent.com/maps.google.com/6{encodedLocation}`,
         '_blank'
       );
     }
@@ -212,8 +208,12 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
 
   const handleLike = useCallback(async () => {
     if (!isAuthenticated || isProcessing || hasLiked) return;
-    likePost(post._id, () => {
-      setPost((prev) => ({ ...prev, likes: (prev.likes || 0) + 1 }));
+    likePost(post._id, (updatedPost) => {
+      // Use full updated post data if returned by LikesContext/API
+      setPost((prev) => ({
+        ...prev,
+        likes: updatedPost?.likes ?? (prev.likes || 0) + 1,
+      }));
       if (onLike) onLike(post._id);
     });
   }, [post._id, isProcessing, hasLiked, isAuthenticated, likePost, onLike]);
@@ -234,13 +234,32 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     trackMouse: true,
   });
 
+  const handleDeletePost = () => {
+    showDeleteModal({
+      title: 'Delete Log Entry?',
+      message:
+        'This will permanently remove this post and all its interactions.',
+      confirmText: 'Delete Post',
+      onConfirm: async () => {
+        try {
+          await api.deletePost(post._id);
+          if (onDelete) onDelete(post._id);
+          toast.success('Log entry removed');
+        } catch (err) {
+          toast.error('Failed to delete entry');
+        }
+      },
+    });
+    setShowActions(false);
+  };
+
   return (
     <CardWrapper ref={cardRef} className={isVisible ? 'visible' : ''}>
       <Card>
         <CardHeader>
           <SignatureArea>
             <AvatarContainer>
-              <Avatar src={AUTHOR_IMAGE} />
+              <Avatar src={AUTHOR_IMAGE} alt={AUTHOR_NAME} />
               <StatusDot />
             </AvatarContainer>
             <HeaderInfo>
@@ -263,7 +282,10 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
 
           {isAuthenticated && (
             <ActionsWrapper ref={actionsRef}>
-              <MenuToggle onClick={() => setShowActions(!showActions)}>
+              <MenuToggle
+                onClick={() => setShowActions(!showActions)}
+                aria-label='Menu Options'
+              >
                 <FaEllipsisH />
               </MenuToggle>
               {showActions && (
@@ -271,7 +293,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
                   <Link to={`/edit/${post._id}`}>
                     <FaEdit /> Edit Post
                   </Link>
-                  <button onClick={() => {}} className='warn'>
+                  <button onClick={handleDeletePost} className='warn'>
                     <FaTrash /> Delete Post
                   </button>
                 </Dropdown>
@@ -294,6 +316,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
                       crop: 'fill',
                     })}
                     loading={i === 0 ? 'eager' : 'lazy'}
+                    alt={post.title || 'Sologram Post Image'}
                   />
                 ) : (
                   <PostVid src={m.mediaUrl} controls preload='metadata' />
@@ -578,7 +601,7 @@ const Dot = styled.div`
   height: 6px;
   border-radius: 50%;
   background: ${(p) =>
-    p.active ? COLORS.primaryMint : 'rgba(255,255,255,0.3)'};
+    p.active ? COLORS.primaryMint : 'rgba(255, 255, 255, 0.3)'};
 `;
 
 const RippleEffect = styled.div`
