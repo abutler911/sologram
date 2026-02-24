@@ -14,7 +14,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { COLORS } from '../theme';
-import MainLayout from '../components/layout/MainLayout';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 /**
@@ -116,165 +115,163 @@ const ProfilePage = () => {
     (formData.username?.[0]?.toUpperCase() ?? 'A');
 
   return (
-    <MainLayout>
-      <PageWrapper>
-        <Card>
-          {/* ── Page title ── */}
-          <CardHeader>
-            <CardTitle>Account Settings</CardTitle>
-            <CardSubtitle>Manage your SoloGram profile</CardSubtitle>
-          </CardHeader>
+    <PageWrapper>
+      <Card>
+        {/* ── Page title ── */}
+        <CardHeader>
+          <CardTitle>Account Settings</CardTitle>
+          <CardSubtitle>Manage your SoloGram profile</CardSubtitle>
+        </CardHeader>
 
-          <Divider />
+        <Divider />
 
-          {/* ── Avatar ── */}
-          <AvatarSection>
-            {imagePreview ? (
-              <AvatarWrap>
-                <AvatarImg src={imagePreview} alt='Profile' />
-                <AvatarEditBtn
-                  type='button'
-                  onClick={() => {
-                    setProfileImage(null);
-                    setImagePreview(null);
-                  }}
-                  title='Remove photo'
-                >
-                  <FaPencilAlt />
-                </AvatarEditBtn>
-              </AvatarWrap>
-            ) : (
-              <DropZone
-                {...getRootProps()}
-                $active={isDragActive}
-                title='Upload a photo'
+        {/* ── Avatar ── */}
+        <AvatarSection>
+          {imagePreview ? (
+            <AvatarWrap>
+              <AvatarImg src={imagePreview} alt='Profile' />
+              <AvatarEditBtn
+                type='button'
+                onClick={() => {
+                  setProfileImage(null);
+                  setImagePreview(null);
+                }}
+                title='Remove photo'
               >
-                <input {...getInputProps()} />
-                <AvatarFallback>{initials}</AvatarFallback>
-                <DropOverlay>
-                  <FaCamera />
-                  <span>Add photo</span>
-                </DropOverlay>
-              </DropZone>
-            )}
-            <AvatarMeta>
-              <AvatarName>
-                {formData.firstName
-                  ? `${formData.firstName} ${formData.lastName}`.trim()
-                  : formData.username || 'Your Name'}
-              </AvatarName>
-              <AvatarHandle>@{formData.username || 'username'}</AvatarHandle>
-            </AvatarMeta>
-          </AvatarSection>
+                <FaPencilAlt />
+              </AvatarEditBtn>
+            </AvatarWrap>
+          ) : (
+            <DropZone
+              {...getRootProps()}
+              $active={isDragActive}
+              title='Upload a photo'
+            >
+              <input {...getInputProps()} />
+              <AvatarFallback>{initials}</AvatarFallback>
+              <DropOverlay>
+                <FaCamera />
+                <span>Add photo</span>
+              </DropOverlay>
+            </DropZone>
+          )}
+          <AvatarMeta>
+            <AvatarName>
+              {formData.firstName
+                ? `${formData.firstName} ${formData.lastName}`.trim()
+                : formData.username || 'Your Name'}
+            </AvatarName>
+            <AvatarHandle>@{formData.username || 'username'}</AvatarHandle>
+          </AvatarMeta>
+        </AvatarSection>
 
-          <Divider />
+        <Divider />
 
-          {/* ── Form ── */}
-          <ProfileForm onSubmit={handleSubmit}>
-            <FieldRow>
-              <FieldGroup>
-                <FieldLabel htmlFor='firstName'>First Name</FieldLabel>
-                <FieldWrap>
-                  <FieldIcon>
-                    <FaUser />
-                  </FieldIcon>
-                  <FieldInput
-                    id='firstName'
-                    name='firstName'
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    placeholder='First name'
-                    required
-                  />
-                </FieldWrap>
-              </FieldGroup>
-
-              <FieldGroup>
-                <FieldLabel htmlFor='lastName'>Last Name</FieldLabel>
-                <FieldWrap>
-                  <FieldIcon>
-                    <FaUser />
-                  </FieldIcon>
-                  <FieldInput
-                    id='lastName'
-                    name='lastName'
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    placeholder='Last name'
-                  />
-                </FieldWrap>
-              </FieldGroup>
-            </FieldRow>
-
+        {/* ── Form ── */}
+        <ProfileForm onSubmit={handleSubmit}>
+          <FieldRow>
             <FieldGroup>
-              <FieldLabel htmlFor='username'>Username</FieldLabel>
-              <FieldWrap>
-                <FieldPrefix>@</FieldPrefix>
-                <FieldInput
-                  id='username'
-                  name='username'
-                  value={formData.username}
-                  onChange={handleChange}
-                  placeholder='username'
-                  required
-                  $hasPrefix
-                />
-              </FieldWrap>
-            </FieldGroup>
-
-            <FieldGroup>
-              <FieldLabel htmlFor='email'>Email</FieldLabel>
+              <FieldLabel htmlFor='firstName'>First Name</FieldLabel>
               <FieldWrap>
                 <FieldIcon>
-                  <FaEnvelope />
+                  <FaUser />
                 </FieldIcon>
                 <FieldInput
-                  id='email'
-                  name='email'
-                  type='email'
-                  value={formData.email}
+                  id='firstName'
+                  name='firstName'
+                  value={formData.firstName}
                   onChange={handleChange}
-                  placeholder='you@example.com'
+                  placeholder='First name'
                   required
                 />
               </FieldWrap>
             </FieldGroup>
 
             <FieldGroup>
-              <FieldLabel htmlFor='bio'>Bio</FieldLabel>
-              <FieldTextarea
-                id='bio'
-                name='bio'
-                value={formData.bio}
-                onChange={handleChange}
-                placeholder='Tell the world a little about yourself…'
-                rows={4}
-                maxLength={300}
-              />
-              <CharCount $warn={formData.bio.length > 260}>
-                {formData.bio.length} / 300
-              </CharCount>
+              <FieldLabel htmlFor='lastName'>Last Name</FieldLabel>
+              <FieldWrap>
+                <FieldIcon>
+                  <FaUser />
+                </FieldIcon>
+                <FieldInput
+                  id='lastName'
+                  name='lastName'
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  placeholder='Last name'
+                />
+              </FieldWrap>
             </FieldGroup>
+          </FieldRow>
 
-            <SaveButton type='submit' disabled={loading} $saved={saved}>
-              {loading ? (
-                <LoadingSpinner size='18px' noMinHeight />
-              ) : saved ? (
-                <>
-                  <FaCheck />
-                  <span>Saved</span>
-                </>
-              ) : (
-                <>
-                  <FaSave />
-                  <span>Save changes</span>
-                </>
-              )}
-            </SaveButton>
-          </ProfileForm>
-        </Card>
-      </PageWrapper>
-    </MainLayout>
+          <FieldGroup>
+            <FieldLabel htmlFor='username'>Username</FieldLabel>
+            <FieldWrap>
+              <FieldPrefix>@</FieldPrefix>
+              <FieldInput
+                id='username'
+                name='username'
+                value={formData.username}
+                onChange={handleChange}
+                placeholder='username'
+                required
+                $hasPrefix
+              />
+            </FieldWrap>
+          </FieldGroup>
+
+          <FieldGroup>
+            <FieldLabel htmlFor='email'>Email</FieldLabel>
+            <FieldWrap>
+              <FieldIcon>
+                <FaEnvelope />
+              </FieldIcon>
+              <FieldInput
+                id='email'
+                name='email'
+                type='email'
+                value={formData.email}
+                onChange={handleChange}
+                placeholder='you@example.com'
+                required
+              />
+            </FieldWrap>
+          </FieldGroup>
+
+          <FieldGroup>
+            <FieldLabel htmlFor='bio'>Bio</FieldLabel>
+            <FieldTextarea
+              id='bio'
+              name='bio'
+              value={formData.bio}
+              onChange={handleChange}
+              placeholder='Tell the world a little about yourself…'
+              rows={4}
+              maxLength={300}
+            />
+            <CharCount $warn={formData.bio.length > 260}>
+              {formData.bio.length} / 300
+            </CharCount>
+          </FieldGroup>
+
+          <SaveButton type='submit' disabled={loading} $saved={saved}>
+            {loading ? (
+              <LoadingSpinner size='18px' noMinHeight />
+            ) : saved ? (
+              <>
+                <FaCheck />
+                <span>Saved</span>
+              </>
+            ) : (
+              <>
+                <FaSave />
+                <span>Save changes</span>
+              </>
+            )}
+          </SaveButton>
+        </ProfileForm>
+      </Card>
+    </PageWrapper>
   );
 };
 
