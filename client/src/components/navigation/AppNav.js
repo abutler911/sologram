@@ -36,7 +36,7 @@ import { COLORS } from '../../theme';
  *
  * ─ Mobile  (<960px) ─────────────────────────────────────────────────────────
  *   Top bar : Logo + right-side icons (archive, avatar)
- *   Bottom  : 5-tab bar, icon-only — Home · Search · Create · Collections · Profile
+ *   Bottom  : 5-tab bar, icon-only — Home · Search · Create · Thoughts · Profile
  *   Create  : Tap + → slide-up bottom sheet (2×2 grid)
  *   Search  : Tap 🔍 → full-screen takeover
  *
@@ -389,10 +389,10 @@ const AppNav = ({ onSearch, onClearSearch }) => {
             </BottomTab>
           )}
 
-          {/* Collections */}
-          <BottomTab to='/collections' $active={isActive('/collections')}>
-            <BottomIcon $active={isActive('/collections')}>
-              {isActive('/collections') ? <FaFolderOpen /> : <FaFolder />}
+          {/* Thoughts */}
+          <BottomTab to='/thoughts' $active={isActive('/thoughts')}>
+            <BottomIcon $active={isActive('/thoughts')}>
+              <FaLightbulb />
             </BottomIcon>
           </BottomTab>
 
@@ -531,6 +531,33 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 <CreateCardSub>Group your posts</CreateCardSub>
               </CreateCard>
             </CreateGrid>
+
+            {/* Browse — destinations no longer in the bottom tab bar */}
+            <SheetDivider />
+            <SheetTitle>Browse</SheetTitle>
+            <BrowseList>
+              <BrowseItem onClick={() => goCreate('/collections')}>
+                <BrowseItemIcon $color={COLORS.accentSalmon}>
+                  <FaFolderOpen />
+                </BrowseItemIcon>
+                <BrowseItemText>
+                  <BrowseItemName>Collections</BrowseItemName>
+                  <BrowseItemSub>Browse your curated groups</BrowseItemSub>
+                </BrowseItemText>
+              </BrowseItem>
+
+              {canCreate && (
+                <BrowseItem onClick={() => goCreate('/story-archive')}>
+                  <BrowseItemIcon $color={COLORS.primaryBlueGray}>
+                    <FaArchive />
+                  </BrowseItemIcon>
+                  <BrowseItemText>
+                    <BrowseItemName>Story Archive</BrowseItemName>
+                    <BrowseItemSub>Your past stories</BrowseItemSub>
+                  </BrowseItemText>
+                </BrowseItem>
+              )}
+            </BrowseList>
           </CreateSheet>
         </SheetBackdrop>
       )}
@@ -1443,4 +1470,66 @@ const PaletteEmpty = styled.div`
   text-align: center;
   color: ${COLORS.textTertiary};
   font-size: 0.88rem;
+`;
+
+const SheetDivider = styled.hr`
+  border: none;
+  height: 1px;
+  background: ${COLORS.border};
+  margin: 14px 0 10px;
+`;
+
+const BrowseList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+`;
+
+const BrowseItem = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+  &:hover {
+    background: ${COLORS.elevatedBackground};
+  }
+  &:active {
+    background: ${COLORS.buttonHover};
+  }
+`;
+
+const BrowseItemIcon = styled.div`
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: ${(p) => p.$color}18;
+  color: ${(p) => p.$color};
+  font-size: 0.95rem;
+  flex-shrink: 0;
+`;
+
+const BrowseItemText = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+`;
+
+const BrowseItemName = styled.span`
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: ${COLORS.textPrimary};
+`;
+
+const BrowseItemSub = styled.span`
+  font-size: 0.72rem;
+  color: ${COLORS.textTertiary};
 `;
