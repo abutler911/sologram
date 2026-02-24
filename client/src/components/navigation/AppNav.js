@@ -5,9 +5,9 @@ import React, {
   useRef,
   useState,
   useCallback,
-} from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import styled, { keyframes } from "styled-components";
+} from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import styled, { keyframes } from 'styled-components';
 import {
   FaCamera,
   FaChevronDown,
@@ -24,16 +24,17 @@ import {
   FaArchive,
   FaPlus,
   FaMagic,
-} from "react-icons/fa";
-import { AuthContext } from "../../context/AuthContext";
-import { COLORS } from "../../theme";
+  FaShieldAlt,
+} from 'react-icons/fa';
+import { AuthContext } from '../../context/AuthContext';
+import { COLORS } from '../../theme';
 
 /**
  * AppNav.jsx — Unified Navigation (Desktop + Mobile)
  *
  * - Top App Bar (desktop & tablet): logo, primary nav, create dropdown, search, user menu
  * - Mobile Bottom Tab Bar + center Create FAB + "More" sheet
- * - Role aware: `admin` gets AI + Gallery; `creator|admin` get Create actions
+ * - Role aware: `admin` gets AI + Gallery + dedicated Admin tab; `creator|admin` get Create actions
  * - Command Palette (⌘K / Ctrl+K)
  * - Search overlay that syncs with /?search= query param
  */
@@ -43,16 +44,16 @@ const AppNav = ({ onSearch, onClearSearch }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === 'admin';
   const canCreate =
-    isAuthenticated && (user?.role === "admin" || user?.role === "creator");
+    isAuthenticated && (user?.role === 'admin' || user?.role === 'creator');
 
   // UI state
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false); // mobile sheet
+  const [moreOpen, setMoreOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   const searchInputRef = useRef(null);
@@ -62,9 +63,9 @@ const AppNav = ({ onSearch, onClearSearch }) => {
   // Sync search query with URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const q = params.get("search") || "";
+    const q = params.get('search') || '';
     setSearchQuery(q);
-    if (location.pathname === "/" && q && onSearch) onSearch(q);
+    if (location.pathname === '/' && q && onSearch) onSearch(q);
   }, [location, onSearch]);
 
   // Close menus on route change
@@ -95,32 +96,32 @@ const AppNav = ({ onSearch, onClearSearch }) => {
         setUserOpen(false);
       }
     };
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
   }, [createOpen, userOpen]);
 
   // Command palette hotkey
   useEffect(() => {
     const onKey = (e) => {
-      const mod = navigator.platform.includes("Mac") ? e.metaKey : e.ctrlKey;
-      if (mod && e.key.toLowerCase() === "k") {
+      const mod = navigator.platform.includes('Mac') ? e.metaKey : e.ctrlKey;
+      if (mod && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setPaletteOpen((s) => !s);
       }
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         setSearchOpen(false);
         setPaletteOpen(false);
         setMoreOpen(false);
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   const isActive = useCallback(
     (path) =>
-      path === "/"
-        ? location.pathname === "/" && !location.search.includes("search")
+      path === '/'
+        ? location.pathname === '/' && !location.search.includes('search')
         : location.pathname.startsWith(path),
     [location.pathname, location.search]
   );
@@ -129,14 +130,14 @@ const AppNav = ({ onSearch, onClearSearch }) => {
   const doLogout = () => {
     logout();
     setUserOpen(false);
-    navigate("/login");
+    navigate('/login');
   };
 
   const triggerSearch = (e) => {
     e?.preventDefault();
     if (searchQuery.trim()) {
       onSearch && onSearch(searchQuery);
-      if (location.pathname !== "/")
+      if (location.pathname !== '/')
         navigate(`/?search=${encodeURIComponent(searchQuery)}`);
       setSearchOpen(false);
     } else {
@@ -146,7 +147,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
   };
 
   const clearSearch = () => {
-    setSearchQuery("");
+    setSearchQuery('');
     onClearSearch && onClearSearch();
     searchInputRef.current?.focus();
   };
@@ -154,36 +155,36 @@ const AppNav = ({ onSearch, onClearSearch }) => {
   // Command palette items
   const paletteItems = useMemo(() => {
     const items = [
-      { label: "Home", icon: <FaHome />, to: "/" },
-      { label: "Thoughts", icon: <FaLightbulb />, to: "/thoughts" },
-      { label: "Collections", icon: <FaFolder />, to: "/collections" },
+      { label: 'Home', icon: <FaHome />, to: '/' },
+      { label: 'Thoughts', icon: <FaLightbulb />, to: '/thoughts' },
+      { label: 'Collections', icon: <FaFolder />, to: '/collections' },
     ];
     if (isAdmin)
       items.push({
-        label: "Gallery",
+        label: 'Gallery',
         icon: <FaImages />,
-        to: "/media-gallery",
+        to: '/media-gallery',
       });
     if (canCreate) {
       items.push(
-        { label: "New Post", icon: <FaCamera />, to: "/create" },
-        { label: "New Story", icon: <FaImages />, to: "/create-story" },
-        { label: "New Thought", icon: <FaLightbulb />, to: "/thoughts/create" },
+        { label: 'New Post', icon: <FaCamera />, to: '/create' },
+        { label: 'New Story', icon: <FaImages />, to: '/create-story' },
+        { label: 'New Thought', icon: <FaLightbulb />, to: '/thoughts/create' },
         {
-          label: "New Collection",
+          label: 'New Collection',
           icon: <FaFolder />,
-          to: "/collections/create",
+          to: '/collections/create',
         },
-        { label: "Story Archive", icon: <FaArchive />, to: "/story-archive" }
+        { label: 'Story Archive', icon: <FaArchive />, to: '/story-archive' }
       );
     }
     if (isAdmin)
       items.push({
-        label: "AI Content",
+        label: 'AI Content',
         icon: <FaRobot />,
-        to: "/admin/ai-content",
+        to: '/admin/ai-content',
       });
-    items.push({ label: "Profile", icon: <FaUser />, to: "/profile" });
+    items.push({ label: 'Profile', icon: <FaUser />, to: '/profile' });
     return items;
   }, [isAdmin, canCreate]);
 
@@ -193,34 +194,34 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       {/* Top App Bar */}
       <AppBar>
         <BarInner>
-          <Logo to="/">
-            <span className="mark">
+          <Logo to='/'>
+            <span className='mark'>
               <FaCamera />
             </span>
-            <span className="brand">
-              <span className="word">SoloGram</span>
-              <span className="tagline">One Voice. Infinite Moments.</span>
+            <span className='brand'>
+              <span className='word'>SoloGram</span>
+              <span className='tagline'>One Voice. Infinite Moments.</span>
             </span>
           </Logo>
 
           {/* Desktop primary nav */}
           <PrimaryNav>
-            <NavLinkEl to="/" $active={isActive("/")}>
+            <NavLinkEl to='/' $active={isActive('/')}>
               <FaHome />
               <span>Home</span>
             </NavLinkEl>
-            <NavLinkEl to="/thoughts" $active={isActive("/thoughts")}>
+            <NavLinkEl to='/thoughts' $active={isActive('/thoughts')}>
               <FaLightbulb />
               <span>Thoughts</span>
             </NavLinkEl>
-            <NavLinkEl to="/collections" $active={isActive("/collections")}>
+            <NavLinkEl to='/collections' $active={isActive('/collections')}>
               <FaFolder />
               <span>Collections</span>
             </NavLinkEl>
             {isAdmin && (
               <NavLinkEl
-                to="/media-gallery"
-                $active={isActive("/media-gallery")}
+                to='/media-gallery'
+                $active={isActive('/media-gallery')}
               >
                 <FaImages />
                 <span>Gallery</span>
@@ -228,8 +229,8 @@ const AppNav = ({ onSearch, onClearSearch }) => {
             )}
             {isAdmin && (
               <NavLinkEl
-                to="/admin/ai-content"
-                $active={isActive("/admin/ai-content")}
+                to='/admin/ai-content'
+                $active={isActive('/admin/ai-content')}
               >
                 <FaRobot />
                 <span>AI</span>
@@ -244,38 +245,38 @@ const AppNav = ({ onSearch, onClearSearch }) => {
               <CreateWrap ref={createRef}>
                 <CreateBtn
                   onClick={() => setCreateOpen((s) => !s)}
-                  aria-haspopup="menu"
+                  aria-haspopup='menu'
                   aria-expanded={createOpen}
                 >
-                  <FaPlus /> <span>Create</span>{" "}
-                  <FaChevronDown className="chev" />
+                  <FaPlus /> <span>Create</span>{' '}
+                  <FaChevronDown className='chev' />
                 </CreateBtn>
                 {createOpen && (
-                  <Dropdown role="menu">
+                  <Dropdown role='menu'>
                     <DropItem
                       as={Link}
-                      to="/create"
+                      to='/create'
                       onClick={() => setCreateOpen(false)}
                     >
                       <FaCamera /> New Post
                     </DropItem>
                     <DropItem
                       as={Link}
-                      to="/create-story"
+                      to='/create-story'
                       onClick={() => setCreateOpen(false)}
                     >
                       <FaImages /> New Story
                     </DropItem>
                     <DropItem
                       as={Link}
-                      to="/thoughts/create"
+                      to='/thoughts/create'
                       onClick={() => setCreateOpen(false)}
                     >
                       <FaLightbulb /> New Thought
                     </DropItem>
                     <DropItem
                       as={Link}
-                      to="/collections/create"
+                      to='/collections/create'
                       onClick={() => setCreateOpen(false)}
                     >
                       <FaFolder /> New Collection
@@ -283,7 +284,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                     <Divider />
                     <DropItem
                       as={Link}
-                      to="/story-archive"
+                      to='/story-archive'
                       onClick={() => setCreateOpen(false)}
                     >
                       <FaArchive /> Story Archive
@@ -294,7 +295,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
             )}
 
             {/* Search */}
-            <IconBtn aria-label="Search" onClick={() => setSearchOpen(true)}>
+            <IconBtn aria-label='Search' onClick={() => setSearchOpen(true)}>
               <FaSearch />
             </IconBtn>
 
@@ -303,25 +304,25 @@ const AppNav = ({ onSearch, onClearSearch }) => {
               <UserWrap ref={userRef}>
                 <AvatarBtn
                   onClick={() => setUserOpen((s) => !s)}
-                  aria-haspopup="menu"
+                  aria-haspopup='menu'
                   aria-expanded={userOpen}
                 >
                   <FaUser />
                 </AvatarBtn>
                 {userOpen && (
-                  <Dropdown right role="menu">
+                  <Dropdown right role='menu'>
                     <UserCard>
                       <strong>{user?.username}</strong>
                       <small>
-                        {user?.role === "admin"
-                          ? "Admin"
-                          : user?.role || "User"}
+                        {user?.role === 'admin'
+                          ? 'Admin'
+                          : user?.role || 'User'}
                       </small>
                     </UserCard>
                     <Divider />
                     <DropItem
                       as={Link}
-                      to="/profile"
+                      to='/profile'
                       onClick={() => setUserOpen(false)}
                     >
                       <FaUser /> Profile
@@ -330,7 +331,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                       <>
                         <DropItem
                           as={Link}
-                          to="/story-archive"
+                          to='/story-archive'
                           onClick={() => setUserOpen(false)}
                         >
                           <FaArchive /> Story Archive
@@ -340,21 +341,21 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                     {isAdmin && (
                       <DropItem
                         as={Link}
-                        to="/admin/ai-content"
+                        to='/admin/ai-content'
                         onClick={() => setUserOpen(false)}
                       >
                         <FaRobot /> AI Content
                       </DropItem>
                     )}
                     <Divider />
-                    <DropItem as="button" onClick={doLogout}>
+                    <DropItem as='button' onClick={doLogout}>
                       <FaSignOutAlt /> Logout
                     </DropItem>
                   </Dropdown>
                 )}
               </UserWrap>
             ) : (
-              <IconLink to="/login" title="Login">
+              <IconLink to='/login' title='Login'>
                 <FaSignInAlt />
               </IconLink>
             )}
@@ -373,14 +374,14 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                   ref={searchInputRef}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search posts and thoughts…"
-                  aria-label="Search"
+                  placeholder='Search posts and thoughts…'
+                  aria-label='Search'
                 />
                 {searchQuery && (
                   <ClearBtn
-                    type="button"
+                    type='button'
                     onClick={clearSearch}
-                    aria-label="Clear search"
+                    aria-label='Clear search'
                   >
                     <FaTimes />
                   </ClearBtn>
@@ -403,14 +404,14 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       {/* Mobile bottom bar + FAB */}
       <BottomDock>
         <BottomDockInner>
-          <DockLink to="/" $active={isActive("/")} aria-label="Home">
+          <DockLink to='/' $active={isActive('/')} aria-label='Home'>
             <FaHome />
             <span>Home</span>
           </DockLink>
           <DockLink
-            to="/thoughts"
-            $active={isActive("/thoughts")}
-            aria-label="Thoughts"
+            to='/thoughts'
+            $active={isActive('/thoughts')}
+            aria-label='Thoughts'
           >
             <FaLightbulb />
             <span>Thoughts</span>
@@ -419,32 +420,44 @@ const AppNav = ({ onSearch, onClearSearch }) => {
             {canCreate ? (
               <Fab
                 onClick={() => setMoreOpen(true)}
-                aria-label="Create or more"
+                aria-label='Create or more'
               >
                 <FaPlus />
               </Fab>
             ) : (
-              <Fab as={Link} to="/login" aria-label="Login">
+              <Fab as={Link} to='/login' aria-label='Login'>
                 <FaSignInAlt />
               </Fab>
             )}
           </FabShell>
           <DockLink
-            to="/collections"
-            $active={isActive("/collections")}
-            aria-label="Collections"
+            to='/collections'
+            $active={isActive('/collections')}
+            aria-label='Collections'
           >
             <FaFolder />
             <span>Collections</span>
           </DockLink>
-          <DockLink
-            to="/profile"
-            $active={isActive("/profile")}
-            aria-label="Profile"
-          >
-            <FaUser />
-            <span>Profile</span>
-          </DockLink>
+          {/* Admin gets a dedicated shield tab; regular users get Profile */}
+          {isAdmin ? (
+            <DockLink
+              to='/media-gallery'
+              $active={isActive('/media-gallery') || isActive('/admin')}
+              aria-label='Admin'
+            >
+              <FaShieldAlt />
+              <span>Admin</span>
+            </DockLink>
+          ) : (
+            <DockLink
+              to='/profile'
+              $active={isActive('/profile')}
+              aria-label='Profile'
+            >
+              <FaUser />
+              <span>Profile</span>
+            </DockLink>
+          )}
         </BottomDockInner>
       </BottomDock>
 
@@ -457,7 +470,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
               <SheetGrid>
                 <SheetItem
                   as={Link}
-                  to="/create"
+                  to='/create'
                   onClick={() => setMoreOpen(false)}
                 >
                   <FaCamera />
@@ -465,7 +478,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 </SheetItem>
                 <SheetItem
                   as={Link}
-                  to="/create-story"
+                  to='/create-story'
                   onClick={() => setMoreOpen(false)}
                 >
                   <FaImages />
@@ -473,7 +486,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 </SheetItem>
                 <SheetItem
                   as={Link}
-                  to="/thoughts/create"
+                  to='/thoughts/create'
                   onClick={() => setMoreOpen(false)}
                 >
                   <FaLightbulb />
@@ -481,7 +494,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 </SheetItem>
                 <SheetItem
                   as={Link}
-                  to="/collections/create"
+                  to='/collections/create'
                   onClick={() => setMoreOpen(false)}
                 >
                   <FaFolder />
@@ -495,31 +508,43 @@ const AppNav = ({ onSearch, onClearSearch }) => {
           <SheetTitle>Navigate</SheetTitle>
           <SheetList>
             <li>
-              <Link to="/" onClick={() => setMoreOpen(false)}>
+              <Link to='/' onClick={() => setMoreOpen(false)}>
                 <FaHome /> Home
               </Link>
             </li>
             <li>
-              <Link to="/story-archive" onClick={() => setMoreOpen(false)}>
+              <Link to='/story-archive' onClick={() => setMoreOpen(false)}>
                 <FaArchive /> Story Archive
               </Link>
             </li>
-            {isAdmin && (
+            {/* Admin gets Profile here (since the dock tab is Admin) + admin tools */}
+            {isAdmin ? (
               <>
                 <li>
-                  <Link to="/media-gallery" onClick={() => setMoreOpen(false)}>
-                    <FaImages /> Gallery
+                  <Link to='/profile' onClick={() => setMoreOpen(false)}>
+                    <FaUser /> Profile
+                  </Link>
+                </li>
+                <li>
+                  <Link to='/media-gallery' onClick={() => setMoreOpen(false)}>
+                    <FaImages /> Media Gallery
                   </Link>
                 </li>
                 <li>
                   <Link
-                    to="/admin/ai-content"
+                    to='/admin/ai-content'
                     onClick={() => setMoreOpen(false)}
                   >
                     <FaRobot /> AI Content
                   </Link>
                 </li>
               </>
+            ) : (
+              <li>
+                <Link to='/profile' onClick={() => setMoreOpen(false)}>
+                  <FaUser /> Profile
+                </Link>
+              </li>
             )}
           </SheetList>
         </Sheet>
@@ -537,7 +562,7 @@ const AppBar = styled.header`
   top: 0;
   z-index: 1000;
   width: 100%;
-  overflow-x: clip; /* prevents 0.5px rounding from creating a scroll */
+  overflow-x: clip;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   background: linear-gradient(
@@ -556,12 +581,12 @@ const BarInner = styled.div`
   align-items: center;
   gap: 16px;
   width: 100%;
-  max-width: 470px; /* match feed column on mobile */
+  max-width: 470px;
   margin: 0 auto;
-  padding: 0 12px; /* smaller mobile padding */
+  padding: 0 12px;
   box-sizing: border-box;
   @media (min-width: 960px) {
-    max-width: 1200px; /* expand on desktop */
+    max-width: 1200px;
     padding: 0 16px;
   }
 `;
@@ -589,14 +614,14 @@ const Logo = styled(Link)`
     flex-direction: column;
   }
   .word {
-    font-family: "Mystery Quest", cursive;
+    font-family: 'Mystery Quest', cursive;
     color: ${COLORS.textPrimary};
     font-size: 1.6rem;
     line-height: 1.05;
     letter-spacing: 0.2px;
   }
   .tagline {
-    font-family: "Inter", sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 0.78rem;
     font-weight: 600;
     color: ${COLORS.primaryMint};
@@ -631,9 +656,9 @@ const NavLinkEl = styled(Link)`
   font-size: 0.9rem;
   color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textSecondary)};
   background: ${(p) =>
-    p.$active ? `${COLORS.primarySalmon}15` : "transparent"};
+    p.$active ? `${COLORS.primarySalmon}15` : 'transparent'};
   border: 1px solid
-    ${(p) => (p.$active ? `${COLORS.primarySalmon}40` : "transparent")};
+    ${(p) => (p.$active ? `${COLORS.primarySalmon}40` : 'transparent')};
   transition: all 0.2s ease;
   &:hover {
     color: ${COLORS.primarySalmon};
@@ -723,7 +748,7 @@ const AvatarBtn = styled(IconBtn)`
 
 const Dropdown = styled.div`
   position: absolute;
-  ${(p) => (p.right ? "right: 0;" : "left: 0;")};
+  ${(p) => (p.right ? 'right: 0;' : 'left: 0;')};
   top: 48px;
   min-width: 220px;
   background: ${COLORS.cardBackground};
@@ -865,7 +890,7 @@ const BottomDockInner = styled.div`
   box-sizing: border-box;
   height: 72px;
   width: 100%;
-  max-width: 470px; /* match the feed column */
+  max-width: 470px;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -1011,9 +1036,9 @@ const SheetList = styled.ul`
 /* Simple Sheet + Palette components */
 const Sheet = ({ children, onClose }) => {
   useEffect(() => {
-    const onEsc = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onEsc);
-    return () => window.removeEventListener("keydown", onEsc);
+    const onEsc = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
   }, [onClose]);
   return (
     <SheetOverlay onClick={onClose}>
@@ -1084,15 +1109,15 @@ const PaletteItem = styled.button`
 
 const Palette = ({ onClose, items }) => {
   const navigate = useNavigate();
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState('');
   const inputRef = useRef(null);
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
   useEffect(() => {
-    const onEsc = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onEsc);
-    return () => window.removeEventListener("keydown", onEsc);
+    const onEsc = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
   }, [onClose]);
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -1108,9 +1133,9 @@ const Palette = ({ onClose, items }) => {
             ref={inputRef}
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Type a command or destination…"
+            placeholder='Type a command or destination…'
           />
-          <kbd style={{ color: COLORS.textTertiary, fontSize: ".8rem" }}>
+          <kbd style={{ color: COLORS.textTertiary, fontSize: '.8rem' }}>
             Esc
           </kbd>
         </PaletteSearch>

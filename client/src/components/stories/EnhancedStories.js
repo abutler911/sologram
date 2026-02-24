@@ -203,7 +203,7 @@ const EnhancedStories = ({ isPWA = false }) => {
     return media.mediaUrl;
   };
 
-  // ── Filter + sort active stories (client-side, same logic as before) ─────────
+  // ── Filter + sort active stories ─────────────────────────────────────────────
   const activeStories = sortStoriesByPriority(
     stories.filter((s) => new Date(s.expiresAt) > new Date())
   );
@@ -352,7 +352,7 @@ const EnhancedStories = ({ isPWA = false }) => {
   );
 };
 
-// ── Styled Components (unchanged) ─────────────────────────────────────────────
+// ── Styled Components ─────────────────────────────────────────────────────────
 
 const shimmer = keyframes`
   0% { background-position: -200% 0; }
@@ -802,17 +802,19 @@ const StoryContent = styled.div`
   height: 100vh;
 `;
 
+/* FIXED: cover fills the frame — no more black bars on portrait stories */
 const FullScreenImage = styled.img`
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   max-width: 100vw;
 `;
 
+/* FIXED: cover fills the frame for video too */
 const StoryVideo = styled.video`
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   outline: none;
   max-width: 100vw;
 `;
