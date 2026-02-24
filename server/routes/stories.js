@@ -1,6 +1,5 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const { upload, uploadMultiple } = require("../config/cloudinary");
 const {
   getStories,
   getStory,
@@ -9,28 +8,38 @@ const {
   getArchivedStory,
   archiveStory,
   deleteStory,
-} = require("../controllers/stories");
-const { protect, authorize } = require("../middleware/auth");
-const { storyCreationLimiter } = require("../middleware/rateLimiter");
+  deleteArchivedStory,
+} = require('../controllers/stories');
+const { protect, authorize } = require('../middleware/auth');
+const { storyCreationLimiter } = require('../middleware/rateLimiter');
 
-router.get("/", getStories);
-router.get("/:id", getStory);
+// Active stories
+router.get('/', getStories);
+router.get('/archived', protect, getArchivedStories); // must come before /:id
+router.get('/archived/:id', protect, getArchivedStory);
+router.get('/:id', getStory);
+
+// Create — JSON body only, no multer (media already uploaded to Cloudinary by client)
 router.post(
-  "/",
+  '/',
   protect,
-  authorize(["admin", "creator"]),
+  authorize(['admin', 'creator']),
   storyCreationLimiter,
-  uploadMultiple.array("media", 20),
   createStory
 );
-router.get("/archived", protect, getArchivedStories);
-router.get("/archived/:id", protect, getArchivedStory);
+
 router.put(
-  "/:id/archive",
+  '/:id/archive',
   protect,
-  authorize(["admin", "creator"]),
+  authorize(['admin', 'creator']),
   archiveStory
 );
-router.delete("/:id", protect, authorize(["admin", "creator"]), deleteStory);
+router.delete(
+  '/archived/:id',
+  protect,
+  authorize(['admin', 'creator']),
+  deleteArchivedStory
+);
+router.delete('/:id', protect, authorize(['admin', 'creator']), deleteStory);
 
 module.exports = router;
