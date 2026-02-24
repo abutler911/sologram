@@ -1,50 +1,59 @@
-import React, { useState, useEffect, useContext } from "react";
-import styled, { keyframes } from "styled-components";
-import { useDropzone } from "react-dropzone";
-import { AuthContext } from "../context/AuthContext";
+// pages/Profile.js
+import React, { useState, useEffect, useContext } from 'react';
+import styled, { keyframes } from 'styled-components';
+import { useDropzone } from 'react-dropzone';
+import { AuthContext } from '../context/AuthContext';
 import {
   FaUser,
   FaEnvelope,
   FaCamera,
-  FaUpload,
   FaPencilAlt,
   FaSave,
-  FaStar,
-  FaHeart,
-} from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
-import { COLORS, THEME } from "../theme";
+  FaCheck,
+} from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+import { COLORS } from '../theme';
+import MainLayout from '../components/layout/MainLayout';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+
+/**
+ * Profile — SoloGram account settings
+ *
+ * Design direction: refined minimalism.
+ * One card, clean form, avatar takes center stage.
+ * Zero persistent animations — one fade-in entrance only.
+ * Every color from COLORS tokens.
+ */
 
 const ProfilePage = () => {
   const { user, updateProfile } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    username: "",
-    email: "",
-    bio: "",
+    firstName: '',
+    lastName: '',
+    username: '',
+    email: '',
+    bio: '',
   });
 
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [activeField, setActiveField] = useState("");
+  const [saved, setSaved] = useState(false);
 
+  // Populate from auth context
   useEffect(() => {
     if (user) {
       setFormData({
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        username: user.username || "",
-        email: user.email || "",
-        bio: user.bio || "",
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        username: user.username || '',
+        email: user.email || '',
+        bio: user.bio || '',
       });
-      if (user.profileImage) {
-        setImagePreview(user.profileImage);
-      }
+      if (user.profileImage) setImagePreview(user.profileImage);
     }
   }, [user]);
 
@@ -56,19 +65,16 @@ const ProfilePage = () => {
   const onDrop = (acceptedFiles) => {
     const file = acceptedFiles[0];
     if (!file) return;
-
     setProfileImage(file);
     const reader = new FileReader();
-    reader.onload = () => {
-      setImagePreview(reader.result);
-    };
+    reader.onload = () => setImagePreview(reader.result);
     reader.readAsDataURL(file);
   };
 
-  const { getRootProps, getInputProps } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    onDropRejected: () => toast.error("Image is too large. Max size is 5MB."),
-    accept: { "image/*": [".jpg", ".jpeg", ".png"] },
+    onDropRejected: () => toast.error('Image too large. Max 5 MB.'),
+    accept: { 'image/*': ['.jpg', '.jpeg', '.png'] },
     maxSize: 5 * 1024 * 1024,
     multiple: false,
   });
@@ -78,820 +84,526 @@ const ProfilePage = () => {
     setLoading(true);
 
     const data = new FormData();
-    data.append("firstName", formData.firstName);
-    data.append("lastName", formData.lastName);
-    data.append("username", formData.username);
-    data.append("email", formData.email);
-    data.append("bio", formData.bio);
-    if (profileImage) {
-      data.append("profileImage", profileImage);
-    }
+    data.append('firstName', formData.firstName);
+    data.append('lastName', formData.lastName);
+    data.append('username', formData.username);
+    data.append('email', formData.email);
+    data.append('bio', formData.bio);
+    if (profileImage) data.append('profileImage', profileImage);
 
     try {
-      toast.loading("Updating your amazing profile...", {
-        style: {
-          background: COLORS.cardBackground,
-          color: COLORS.textPrimary,
-          border: `2px solid ${COLORS.primarySalmon}`,
-        },
-      });
-
       const success = await updateProfile(data);
       if (success) {
-        toast.success("Profile updated successfully! Looking fantastic! ✨", {
-          style: {
-            background: COLORS.cardBackground,
-            color: COLORS.success,
-            border: `2px solid ${COLORS.success}`,
-          },
-          icon: "🎉",
-          duration: 5000,
-        });
-        navigate("/");
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+        toast.success('Profile saved');
+        navigate('/');
       } else {
-        toast.error("Profile update failed. Let's try again!", {
-          style: {
-            background: COLORS.cardBackground,
-            color: COLORS.error,
-            border: `2px solid ${COLORS.error}`,
-          },
-          icon: "💔",
-        });
+        toast.error('Update failed — please try again');
       }
-    } catch (err) {
-      toast.error("An unexpected error occurred. Tech happens!", {
-        style: {
-          background: COLORS.cardBackground,
-          color: COLORS.error,
-          border: `2px solid ${COLORS.error}`,
-        },
-        icon: "🤯",
-      });
+    } catch {
+      toast.error('Something went wrong');
     } finally {
       setLoading(false);
     }
   };
 
+  const initials =
+    [formData.firstName, formData.lastName]
+      .filter(Boolean)
+      .map((n) => n[0].toUpperCase())
+      .join('') ||
+    (formData.username?.[0]?.toUpperCase() ?? 'A');
+
   return (
-    <PageWrapper>
-      {/* Animated background elements */}
-      <BackgroundPattern />
-      <FloatingElement
-        top="5%"
-        left="8%"
-        size="120px"
-        delay="0s"
-        color={COLORS.primarySalmon}
-        opacity="0.15"
-      />
-      <FloatingElement
-        top="75%"
-        left="85%"
-        size="90px"
-        delay="2s"
-        color={COLORS.primaryMint}
-        opacity="0.12"
-      />
-      <FloatingElement
-        top="35%"
-        left="92%"
-        size="150px"
-        delay="1s"
-        color={COLORS.primaryKhaki}
-        opacity="0.1"
-      />
-      <FloatingElement
-        top="85%"
-        left="15%"
-        size="100px"
-        delay="3s"
-        color={COLORS.primaryBlueGray}
-        opacity="0.08"
-      />
+    <MainLayout>
+      <PageWrapper>
+        <Card>
+          {/* ── Page title ── */}
+          <CardHeader>
+            <CardTitle>Account Settings</CardTitle>
+            <CardSubtitle>Manage your SoloGram profile</CardSubtitle>
+          </CardHeader>
 
-      <Container>
-        <ContentCard>
-          <ProfileHeader>
-            <HeaderBackground />
-            <HeaderContent>
-              <SparkleIcon>
-                <FaStar />
-              </SparkleIcon>
-              <HeaderTitle>Create Your Perfect Profile</HeaderTitle>
-              <HeaderSubtitle>Show the world who you are ✨</HeaderSubtitle>
-            </HeaderContent>
-          </ProfileHeader>
+          <Divider />
 
-          <ProfileBody>
-            <ImageUploadSection>
-              {imagePreview ? (
-                <ImageContainer>
-                  <ProfileAvatar src={imagePreview} alt="Profile Preview" />
-                  <ImageBorder />
-                  <ImageOverlay>
-                    <ChangeButton
-                      type="button"
-                      onClick={() => {
-                        setProfileImage(null);
-                        setImagePreview(null);
-                      }}
-                    >
-                      <FaPencilAlt />
-                      <span>Change Photo</span>
-                    </ChangeButton>
-                  </ImageOverlay>
-                </ImageContainer>
-              ) : (
-                <UploadDropzone {...getRootProps()}>
-                  <input {...getInputProps()} />
-                  <UploadIcon>
-                    <FaCamera />
-                  </UploadIcon>
-                  <UploadText>Add Your Photo</UploadText>
-                  <UploadHint>Click or drag to upload</UploadHint>
-                </UploadDropzone>
-              )}
-            </ImageUploadSection>
-
-            <ProfileForm onSubmit={handleSubmit}>
-              <FormGrid>
-                <InputGroup
-                  className={activeField === "firstName" ? "focused" : ""}
+          {/* ── Avatar ── */}
+          <AvatarSection>
+            {imagePreview ? (
+              <AvatarWrap>
+                <AvatarImg src={imagePreview} alt='Profile' />
+                <AvatarEditBtn
+                  type='button'
+                  onClick={() => {
+                    setProfileImage(null);
+                    setImagePreview(null);
+                  }}
+                  title='Remove photo'
                 >
-                  <InputLabel>First Name</InputLabel>
-                  <InputContainer>
-                    <InputIcon>
-                      <FaUser />
-                    </InputIcon>
-                    <StyledInput
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      onFocus={() => setActiveField("firstName")}
-                      onBlur={() => setActiveField("")}
-                      placeholder="Enter your first name"
-                      required
-                    />
-                  </InputContainer>
-                </InputGroup>
-
-                <InputGroup
-                  className={activeField === "lastName" ? "focused" : ""}
-                >
-                  <InputLabel>Last Name</InputLabel>
-                  <InputContainer>
-                    <InputIcon>
-                      <FaUser />
-                    </InputIcon>
-                    <StyledInput
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      onFocus={() => setActiveField("lastName")}
-                      onBlur={() => setActiveField("")}
-                      placeholder="Enter your last name"
-                    />
-                  </InputContainer>
-                </InputGroup>
-              </FormGrid>
-
-              <InputGroup
-                className={activeField === "username" ? "focused" : ""}
+                  <FaPencilAlt />
+                </AvatarEditBtn>
+              </AvatarWrap>
+            ) : (
+              <DropZone
+                {...getRootProps()}
+                $active={isDragActive}
+                title='Upload a photo'
               >
-                <InputLabel>Username</InputLabel>
-                <InputContainer>
-                  <InputIcon>
+                <input {...getInputProps()} />
+                <AvatarFallback>{initials}</AvatarFallback>
+                <DropOverlay>
+                  <FaCamera />
+                  <span>Add photo</span>
+                </DropOverlay>
+              </DropZone>
+            )}
+            <AvatarMeta>
+              <AvatarName>
+                {formData.firstName
+                  ? `${formData.firstName} ${formData.lastName}`.trim()
+                  : formData.username || 'Your Name'}
+              </AvatarName>
+              <AvatarHandle>@{formData.username || 'username'}</AvatarHandle>
+            </AvatarMeta>
+          </AvatarSection>
+
+          <Divider />
+
+          {/* ── Form ── */}
+          <ProfileForm onSubmit={handleSubmit}>
+            <FieldRow>
+              <FieldGroup>
+                <FieldLabel htmlFor='firstName'>First Name</FieldLabel>
+                <FieldWrap>
+                  <FieldIcon>
                     <FaUser />
-                  </InputIcon>
-                  <StyledInput
-                    type="text"
-                    name="username"
-                    value={formData.username}
+                  </FieldIcon>
+                  <FieldInput
+                    id='firstName'
+                    name='firstName'
+                    value={formData.firstName}
                     onChange={handleChange}
-                    onFocus={() => setActiveField("username")}
-                    onBlur={() => setActiveField("")}
-                    placeholder="Choose a unique username"
+                    placeholder='First name'
                     required
                   />
-                </InputContainer>
-              </InputGroup>
+                </FieldWrap>
+              </FieldGroup>
 
-              <InputGroup className={activeField === "email" ? "focused" : ""}>
-                <InputLabel>Email Address</InputLabel>
-                <InputContainer>
-                  <InputIcon>
-                    <FaEnvelope />
-                  </InputIcon>
-                  <StyledInput
-                    type="email"
-                    name="email"
-                    value={formData.email}
+              <FieldGroup>
+                <FieldLabel htmlFor='lastName'>Last Name</FieldLabel>
+                <FieldWrap>
+                  <FieldIcon>
+                    <FaUser />
+                  </FieldIcon>
+                  <FieldInput
+                    id='lastName'
+                    name='lastName'
+                    value={formData.lastName}
                     onChange={handleChange}
-                    onFocus={() => setActiveField("email")}
-                    onBlur={() => setActiveField("")}
-                    placeholder="your@email.com"
-                    required
+                    placeholder='Last name'
                   />
-                </InputContainer>
-              </InputGroup>
+                </FieldWrap>
+              </FieldGroup>
+            </FieldRow>
 
-              <InputGroup className={activeField === "bio" ? "focused" : ""}>
-                <InputLabel>About You</InputLabel>
-                <StyledTextarea
-                  name="bio"
-                  value={formData.bio}
+            <FieldGroup>
+              <FieldLabel htmlFor='username'>Username</FieldLabel>
+              <FieldWrap>
+                <FieldPrefix>@</FieldPrefix>
+                <FieldInput
+                  id='username'
+                  name='username'
+                  value={formData.username}
                   onChange={handleChange}
-                  onFocus={() => setActiveField("bio")}
-                  onBlur={() => setActiveField("")}
-                  placeholder="Tell everyone about yourself... What makes you unique? ✨"
-                  rows={4}
+                  placeholder='username'
+                  required
+                  $hasPrefix
                 />
-              </InputGroup>
+              </FieldWrap>
+            </FieldGroup>
 
-              <SaveButton type="submit" disabled={loading}>
-                {loading ? (
-                  <ButtonContent>
-                    <LoadingSpinner />
-                    <span>Saving Your Profile...</span>
-                  </ButtonContent>
-                ) : (
-                  <ButtonContent>
-                    <FaSave />
-                    <span>Save Profile</span>
-                    <HeartIcon>
-                      <FaHeart />
-                    </HeartIcon>
-                  </ButtonContent>
-                )}
-              </SaveButton>
-            </ProfileForm>
-          </ProfileBody>
-        </ContentCard>
-      </Container>
-    </PageWrapper>
+            <FieldGroup>
+              <FieldLabel htmlFor='email'>Email</FieldLabel>
+              <FieldWrap>
+                <FieldIcon>
+                  <FaEnvelope />
+                </FieldIcon>
+                <FieldInput
+                  id='email'
+                  name='email'
+                  type='email'
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder='you@example.com'
+                  required
+                />
+              </FieldWrap>
+            </FieldGroup>
+
+            <FieldGroup>
+              <FieldLabel htmlFor='bio'>Bio</FieldLabel>
+              <FieldTextarea
+                id='bio'
+                name='bio'
+                value={formData.bio}
+                onChange={handleChange}
+                placeholder='Tell the world a little about yourself…'
+                rows={4}
+                maxLength={300}
+              />
+              <CharCount $warn={formData.bio.length > 260}>
+                {formData.bio.length} / 300
+              </CharCount>
+            </FieldGroup>
+
+            <SaveButton type='submit' disabled={loading} $saved={saved}>
+              {loading ? (
+                <LoadingSpinner size='18px' noMinHeight />
+              ) : saved ? (
+                <>
+                  <FaCheck />
+                  <span>Saved</span>
+                </>
+              ) : (
+                <>
+                  <FaSave />
+                  <span>Save changes</span>
+                </>
+              )}
+            </SaveButton>
+          </ProfileForm>
+        </Card>
+      </PageWrapper>
+    </MainLayout>
   );
 };
 
 export default ProfilePage;
 
-// Stunning animations and styled components
-const gentleFloat = keyframes`
-  0%, 100% { transform: translateY(0px) rotate(0deg) }
-  25% { transform: translateY(-10px) rotate(1deg) }
-  50% { transform: translateY(-20px) rotate(0deg) }
-  75% { transform: translateY(-10px) rotate(-1deg) }
+// ─────────────────────────────────────────────────────────────────────────────
+// Animation — entrance only, nothing persistent
+// ─────────────────────────────────────────────────────────────────────────────
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 `;
 
-const shimmer = keyframes`
-  0% { background-position: -200% 0 }
-  100% { background-position: 200% 0 }
-`;
-
-const pulse = keyframes`
-  0%, 100% { transform: scale(1) }
-  50% { transform: scale(1.05) }
-`;
-
-const heartBeat = keyframes`
-  0%, 100% { transform: scale(1) }
-  25% { transform: scale(1.1) }
-  50% { transform: scale(1) }
-  75% { transform: scale(1.05) }
-`;
-
-const spin = keyframes`
-  0% { transform: rotate(0deg) }
-  100% { transform: rotate(360deg) }
-`;
-
-const gradientFlow = keyframes`
-  0% { background-position: 0% 50% }
-  50% { background-position: 100% 50% }
-  100% { background-position: 0% 50% }
-`;
-
-const sparkle = keyframes`
-  0%, 100% { opacity: 1; transform: scale(1) rotate(0deg) }
-  50% { opacity: 0.7; transform: scale(1.2) rotate(180deg) }
-`;
-
-const FloatingElement = styled.div`
-  position: absolute;
-  width: ${(props) => props.size};
-  height: ${(props) => props.size};
-  top: ${(props) => props.top};
-  left: ${(props) => props.left};
-  border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    ${(props) => props.color}40 0%,
-    ${(props) => props.color}20 100%
-  );
-  opacity: ${(props) => props.opacity};
-  filter: blur(15px);
-  animation: ${gentleFloat} 8s ease-in-out infinite;
-  animation-delay: ${(props) => props.delay};
-  pointer-events: none;
-  z-index: 1;
-`;
-
-const BackgroundPattern = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.background} 0%,
-    ${COLORS.primaryKhaki}30 25%,
-    ${COLORS.accentMint}20 50%,
-    ${COLORS.background} 75%,
-    ${COLORS.primarySalmon}15 100%
-  );
-  background-size: 400% 400%;
-  animation: ${gradientFlow} 20s ease infinite;
-  z-index: 0;
-`;
-
+// ─────────────────────────────────────────────────────────────────────────────
+// Layout
+// ─────────────────────────────────────────────────────────────────────────────
 const PageWrapper = styled.div`
-  position: relative;
   min-height: 100vh;
+  background: ${COLORS.background};
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 2rem 1rem;
-  overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: 32px 16px 80px;
+
+  @media (min-width: 600px) {
+    padding: 48px 24px 80px;
+  }
 `;
 
-const Container = styled.div`
-  max-width: 800px;
+const Card = styled.div`
   width: 100%;
-  position: relative;
-  z-index: 2;
-`;
-
-const ContentCard = styled.div`
-  border-radius: 24px;
-  overflow: hidden;
+  max-width: 560px;
   background: ${COLORS.cardBackground};
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), 0 8px 25px rgba(0, 0, 0, 0.08);
   border: 1px solid ${COLORS.border};
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15), 0 10px 35px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const ProfileHeader = styled.div`
-  position: relative;
-  height: 200px;
+  border-radius: 16px;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  animation: ${fadeUp} 0.22s ease both;
 `;
 
-const HeaderBackground = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryBlueGray} 0%,
-    ${COLORS.primaryMint} 50%,
-    ${COLORS.accentSalmon} 100%
-  );
-  background-size: 300% 300%;
-  animation: ${gradientFlow} 15s ease infinite;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(
-      45deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.1) 50%,
-      transparent 100%
-    );
-    background-size: 200% 200%;
-    animation: ${shimmer} 8s ease-in-out infinite;
-  }
+const CardHeader = styled.div`
+  padding: 24px 24px 20px;
 `;
 
-const HeaderContent = styled.div`
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  color: white;
-`;
-
-const SparkleIcon = styled.div`
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  color: rgba(255, 255, 255, 0.9);
-  animation: ${sparkle} 3s ease-in-out infinite;
-`;
-
-const HeaderTitle = styled.h1`
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin: 0 0 0.5rem 0;
-  text-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
-  letter-spacing: -1px;
-`;
-
-const HeaderSubtitle = styled.p`
+const CardTitle = styled.h1`
   font-size: 1.1rem;
+  font-weight: 800;
+  color: ${COLORS.textPrimary};
+  margin: 0 0 3px;
+  letter-spacing: -0.2px;
+`;
+
+const CardSubtitle = styled.p`
+  font-size: 0.82rem;
+  color: ${COLORS.textTertiary};
   margin: 0;
-  opacity: 0.9;
-  font-weight: 500;
 `;
 
-const ProfileBody = styled.div`
-  padding: 3rem 2.5rem;
+const Divider = styled.hr`
+  border: none;
+  height: 1px;
+  background: ${COLORS.border};
+  margin: 0;
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Avatar section
+// ─────────────────────────────────────────────────────────────────────────────
+const AvatarSection = styled.div`
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2.5rem;
+  gap: 18px;
+  padding: 20px 24px;
 `;
 
-const ImageUploadSection = styled.div`
-  display: flex;
-  justify-content: center;
-  margin-bottom: 1rem;
-`;
+const avatarSize = '72px';
 
-const ImageContainer = styled.div`
+const AvatarWrap = styled.div`
   position: relative;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: scale(1.05);
-  }
+  width: ${avatarSize};
+  height: ${avatarSize};
+  flex-shrink: 0;
 `;
 
-const ProfileAvatar = styled.img`
-  width: 100%;
-  height: 100%;
+const AvatarImg = styled.img`
+  width: ${avatarSize};
+  height: ${avatarSize};
+  border-radius: 50%;
   object-fit: cover;
-  transition: transform 0.5s ease;
+  border: 2.5px solid ${COLORS.primarySalmon}70;
+  display: block;
+`;
 
-  ${ImageContainer}:hover & {
+const AvatarEditBtn = styled.button`
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: ${COLORS.primarySalmon};
+  color: #fff;
+  border: 2px solid ${COLORS.cardBackground};
+  display: grid;
+  place-items: center;
+  font-size: 0.62rem;
+  cursor: pointer;
+  transition: background 0.12s, transform 0.1s;
+  &:hover {
+    background: ${COLORS.accentSalmon};
     transform: scale(1.1);
   }
 `;
 
-const ImageBorder = styled.div`
-  position: absolute;
-  top: -4px;
-  left: -4px;
-  right: -4px;
-  bottom: -4px;
-  border-radius: 50%;
-  background: linear-gradient(
-    45deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.primaryMint},
-    ${COLORS.primaryBlueGray},
-    ${COLORS.accentSalmon}
-  );
-  background-size: 300% 300%;
-  animation: ${gradientFlow} 8s ease infinite;
-  z-index: -1;
-`;
-
-const ImageOverlay = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.7) 0%,
-    rgba(0, 0, 0, 0.2) 50%,
-    transparent 100%
-  );
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 1rem;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-
-  ${ImageContainer}:hover & {
-    opacity: 1;
-  }
-`;
-
-const ChangeButton = styled.button`
-  background: rgba(255, 255, 255, 0.95);
-  color: ${COLORS.textPrimary};
-  border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 50px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-
-  &:hover {
-    background: white;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-  }
-`;
-
-const UploadDropzone = styled.div`
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.elevatedBackground} 0%,
-    rgba(255, 255, 255, 0.8) 100%
-  );
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border: 3px dashed ${COLORS.primaryMint};
-  transition: all 0.3s ease;
+/* Dropzone — shown when no image selected */
+const DropZone = styled.div`
   position: relative;
-
+  width: ${avatarSize};
+  height: ${avatarSize};
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  border: 2.5px dashed
+    ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.border)};
+  transition: border-color 0.15s;
+  overflow: hidden;
   &:hover {
     border-color: ${COLORS.primarySalmon};
-    transform: scale(1.05);
-    background: linear-gradient(
-      135deg,
-      ${COLORS.accentMint}30 0%,
-      rgba(255, 255, 255, 0.9) 100%
-    );
+  }
+`;
+
+const AvatarFallback = styled.div`
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
+  );
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -1px;
+`;
+
+const DropOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.52);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 600;
+  svg {
+    font-size: 1rem;
   }
 
-  &::before {
-    content: "";
-    position: absolute;
-    top: -6px;
-    left: -6px;
-    right: -6px;
-    bottom: -6px;
-    border-radius: 50%;
-    background: linear-gradient(
-      45deg,
-      ${COLORS.primarySalmon}30,
-      ${COLORS.primaryMint}30,
-      ${COLORS.primaryBlueGray}30
-    );
-    background-size: 200% 200%;
-    animation: ${gradientFlow} 10s ease infinite;
-    z-index: -1;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  &:hover::before {
+  ${DropZone}:hover & {
     opacity: 1;
   }
 `;
 
-const UploadIcon = styled.div`
-  font-size: 2rem;
-  color: ${COLORS.primaryBlueGray};
-  margin-bottom: 0.5rem;
-  transition: all 0.3s ease;
-
-  ${UploadDropzone}:hover & {
-    color: ${COLORS.primarySalmon};
-    animation: ${pulse} 2s infinite;
-  }
+const AvatarMeta = styled.div`
+  min-width: 0;
 `;
 
-const UploadText = styled.p`
-  color: ${COLORS.textPrimary};
-  margin: 0 0 0.25rem 0;
+const AvatarName = styled.div`
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
+  color: ${COLORS.textPrimary};
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
-const UploadHint = styled.p`
-  color: ${COLORS.textSecondary};
-  margin: 0;
-  font-size: 0.75rem;
+const AvatarHandle = styled.div`
+  font-size: 0.8rem;
+  color: ${COLORS.textTertiary};
 `;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Form
+// ─────────────────────────────────────────────────────────────────────────────
 const ProfileForm = styled.form`
-  width: 100%;
-  max-width: 500px;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 18px;
+  padding: 24px;
 `;
 
-const FormGrid = styled.div`
+const FieldRow = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 14px;
 
-  @media (max-width: 600px) {
+  @media (max-width: 440px) {
     grid-template-columns: 1fr;
   }
 `;
 
-const InputGroup = styled.div`
+const FieldGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-
-  &.focused {
-    transform: translateY(-2px);
-
-    label {
-      color: ${COLORS.primarySalmon};
-      font-weight: 600;
-    }
-  }
+  gap: 6px;
 `;
 
-const InputLabel = styled.label`
+const FieldLabel = styled.label`
+  font-size: 0.78rem;
+  font-weight: 600;
   color: ${COLORS.textSecondary};
-  font-size: 0.9rem;
-  font-weight: 500;
-  margin-left: 0.5rem;
-  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
-const InputContainer = styled.div`
+const FieldWrap = styled.div`
   position: relative;
+  display: flex;
+  align-items: center;
 `;
 
-const InputIcon = styled.div`
+const FieldIcon = styled.div`
   position: absolute;
-  top: 50%;
-  left: 1rem;
-  transform: translateY(-50%);
+  left: 12px;
   color: ${COLORS.textTertiary};
-  transition: color 0.3s ease;
-  z-index: 1;
+  font-size: 0.8rem;
+  pointer-events: none;
+  display: flex;
 `;
 
-const StyledInput = styled.input`
+const FieldPrefix = styled.div`
+  position: absolute;
+  left: 12px;
+  color: ${COLORS.textTertiary};
+  font-size: 0.88rem;
+  font-weight: 600;
+  pointer-events: none;
+`;
+
+const FieldInput = styled.input`
   width: 100%;
-  padding: 1rem 1rem 1rem 3rem;
   background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 10px;
   color: ${COLORS.textPrimary};
-  border: 2px solid ${COLORS.border};
-  border-radius: 12px;
-  font-size: 1rem;
-  font-family: inherit;
-  transition: all 0.3s ease;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: ${COLORS.primarySalmon};
-    background: rgba(255, 255, 255, 0.9);
-    outline: none;
-    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
-
-    & + ${InputIcon} {
-      color: ${COLORS.primarySalmon};
-    }
-  }
+  font-size: 0.9rem;
+  padding: ${(p) =>
+    p.$hasPrefix ? '10px 12px 10px 28px' : '10px 12px 10px 36px'};
+  transition: border-color 0.12s, box-shadow 0.12s;
 
   &::placeholder {
     color: ${COLORS.textTertiary};
   }
+
+  &:focus {
+    outline: none;
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}18;
+  }
 `;
 
-const StyledTextarea = styled.textarea`
+const FieldTextarea = styled.textarea`
   width: 100%;
-  padding: 1rem;
   background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 10px;
   color: ${COLORS.textPrimary};
-  border: 2px solid ${COLORS.border};
-  border-radius: 12px;
-  font-size: 1rem;
-  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 10px 12px;
   resize: vertical;
-  min-height: 120px;
-  transition: all 0.3s ease;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: ${COLORS.primarySalmon};
-    background: rgba(255, 255, 255, 0.9);
-    outline: none;
-    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
-  }
+  min-height: 90px;
+  font-family: inherit;
+  line-height: 1.5;
+  transition: border-color 0.12s, box-shadow 0.12s;
 
   &::placeholder {
     color: ${COLORS.textTertiary};
   }
+
+  &:focus {
+    outline: none;
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}18;
+  }
+`;
+
+const CharCount = styled.div`
+  font-size: 0.72rem;
+  color: ${(p) => (p.$warn ? COLORS.primarySalmon : COLORS.textTertiary)};
+  text-align: right;
+  margin-top: 2px;
 `;
 
 const SaveButton = styled.button`
-  width: 100%;
-  padding: 1.2rem;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primarySalmon} 0%,
-    ${COLORS.accentSalmon} 100%
-  );
-  color: white;
-  font-weight: 700;
-  font-size: 1.1rem;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 1rem;
-  box-shadow: 0 6px 20px ${COLORS.primarySalmon}40;
-  position: relative;
-  overflow: hidden;
-
-  &:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.2),
-      transparent
-    );
-    transition: left 0.5s;
-  }
-
-  &:hover:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 30px ${COLORS.primarySalmon}50;
-    background: linear-gradient(
-      135deg,
-      ${COLORS.accentSalmon} 0%,
-      ${COLORS.primarySalmon} 100%
-    );
-
-    &:before {
-      left: 100%;
-    }
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(-1px);
-  }
-
-  &:disabled {
-    background: ${COLORS.textTertiary};
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-`;
-
-const ButtonContent = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-`;
-
-const LoadingSpinner = styled.div`
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: white;
-  animation: ${spin} 1s linear infinite;
-`;
-
-const HeartIcon = styled.div`
-  color: ${COLORS.heartRed};
-  animation: ${heartBeat} 2s ease-in-out infinite;
+  gap: 8px;
+  padding: 11px 20px;
+  border: none;
+  border-radius: 10px;
   font-size: 0.9rem;
+  font-weight: 700;
+  cursor: ${(p) => (p.disabled ? 'not-allowed' : 'pointer')};
+  transition: background 0.15s, transform 0.1s, opacity 0.15s;
+  align-self: flex-end;
+  min-width: 140px;
+
+  background: ${(p) => (p.$saved ? COLORS.primaryMint : COLORS.primarySalmon)};
+  color: #fff;
+  opacity: ${(p) => (p.disabled && !p.$saved ? 0.65 : 1)};
+
+  &:hover:not(:disabled) {
+    background: ${(p) => (p.$saved ? COLORS.accentMint : COLORS.accentSalmon)};
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  svg {
+    font-size: 0.85rem;
+  }
 `;
