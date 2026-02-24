@@ -1,45 +1,21 @@
-import React, { useState, useEffect, useContext } from "react";
-import { Link } from "react-router-dom";
-import styled from "styled-components";
-import axios from "axios";
-import { toast } from "react-hot-toast";
-import { FaPlus, FaFolder, FaImages } from "react-icons/fa";
-import { AuthContext } from "../context/AuthContext";
-import MainLayout from "../components/layout/MainLayout";
-import { COLORS, THEME } from "../theme"; // Import your theme
+// client/src/pages/CollectionsList.js
+import React, { useContext } from 'react';
+import { Link } from 'react-router-dom';
+import styled from 'styled-components';
+import { FaPlus, FaFolder, FaImages } from 'react-icons/fa';
+import { AuthContext } from '../context/AuthContext';
+import MainLayout from '../components/layout/MainLayout';
+import { COLORS } from '../theme';
+import { useCollections } from '../hooks/queries/useCollections';
 
 const CollectionsList = () => {
-  const [collections, setCollections] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Get auth context and check for appropriate permissions
   const { isAuthenticated, user } = useContext(AuthContext);
-  // Allow only admin and creator roles to create collections
   const canCreateCollection =
-    isAuthenticated && (user?.role === "admin" || user?.role === "creator");
+    isAuthenticated && (user?.role === 'admin' || user?.role === 'creator');
 
-  useEffect(() => {
-    const fetchCollections = async () => {
-      try {
-        setLoading(true);
+  const { data: collections = [], isLoading, error } = useCollections();
 
-        const response = await axios.get("/api/collections");
-        setCollections(response.data.data);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching collections:", err);
-        setError("Failed to load collections. Please try again.");
-        toast.error("Failed to load collections");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCollections();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <PageWrapper>
         <Container>
@@ -53,7 +29,9 @@ const CollectionsList = () => {
     return (
       <PageWrapper>
         <Container>
-          <ErrorMessage>{error}</ErrorMessage>
+          <ErrorMessage>
+            Failed to load collections. Please try again.
+          </ErrorMessage>
         </Container>
       </PageWrapper>
     );
@@ -68,10 +46,8 @@ const CollectionsList = () => {
               <FaFolder />
               <span>Collections</span>
             </PageTitle>
-
-            {/* Only show create button for admin and creator roles */}
             {canCreateCollection && (
-              <CreateButton to="/collections/create">
+              <CreateButton to='/collections/create'>
                 <FaPlus />
                 <span>Create Collection</span>
               </CreateButton>
@@ -84,9 +60,8 @@ const CollectionsList = () => {
                 <FaImages />
               </EmptyIcon>
               <EmptyText>No collections yet</EmptyText>
-              {/* Only show create action link for admin and creator roles */}
               {canCreateCollection && (
-                <EmptyActionLink to="/collections/create">
+                <EmptyActionLink to='/collections/create'>
                   Create your first collection
                 </EmptyActionLink>
               )}
@@ -130,7 +105,8 @@ const CollectionsList = () => {
   );
 };
 
-// Styled Components with updated theme colors
+// ── Styled Components ─────────────────────────────────────────────────────────
+
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
   min-height: 100vh;
@@ -141,7 +117,6 @@ const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-
   @media (max-width: 768px) {
     padding: 1rem;
   }
@@ -152,7 +127,6 @@ const PageHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-
   @media (max-width: 640px) {
     flex-direction: column;
     align-items: flex-start;
@@ -166,7 +140,6 @@ const PageTitle = styled.h1`
   font-size: 2rem;
   color: ${COLORS.textPrimary};
   margin: 0;
-
   svg {
     margin-right: 0.75rem;
     color: ${COLORS.primarySalmon};
@@ -176,6 +149,7 @@ const PageTitle = styled.h1`
 const CreateButton = styled(Link)`
   display: flex;
   align-items: center;
+  gap: 0.5rem;
   background-color: ${COLORS.primarySalmon};
   color: white;
   border: none;
@@ -185,13 +159,8 @@ const CreateButton = styled(Link)`
   font-weight: 600;
   text-decoration: none;
   transition: background-color 0.3s;
-
   &:hover {
-    background-color: #cc6e5f; /* Darker salmon on hover */
-  }
-
-  svg {
-    margin-right: 0.5rem;
+    background-color: ${COLORS.accentSalmon};
   }
 `;
 
@@ -207,7 +176,6 @@ const CollectionCard = styled.div`
   overflow: hidden;
   box-shadow: 0 2px 8px ${COLORS.shadow};
   transition: transform 0.3s, box-shadow 0.3s;
-
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 4px 12px ${COLORS.shadow};
@@ -234,7 +202,6 @@ const CollectionCoverPlaceholder = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-
   svg {
     font-size: 3rem;
     color: ${COLORS.divider};
@@ -309,9 +276,8 @@ const EmptyActionLink = styled(Link)`
   border-radius: 4px;
   font-weight: 600;
   transition: background-color 0.3s;
-
   &:hover {
-    background-color: #cc6e5f; /* Darker salmon on hover */
+    background-color: ${COLORS.accentSalmon};
   }
 `;
 
