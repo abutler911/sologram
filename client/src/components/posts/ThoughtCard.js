@@ -369,14 +369,14 @@ const MetaLeft = styled.div`
 `;
 
 const AuthorName = styled.span`
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   font-weight: 700;
   color: ${COLORS.textPrimary};
   white-space: nowrap;
 `;
 
 const AuthorHandle = styled.span`
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: ${COLORS.textTertiary};
   white-space: nowrap;
 `;
@@ -387,7 +387,7 @@ const MetaDot = styled.span`
 `;
 
 const Timestamp = styled.time`
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: ${COLORS.textTertiary};
   white-space: nowrap;
 `;
@@ -474,8 +474,8 @@ const MenuItem = styled.button`
 /* Content */
 const Content = styled.p`
   color: ${COLORS.textPrimary};
-  font-size: 0.97rem;
-  line-height: 1.55;
+  font-size: 0.9rem;
+  line-height: 1.45;
   margin: 0 0 10px;
   white-space: pre-wrap;
   word-break: break-word;

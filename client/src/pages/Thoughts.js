@@ -218,7 +218,9 @@ const Thoughts = () => {
         {/* ══ Sticky feed header ══════════════════════════════════════════════ */}
         <FeedHeader>
           <FeedHeaderTop>
-            <FeedTitle>SoloThoughts</FeedTitle>
+            <FeedTitle>
+              <TitleAccent>Solo</TitleAccent>Thoughts
+            </FeedTitle>
             <HeaderActions>
               {searchOpen ? (
                 <SearchForm onSubmit={submitSearch}>
@@ -399,8 +401,12 @@ const FeedTitle = styled.h1`
   font-weight: 800;
   color: ${COLORS.textPrimary};
   margin: 0;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
   flex-shrink: 0;
+`;
+
+const TitleAccent = styled.span`
+  color: ${COLORS.primarySalmon};
 `;
 
 const HeaderActions = styled.div`
