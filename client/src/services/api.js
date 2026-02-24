@@ -1,10 +1,9 @@
-// client/src/services/api.js
-//
-// Single source of truth for all API calls.
-// Components and hooks never import axios directly — they use this file.
-// Auth header is handled automatically by the axios default set in AuthContext.
-
 import axios from 'axios';
+
+/**
+ * Single source of truth for all Sologram API calls.
+ * Base configuration and Auth headers are handled by axios defaults in AuthContext.
+ */
 
 export const api = {
   // ── POSTS ──────────────────────────────────────────────────────────
@@ -24,6 +23,7 @@ export const api = {
 
   deletePost: (id) => axios.delete(`/api/posts/${id}`).then((r) => r.data),
 
+  // Updated to ensure it returns the new post object for immediate UI sync
   likePost: (id) => axios.post(`/api/posts/${id}/like`).then((r) => r.data),
 
   checkLikeStatus: (id) =>
@@ -103,7 +103,7 @@ export const api = {
       .then((r) => r.data),
 
   // ── COMMENTS ───────────────────────────────────────────────────────
-  // Lightweight count — dedicated endpoint backed by a covered index
+  // Using covered index endpoints for Sologram performance
   getCommentCount: (postId) =>
     axios.get(`/api/posts/${postId}/comments/count`).then((r) => r.data),
 
@@ -113,6 +113,7 @@ export const api = {
   addComment: (postId, payload) =>
     axios.post(`/api/posts/${postId}/comments`, payload).then((r) => r.data),
 
+  // CRITICAL: Ensure this returns the full updated comment object { comment: { ... } }
   likeComment: (commentId) =>
     axios.post(`/api/comments/${commentId}/like`).then((r) => r.data),
 

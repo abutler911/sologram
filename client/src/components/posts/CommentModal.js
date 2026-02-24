@@ -17,7 +17,7 @@ import { createPortal } from 'react-dom';
 const AVATAR_FALLBACK = authorImg;
 const AUTHOR_IMAGE = authorImg;
 
-// --- ANIMATIONS ---
+// ─── ANIMATIONS ───
 const fadeIn = keyframes`0%{opacity:0}100%{opacity:1}`;
 const slideUp = keyframes`0%{transform:translateY(100%)}100%{transform:translateY(0)}`;
 const slideDown = keyframes`0%{transform:translateY(0)}100%{transform:translateY(100%)}`;
@@ -91,11 +91,10 @@ export const CommentModal = ({
       >
         <DragHandle />
 
-        {/* NEW: Minimalist Header with just the Title */}
         <ModalHeader>
           <HeaderTitleArea>
             <HeaderTitle>Conversation</HeaderTitle>
-            <HeaderSubtitle>{post.title || 'Sologram'}</HeaderSubtitle>
+            <HeaderSubtitle>{post.title || 'Sologram Log'}</HeaderSubtitle>
           </HeaderTitleArea>
           <CloseButton onClick={handleClose}>
             <FaTimes />
@@ -118,7 +117,7 @@ export const CommentModal = ({
               <CommentsList>
                 {comments.map((comment) => {
                   const a = comment.author || {};
-                  // Lock author check to your specific name or username
+                  // Branding logic: apply salmon ring if it's you
                   const isAuthor =
                     a.username === 'andy' || a.name === 'Andrew Butler';
                   return (
@@ -285,6 +284,10 @@ const CloseButton = styled.button`
   color: ${COLORS.textTertiary};
   font-size: 1.2rem;
   cursor: pointer;
+  transition: color 0.2s;
+  &:hover {
+    color: ${COLORS.primarySalmon};
+  }
 `;
 
 const ModalContent = styled.div`
@@ -293,8 +296,6 @@ const ModalContent = styled.div`
   display: flex;
   flex-direction: column;
 `;
-
-// Removed PostContext to maximize comment space
 
 const CommentsArea = styled.div`
   flex: 1;
@@ -310,7 +311,7 @@ const CommentsList = styled.div`
 const CommentItem = styled.div`
   padding: 20px;
   display: flex;
-  align-items: flex-start; /* CRITICAL: Aligns to top, prevents vertical stretching */
+  align-items: flex-start;
   gap: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 `;
@@ -318,8 +319,8 @@ const CommentItem = styled.div`
 const CommentAvatarContainer = styled.div`
   position: relative;
   flex-shrink: 0;
-  width: 40px; /* Locked width */
-  height: 40px; /* Locked height */
+  width: 40px;
+  height: 40px;
 
   ${(p) =>
     p.isAuthor &&
@@ -337,7 +338,7 @@ const CommentAvatarContainer = styled.div`
 
 const CommentAvatar = styled.img`
   width: 40px;
-  height: 40px; /* Force dimensions here too */
+  height: 40px;
   border-radius: 50%;
   object-fit: cover;
   display: block;
@@ -392,6 +393,10 @@ const LikeBtn = styled.button`
   align-items: center;
   gap: 4px;
   cursor: pointer;
+  transition: transform 0.2s;
+  &:hover {
+    transform: scale(1.05);
+  }
   span {
     font-size: 0.75rem;
     font-weight: 700;
@@ -405,6 +410,9 @@ const ReplyBtn = styled.button`
   font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;
+  &:hover {
+    color: ${COLORS.textPrimary};
+  }
 `;
 
 const DeleteBtn = styled.button`
@@ -413,6 +421,10 @@ const DeleteBtn = styled.button`
   color: rgba(255, 255, 255, 0.1);
   font-size: 0.75rem;
   cursor: pointer;
+  transition: 0.2s;
+  &:hover {
+    color: ${COLORS.primarySalmon};
+  }
 `;
 
 const InputSection = styled.div`
@@ -444,6 +456,10 @@ const InputWrapper = styled.div`
   border-radius: 24px;
   padding: 4px 4px 4px 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 0.2s;
+  &:focus-within {
+    border-color: ${COLORS.primaryMint}50;
+  }
 `;
 
 const CommentInput = styled.input`
@@ -453,6 +469,9 @@ const CommentInput = styled.input`
   color: ${COLORS.textPrimary};
   font-size: 0.9rem;
   outline: none;
+  &::placeholder {
+    color: ${COLORS.textTertiary};
+  }
 `;
 
 const SubmitBtn = styled.button`
@@ -466,6 +485,11 @@ const SubmitBtn = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s;
+  &:hover:not(:disabled) {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+  }
   &:disabled {
     background: rgba(255, 255, 255, 0.1);
     color: ${COLORS.textTertiary};
@@ -474,8 +498,8 @@ const SubmitBtn = styled.button`
 `;
 
 const LoadingSpinner = styled.div`
-  width: 24px;
-  height: 24px;
+  width: ${(p) => p.size || '24px'};
+  height: ${(p) => p.size || '24px'};
   border: 2px solid rgba(255, 255, 255, 0.1);
   border-top: 2px solid ${COLORS.primaryMint};
   border-radius: 50%;
@@ -485,6 +509,7 @@ const LoadingSpinner = styled.div`
 const LoadingState = styled.div`
   display: flex;
   justify-content: center;
+  align-items: center;
   padding: 60px;
 `;
 
@@ -500,6 +525,7 @@ const EmptyIcon = styled.div`
 const EmptyTitle = styled.h4`
   color: ${COLORS.textPrimary};
   margin-bottom: 4px;
+  font-size: 1.1rem;
 `;
 const EmptySubtitle = styled.p`
   color: ${COLORS.textTertiary};
@@ -523,5 +549,7 @@ const ReplyIndicator = styled.div`
     border: none;
     color: ${COLORS.textTertiary};
     cursor: pointer;
+    display: flex;
+    align-items: center;
   }
 `;
