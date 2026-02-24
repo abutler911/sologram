@@ -1,7 +1,8 @@
-// client/src/pages/CollectionDetail.js
-import React, { useState, useContext, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useContext, lazy, Suspense } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import {
   FaFolder,
   FaEdit,
@@ -11,12 +12,9 @@ import {
   FaPlusCircle,
 } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
+import { useDeleteModal } from '../context/DeleteModalContext';
 import { COLORS } from '../theme';
-import {
-  useCollection,
-  useDeleteCollection,
-  useRemovePostFromCollection,
-} from '../hooks/queries/useCollections';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const PostCard = lazy(() => import('../components/posts/PostCard'));
 
@@ -24,45 +22,86 @@ const CollectionDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useContext(AuthContext);
+  const { showDeleteModal } = useDeleteModal();
 
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showRemovePostModal, setShowRemovePostModal] = useState(false);
-  const [postToRemove, setPostToRemove] = useState(null);
+  const [collection, setCollection] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const { data: collection, isLoading, error } = useCollection(id);
-  const deleteCollection = useDeleteCollection();
-  const removePost = useRemovePostFromCollection();
+  useEffect(() => {
+    const fetchCollection = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`/api/collections/${id}`);
+        setCollection(response.data.data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching collection:', err);
+        setError(
+          'Failed to load collection. It may have been deleted or does not exist.'
+        );
+        toast.error('Failed to load collection');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCollection();
+  }, [id]);
 
+  // Remove a post from this collection — optimistic UI update
   const handleDeletePost = (postId) => {
-    setPostToRemove(postId);
-    setShowRemovePostModal(true);
+    const postPreview = collection.posts.find((p) => p._id === postId);
+    showDeleteModal({
+      title: 'Remove Post',
+      message:
+        "Remove this post from the collection? The post itself won't be deleted.",
+      confirmText: 'Remove',
+      cancelText: 'Keep',
+      itemName: postPreview?.title || postPreview?.caption || 'this post',
+      onConfirm: async () => {
+        try {
+          await axios.delete(`/api/collections/${id}/posts/${postId}`);
+          setCollection((prev) => ({
+            ...prev,
+            posts: prev.posts.filter((p) => p._id !== postId),
+          }));
+          toast.success('Post removed from collection');
+        } catch (err) {
+          console.error('Error removing post:', err);
+          toast.error('Failed to remove post');
+        }
+      },
+      destructive: true,
+    });
   };
 
-  const confirmRemovePost = async () => {
-    try {
-      await removePost.mutateAsync({ collectionId: id, postId: postToRemove });
-      setShowRemovePostModal(false);
-      setPostToRemove(null);
-    } catch {
-      setShowRemovePostModal(false);
-      setPostToRemove(null);
-    }
+  const handleDeleteCollection = () => {
+    showDeleteModal({
+      title: 'Delete Collection',
+      message:
+        'Are you sure you want to delete this collection? This cannot be undone.',
+      confirmText: 'Delete Collection',
+      cancelText: 'Keep',
+      itemName: collection?.name,
+      onConfirm: async () => {
+        try {
+          await axios.delete(`/api/collections/${id}`);
+          toast.success('Collection deleted');
+          navigate('/collections');
+        } catch (err) {
+          console.error('Error deleting collection:', err);
+          toast.error('Failed to delete collection');
+        }
+      },
+      destructive: true,
+    });
   };
 
-  const handleDeleteCollection = async () => {
-    try {
-      await deleteCollection.mutateAsync(id);
-      navigate('/collections');
-    } catch {
-      setShowDeleteModal(false);
-    }
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
       <PageWrapper>
         <Container>
-          <LoadingMessage>Loading collection...</LoadingMessage>
+          <LoadingSpinner />
         </Container>
       </PageWrapper>
     );
@@ -72,15 +111,11 @@ const CollectionDetail = () => {
     return (
       <PageWrapper>
         <Container>
-          <ErrorContainer>
-            <ErrorMessage>
-              {error?.message || 'Collection not found'}
-            </ErrorMessage>
-            <BackButton to='/collections'>
-              <FaArrowLeft />
-              <span>Back to Collections</span>
-            </BackButton>
-          </ErrorContainer>
+          <ErrorBox>{error || 'Collection not found'}</ErrorBox>
+          <BackButton to='/collections'>
+            <FaArrowLeft />
+            <span>Back to Collections</span>
+          </BackButton>
         </Container>
       </PageWrapper>
     );
@@ -89,15 +124,17 @@ const CollectionDetail = () => {
   return (
     <PageWrapper>
       <Container>
+        {/* ── Back nav ── */}
         <BackButton to='/collections'>
           <FaArrowLeft />
-          <span>Back to Collections</span>
+          <span>Collections</span>
         </BackButton>
 
+        {/* ── Collection header card ── */}
         <CollectionHeader>
-          <CollectionIcon>
+          <CollectionIconWrap>
             <FaFolder />
-          </CollectionIcon>
+          </CollectionIconWrap>
 
           <CollectionInfo>
             <CollectionTitle>{collection.name}</CollectionTitle>
@@ -106,29 +143,39 @@ const CollectionDetail = () => {
                 {collection.description}
               </CollectionDescription>
             )}
-            <CollectionMeta>
-              <PostCount>{collection.posts.length} posts</PostCount>
-            </CollectionMeta>
+            <PostCountBadge>
+              {collection.posts.length}{' '}
+              {collection.posts.length === 1 ? 'post' : 'posts'}
+            </PostCountBadge>
           </CollectionInfo>
 
           {isAuthenticated && (
             <ActionButtons>
-              <EditButton to={`/collections/${id}/edit`}>
+              <ActionBtn
+                as={Link}
+                to={`/collections/${id}/edit`}
+                $variant='neutral'
+              >
                 <FaEdit />
                 <span>Edit</span>
-              </EditButton>
-              <DeleteButton onClick={() => setShowDeleteModal(true)}>
-                <FaTrash />
-                <span>Delete</span>
-              </DeleteButton>
-              <AddPostButton to={`/collections/${id}/add-posts`}>
+              </ActionBtn>
+              <ActionBtn
+                as={Link}
+                to={`/collections/${id}/add-posts`}
+                $variant='primary'
+              >
                 <FaPlusCircle />
                 <span>Add Posts</span>
-              </AddPostButton>
+              </ActionBtn>
+              <ActionBtn onClick={handleDeleteCollection} $variant='danger'>
+                <FaTrash />
+                <span>Delete</span>
+              </ActionBtn>
             </ActionButtons>
           )}
         </CollectionHeader>
 
+        {/* ── Posts ── */}
         {collection.posts.length === 0 ? (
           <EmptyState>
             <EmptyIcon>
@@ -138,102 +185,44 @@ const CollectionDetail = () => {
             {isAuthenticated && (
               <EmptyActionLink to={`/collections/${id}/add-posts`}>
                 <FaPlusCircle />
-                <span>Add Posts</span>
+                <span>Add posts</span>
               </EmptyActionLink>
             )}
           </EmptyState>
         ) : (
           <PostsGrid>
             {collection.posts.map((post) => (
-              <PostCardWrapper key={post._id}>
-                <Suspense
-                  fallback={
-                    <PostCardSkeleton>Loading post...</PostCardSkeleton>
-                  }
-                >
-                  <PostCard
-                    post={post}
-                    onDelete={
-                      isAuthenticated
-                        ? () => handleDeletePost(post._id)
-                        : undefined
-                    }
-                  />
-                </Suspense>
-              </PostCardWrapper>
+              <Suspense key={post._id} fallback={<PostCardSkeleton />}>
+                <PostCard post={post} onDelete={handleDeletePost} />
+              </Suspense>
             ))}
           </PostsGrid>
-        )}
-
-        {/* Delete Collection Modal */}
-        {showDeleteModal && (
-          <DeleteModal>
-            <DeleteModalContent>
-              <h3>Delete Collection</h3>
-              <p>
-                Are you sure you want to delete this collection? This action
-                cannot be undone.
-              </p>
-              <DeleteModalButtons>
-                <CancelModalButton onClick={() => setShowDeleteModal(false)}>
-                  Cancel
-                </CancelModalButton>
-                <ConfirmDeleteButton
-                  onClick={handleDeleteCollection}
-                  disabled={deleteCollection.isPending}
-                >
-                  {deleteCollection.isPending
-                    ? 'Deleting...'
-                    : 'Delete Collection'}
-                </ConfirmDeleteButton>
-              </DeleteModalButtons>
-            </DeleteModalContent>
-            <Backdrop onClick={() => setShowDeleteModal(false)} />
-          </DeleteModal>
-        )}
-
-        {/* Remove Post Modal */}
-        {showRemovePostModal && (
-          <DeleteModal>
-            <DeleteModalContent>
-              <h3>Remove Post</h3>
-              <p>
-                Are you sure you want to remove this post from the collection?
-              </p>
-              <DeleteModalButtons>
-                <CancelModalButton
-                  onClick={() => setShowRemovePostModal(false)}
-                >
-                  Cancel
-                </CancelModalButton>
-                <ConfirmDeleteButton
-                  onClick={confirmRemovePost}
-                  disabled={removePost.isPending}
-                >
-                  {removePost.isPending ? 'Removing...' : 'Remove Post'}
-                </ConfirmDeleteButton>
-              </DeleteModalButtons>
-            </DeleteModalContent>
-            <Backdrop onClick={() => setShowRemovePostModal(false)} />
-          </DeleteModal>
         )}
       </Container>
     </PageWrapper>
   );
 };
 
-// ── Styled Components (unchanged) ─────────────────────────────────────────────
+export default CollectionDetail;
 
+// ── Animations ────────────────────────────────────────────────────────────────
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
+
+// ── Layout ────────────────────────────────────────────────────────────────────
 const PageWrapper = styled.div`
-  background-color: ${COLORS.background};
+  background: ${COLORS.background};
   min-height: 100vh;
   padding: 1rem 0;
 `;
 
 const Container = styled.div`
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 2rem;
+
   @media (max-width: 768px) {
     padding: 1rem;
   }
@@ -242,286 +231,199 @@ const Container = styled.div`
 const BackButton = styled(Link)`
   display: inline-flex;
   align-items: center;
-  color: ${COLORS.textSecondary};
+  gap: 0.4rem;
+  color: ${COLORS.textTertiary};
   text-decoration: none;
-  margin-bottom: 2rem;
-  transition: color 0.3s;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  transition: color 0.15s;
+
   &:hover {
-    color: ${COLORS.accentPurple};
-  }
-  svg {
-    margin-right: 0.5rem;
+    color: ${COLORS.textPrimary};
   }
 `;
 
+// ── Collection header card ────────────────────────────────────────────────────
 const CollectionHeader = styled.div`
   display: flex;
-  align-items: center;
-  margin-bottom: 2.5rem;
-  background-color: ${COLORS.cardBackground};
+  align-items: flex-start;
+  gap: 1.25rem;
+  background: ${COLORS.cardBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 12px;
   padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px ${COLORS.shadow};
+  margin-bottom: 2rem;
+  animation: ${fadeUp} 0.2s ease both;
+
   @media (max-width: 768px) {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 1.5rem;
   }
 `;
 
-const CollectionIcon = styled.div`
-  font-size: 2.5rem;
-  color: ${COLORS.primaryPurple};
-  margin-right: 1.5rem;
-  @media (max-width: 768px) {
-    margin-right: 0;
-  }
+const CollectionIconWrap = styled.div`
+  font-size: 2rem;
+  color: ${COLORS.primarySalmon};
+  flex-shrink: 0;
+  margin-top: 2px;
 `;
 
 const CollectionInfo = styled.div`
   flex: 1;
+  min-width: 0;
 `;
 
 const CollectionTitle = styled.h1`
-  font-size: 1.75rem;
+  font-size: 1.4rem;
+  font-weight: 800;
   color: ${COLORS.textPrimary};
-  margin: 0 0 0.5rem;
+  margin: 0 0 4px;
+  line-height: 1.2;
 `;
 
 const CollectionDescription = styled.p`
   color: ${COLORS.textSecondary};
-  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  margin: 0 0 8px;
+  line-height: 1.5;
 `;
 
-const CollectionMeta = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-`;
-
-const PostCount = styled.span`
-  color: ${COLORS.textTertiary};
-  font-size: 0.875rem;
+const PostCountBadge = styled.div`
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: ${COLORS.primarySalmon};
+  background: ${COLORS.primarySalmon}18;
+  padding: 3px 10px;
+  border-radius: 999px;
 `;
 
 const ActionButtons = styled.div`
   display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  @media (max-width: 640px) {
+  gap: 0.5rem;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
     width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 `;
 
-const EditButton = styled(Link)`
+const ActionBtn = styled.button`
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  background-color: ${COLORS.primaryBlue};
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  transition: background-color 0.3s;
-  &:hover {
-    background-color: ${COLORS.accentBlue};
-  }
-`;
-
-const DeleteButton = styled.button`
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: ${COLORS.error};
-  color: white;
+  gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
+  font-size: 0.82rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.3s;
-  &:hover {
-    background-color: #c0392b;
-  }
-`;
-
-const AddPostButton = styled(Link)`
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: #2e7d32;
-  color: white;
   text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  transition: background-color 0.3s;
+  transition: background 0.12s, transform 0.1s;
+
+  background: ${(p) =>
+    p.$variant === 'danger'
+      ? `${COLORS.error}18`
+      : p.$variant === 'primary'
+      ? `${COLORS.primarySalmon}18`
+      : COLORS.elevatedBackground};
+
+  color: ${(p) =>
+    p.$variant === 'danger'
+      ? COLORS.error
+      : p.$variant === 'primary'
+      ? COLORS.primarySalmon
+      : COLORS.textSecondary};
+
   &:hover {
-    background-color: #1b5e20;
+    background: ${(p) =>
+      p.$variant === 'danger'
+        ? `${COLORS.error}30`
+        : p.$variant === 'primary'
+        ? `${COLORS.primarySalmon}30`
+        : COLORS.buttonHover};
+    transform: translateY(-1px);
   }
 `;
 
+// ── Posts grid ────────────────────────────────────────────────────────────────
 const PostsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
+  gap: 1.5rem;
+
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
   }
 `;
 
-const PostCardWrapper = styled.div`
-  width: 100%;
-`;
-
 const PostCardSkeleton = styled.div`
-  width: 100%;
-  height: 400px;
-  background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  height: 380px;
+  background: ${COLORS.cardBackground};
+  border-radius: 12px;
   border: 1px solid ${COLORS.border};
-  color: ${COLORS.textSecondary};
+  animation: pulse 1.5s ease-in-out infinite;
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
 `;
 
-const LoadingMessage = styled.div`
-  text-align: center;
-  padding: 4rem 0;
-  font-size: 1.125rem;
-  color: ${COLORS.textTertiary};
-`;
-
-const ErrorContainer = styled.div`
-  text-align: center;
-  padding: 4rem 0;
-`;
-
-const ErrorMessage = styled.div`
-  background-color: rgba(244, 67, 54, 0.1);
-  color: ${COLORS.error};
-  padding: 1rem;
-  border-radius: 4px;
-  margin-bottom: 2rem;
-`;
-
+// ── Empty / Error states ──────────────────────────────────────────────────────
 const EmptyState = styled.div`
   text-align: center;
-  padding: 4rem 0;
-  background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
-  box-shadow: 0 2px 8px ${COLORS.shadow};
+  padding: 5rem 1rem;
+  background: ${COLORS.cardBackground};
+  border-radius: 12px;
+  border: 1px solid ${COLORS.border};
 `;
 
 const EmptyIcon = styled.div`
   font-size: 3rem;
-  color: ${COLORS.divider};
+  color: ${COLORS.textTertiary};
+  opacity: 0.35;
   margin-bottom: 1rem;
 `;
 
 const EmptyText = styled.h3`
-  font-size: 1.5rem;
-  color: ${COLORS.textTertiary};
-  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  color: ${COLORS.textSecondary};
+  font-weight: 600;
+  margin: 0 0 1.25rem;
 `;
 
 const EmptyActionLink = styled(Link)`
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  background-color: ${COLORS.primaryPurple};
-  color: ${COLORS.textPrimary};
+  gap: 0.4rem;
+  background: ${COLORS.primarySalmon};
+  color: #fff;
   text-decoration: none;
-  padding: 0.75rem 1.25rem;
-  border-radius: 4px;
-  font-weight: 600;
-  transition: background-color 0.3s;
+  border-radius: 10px;
+  padding: 0.65rem 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: background 0.15s;
+
   &:hover {
-    background-color: #4527a0;
+    background: ${COLORS.accentSalmon};
   }
 `;
 
-const DeleteModal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+const ErrorBox = styled.div`
+  background: ${COLORS.error}18;
+  color: ${COLORS.error};
+  padding: 1rem;
+  border-radius: 10px;
+  border: 1px solid ${COLORS.error}30;
+  margin-bottom: 1rem;
+  text-align: center;
 `;
-
-const DeleteModalContent = styled.div`
-  background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
-  padding: 2rem;
-  width: 90%;
-  max-width: 500px;
-  z-index: 1001;
-  box-shadow: 0 4px 12px ${COLORS.shadow};
-  h3 {
-    color: ${COLORS.textPrimary};
-    margin-top: 0;
-    margin-bottom: 1rem;
-  }
-  p {
-    color: ${COLORS.textSecondary};
-    margin-bottom: 1.5rem;
-  }
-`;
-
-const DeleteModalButtons = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  @media (max-width: 480px) {
-    flex-direction: column;
-  }
-`;
-
-const CancelModalButton = styled.button`
-  background-color: ${COLORS.elevatedBackground};
-  color: ${COLORS.textSecondary};
-  border: 1px solid ${COLORS.border};
-  border-radius: 4px;
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  &:hover {
-    background-color: ${COLORS.buttonHover};
-  }
-`;
-
-const ConfirmDeleteButton = styled.button`
-  background-color: ${COLORS.error};
-  color: ${COLORS.textPrimary};
-  border: none;
-  border-radius: 4px;
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  &:hover {
-    background-color: #c0392b;
-  }
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
-const Backdrop = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  z-index: 1000;
-`;
-
-export default CollectionDetail;
