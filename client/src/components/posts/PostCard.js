@@ -25,7 +25,6 @@ import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { useSwipeable } from 'react-swipeable';
 
-// Context & Services
 import { LikesContext } from '../../context/LikesContext';
 import { useDeleteModal } from '../../context/DeleteModalContext';
 import { AuthContext } from '../../context/AuthContext';
@@ -85,9 +84,23 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const { likePost, likedPosts, isProcessing } = useContext(LikesContext);
 
   const hasLiked = likedPosts[post?._id] || false;
-  const formattedDate = format(new Date(post.createdAt), 'MMMM do, yyyy');
+  const formattedDate = format(new Date(post.createdAt), 'MMM d, yyyy');
 
-  // Load logic
+  // --- HELPER: Universal Location Handler ---
+  const handleLocationClick = useCallback((location) => {
+    const encodedLocation = encodeURIComponent(location);
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+    if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+      window.open(`https://maps.apple.com/?q=${encodedLocation}`, '_blank');
+    } else {
+      window.open(
+        `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`,
+        '_blank'
+      );
+    }
+  }, []);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -102,7 +115,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     return () => observer.disconnect();
   }, []);
 
-  // Actions click-away
   useEffect(() => {
     const handleOutside = (e) => {
       if (actionsRef.current && !actionsRef.current.contains(e.target))
@@ -136,23 +148,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     trackMouse: true,
   });
 
-  const handleDelete = () => {
-    showDeleteModal({
-      title: 'Remove Sologram?',
-      message: 'This will permanently delete this post.',
-      onConfirm: async () => {
-        try {
-          await api.deletePost(post._id);
-          if (onDelete) onDelete(post._id);
-          toast.success('Deleted');
-        } catch (err) {
-          toast.error('Error');
-        }
-      },
-    });
-    setShowActions(false);
-  };
-
   return (
     <CardWrapper ref={cardRef} className={isVisible ? 'visible' : ''}>
       <Card>
@@ -164,7 +159,19 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
             </AvatarContainer>
             <HeaderInfo>
               <Signature className='autography-font'>{AUTHOR_NAME}</Signature>
-              <DateText>{formattedDate}</DateText>
+              <MetaRow>
+                <DateText>{formattedDate}</DateText>
+                {post.location && (
+                  <>
+                    <DotDivider>•</DotDivider>
+                    <InlineLocation
+                      onClick={() => handleLocationClick(post.location)}
+                    >
+                      <FaMapMarkerAlt size={9} /> {post.location}
+                    </InlineLocation>
+                  </>
+                )}
+              </MetaRow>
             </HeaderInfo>
           </SignatureArea>
 
@@ -178,7 +185,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
                   <Link to={`/edit/${post._id}`}>
                     <FaEdit /> Edit
                   </Link>
-                  <button onClick={handleDelete} className='warn'>
+                  <button onClick={() => {}} className='warn'>
                     <FaTrash /> Delete
                   </button>
                 </Dropdown>
@@ -207,31 +214,13 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
               </MediaSlide>
             ))}
           </MediaTrack>
-
           {post.media?.length > 1 && (
-            <>
-              <NavBtn
-                className='L'
-                onClick={() => setCurrentMediaIndex((p) => p - 1)}
-                disabled={currentMediaIndex === 0}
-              >
-                <FaChevronLeft />
-              </NavBtn>
-              <NavBtn
-                className='R'
-                onClick={() => setCurrentMediaIndex((p) => p + 1)}
-                disabled={currentMediaIndex === post.media.length - 1}
-              >
-                <FaChevronRight />
-              </NavBtn>
-              <Dots>
-                {post.media.map((_, i) => (
-                  <Dot key={i} active={i === currentMediaIndex} />
-                ))}
-              </Dots>
-            </>
+            <Dots>
+              {post.media.map((_, i) => (
+                <Dot key={i} active={i === currentMediaIndex} />
+              ))}
+            </Dots>
           )}
-
           {isDoubleTapLiking && (
             <>
               <RippleEffect />
@@ -248,11 +237,13 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
           </Link>
           <CaptionText>{post.caption || post.content}</CaptionText>
 
-          <TagBox>
-            {post.tags?.map((t, i) => (
-              <Tag key={i}>#{t}</Tag>
-            ))}
-          </TagBox>
+          {post.tags?.length > 0 && (
+            <TagBox>
+              {post.tags.map((t, i) => (
+                <Tag key={i}>#{t}</Tag>
+              ))}
+            </TagBox>
+          )}
 
           <Footer>
             <BtnGroup>
@@ -271,18 +262,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
                 <FaComment /> <span>{post.commentCount || 0}</span>
               </ActionBtn>
             </BtnGroup>
-
-            {post.location && (
-              <LocLink
-                onClick={() =>
-                  window.open(
-                    `http://googleusercontent.com/maps.google.com/4{encodeURIComponent(post.location)}`
-                  )
-                }
-              >
-                <FaMapMarkerAlt /> {post.location}
-              </LocLink>
-            )}
           </Footer>
         </ContentBody>
       </Card>
@@ -306,7 +285,7 @@ const CardWrapper = styled.div`
   ${fontFaceStyles}
   width: 100%;
   max-width: 600px;
-  margin: 0 auto 40px;
+  margin: 0 auto 32px;
   opacity: 0;
   transform: translateY(20px);
   transition: all 0.7s cubic-bezier(0.2, 1, 0.3, 1);
@@ -324,10 +303,10 @@ const Card = styled.div`
 `;
 
 const CardHeader = styled.div`
-  padding: 16px 20px;
+  padding: 18px 20px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
 `;
 
 const SignatureArea = styled.div`
@@ -369,14 +348,44 @@ const Signature = styled.div`
   font-family: 'Autography', cursive;
   font-size: 1.8rem;
   color: ${COLORS.textPrimary};
-  line-height: 0.8;
+  line-height: 1;
+`;
+
+const MetaRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
 `;
 
 const DateText = styled.div`
   font-size: 0.65rem;
   color: ${COLORS.textTertiary};
+  text-transform: uppercase;
   letter-spacing: 1px;
-  margin-top: 4px;
+`;
+
+const DotDivider = styled.span`
+  color: ${COLORS.textTertiary};
+  font-size: 0.6rem;
+`;
+
+const InlineLocation = styled.button`
+  background: none;
+  border: none;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: ${COLORS.primarySalmon};
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 0;
+  &:hover {
+    color: ${COLORS.primaryMint};
+  }
 `;
 
 const ActionsWrapper = styled.div`
@@ -459,36 +468,6 @@ const PostVid = styled.video`
   object-fit: cover;
 `;
 
-const NavBtn = styled.button`
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(5px);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  &:disabled {
-    display: none;
-  }
-  &.L {
-    left: 12px;
-  }
-  &.R {
-    right: 12px;
-  }
-  &:hover {
-    background: ${COLORS.primaryMint};
-  }
-`;
-
 const Dots = styled.div`
   position: absolute;
   bottom: 12px;
@@ -537,9 +516,8 @@ const Title = styled.h2`
   font-weight: 800;
   color: ${COLORS.textPrimary};
   margin-bottom: 6px;
-  line-height: 1.1; /* Tight header */
-  letter-spacing: -0.04em; /* Premium "Apple-esque" feel */
-
+  line-height: 1.1;
+  letter-spacing: -0.04em;
   &:hover {
     color: ${COLORS.primaryMint};
   }
@@ -547,11 +525,10 @@ const Title = styled.h2`
 
 const CaptionText = styled.p`
   font-size: 0.95rem;
-  line-height: 1.6; /* Keep this! Excellent for reading comfort */
+  line-height: 1.6;
   color: ${COLORS.textSecondary};
   margin-bottom: 20px;
   font-weight: 400;
-  letter-spacing: 0.01em; /* Makes body text slightly more legible */
 `;
 
 const TagBox = styled.div`
@@ -581,7 +558,7 @@ const Footer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 20px;
+  padding-top: 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 `;
 
@@ -608,19 +585,6 @@ const ActionBtn = styled.button`
   &:hover {
     color: ${(p) => p.hoverColor || p.color};
     transform: scale(1.1);
-  }
-`;
-
-const LocLink = styled.div`
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: ${COLORS.textTertiary};
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  &:hover {
-    color: ${COLORS.primarySalmon};
   }
 `;
 
