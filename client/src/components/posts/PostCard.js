@@ -75,7 +75,14 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [showActions, setShowActions] = useState(false);
   const [isDoubleTapLiking, setIsDoubleTapLiking] = useState(false);
+
+  // Comment States
   const [showCommentModal, setShowCommentModal] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [commentCount, setCommentCount] = useState(
+    initialPost.commentCount || 0
+  );
 
   const cardRef = useRef(null);
   const actionsRef = useRef(null);
@@ -86,11 +93,73 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const hasLiked = likedPosts[post?._id] || false;
   const formattedDate = format(new Date(post.createdAt), 'MMM d, yyyy');
 
-  // --- HELPER: Universal Location Handler ---
+  // --- COMMENT LOGIC ---
+  const fetchComments = useCallback(async () => {
+    if (!post._id) return;
+    setIsLoadingComments(true);
+    try {
+      const data = await api.getComments(post._id);
+      setComments(Array.isArray(data.comments) ? data.comments : []);
+      if (data.count !== undefined) setCommentCount(data.count);
+    } catch (err) {
+      toast.error('Failed to load comments');
+    } finally {
+      setIsLoadingComments(false);
+    }
+  }, [post._id]);
+
+  const handleOpenComments = useCallback(() => {
+    setShowCommentModal(true);
+    fetchComments();
+  }, [fetchComments]);
+
+  const handleAddComment = useCallback(
+    async (commentData) => {
+      try {
+        const data = await api.addComment(post._id, commentData);
+        const newComment = data.comment || data;
+        setComments((prev) => [newComment, ...prev]);
+        setCommentCount((prev) => prev + 1);
+        return newComment;
+      } catch (err) {
+        toast.error('Could not post comment');
+        throw err;
+      }
+    },
+    [post._id]
+  );
+
+  const handleDeleteComment = useCallback(async (commentId) => {
+    try {
+      await api.deleteComment(commentId);
+      setComments((prev) => prev.filter((c) => c._id !== commentId));
+      setCommentCount((prev) => Math.max(0, prev - 1));
+      toast.success('Comment removed');
+    } catch (err) {
+      toast.error('Failed to delete');
+    }
+  }, []);
+
+  const handleLikeComment = useCallback(
+    async (commentId) => {
+      if (!isAuthenticated) return;
+      try {
+        const data = await api.likeComment(commentId);
+        const updated = data.comment || data;
+        setComments((prev) =>
+          prev.map((c) => (c._id === commentId ? updated : c))
+        );
+      } catch (err) {
+        toast.error('Failed to like comment');
+      }
+    },
+    [isAuthenticated]
+  );
+
+  // --- LOCATION LOGIC ---
   const handleLocationClick = useCallback((location) => {
     const encodedLocation = encodeURIComponent(location);
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-
     if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
       window.open(`https://maps.apple.com/?q=${encodedLocation}`, '_blank');
     } else {
@@ -101,6 +170,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     }
   }, []);
 
+  // Intersection Observer
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -115,6 +185,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     return () => observer.disconnect();
   }, []);
 
+  // Actions click-away
   useEffect(() => {
     const handleOutside = (e) => {
       if (actionsRef.current && !actionsRef.current.contains(e.target))
@@ -256,10 +327,10 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
                 <span>{post.likes || 0}</span>
               </ActionBtn>
               <ActionBtn
-                onClick={() => setShowCommentModal(true)}
+                onClick={handleOpenComments}
                 color={COLORS.primaryMint}
               >
-                <FaComment /> <span>{post.commentCount || 0}</span>
+                <FaComment /> <span>{commentCount}</span>
               </ActionBtn>
             </BtnGroup>
           </Footer>
@@ -272,6 +343,11 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
             isOpen={showCommentModal}
             onClose={() => setShowCommentModal(false)}
             post={post}
+            comments={comments}
+            onAddComment={handleAddComment}
+            onDeleteComment={handleDeleteComment}
+            onLikeComment={handleLikeComment}
+            isLoading={isLoadingComments}
           />
         </Suspense>
       )}
@@ -280,6 +356,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
 });
 
 // ─── STYLED COMPONENTS ───
+// (All previous styles remain the same below)
 
 const CardWrapper = styled.div`
   ${fontFaceStyles}
