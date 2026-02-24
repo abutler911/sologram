@@ -282,9 +282,6 @@ const Thoughts = () => {
         {/* ══ Compose row ═════════════════════════════════════════════════════ */}
         {canCreate && (
           <ComposeRow onClick={() => navigate('/thoughts/create')}>
-            <ComposeAvatar>
-              {defaultUser.username.charAt(0).toUpperCase()}
-            </ComposeAvatar>
             <ComposePlaceholder>What are you thinking?</ComposePlaceholder>
             <ComposeBtn type='button'>
               <FaPen />
@@ -539,31 +536,16 @@ const ComposeRow = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 13px 16px 13px 20px;
   border-bottom: 1px solid ${COLORS.border};
+  border-left: 3px solid ${COLORS.primarySalmon}55;
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background 0.15s, border-color 0.15s;
 
   &:hover {
-    background: ${COLORS.cardBackground}80;
+    background: ${COLORS.cardBackground}70;
+    border-left-color: ${COLORS.primarySalmon};
   }
-`;
-
-const ComposeAvatar = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.accentSalmon}
-  );
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 1rem;
-  font-weight: 700;
-  flex-shrink: 0;
 `;
 
 const ComposePlaceholder = styled.span`

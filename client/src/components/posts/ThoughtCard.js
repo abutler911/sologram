@@ -5,8 +5,6 @@ import styled, { keyframes, css } from 'styled-components';
 import {
   FaHeart,
   FaRegHeart,
-  FaRegComment,
-  FaRetweet,
   FaShare,
   FaEllipsisH,
   FaThumbtack,
@@ -19,19 +17,17 @@ import { toast } from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 
 /**
- * ThoughtCard — Twitter / Threads layout
+ * ThoughtCard — SoloGram original aesthetic
  *
- * Layout:
- *   [avatar col]  [content col]
- *                   name · @handle · time  [···]
- *                   content text
- *                   optional image
- *                   #tags
- *                   [💬 n] [🔁 n] [❤️ n] [↑]
+ * Single-author journal entry design:
+ *   - Left 3px bar in the mood's color — tone at a glance
+ *   - Content first, no header above it
+ *   - Metadata (mood · time · actions) quietly at the bottom
+ *   - No avatar column — there's only one author
  *
- * Props (fully backward-compatible):
- *   thought, defaultUser, formatDate (optional — uses date-fns if omitted),
- *   handleLike, handleRetweet, handlePin, canCreateThought, onDelete
+ * Props (backward-compatible):
+ *   thought, defaultUser, formatDate, handleLike,
+ *   handleRetweet, handlePin, canCreateThought, onDelete
  */
 
 const ThoughtCard = ({
@@ -39,15 +35,15 @@ const ThoughtCard = ({
   defaultUser,
   formatDate,
   handleLike,
-  handleRetweet,
   handlePin,
   canCreateThought,
+  onDelete,
 }) => {
   const [likeAnimating, setLikeAnimating] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // Click-outside to close the ··· menu
+  // Close ··· menu on outside click
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e) => {
@@ -60,7 +56,7 @@ const ThoughtCard = ({
 
   const onLike = () => {
     setLikeAnimating(true);
-    setTimeout(() => setLikeAnimating(false), 600);
+    setTimeout(() => setLikeAnimating(false), 500);
     handleLike(thought._id);
   };
 
@@ -69,7 +65,6 @@ const ThoughtCard = ({
     if (navigator.share) {
       navigator
         .share({ title: 'SoloThought', text: thought.content, url })
-        .then(() => toast.success('Shared!'))
         .catch(() => {});
     } else {
       navigator.clipboard
@@ -79,164 +74,120 @@ const ThoughtCard = ({
     }
   };
 
-  const onRepost = () => {
-    handleRetweet?.(thought._id);
-    toast.success('Reposted!');
-  };
-
-  const onPin = () => {
-    setMenuOpen(false);
-    handlePin?.(thought._id);
-  };
-
-  const onDelete = () => {
-    setMenuOpen(false);
-    onDelete?.(thought._id);
-  };
-
-  // Relative time — use formatDate prop if provided, otherwise date-fns
   const relativeTime = formatDate
     ? formatDate(thought.createdAt)
     : formatDistanceToNow(new Date(thought.createdAt), { addSuffix: true });
 
-  const moodColor = thought.mood ? moodColors[thought.mood]?.primary : null;
-  const handle =
-    defaultUser?.username?.toLowerCase().replace(/\s+/g, '') || 'user';
-  const initials = defaultUser?.username?.slice(0, 1).toUpperCase() || 'A';
+  const moodColor = thought.mood
+    ? moodColors[thought.mood]?.primary
+    : COLORS.primarySalmon;
+  const moodEmoji = thought.mood ? moodEmojis[thought.mood] : null;
+  const moodLabel = thought.mood
+    ? thought.mood.charAt(0).toUpperCase() + thought.mood.slice(1)
+    : null;
 
   return (
-    <Row $pinned={thought.pinned}>
-      {/* Pinned indicator */}
+    <Card $moodColor={moodColor} $pinned={thought.pinned}>
+      {/* ── Pinned label ──────────────────────────────────────── */}
       {thought.pinned && (
-        <PinnedRow>
-          <FaThumbtack />
-          <span>Pinned thought</span>
-        </PinnedRow>
+        <PinnedLabel>
+          <FaThumbtack /> Pinned
+        </PinnedLabel>
       )}
 
-      <RowInner>
-        {/* ── Left: avatar column ───────────────────── */}
-        <AvatarCol>
-          <AvatarCircle>
-            {defaultUser?.avatar ? (
-              <img src={defaultUser.avatar} alt={defaultUser.username} />
-            ) : (
-              initials
-            )}
-          </AvatarCircle>
-          {/* Thread line (visual only — stretches to bottom of content) */}
-          <ThreadLine />
-        </AvatarCol>
+      {/* ── Content — the hero ────────────────────────────────── */}
+      <Content>{thought.content}</Content>
 
-        {/* ── Right: content column ─────────────────── */}
-        <ContentCol>
-          {/* Header row */}
-          <MetaRow>
-            <MetaLeft>
-              <AuthorName>{defaultUser?.username || 'Andrew'}</AuthorName>
-              <AuthorHandle>@{handle}</AuthorHandle>
-              <MetaDot>·</MetaDot>
-              <Timestamp title={thought.createdAt}>{relativeTime}</Timestamp>
-              {thought.mood && (
-                <>
-                  <MetaDot>·</MetaDot>
-                  <MoodPill $color={moodColor}>
-                    {moodEmojis[thought.mood]}
-                  </MoodPill>
-                </>
+      {/* ── Optional image ────────────────────────────────────── */}
+      {thought.media?.mediaUrl && (
+        <MediaWrap>
+          <img src={thought.media.mediaUrl} alt='' />
+        </MediaWrap>
+      )}
+
+      {/* ── Tags ──────────────────────────────────────────────── */}
+      {thought.tags?.length > 0 && (
+        <TagRow>
+          {thought.tags.map((tag, i) => (
+            <Tag key={i} $moodColor={moodColor}>
+              #{tag}
+            </Tag>
+          ))}
+        </TagRow>
+      )}
+
+      {/* ── Footer: mood · time | actions ─────────────────────── */}
+      <Footer>
+        <FooterLeft>
+          {moodEmoji && (
+            <MoodChip $moodColor={moodColor}>
+              <span>{moodEmoji}</span>
+              <span>{moodLabel}</span>
+            </MoodChip>
+          )}
+          <Timestamp>{relativeTime}</Timestamp>
+        </FooterLeft>
+
+        <FooterRight>
+          {/* Like */}
+          <ActionBtn
+            onClick={onLike}
+            $active={thought.userHasLiked}
+            $animating={likeAnimating}
+            aria-label='Like'
+          >
+            {thought.userHasLiked ? <FaHeart /> : <FaRegHeart />}
+            {thought.likes > 0 && <ActionCount>{thought.likes}</ActionCount>}
+          </ActionBtn>
+
+          {/* Share */}
+          <ActionBtn onClick={onShare} aria-label='Share'>
+            <FaShare />
+          </ActionBtn>
+
+          {/* Admin ··· */}
+          {canCreateThought && (
+            <MenuWrap ref={menuRef}>
+              <ActionBtn
+                onClick={() => setMenuOpen((s) => !s)}
+                aria-label='More options'
+              >
+                <FaEllipsisH />
+              </ActionBtn>
+              {menuOpen && (
+                <MenuDropdown>
+                  <MenuItem
+                    onClick={() => {
+                      setMenuOpen(false);
+                      handlePin?.(thought._id);
+                    }}
+                  >
+                    <FaThumbtack />
+                    {thought.pinned ? 'Unpin' : 'Pin'}
+                  </MenuItem>
+                  <MenuItem
+                    as={Link}
+                    to={`/thoughts/edit/${thought._id}`}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <FaEdit /> Edit
+                  </MenuItem>
+                  <MenuItem
+                    $danger
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onDelete?.(thought._id);
+                    }}
+                  >
+                    <FaTrash /> Delete
+                  </MenuItem>
+                </MenuDropdown>
               )}
-            </MetaLeft>
-
-            {/* ··· admin menu */}
-            {canCreateThought && (
-              <MenuWrap ref={menuRef}>
-                <MenuBtn
-                  onClick={() => setMenuOpen((s) => !s)}
-                  aria-label='More options'
-                >
-                  <FaEllipsisH />
-                </MenuBtn>
-                {menuOpen && (
-                  <MenuDropdown>
-                    <MenuItem onClick={onPin}>
-                      <FaThumbtack />
-                      {thought.pinned ? 'Unpin' : 'Pin'}
-                    </MenuItem>
-                    <MenuItem as={Link} to={`/thoughts/edit/${thought._id}`}>
-                      <FaEdit /> Edit
-                    </MenuItem>
-                    <MenuItem
-                      $danger
-                      onClick={() => {
-                        setMenuOpen(false);
-                        onDelete?.(thought._id);
-                      }}
-                    >
-                      <FaTrash /> Delete
-                    </MenuItem>
-                  </MenuDropdown>
-                )}
-              </MenuWrap>
-            )}
-          </MetaRow>
-
-          {/* Content */}
-          <Content>{thought.content}</Content>
-
-          {/* Optional image */}
-          {thought.media?.mediaUrl && (
-            <MediaWrap>
-              <img src={thought.media.mediaUrl} alt='Thought media' />
-            </MediaWrap>
+            </MenuWrap>
           )}
-
-          {/* Tags */}
-          {thought.tags?.length > 0 && (
-            <TagRow>
-              {thought.tags.map((tag, i) => (
-                <Tag key={i}>#{tag}</Tag>
-              ))}
-            </TagRow>
-          )}
-
-          {/* Action bar */}
-          <Actions>
-            <ActionBtn aria-label='Reply'>
-              <FaRegComment />
-              <ActionCount>{thought.comments?.length || 0}</ActionCount>
-            </ActionBtn>
-
-            <ActionBtn
-              $color={COLORS.primaryMint}
-              onClick={onRepost}
-              aria-label='Repost'
-            >
-              <FaRetweet />
-              <ActionCount>{thought.shares || 0}</ActionCount>
-            </ActionBtn>
-
-            <ActionBtn
-              $color={COLORS.heartRed}
-              onClick={onLike}
-              $active={thought.userHasLiked}
-              $animating={likeAnimating}
-              aria-label='Like'
-            >
-              {thought.userHasLiked ? <FaHeart /> : <FaRegHeart />}
-              <ActionCount>{thought.likes || 0}</ActionCount>
-            </ActionBtn>
-
-            <ActionBtn
-              $color={COLORS.primaryBlueGray}
-              onClick={onShare}
-              aria-label='Share'
-            >
-              <FaShare />
-            </ActionBtn>
-          </Actions>
-        </ContentCol>
-      </RowInner>
-    </Row>
+        </FooterRight>
+      </Footer>
+    </Card>
   );
 };
 
@@ -247,221 +198,250 @@ export default ThoughtCard;
 // ─────────────────────────────────────────────────────────────────────────────
 const heartPop = keyframes`
   0%   { transform: scale(1); }
-  40%  { transform: scale(1.35); }
-  70%  { transform: scale(0.9); }
+  35%  { transform: scale(1.4); }
+  65%  { transform: scale(0.88); }
   100% { transform: scale(1); }
 `;
 
-const fadeSlide = keyframes`
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+const menuSlide = keyframes`
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)  scale(1); }
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Styles
+// Card
 // ─────────────────────────────────────────────────────────────────────────────
-
-const Row = styled.article`
-  padding: 12px 16px 0;
+const Card = styled.article`
+  position: relative;
+  padding: 16px 16px 14px 20px;
   border-bottom: 1px solid ${COLORS.border};
-  cursor: default;
+  background: transparent;
+  transition: background 0.15s;
 
-  /* Pinned posts get a subtle salmon left accent */
-  ${(p) =>
-    p.$pinned &&
-    css`
-      border-left: 2.5px solid ${COLORS.primarySalmon};
-    `}
+  /* Left mood bar */
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: ${(p) => p.$moodColor || COLORS.primarySalmon};
+    border-radius: 0 2px 2px 0;
+    /* Slightly dimmed when not pinned, full opacity when pinned */
+    opacity: ${(p) => (p.$pinned ? 1 : 0.55)};
+    transition: opacity 0.2s;
+  }
 
   &:hover {
-    background: ${COLORS.cardBackground}80;
+    background: ${COLORS.cardBackground}70;
+    &::before {
+      opacity: 1;
+    }
   }
 `;
 
-const PinnedRow = styled.div`
+// ─────────────────────────────────────────────────────────────────────────────
+// Pinned
+// ─────────────────────────────────────────────────────────────────────────────
+const PinnedLabel = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.72rem;
-  font-weight: 600;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 700;
   color: ${COLORS.textTertiary};
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   margin-bottom: 10px;
-  padding-left: 52px; /* align with content col */
 
   svg {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
+    color: ${COLORS.primarySalmon};
   }
 `;
 
-const RowInner = styled.div`
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
+// ─────────────────────────────────────────────────────────────────────────────
+// Content — the hero
+// ─────────────────────────────────────────────────────────────────────────────
+const Content = styled.p`
+  margin: 0 0 12px;
+  color: ${COLORS.textPrimary};
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  letter-spacing: -0.1px;
+  white-space: pre-wrap;
+  word-break: break-word;
 `;
 
-/* ── Avatar column ── */
-const AvatarCol = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
-  width: 40px;
-`;
-
-const AvatarCircle = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.accentSalmon}
-  );
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 1rem;
-  font-weight: 700;
-  flex-shrink: 0;
+// ─────────────────────────────────────────────────────────────────────────────
+// Media
+// ─────────────────────────────────────────────────────────────────────────────
+const MediaWrap = styled.div`
+  margin-bottom: 12px;
+  border-radius: 12px;
   overflow: hidden;
+  border: 1px solid ${COLORS.border};
 
   img {
     width: 100%;
-    height: 100%;
+    max-height: 380px;
     object-fit: cover;
+    display: block;
   }
 `;
 
-const ThreadLine = styled.div`
-  width: 2px;
-  flex: 1;
-  min-height: 12px;
-  background: ${COLORS.border};
-  margin-top: 6px;
-  border-radius: 1px;
-  opacity: 0.5;
+// ─────────────────────────────────────────────────────────────────────────────
+// Tags
+// ─────────────────────────────────────────────────────────────────────────────
+const TagRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
 `;
 
-/* ── Content column ── */
-const ContentCol = styled.div`
-  flex: 1;
-  min-width: 0;
-  padding-bottom: 10px;
+const Tag = styled.span`
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: ${(p) => p.$moodColor || COLORS.primaryBlueGray};
+  opacity: 0.85;
+  cursor: pointer;
+  transition: opacity 0.12s;
+  &:hover {
+    opacity: 1;
+    text-decoration: underline;
+  }
 `;
 
-const MetaRow = styled.div`
+// ─────────────────────────────────────────────────────────────────────────────
+// Footer
+// ─────────────────────────────────────────────────────────────────────────────
+const Footer = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  margin-bottom: 4px;
-  min-width: 0;
+  gap: 8px;
+  margin-top: 2px;
 `;
 
-const MetaLeft = styled.div`
+const FooterLeft = styled.div`
   display: flex;
   align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
+  gap: 8px;
   min-width: 0;
+  flex: 1;
 `;
 
-const AuthorName = styled.span`
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: ${COLORS.textPrimary};
+const MoodChip = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 5px;
+  border-radius: 99px;
+  background: ${(p) => p.$moodColor || COLORS.primarySalmon}18;
+  border: 1px solid ${(p) => p.$moodColor || COLORS.primarySalmon}30;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: ${(p) => p.$moodColor || COLORS.primarySalmon};
   white-space: nowrap;
-`;
+  flex-shrink: 0;
 
-const AuthorHandle = styled.span`
-  font-size: 0.875rem;
-  color: ${COLORS.textTertiary};
-  white-space: nowrap;
-`;
-
-const MetaDot = styled.span`
-  color: ${COLORS.textTertiary};
-  font-size: 0.75rem;
+  span:first-child {
+    font-size: 0.78rem;
+  }
 `;
 
 const Timestamp = styled.time`
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: ${COLORS.textTertiary};
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
-const MoodPill = styled.span`
-  font-size: 0.85rem;
-  line-height: 1;
-  /* subtle tint ring */
-  display: inline-flex;
+const FooterRight = styled.div`
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: ${(p) => (p.$color ? `${p.$color}18` : 'transparent')};
-`;
-
-/* ··· menu */
-const MenuWrap = styled.div`
-  position: relative;
+  gap: 2px;
   flex-shrink: 0;
 `;
 
-const MenuBtn = styled.button`
-  width: 30px;
-  height: 30px;
+// ─────────────────────────────────────────────────────────────────────────────
+// Action buttons
+// ─────────────────────────────────────────────────────────────────────────────
+const ActionBtn = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 7px;
   border: none;
   background: none;
-  color: ${COLORS.textTertiary};
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 0.8rem;
-  transition: background 0.12s, color 0.12s;
+  font-size: 0.82rem;
+  color: ${(p) => (p.$active ? COLORS.heartRed : COLORS.textTertiary)};
+  transition: color 0.12s, background 0.12s;
+
+  ${(p) =>
+    p.$animating &&
+    css`
+      svg {
+        animation: ${heartPop} 0.45s ease;
+      }
+    `}
 
   &:hover {
     background: ${COLORS.elevatedBackground};
-    color: ${COLORS.primarySalmon};
+    color: ${(p) => (p.$active ? COLORS.heartRed : COLORS.textSecondary)};
   }
+`;
+
+const ActionCount = styled.span`
+  font-size: 0.78rem;
+  font-weight: 500;
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ··· Menu
+// ─────────────────────────────────────────────────────────────────────────────
+const MenuWrap = styled.div`
+  position: relative;
 `;
 
 const MenuDropdown = styled.div`
   position: absolute;
   right: 0;
-  top: calc(100% + 4px);
+  bottom: calc(100% + 6px);
   z-index: 50;
   background: ${COLORS.cardBackground};
   border: 1px solid ${COLORS.border};
   border-radius: 12px;
-  min-width: 150px;
-  padding: 6px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
-  animation: ${fadeSlide} 0.14s ease;
+  min-width: 140px;
+  padding: 5px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  animation: ${menuSlide} 0.13s ease;
 `;
 
 const MenuItem = styled.button`
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   width: 100%;
-  padding: 9px 12px;
+  padding: 8px 11px;
   background: none;
   border: none;
   border-radius: 8px;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
+  text-align: left;
   text-decoration: none;
-  transition: background 0.1s;
   color: ${(p) => (p.$danger ? COLORS.error : COLORS.textPrimary)};
+  transition: background 0.1s;
 
   svg {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: ${(p) => (p.$danger ? COLORS.error : COLORS.textTertiary)};
   }
 
@@ -469,91 +449,4 @@ const MenuItem = styled.button`
     background: ${(p) =>
       p.$danger ? `${COLORS.error}12` : COLORS.elevatedBackground};
   }
-`;
-
-/* Content */
-const Content = styled.p`
-  color: ${COLORS.textPrimary};
-  font-size: 0.9375rem;
-  line-height: 1.3;
-  letter-spacing: -0.1px;
-  margin: 0 0 8px;
-  white-space: pre-wrap;
-  word-break: break-word;
-`;
-
-const MediaWrap = styled.div`
-  margin-bottom: 10px;
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid ${COLORS.border};
-
-  img {
-    width: 100%;
-    max-height: 400px;
-    object-fit: cover;
-    display: block;
-  }
-`;
-
-const TagRow = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 10px;
-`;
-
-const Tag = styled.span`
-  font-size: 0.85rem;
-  color: ${COLORS.primaryBlueGray};
-  font-weight: 500;
-  cursor: pointer;
-  &:hover {
-    text-decoration: underline;
-  }
-`;
-
-/* Action bar */
-const Actions = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0;
-  margin: 2px -8px 0;
-`;
-
-const ActionBtn = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 8px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  border-radius: 99px;
-  font-size: 0.85rem;
-  transition: color 0.12s, background 0.12s;
-
-  color: ${(p) => {
-    if (p.$active) return p.$color || COLORS.primarySalmon;
-    return COLORS.textTertiary;
-  }};
-
-  ${(p) =>
-    p.$animating &&
-    css`
-      svg {
-        animation: ${heartPop} 0.5s ease;
-      }
-    `}
-
-  &:hover {
-    color: ${(p) => p.$color || COLORS.primarySalmon};
-    background: ${(p) =>
-      p.$color ? `${p.$color}14` : `${COLORS.primarySalmon}14`};
-  }
-`;
-
-const ActionCount = styled.span`
-  font-size: 0.8rem;
-  font-weight: 500;
 `;
