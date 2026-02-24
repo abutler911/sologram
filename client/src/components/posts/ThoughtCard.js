@@ -262,7 +262,7 @@ const fadeSlide = keyframes`
 // ─────────────────────────────────────────────────────────────────────────────
 
 const Row = styled.article`
-  padding: 14px 16px 0;
+  padding: 12px 16px 0;
   border-bottom: 1px solid ${COLORS.border};
   cursor: default;
 
@@ -348,7 +348,7 @@ const ThreadLine = styled.div`
 const ContentCol = styled.div`
   flex: 1;
   min-width: 0;
-  padding-bottom: 14px;
+  padding-bottom: 10px;
 `;
 
 const MetaRow = styled.div`
@@ -356,7 +356,7 @@ const MetaRow = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: 6px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   min-width: 0;
 `;
 
@@ -369,14 +369,14 @@ const MetaLeft = styled.div`
 `;
 
 const AuthorName = styled.span`
-  font-size: 0.86rem;
+  font-size: 0.9375rem;
   font-weight: 700;
   color: ${COLORS.textPrimary};
   white-space: nowrap;
 `;
 
 const AuthorHandle = styled.span`
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: ${COLORS.textTertiary};
   white-space: nowrap;
 `;
@@ -387,7 +387,7 @@ const MetaDot = styled.span`
 `;
 
 const Timestamp = styled.time`
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   color: ${COLORS.textTertiary};
   white-space: nowrap;
 `;
@@ -474,9 +474,10 @@ const MenuItem = styled.button`
 /* Content */
 const Content = styled.p`
   color: ${COLORS.textPrimary};
-  font-size: 0.9rem;
-  line-height: 1.45;
-  margin: 0 0 10px;
+  font-size: 0.9375rem;
+  line-height: 1.3;
+  letter-spacing: -0.1px;
+  margin: 0 0 8px;
   white-space: pre-wrap;
   word-break: break-word;
 `;
