@@ -1,153 +1,252 @@
 // components/common/LoadingSpinner.js
-import React from "react";
-import styled, { keyframes } from "styled-components";
-import { COLORS } from "../../theme";
+import React from 'react';
+import styled, { keyframes } from 'styled-components';
+import { COLORS } from '../../theme';
 
-// Clean rotation animation
-const rotate = keyframes`
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/**
+ * LoadingSpinner
+ *
+ * Props (all optional — fully backward-compatible):
+ *   size        {string}  — spinner diameter,        default "44px"
+ *   speed       {string}  — rotation speed,          default "0.9s"
+ *   text        {string}  — label below spinner,     default "Loading"
+ *   textSize    {string}  — label font-size,         default "0.85rem"
+ *   overlay     {bool}    — fixed full-screen cover, default false
+ *   fullHeight  {bool}    — wrapper fills viewport,  default false
+ *   height      {string}  — wrapper min-height,      default "200px"
+ *   noMinHeight {bool}    — strip wrapper min-height, default false
+ *   showDots    {bool}    — animated ellipsis,       default true
+ *   color       {string}  — override accent colour   (rarely needed)
+ *
+ * Design
+ *   Two concentric SVG arcs:
+ *     • Outer arc — salmon, spins clockwise
+ *     • Inner arc — mint,   spins counter-clockwise (slower)
+ *   Clean fade-in text label + optional animated ellipsis.
+ *   Overlay mode uses the dark theme background, not the old cream colour.
+ */
+
+// ── Keyframes ──────────────────────────────────────────────────────────────────
+const spinCW = keyframes`
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 `;
 
-// Smooth fade animation for text
-const fadeIn = keyframes`
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+const spinCCW = keyframes`
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
 `;
 
-// Gentle pulse for the inner dot
-const pulse = keyframes`
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 `;
 
-const SpinnerWrapper = styled.div`
+const dotCycle = keyframes`
+  0%,  19% { content: "";   }
+  20%, 39% { content: ".";  }
+  40%, 59% { content: ".."; }
+  60%, 79% { content: "..."; }
+  80%,100% { content: "";   }
+`;
+
+// ── Styled components ──────────────────────────────────────────────────────────
+
+const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  height: ${(props) => (props.fullHeight ? "100vh" : "auto")};
-  min-height: ${(props) =>
-    props.noMinHeight ? "auto" : props.height || "200px"};
-  padding: ${(props) => (props.noMinHeight ? "0" : "2rem")};
-  background-color: ${(props) =>
-    props.overlay ? "rgba(248, 245, 240, 0.9)" : "transparent"};
-  backdrop-filter: ${(props) => (props.overlay ? "blur(8px)" : "none")};
-  position: ${(props) => (props.overlay ? "fixed" : "relative")};
-  top: ${(props) => (props.overlay ? "0" : "auto")};
-  left: ${(props) => (props.overlay ? "0" : "auto")};
-  right: ${(props) => (props.overlay ? "0" : "auto")};
-  bottom: ${(props) => (props.overlay ? "0" : "auto")};
-  z-index: ${(props) => (props.overlay ? "1000" : "1")};
+  justify-content: center;
+  gap: 14px;
+
+  /* Sizing / positioning */
+  min-height: ${(p) => {
+    if (p.$noMinHeight) return '0';
+    if (p.$fullHeight)
+      return '100%'; /* relative to parent — avoids vh overflow in sidebar layouts */
+    return p.$height || '200px';
+  }};
+  padding: ${(p) => (p.$noMinHeight ? '0' : '24px')};
+
+  /* Overlay mode — dark-theme backdrop */
+  ${(p) =>
+    p.$overlay &&
+    `
+    position: fixed;
+    inset: 0;
+    background: ${COLORS.background}e6;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 1200;
+  `}
 `;
 
-const SpinnerContainer = styled.div`
-  position: relative;
-  width: ${(props) => props.size || "50px"};
-  height: ${(props) => props.size || "50px"};
-`;
-
-// Outer ring with your theme colors
-const SpinnerRing = styled.div`
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 3px solid ${COLORS.elevatedBackground};
-  border-top: 3px solid ${COLORS.primarySalmon};
-  border-right: 3px solid ${COLORS.primaryMint};
-  border-bottom: 3px solid ${COLORS.primaryBlueGray};
-  animation: ${rotate} ${(props) => props.speed || "1.2s"} linear infinite;
-  position: relative;
-`;
-
-// Inner dot that pulses
-const SpinnerDot = styled.div`
+/* Outer SVG ring — spins clockwise */
+const OuterRing = styled.svg`
+  animation: ${spinCW} ${(p) => p.$speed} linear infinite;
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 8px;
-  height: 8px;
-  background: ${(props) => props.color || COLORS.primarySalmon};
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  animation: ${pulse} 1.5s ease-in-out infinite;
-  box-shadow: 0 0 10px rgba(233, 137, 115, 0.3);
+  top: 0;
+  left: 0;
+  overflow: visible;
 `;
 
-// Clean, minimal text
-const SpinnerText = styled.div`
-  margin-top: 16px;
-  color: ${COLORS.textSecondary};
-  font-size: ${(props) => props.textSize || "0.875rem"};
+/* Inner SVG ring — spins counter-clockwise, slower */
+const InnerRing = styled.svg`
+  animation: ${spinCCW} ${(p) => p.$speed} linear infinite;
+  animation-duration: ${(p) => {
+    /* ~1.6× slower than the outer ring */
+    const ms = parseFloat(p.$speed) * 1.6;
+    return p.$speed.endsWith('ms') ? `${ms}ms` : `${ms}s`;
+  }};
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+`;
+
+const RingWrap = styled.div`
+  position: relative;
+  width: ${(p) => p.$size};
+  height: ${(p) => p.$size};
+  flex-shrink: 0;
+`;
+
+const Label = styled.span`
+  font-size: ${(p) => p.$textSize};
   font-weight: 500;
-  text-align: center;
-  animation: ${fadeIn} 0.5s ease-out;
-  letter-spacing: 0.5px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
-`;
-
-// Optional dots that appear after the text for a modern loading effect
-const LoadingDots = styled.div`
-  display: inline-block;
-  margin-left: 4px;
+  color: ${COLORS.textSecondary};
+  letter-spacing: 0.4px;
+  animation: ${fadeUp} 0.4s ease both;
+  animation-delay: 0.1s;
 
   &::after {
-    content: "";
-    animation: ${keyframes`
-      0%, 20% { content: ''; }
-      25%, 40% { content: '.'; }
-      45%, 60% { content: '..'; }
-      65%, 80% { content: '...'; }
-      85%, 100% { content: ''; }
-    `} 1.5s infinite;
+    content: '';
+    display: inline-block;
+    width: 1.5ch;
+    text-align: left;
+    animation: ${dotCycle} 1.6s steps(1) infinite;
   }
 `;
 
+const LabelNoAnim = styled.span`
+  font-size: ${(p) => p.$textSize};
+  font-weight: 500;
+  color: ${COLORS.textSecondary};
+  letter-spacing: 0.4px;
+  animation: ${fadeUp} 0.4s ease both;
+  animation-delay: 0.1s;
+`;
+
+// ── Component ──────────────────────────────────────────────────────────────────
+
 const LoadingSpinner = ({
-  size = "50px",
-  speed = "1.2s",
-  text = "Loading",
+  size = '44px',
+  speed = '0.9s',
+  text = 'Loading',
+  textSize = '0.85rem',
   overlay = false,
   fullHeight = false,
-  height = "200px",
-  textSize = "0.875rem",
+  height = '200px',
   noMinHeight = false,
-  color,
   showDots = true,
+  color, // accent override (falls back to primarySalmon)
 }) => {
+  /* Convert size string → number for SVG math */
+  const px = parseFloat(size);
+  const cx = px / 2;
+  const outerR = cx - 4; /* outer arc radius */
+  const innerR = cx - 12; /* inner arc radius */
+
+  const stroke = Math.max(2.5, px * 0.07); /* proportional stroke width */
+  const trackClr = COLORS.elevatedBackground;
+  const outerClr = color || COLORS.primarySalmon;
+  const innerClr = COLORS.primaryMint;
+
+  /* Arc dash helpers — a 220° arc out of 360° */
+  const outerCirc = 2 * Math.PI * outerR;
+  const innerCirc = 2 * Math.PI * innerR;
+  const outerDash = `${(220 / 360) * outerCirc} ${outerCirc}`;
+  const innerDash = `${(140 / 360) * innerCirc} ${innerCirc}`;
+
   return (
-    <SpinnerWrapper
-      overlay={overlay}
-      fullHeight={fullHeight}
-      height={height}
-      noMinHeight={noMinHeight}
+    <Wrapper
+      $overlay={overlay}
+      $fullHeight={fullHeight}
+      $height={height}
+      $noMinHeight={noMinHeight}
+      role='status'
+      aria-label={text || 'Loading'}
     >
-      <SpinnerContainer size={size}>
-        <SpinnerRing size={size} speed={speed} />
-        <SpinnerDot color={color} />
-      </SpinnerContainer>
-      {text && (
-        <SpinnerText textSize={textSize}>
-          {text}
-          {showDots && <LoadingDots />}
-        </SpinnerText>
-      )}
-    </SpinnerWrapper>
+      <RingWrap $size={size}>
+        {/* ── Outer track + arc ─────────────────────── */}
+        <OuterRing
+          $speed={speed}
+          width={px}
+          height={px}
+          viewBox={`0 0 ${px} ${px}`}
+        >
+          {/* full track */}
+          <circle
+            cx={cx}
+            cy={cx}
+            r={outerR}
+            fill='none'
+            stroke={trackClr}
+            strokeWidth={stroke}
+          />
+          {/* spinning arc */}
+          <circle
+            cx={cx}
+            cy={cx}
+            r={outerR}
+            fill='none'
+            stroke={outerClr}
+            strokeWidth={stroke}
+            strokeLinecap='round'
+            strokeDasharray={outerDash}
+            strokeDashoffset='0'
+          />
+        </OuterRing>
+
+        {/* ── Inner track + arc ─────────────────────── */}
+        <InnerRing
+          $speed={speed}
+          width={px}
+          height={px}
+          viewBox={`0 0 ${px} ${px}`}
+        >
+          {/* full track */}
+          <circle
+            cx={cx}
+            cy={cx}
+            r={innerR}
+            fill='none'
+            stroke={trackClr}
+            strokeWidth={stroke}
+          />
+          {/* spinning arc */}
+          <circle
+            cx={cx}
+            cy={cx}
+            r={innerR}
+            fill='none'
+            stroke={innerClr}
+            strokeWidth={stroke}
+            strokeLinecap='round'
+            strokeDasharray={innerDash}
+            strokeDashoffset='0'
+          />
+        </InnerRing>
+      </RingWrap>
+
+      {/* ── Label ────────────────────────────────────── */}
+      {text &&
+        (showDots ? (
+          <Label $textSize={textSize}>{text}</Label>
+        ) : (
+          <LabelNoAnim $textSize={textSize}>{text}</LabelNoAnim>
+        ))}
+    </Wrapper>
   );
 };
 
