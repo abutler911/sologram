@@ -375,37 +375,9 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike, index = 0 }) => {
       itemName: truncatedPreview,
       onConfirm: async () => {
         try {
-          const token = localStorage.getItem('token');
-          if (!token) {
-            toast.error('Authentication required. Please log in again.');
-            return;
-          }
-          const baseURL = process.env.REACT_APP_API_URL || '';
-          const url = baseURL
-            ? `${baseURL}/api/posts/${post._id}`
-            : `/api/posts/${post._id}`;
-          const response = await fetch(url, {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          });
-          if (response.ok) {
-            if (typeof onDelete === 'function') onDelete(post._id);
-            toast.success('Post deleted successfully');
-            window.location.reload();
-          } else {
-            let errorMessage = 'Delete failed';
-            try {
-              const errorData = await response.json();
-              errorMessage = errorData.message || errorMessage;
-            } catch (e) {
-              errorMessage = `Delete failed: ${response.status}`;
-            }
-            throw new Error(errorMessage);
-          }
+          await api.deletePost(post._id);
+          if (typeof onDelete === 'function') onDelete(post._id);
+          toast.success('Post deleted');
         } catch (err) {
           console.error('Error deleting post:', err);
           toast.error(err.message || 'Failed to delete post');
@@ -877,13 +849,13 @@ const ActionsContainer = styled.div`
 `;
 
 const Username = styled.span`
-  font-family: 'Autography', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, Helvetica, Arial, sans-serif;
-  font-size: 26px;
-  font-weight: 400;
-  letter-spacing: 0.2px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: -0.1px;
   margin: 0;
-  line-height: 1.1;
+  line-height: 1.2;
   color: ${COLORS.textPrimary};
 `;
 
@@ -914,8 +886,8 @@ const ActionsButton = styled.button`
   width: 36px;
   height: 36px;
   &:hover {
-    background-color: rgba(0, 0, 0, 0.2);
-    color: ${COLORS.accentMint};
+    background-color: ${COLORS.elevatedBackground};
+    color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -924,45 +896,46 @@ const ActionsMenu = styled.div`
   right: 0;
   top: 40px;
   background-color: ${COLORS.cardBackground};
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
   z-index: 10;
   overflow: hidden;
-  width: 180px;
+  width: 170px;
+  padding: 5px;
   transform-origin: top right;
-  animation: ${fadeIn} 0.2s ease-out;
+  animation: ${fadeIn} 0.15s ease-out;
   border: 1px solid ${COLORS.border};
 `;
 
 const ActionItem = styled.button`
   width: 100%;
-  padding: 12px 16px;
+  padding: 9px 12px;
   border: none;
   background: none;
   color: ${COLORS.textPrimary};
   text-align: left;
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   text-decoration: none;
-  transition: all 0.2s ease;
+  border-radius: 8px;
+  transition: background 0.1s;
   svg {
-    margin-right: 12px;
-    font-size: 0.9rem;
-    color: ${COLORS.textSecondary};
-    transition: all 0.2s ease;
+    margin-right: 10px;
+    font-size: 0.82rem;
+    color: ${COLORS.textTertiary};
   }
   &:hover {
-    background-color: ${COLORS.buttonHover};
-    color: ${COLORS.accentMint};
-    svg {
-      color: ${COLORS.accentMint};
-    }
+    background-color: ${COLORS.elevatedBackground};
+    color: ${COLORS.textPrimary};
   }
-  &:not(:last-child) {
-    border-bottom: 1px solid ${COLORS.divider};
+  &:last-child:hover {
+    color: ${COLORS.error};
+    svg {
+      color: ${COLORS.error};
+    }
   }
 `;
 
@@ -1092,7 +1065,7 @@ const NavigationArrow = styled.button`
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
   &:hover {
     opacity: 1 !important;
-    background-color: ${COLORS.primaryMint};
+    background-color: rgba(255, 255, 255, 0.18);
   }
   ${MediaContainer}:hover & {
     opacity: 0.9;
@@ -1145,7 +1118,7 @@ const ProgressDot = styled.button`
   height: 8px;
   border-radius: 50%;
   background-color: ${(props) =>
-    props.active ? COLORS.accentMint : 'rgba(255, 255, 255, 0.5)'};
+    props.active ? '#fff' : 'rgba(255, 255, 255, 0.45)'};
   border: none;
   cursor: pointer;
   padding: 0;
@@ -1154,7 +1127,7 @@ const ProgressDot = styled.button`
   &:hover {
     transform: scale(1.2);
     background-color: ${(props) =>
-      props.active ? COLORS.accentMint : 'rgba(255, 255, 255, 0.8)'};
+      props.active ? '#fff' : 'rgba(255, 255, 255, 0.75)'};
   }
 `;
 
@@ -1163,12 +1136,12 @@ const HeartAnimation = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: ${COLORS.accentMint};
+  color: ${COLORS.primarySalmon};
   font-size: 80px;
   opacity: 0;
   animation: ${scaleIn} 1s ease forwards;
   z-index: 3;
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.7));
+  filter: drop-shadow(0 0 20px ${COLORS.primarySalmon}60);
   @media (max-width: 768px), screen and (display-mode: standalone) {
     font-size: 90px;
   }
@@ -1205,9 +1178,9 @@ const LikeButton = styled.button`
   min-height: 44px;
   &:hover {
     transform: ${(props) =>
-      !props.disabled || props.liked ? 'scale(1.15)' : 'none'};
+      !props.disabled || props.liked ? 'scale(1.12)' : 'none'};
     color: ${(props) =>
-      !props.disabled && !props.liked ? COLORS.heartRed : ''};
+      !props.disabled && !props.liked ? COLORS.primarySalmon : ''};
   }
   &:active {
     transform: ${(props) =>
@@ -1239,8 +1212,8 @@ const CommentButton = styled.button`
   min-width: 44px;
   min-height: 44px;
   &:hover {
-    transform: scale(1.15);
-    color: ${COLORS.textSecondary};
+    transform: scale(1.12);
+    color: ${COLORS.primarySalmon};
   }
 `;
 
@@ -1413,6 +1386,8 @@ const PostLink = styled(Link)`
 
 // ── CHANGED: salmon ring on avatar — gives every card a branded anchor point
 const UserAvatarImage = styled.img`
+  border: 2px solid ${COLORS.primarySalmon}60;
+  box-sizing: border-box;
   width: 36px;
   height: 36px;
   border-radius: 50%;
