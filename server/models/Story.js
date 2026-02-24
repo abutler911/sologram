@@ -1,31 +1,29 @@
 // models/Story.js
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const StorySchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: [true, "Story title is required"],
+      required: [true, 'Story title is required'],
       trim: true,
-      maxlength: [100, "Title cannot exceed 100 characters"],
+      maxlength: [100, 'Title cannot exceed 100 characters'],
     },
     media: [
       {
         mediaType: {
           type: String,
           enum: {
-            values: ["image", "video"],
-            message: "Media type must be either image or video",
+            values: ['image', 'video'],
+            message: 'Media type must be either image or video',
           },
-          default: "image",
+          default: 'image',
         },
         mediaUrl: {
           type: String,
-          required: [true, "Media URL is required"],
+          required: [true, 'Media URL is required'],
         },
-        cloudinaryId: {
-          type: String,
-        }
+        cloudinaryId: { type: String },
       },
     ],
     archived: {
@@ -41,7 +39,7 @@ const StorySchema = new mongoose.Schema(
       type: Date,
       default: function () {
         const date = new Date();
-        date.setHours(date.getHours() + 24); // Set to expire after 24 hours
+        date.setHours(date.getHours() + 24);
         return date;
       },
       index: true,
@@ -54,12 +52,17 @@ const StorySchema = new mongoose.Schema(
   }
 );
 
-// Add compound index for more efficient queries
+// Live stories — getStories filters { archived: false } and archiveExpired
+// uses { archived: false, expiresAt: { $lt: now } }
 StorySchema.index({ archived: 1, expiresAt: 1 });
 
-// Pre-save hook to check for expiration
-StorySchema.pre("save", function (next) {
-  // Check if story should be archived based on expiration time
+// Archived stories — getArchivedStories filters { archived: true }
+// and sorts by archivedAt DESC.
+// Separate index needed because expiresAt index above can't serve this sort.
+StorySchema.index({ archived: 1, archivedAt: -1 });
+
+// Pre-save: auto-archive if expired
+StorySchema.pre('save', function (next) {
   if (this.expiresAt && this.expiresAt < new Date() && !this.archived) {
     this.archived = true;
     this.archivedAt = new Date();
@@ -67,54 +70,33 @@ StorySchema.pre("save", function (next) {
   next();
 });
 
-// Virtual property for time left (useful for client-side display)
-StorySchema.virtual("timeLeft").get(function () {
+StorySchema.virtual('timeLeft').get(function () {
   if (this.archived) return 0;
-
   const now = new Date();
-  const expiresAt = this.expiresAt;
-
-  if (!expiresAt || expiresAt <= now) return 0;
-
-  return Math.floor((expiresAt - now) / 1000); // Return seconds left
+  if (!this.expiresAt || this.expiresAt <= now) return 0;
+  return Math.floor((this.expiresAt - now) / 1000);
 });
 
-// Method to check if a story is expired
 StorySchema.methods.isExpired = function () {
   return this.expiresAt < new Date();
 };
 
-// Method to archive a story
 StorySchema.methods.markAsArchived = function () {
   this.archived = true;
   this.archivedAt = new Date();
   return this.save();
 };
 
-// Static method to find expired stories
 StorySchema.statics.findExpired = function () {
-  return this.find({
-    archived: false,
-    expiresAt: { $lt: new Date() },
-  });
+  return this.find({ archived: false, expiresAt: { $lt: new Date() } });
 };
 
-// Static method to archive all expired stories
 StorySchema.statics.archiveExpired = async function () {
   const result = await this.updateMany(
-    {
-      archived: false,
-      expiresAt: { $lt: new Date() }
-    },
-    {
-      $set: {
-        archived: true,
-        archivedAt: new Date()
-      }
-    }
+    { archived: false, expiresAt: { $lt: new Date() } },
+    { $set: { archived: true, archivedAt: new Date() } }
   );
-  
   return result.modifiedCount || 0;
 };
 
-module.exports = mongoose.model("Story", StorySchema);
+module.exports = mongoose.model('Story', StorySchema);
