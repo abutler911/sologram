@@ -316,20 +316,21 @@ const Thoughts = () => {
           </StatusBox>
         ) : (
           <>
-            {visible.map((thought) => (
-              <ThoughtCard
-                key={thought._id}
-                thought={thought}
-                defaultUser={defaultUser}
-                formatDate={formatDate}
-                handleLike={handleLike}
-                handleRetweet={() => {}} // future: real repost
-                handlePin={handlePin}
-                canCreateThought={canCreate}
-                onDelete={handleDeleteThought}
-              />
-            ))}
-
+            <CardFeed>
+              {visible.map((thought) => (
+                <ThoughtCard
+                  key={thought._id}
+                  thought={thought}
+                  defaultUser={defaultUser}
+                  formatDate={formatDate}
+                  handleLike={handleLike}
+                  handleRetweet={() => {}} // future: real repost
+                  handlePin={handlePin}
+                  canCreateThought={canCreate}
+                  onDelete={handleDeleteThought}
+                />
+              ))}
+            </CardFeed>
             {loadingMore && (
               <LoadingSpinner
                 size='32px'
@@ -368,6 +369,21 @@ const FeedWrapper = styled.div`
   min-height: 100vh;
   background: ${COLORS.background};
   animation: ${fadeUp} 0.2s ease both;
+`;
+
+/* Cards sit in a flex column — the gap lets the dark page background
+   bleed through as a natural gutter, making each mood-washed card
+   read as a distinct surface */
+const CardFeed = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 8px 0;
+
+  @media (min-width: 600px) {
+    gap: 8px;
+    padding: 10px 10px 0;
+  }
 `;
 
 /* ── Sticky feed header ── */

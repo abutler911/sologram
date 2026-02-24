@@ -214,31 +214,66 @@ const menuSlide = keyframes`
 const Card = styled.article`
   position: relative;
   padding: 16px 16px 14px 20px;
-  border-bottom: 1px solid ${COLORS.border};
-  background: transparent;
-  transition: background 0.15s;
+  border-radius: 10px;
+
+  /*
+   * Layered background:
+   *   1. cardBackground — lifts the card off the page
+   *   2. mood color wash at 5% opacity — felt more than seen
+   * We use a CSS gradient trick to stack them without needing
+   * two elements: color-mix would need a modern browser, so we
+   * just overlay the mood tint on the solid base.
+   */
+  background: linear-gradient(
+      135deg,
+      ${(p) => p.$moodColor || COLORS.primarySalmon}14 0%,
+      ${(p) => p.$moodColor || COLORS.primarySalmon}09 60%,
+      transparent 100%
+    ),
+    ${COLORS.cardBackground};
+
+  transition: background 0.2s;
 
   /* Left mood bar */
   &::before {
     content: '';
     position: absolute;
     left: 0;
-    top: 0;
-    bottom: 0;
+    top: 12px;
+    bottom: 12px;
     width: 3px;
     background: ${(p) => p.$moodColor || COLORS.primarySalmon};
     border-radius: 0 2px 2px 0;
-    /* Slightly dimmed when not pinned, full opacity when pinned */
-    opacity: ${(p) => (p.$pinned ? 1 : 0.55)};
+    opacity: ${(p) => (p.$pinned ? 1 : 0.5)};
     transition: opacity 0.2s;
   }
 
   &:hover {
-    background: ${COLORS.cardBackground}70;
+    background: linear-gradient(
+        135deg,
+        ${(p) => p.$moodColor || COLORS.primarySalmon}22 0%,
+        ${(p) => p.$moodColor || COLORS.primarySalmon}12 60%,
+        transparent 100%
+      ),
+      ${COLORS.cardBackground};
     &::before {
       opacity: 1;
     }
   }
+
+  /* Pinned: slightly stronger wash + full bar */
+  ${(p) =>
+    p.$pinned &&
+    `
+    background:
+      linear-gradient(
+        135deg,
+        ${p.$moodColor || COLORS.primarySalmon}28 0%,
+        ${p.$moodColor || COLORS.primarySalmon}14 60%,
+        transparent 100%
+      ),
+      ${COLORS.cardBackground};
+  `}
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
