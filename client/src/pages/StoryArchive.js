@@ -131,15 +131,7 @@ const StoryArchive = () => {
                     </ArchivedDate>
                   )}
                   <ActionButtons>
-                    <ViewButton
-                      to={`/story-archive/${story._id}`}
-                      onClick={() =>
-                        localStorage.setItem(
-                          'currentArchivedStoryId',
-                          story._id
-                        )
-                      }
-                    >
+                    <ViewButton to={`/story-archive/${story._id}`}>
                       View
                     </ViewButton>
                     <DeleteButton onClick={() => handleDeleteStory(story._id)}>

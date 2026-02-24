@@ -13,7 +13,6 @@ import { toast } from 'react-hot-toast';
 import { FaSearch, FaTimes, FaPen } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
 import { useDeleteModal } from '../context/DeleteModalContext';
-import MainLayout from '../components/layout/MainLayout';
 import ThoughtCard from '../components/posts/ThoughtCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { COLORS } from '../theme';
@@ -213,140 +212,137 @@ const Thoughts = () => {
   // Render
   // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <MainLayout>
-      <FeedWrapper>
-        {/* ══ Sticky feed header ══════════════════════════════════════════════ */}
-        <FeedHeader>
-          <FeedHeaderTop>
-            <FeedTitle>
-              <TitleAccent>Solo</TitleAccent>Thoughts
-            </FeedTitle>
-            <HeaderActions>
-              {searchOpen ? (
-                <SearchForm onSubmit={submitSearch}>
-                  <SearchInput
-                    ref={searchRef}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder='Search thoughts…'
-                  />
-                  {searchQuery && (
-                    <SearchClear type='button' onClick={clearSearch}>
-                      <FaTimes />
-                    </SearchClear>
-                  )}
-                </SearchForm>
-              ) : (
-                <HeaderIconBtn
-                  onClick={() => setSearchOpen(true)}
-                  aria-label='Search'
-                >
-                  <FaSearch />
-                </HeaderIconBtn>
-              )}
-              {searchOpen && (
-                <CancelBtn
-                  type='button'
-                  onClick={() => {
-                    setSearchOpen(false);
-                    clearSearch();
-                  }}
-                >
-                  Cancel
-                </CancelBtn>
-              )}
-            </HeaderActions>
-          </FeedHeaderTop>
-
-          {/* Mood tabs — scrollable, flush to bottom of header */}
-          <MoodTabs>
-            <MoodTab
-              $active={selectedMood === 'all'}
-              onClick={() => setSelectedMood('all')}
-            >
-              All
-            </MoodTab>
-            {MOODS.map((mood) => (
-              <MoodTab
-                key={mood}
-                $active={selectedMood === mood}
-                onClick={() => setSelectedMood(mood)}
-              >
-                {moodEmojis[mood]}{' '}
-                {mood.charAt(0).toUpperCase() + mood.slice(1)}
-              </MoodTab>
-            ))}
-          </MoodTabs>
-        </FeedHeader>
-
-        {/* ══ Compose row ═════════════════════════════════════════════════════ */}
-        {canCreate && (
-          <ComposeRow onClick={() => navigate('/thoughts/create')}>
-            <ComposePlaceholder>What are you thinking?</ComposePlaceholder>
-            <ComposeBtn type='button'>
-              <FaPen />
-              <span>Thought</span>
-            </ComposeBtn>
-          </ComposeRow>
-        )}
-
-        {/* ══ Feed ════════════════════════════════════════════════════════════ */}
-        {error ? (
-          <StatusBox>
-            <p>{error}</p>
-            <RetryBtn onClick={() => fetchThoughts(true)}>Try again</RetryBtn>
-          </StatusBox>
-        ) : loading ? (
-          <LoadingSpinner text='Loading thoughts' height='300px' />
-        ) : visible.length === 0 ? (
-          <StatusBox>
-            <EmptyIcon>💭</EmptyIcon>
-            <p>
-              {activeSearch
-                ? `No thoughts matching "${activeSearch}"`
-                : selectedMood !== 'all'
-                ? `No ${selectedMood} thoughts yet`
-                : 'No thoughts yet'}
-            </p>
-            {canCreate && (
-              <RetryBtn as={Link} to='/thoughts/create'>
-                Write your first thought
-              </RetryBtn>
-            )}
-          </StatusBox>
-        ) : (
-          <>
-            <CardFeed>
-              {visible.map((thought) => (
-                <ThoughtCard
-                  key={thought._id}
-                  thought={thought}
-                  defaultUser={defaultUser}
-                  formatDate={formatDate}
-                  handleLike={handleLike}
-                  handleRetweet={() => {}} // future: real repost
-                  handlePin={handlePin}
-                  canCreateThought={canCreate}
-                  onDelete={handleDeleteThought}
+    <FeedWrapper>
+      {/* ══ Sticky feed header ══════════════════════════════════════════════ */}
+      <FeedHeader>
+        <FeedHeaderTop>
+          <FeedTitle>
+            <TitleAccent>Solo</TitleAccent>Thoughts
+          </FeedTitle>
+          <HeaderActions>
+            {searchOpen ? (
+              <SearchForm onSubmit={submitSearch}>
+                <SearchInput
+                  ref={searchRef}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder='Search thoughts…'
                 />
-              ))}
-            </CardFeed>
-            {loadingMore && (
-              <LoadingSpinner
-                size='32px'
-                text='Loading more'
-                textSize='0.8rem'
-                height='80px'
-              />
+                {searchQuery && (
+                  <SearchClear type='button' onClick={clearSearch}>
+                    <FaTimes />
+                  </SearchClear>
+                )}
+              </SearchForm>
+            ) : (
+              <HeaderIconBtn
+                onClick={() => setSearchOpen(true)}
+                aria-label='Search'
+              >
+                <FaSearch />
+              </HeaderIconBtn>
             )}
+            {searchOpen && (
+              <CancelBtn
+                type='button'
+                onClick={() => {
+                  setSearchOpen(false);
+                  clearSearch();
+                }}
+              >
+                Cancel
+              </CancelBtn>
+            )}
+          </HeaderActions>
+        </FeedHeaderTop>
 
-            {!hasMore && visible.length > 0 && (
-              <EndOfFeed>You've caught up ✦</EndOfFeed>
-            )}
-          </>
-        )}
-      </FeedWrapper>
-    </MainLayout>
+        {/* Mood tabs — scrollable, flush to bottom of header */}
+        <MoodTabs>
+          <MoodTab
+            $active={selectedMood === 'all'}
+            onClick={() => setSelectedMood('all')}
+          >
+            All
+          </MoodTab>
+          {MOODS.map((mood) => (
+            <MoodTab
+              key={mood}
+              $active={selectedMood === mood}
+              onClick={() => setSelectedMood(mood)}
+            >
+              {moodEmojis[mood]} {mood.charAt(0).toUpperCase() + mood.slice(1)}
+            </MoodTab>
+          ))}
+        </MoodTabs>
+      </FeedHeader>
+
+      {/* ══ Compose row ═════════════════════════════════════════════════════ */}
+      {canCreate && (
+        <ComposeRow onClick={() => navigate('/thoughts/create')}>
+          <ComposePlaceholder>What are you thinking?</ComposePlaceholder>
+          <ComposeBtn type='button'>
+            <FaPen />
+            <span>Thought</span>
+          </ComposeBtn>
+        </ComposeRow>
+      )}
+
+      {/* ══ Feed ════════════════════════════════════════════════════════════ */}
+      {error ? (
+        <StatusBox>
+          <p>{error}</p>
+          <RetryBtn onClick={() => fetchThoughts(true)}>Try again</RetryBtn>
+        </StatusBox>
+      ) : loading ? (
+        <LoadingSpinner text='Loading thoughts' height='300px' />
+      ) : visible.length === 0 ? (
+        <StatusBox>
+          <EmptyIcon>💭</EmptyIcon>
+          <p>
+            {activeSearch
+              ? `No thoughts matching "${activeSearch}"`
+              : selectedMood !== 'all'
+              ? `No ${selectedMood} thoughts yet`
+              : 'No thoughts yet'}
+          </p>
+          {canCreate && (
+            <RetryBtn as={Link} to='/thoughts/create'>
+              Write your first thought
+            </RetryBtn>
+          )}
+        </StatusBox>
+      ) : (
+        <>
+          <CardFeed>
+            {visible.map((thought) => (
+              <ThoughtCard
+                key={thought._id}
+                thought={thought}
+                defaultUser={defaultUser}
+                formatDate={formatDate}
+                handleLike={handleLike}
+                handleRetweet={() => {}} // future: real repost
+                handlePin={handlePin}
+                canCreateThought={canCreate}
+                onDelete={handleDeleteThought}
+              />
+            ))}
+          </CardFeed>
+          {loadingMore && (
+            <LoadingSpinner
+              size='32px'
+              text='Loading more'
+              textSize='0.8rem'
+              height='80px'
+            />
+          )}
+
+          {!hasMore && visible.length > 0 && (
+            <EndOfFeed>You've caught up ✦</EndOfFeed>
+          )}
+        </>
+      )}
+    </FeedWrapper>
   );
 };
 

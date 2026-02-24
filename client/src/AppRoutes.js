@@ -101,7 +101,14 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
             </StandardLayout>
           }
         />
-        <Route path='/thoughts' element={<Thoughts />} />
+        <Route
+          path='/thoughts'
+          element={
+            <StandardLayout>
+              <Thoughts />
+            </StandardLayout>
+          }
+        />
 
         {/* Private */}
         <Route
