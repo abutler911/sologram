@@ -9,7 +9,7 @@ import React, {
   lazy,
 } from 'react';
 import { Link } from 'react-router-dom';
-import styled, { keyframes, css } from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import {
   FaHeart,
   FaRegHeart,
@@ -40,35 +40,29 @@ const CommentModal = lazy(() =>
 const AUTHOR_IMAGE = authorImg;
 const AUTHOR_NAME = 'Andrew Butler';
 
-// ─── Animations ─────────────────────────────────────────────────────────────
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(15px); }
-  to   { opacity: 1; transform: translateY(0); }
-`;
+const fadeIn = keyframes`from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}`;
 const scaleIn = keyframes`
-  0%        { transform: scale(0); opacity: 0; }
-  15%       { transform: scale(1.25); opacity: 1; }
-  30%       { transform: scale(0.95); }
-  45%, 80%  { transform: scale(1); opacity: 1; }
-  100%      { transform: scale(0); opacity: 0; }
+  0%{transform:scale(0);opacity:0}
+  15%{transform:scale(1.25);opacity:1}
+  30%{transform:scale(0.95)}
+  45%,80%{transform:scale(1);opacity:1}
+  100%{transform:scale(0);opacity:0}
 `;
 const mintRipple = keyframes`
-  from { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
-  to   { transform: translate(-50%, -50%) scale(2.8); opacity: 0; }
+  from{transform:translate(-50%,-50%) scale(0.5);opacity:0.8}
+  to{transform:translate(-50%,-50%) scale(2.8);opacity:0}
 `;
 
-// ─── Component ───────────────────────────────────────────────────────────────
 const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [post, setPost] = useState(initialPost);
-  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [currentMediaIndex, setIdx] = useState(0);
   const [showActions, setShowActions] = useState(false);
-  const [isDoubleTapLiking, setIsDoubleTapLiking] = useState(false);
-
-  // Comments
-  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [isDoubleTapLiking, setDTLike] = useState(false);
+  const [showCommentModal, setShowModal] = useState(false);
   const [comments, setComments] = useState([]);
-  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [isLoadingComments, setLoadingC] = useState(false);
+  // Initialize from Post.commentCount, but always sync from server on open
   const [commentCount, setCommentCount] = useState(
     initialPost.commentCount || 0
   );
@@ -76,8 +70,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const cardRef = useRef(null);
   const actionsRef = useRef(null);
 
-  const { isAuthenticated } = useContext(AuthContext);
-  const { user } = useContext(AuthContext);
+  const { isAuthenticated, user } = useContext(AuthContext);
   const { showDeleteModal } = useDeleteModal();
   const { likePost, likedPosts, isProcessing } = useContext(LikesContext);
 
@@ -87,99 +80,114 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     'MMM d, yyyy'
   );
 
-  // ── Intersection Observer (lazy reveal) ────────────────────────────────────
+  // Intersection observer — lazy reveal animation
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
+    const ob = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
           setIsVisible(true);
-          observer.disconnect();
+          ob.disconnect();
         }
       },
       { threshold: 0.1 }
     );
-    if (cardRef.current) observer.observe(cardRef.current);
-    return () => observer.disconnect();
+    if (cardRef.current) ob.observe(cardRef.current);
+    return () => ob.disconnect();
   }, []);
 
-  // ── Click-away for actions menu ────────────────────────────────────────────
+  // Click-away for actions dropdown
   useEffect(() => {
     if (!showActions) return;
-    const handler = (e) => {
+    const h = (e) => {
       if (actionsRef.current && !actionsRef.current.contains(e.target))
         setShowActions(false);
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
   }, [showActions]);
 
-  // ── Comments ────────────────────────────────────────────────────────────────
+  // ── Comments ──────────────────────────────────────────────────────────────
+
   const fetchComments = useCallback(async () => {
     if (!post._id) return;
-    setIsLoadingComments(true);
+    setLoadingC(true);
     try {
       const data = await api.getComments(post._id);
-      setComments(Array.isArray(data.comments) ? data.comments : []);
-      // Sync count from server's authoritative total
-      setCommentCount(data.total ?? data.count ?? 0);
-    } catch {
+      const list = Array.isArray(data.comments) ? data.comments : [];
+      setComments(list);
+      // Always trust the server's total for the count
+      if (typeof data.total === 'number') setCommentCount(data.total);
+    } catch (err) {
+      console.error('[fetchComments]', err);
       toast.error('Failed to load comments');
     } finally {
-      setIsLoadingComments(false);
+      setLoadingC(false);
     }
   }, [post._id]);
 
   const handleOpenComments = useCallback(() => {
-    setShowCommentModal(true);
+    setShowModal(true);
     fetchComments();
   }, [fetchComments]);
 
   const handleAddComment = useCallback(
     async (commentData) => {
-      const data = await api.addComment(post._id, commentData);
-      const newComment = data.comment || data;
-      setComments((prev) => [newComment, ...prev]);
-      setCommentCount((prev) => prev + 1);
-      return newComment;
+      if (!isAuthenticated) {
+        toast.error('You must be logged in to comment');
+        return;
+      }
+      try {
+        const data = await api.addComment(post._id, commentData);
+        const newComment = data.comment;
+        if (!newComment) throw new Error('Bad response from server');
+        setComments((prev) => [newComment, ...prev]);
+        setCommentCount((prev) => prev + 1);
+        return newComment;
+      } catch (err) {
+        console.error('[addComment]', err?.response?.data || err.message);
+        const msg = err?.response?.data?.message || 'Could not post comment';
+        toast.error(msg);
+        throw err;
+      }
     },
-    [post._id]
+    [post._id, isAuthenticated]
   );
 
   const handleDeleteComment = useCallback(async (commentId) => {
-    await api.deleteComment(commentId);
-    setComments((prev) => prev.filter((c) => c._id !== commentId));
-    setCommentCount((prev) => Math.max(0, prev - 1));
-    toast.success('Comment removed');
+    try {
+      await api.deleteComment(commentId);
+      setComments((prev) => prev.filter((c) => c._id !== commentId));
+      setCommentCount((prev) => Math.max(0, prev - 1));
+      toast.success('Comment removed');
+    } catch (err) {
+      console.error('[deleteComment]', err?.response?.data || err.message);
+      toast.error('Failed to delete comment');
+    }
   }, []);
 
   const handleLikeComment = useCallback(
     async (commentId) => {
-      if (!isAuthenticated) return;
-      const data = await api.likeComment(commentId);
-      const updated = data.comment || data;
-      setComments((prev) =>
-        prev.map((c) => (c._id === commentId ? updated : c))
-      );
+      if (!isAuthenticated) {
+        toast.error('Log in to like comments');
+        return;
+      }
+      try {
+        const data = await api.likeComment(commentId);
+        if (!data.comment) throw new Error('Bad response');
+        setComments((prev) =>
+          prev.map((c) => (c._id === commentId ? data.comment : c))
+        );
+      } catch (err) {
+        console.error('[likeComment]', err?.response?.data || err.message);
+        toast.error('Could not update like');
+      }
     },
     [isAuthenticated]
   );
 
-  // ── Location ────────────────────────────────────────────────────────────────
-  const handleLocationClick = useCallback((location) => {
-    const encoded = encodeURIComponent(location);
-    const isIOS =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    // FIX: was broken template literal (`6{encodedLocation}`)
-    window.open(
-      isIOS
-        ? `https://maps.apple.com/?q=${encoded}`
-        : `https://www.google.com/maps/search/?api=1&query=${encoded}`,
-      '_blank'
-    );
-  }, []);
+  // ── Post like ─────────────────────────────────────────────────────────────
 
-  // ── Likes ───────────────────────────────────────────────────────────────────
-  const handleLike = useCallback(async () => {
+  const handleLike = useCallback(() => {
     if (!isAuthenticated || isProcessing || hasLiked) return;
     likePost(post._id, (updatedPost) => {
       setPost((prev) => ({
@@ -193,11 +201,26 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const handleDoubleTapLike = useCallback(() => {
     if (!isAuthenticated) return;
     if (!hasLiked) handleLike();
-    setIsDoubleTapLiking(true);
-    setTimeout(() => setIsDoubleTapLiking(false), 900);
+    setDTLike(true);
+    setTimeout(() => setDTLike(false), 900);
   }, [isAuthenticated, hasLiked, handleLike]);
 
-  // ── Delete ──────────────────────────────────────────────────────────────────
+  // ── Location ──────────────────────────────────────────────────────────────
+
+  const handleLocationClick = useCallback((location) => {
+    const enc = encodeURIComponent(location);
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    window.open(
+      isIOS
+        ? `https://maps.apple.com/?q=${enc}`
+        : `https://www.google.com/maps/search/?api=1&query=${enc}`,
+      '_blank'
+    );
+  }, []);
+
+  // ── Delete post ───────────────────────────────────────────────────────────
+
   const handleDeletePost = useCallback(() => {
     showDeleteModal({
       title: 'Delete Log Entry?',
@@ -217,11 +240,10 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     setShowActions(false);
   }, [post._id, showDeleteModal, onDelete]);
 
-  // ── Swipe ───────────────────────────────────────────────────────────────────
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () =>
-      setCurrentMediaIndex((c) => Math.min(c + 1, post.media.length - 1)),
-    onSwipedRight: () => setCurrentMediaIndex((c) => Math.max(c - 1, 0)),
+      setIdx((c) => Math.min(c + 1, (post.media?.length || 1) - 1)),
+    onSwipedRight: () => setIdx((c) => Math.max(c - 1, 0)),
     trackMouse: true,
   });
 
@@ -300,18 +322,12 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
           {post.media?.length > 1 && (
             <>
               {currentMediaIndex > 0 && (
-                <NavBtn
-                  $side='left'
-                  onClick={() => setCurrentMediaIndex((c) => c - 1)}
-                >
+                <NavBtn $side='left' onClick={() => setIdx((c) => c - 1)}>
                   <FaChevronLeft />
                 </NavBtn>
               )}
               {currentMediaIndex < post.media.length - 1 && (
-                <NavBtn
-                  $side='right'
-                  onClick={() => setCurrentMediaIndex((c) => c + 1)}
-                >
+                <NavBtn $side='right' onClick={() => setIdx((c) => c + 1)}>
                   <FaChevronRight />
                 </NavBtn>
               )}
@@ -373,7 +389,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
         <Suspense fallback={null}>
           <CommentModal
             isOpen={showCommentModal}
-            onClose={() => setShowCommentModal(false)}
+            onClose={() => setShowModal(false)}
             post={post}
             comments={comments}
             onAddComment={handleAddComment}
@@ -404,14 +420,12 @@ const CardWrapper = styled.div`
     opacity: 1;
     transform: translateY(0);
   }
-
   @font-face {
     font-family: 'Autography';
     src: url('/fonts/Autography.woff2') format('woff2');
     font-display: swap;
   }
 `;
-
 const Card = styled.div`
   background: ${COLORS.cardBackground};
   border-radius: 4px;
@@ -419,24 +433,20 @@ const Card = styled.div`
   box-shadow: 0 15px 45px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 `;
-
 const CardHeader = styled.div`
   padding: 18px 20px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
 `;
-
 const SignatureArea = styled.div`
   display: flex;
   align-items: center;
   gap: 14px;
 `;
-
 const AvatarContainer = styled.div`
   position: relative;
 `;
-
 const Avatar = styled.img`
   width: 48px;
   height: 48px;
@@ -445,7 +455,6 @@ const Avatar = styled.img`
   border: 2px solid ${COLORS.cardBackground};
   box-shadow: 0 0 0 2px ${COLORS.primarySalmon};
 `;
-
 const StatusDot = styled.div`
   position: absolute;
   bottom: 2px;
@@ -456,38 +465,32 @@ const StatusDot = styled.div`
   border: 2px solid ${COLORS.cardBackground};
   border-radius: 50%;
 `;
-
 const HeaderInfo = styled.div`
   display: flex;
   flex-direction: column;
 `;
-
 const Signature = styled.div`
   font-family: 'Autography', cursive;
   font-size: 1.8rem;
   color: ${COLORS.textPrimary};
   line-height: 1;
 `;
-
 const MetaRow = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
   margin-top: 4px;
 `;
-
 const DateText = styled.div`
   font-size: 0.65rem;
   color: ${COLORS.textTertiary};
   text-transform: uppercase;
   letter-spacing: 1px;
 `;
-
 const DotDivider = styled.span`
   color: ${COLORS.textTertiary};
   font-size: 0.6rem;
 `;
-
 const InlineLocation = styled.button`
   background: none;
   border: none;
@@ -505,11 +508,9 @@ const InlineLocation = styled.button`
     color: ${COLORS.primaryMint};
   }
 `;
-
 const ActionsWrapper = styled.div`
   position: relative;
 `;
-
 const MenuToggle = styled.button`
   background: none;
   border: none;
@@ -520,7 +521,6 @@ const MenuToggle = styled.button`
     color: ${COLORS.primaryMint};
   }
 `;
-
 const Dropdown = styled.div`
   position: absolute;
   right: 0;
@@ -556,7 +556,6 @@ const Dropdown = styled.div`
     color: ${COLORS.primarySalmon};
   }
 `;
-
 const MediaFrame = styled.div`
   position: relative;
   width: 100%;
@@ -564,18 +563,15 @@ const MediaFrame = styled.div`
   background: #000;
   overflow: hidden;
 `;
-
 const MediaTrack = styled.div`
   display: flex;
   height: 100%;
   transition: transform 0.6s cubic-bezier(0.2, 1, 0.3, 1);
 `;
-
 const MediaSlide = styled.div`
   flex: 0 0 100%;
   height: 100%;
 `;
-
 const PostImg = styled.img`
   width: 100%;
   height: 100%;
@@ -586,12 +582,11 @@ const PostVid = styled.video`
   height: 100%;
   object-fit: cover;
 `;
-
 const NavBtn = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  ${(p) => p.$side}: 12px;
+  ${(p) => p.$side}:12px;
   background: rgba(0, 0, 0, 0.4);
   border: none;
   color: #fff;
@@ -602,12 +597,10 @@ const NavBtn = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s;
   &:hover {
     background: rgba(0, 0, 0, 0.7);
   }
 `;
-
 const Dots = styled.div`
   position: absolute;
   bottom: 12px;
@@ -616,7 +609,6 @@ const Dots = styled.div`
   display: flex;
   gap: 6px;
 `;
-
 const Dot = styled.div`
   width: 6px;
   height: 6px;
@@ -625,7 +617,6 @@ const Dot = styled.div`
     p.$active ? COLORS.primaryMint : 'rgba(255,255,255,0.3)'};
   transition: background 0.2s;
 `;
-
 const RippleEffect = styled.div`
   position: absolute;
   top: 50%;
@@ -637,7 +628,6 @@ const RippleEffect = styled.div`
   pointer-events: none;
   animation: ${mintRipple} 0.8s ease-out forwards;
 `;
-
 const BigHeart = styled.div`
   position: absolute;
   top: 50%;
@@ -647,11 +637,9 @@ const BigHeart = styled.div`
   font-size: 80px;
   animation: ${scaleIn} 0.8s ease forwards;
 `;
-
 const ContentBody = styled.div`
   padding: 24px 20px;
 `;
-
 const Title = styled.h2`
   font-size: 1.5rem;
   font-weight: 800;
@@ -663,7 +651,6 @@ const Title = styled.h2`
     color: ${COLORS.primaryMint};
   }
 `;
-
 const CaptionText = styled.p`
   font-size: 0.95rem;
   line-height: 1.6;
@@ -671,14 +658,12 @@ const CaptionText = styled.p`
   margin-bottom: 20px;
   white-space: pre-wrap;
 `;
-
 const TagBox = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 24px;
 `;
-
 const Tag = styled.span`
   font-size: 0.7rem;
   font-weight: 700;
@@ -694,7 +679,6 @@ const Tag = styled.span`
     transform: translateY(-2px);
   }
 `;
-
 const Footer = styled.div`
   display: flex;
   justify-content: space-between;
@@ -702,12 +686,10 @@ const Footer = styled.div`
   padding-top: 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 `;
-
 const BtnGroup = styled.div`
   display: flex;
   gap: 24px;
 `;
-
 const ActionBtn = styled.button`
   background: none;
   border: none;

@@ -24,13 +24,12 @@ import authorImg from '../../assets/andy.jpg';
 
 const AVATAR_FALLBACK = authorImg;
 
-// ─── Animations ─────────────────────────────────────────────────────────────
 const fadeIn = keyframes`from{opacity:0}to{opacity:1}`;
 const slideUp = keyframes`from{transform:translateY(100%)}to{transform:translateY(0)}`;
 const slideDown = keyframes`from{transform:translateY(0)}to{transform:translateY(100%)}`;
 const spin = keyframes`from{transform:rotate(0)}to{transform:rotate(360deg)}`;
 
-// ─── Sub-component: a single comment row (used for both comments & replies) ──
+// ─── CommentRow ──────────────────────────────────────────────────────────────
 const CommentRow = ({
   comment,
   user,
@@ -40,26 +39,34 @@ const CommentRow = ({
   isReply = false,
 }) => {
   const a = comment.author || {};
-  const isOwner = user?.id === a?._id?.toString();
+  const isOwner = user?.id && a?._id && user.id.toString() === a._id.toString();
   const isAuthor = a.username === 'andy' || a.name === 'Andrew Butler';
 
   return (
-    <CommentItem isReply={isReply}>
-      <CommentAvatarContainer isAuthor={isAuthor && !isReply}>
-        <CommentAvatar src={a.avatar || AVATAR_FALLBACK} alt={a.name} />
-      </CommentAvatarContainer>
+    <CommentItem $isReply={isReply}>
+      <CommentAvatarWrap $isAuthor={isAuthor && !isReply}>
+        <CommentAvatar
+          src={a.avatar || AVATAR_FALLBACK}
+          alt={a.name || 'User'}
+        />
+      </CommentAvatarWrap>
       <CommentBody>
         <CommentHead>
           <AuthorName>{a.name || 'User'}</AuthorName>
           <TimeText>
-            {formatDistanceToNow(new Date(comment.createdAt), {
-              addSuffix: true,
-            })}
+            {comment.createdAt
+              ? formatDistanceToNow(new Date(comment.createdAt), {
+                  addSuffix: true,
+                })
+              : ''}
           </TimeText>
         </CommentHead>
         <CommentText>{comment.text}</CommentText>
         <CommentFooter>
-          <LikeBtn onClick={() => onLike(comment._id)} liked={comment.hasLiked}>
+          <LikeBtn
+            onClick={() => onLike(comment._id)}
+            $liked={comment.hasLiked}
+          >
             {comment.hasLiked ? <FaHeart /> : <FaRegHeart />}
             {comment.likes > 0 && <span>{comment.likes}</span>}
           </LikeBtn>
@@ -77,15 +84,15 @@ const CommentRow = ({
   );
 };
 
-// ─── Sub-component: expandable replies section ───────────────────────────────
+// ─── RepliesSection ──────────────────────────────────────────────────────────
 const RepliesSection = ({ comment, user, onLike, onDelete }) => {
   const [replies, setReplies] = useState([]);
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  const replyCount = comment.replyCount || 0;
-  if (replyCount === 0) return null;
+  const count = comment.replyCount || 0;
+  if (count === 0) return null;
 
   const handleExpand = async () => {
     if (!loaded) {
@@ -100,7 +107,7 @@ const RepliesSection = ({ comment, user, onLike, onDelete }) => {
         setLoading(false);
       }
     }
-    setExpanded((prev) => !prev);
+    setExpanded((v) => !v);
   };
 
   const handleLikeReply = async (replyId) => {
@@ -109,8 +116,8 @@ const RepliesSection = ({ comment, user, onLike, onDelete }) => {
       setReplies((prev) =>
         prev.map((r) => (r._id === replyId ? data.comment : r))
       );
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.error('[likeReply]', err);
     }
   };
 
@@ -124,7 +131,7 @@ const RepliesSection = ({ comment, user, onLike, onDelete }) => {
   };
 
   return (
-    <RepliesWrapper>
+    <RepliesWrap>
       <ViewRepliesBtn onClick={handleExpand}>
         {loading ? (
           <MiniSpinner />
@@ -132,20 +139,20 @@ const RepliesSection = ({ comment, user, onLike, onDelete }) => {
           <>
             <FaChevronDown
               style={{
-                transform: expanded ? 'rotate(180deg)' : 'none',
                 transition: '0.2s',
+                transform: expanded ? 'rotate(180deg)' : 'none',
               }}
             />
-            {expanded ? 'Hide' : `View ${replyCount}`}{' '}
-            {replyCount === 1 ? 'reply' : 'replies'}
+            {expanded ? 'Hide' : `View ${count}`}{' '}
+            {count === 1 ? 'reply' : 'replies'}
           </>
         )}
       </ViewRepliesBtn>
       {expanded &&
-        replies.map((reply) => (
+        replies.map((r) => (
           <CommentRow
-            key={reply._id}
-            comment={reply}
+            key={r._id}
+            comment={r}
             user={user}
             onLike={handleLikeReply}
             onDelete={handleDeleteReply}
@@ -153,11 +160,11 @@ const RepliesSection = ({ comment, user, onLike, onDelete }) => {
             isReply
           />
         ))}
-    </RepliesWrapper>
+    </RepliesWrap>
   );
 };
 
-// ─── Main Modal ──────────────────────────────────────────────────────────────
+// ─── CommentModal ─────────────────────────────────────────────────────────────
 export const CommentModal = ({
   isOpen,
   onClose,
@@ -173,20 +180,19 @@ export const CommentModal = ({
   const [replyingTo, setReplyingTo] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const inputRef = useRef(null);
 
-  const textareaRef = useRef(null);
-
-  // Lock body scroll; focus input; bind Escape
+  // Lock scroll, focus input, Escape key
   useEffect(() => {
     if (!isOpen) return;
     document.body.style.overflow = 'hidden';
-    const timer = setTimeout(() => textareaRef.current?.focus(), 400);
+    const t = setTimeout(() => inputRef.current?.focus(), 400);
     const onEsc = (e) => {
       if (e.key === 'Escape') handleClose();
     };
     document.addEventListener('keydown', onEsc);
     return () => {
-      clearTimeout(timer);
+      clearTimeout(t);
       document.body.style.overflow = '';
       document.removeEventListener('keydown', onEsc);
     };
@@ -203,18 +209,25 @@ export const CommentModal = ({
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
-    if (!newComment.trim() || isSubmitting || !isAuthenticated) return;
+    const text = newComment.trim();
+    if (!text) return;
+
+    if (!isAuthenticated) {
+      toast.error('You must be logged in to comment');
+      return;
+    }
+    if (isSubmitting) return;
+
     setIsSubmitting(true);
     try {
       await onAddComment({
-        text: newComment.trim(),
+        text,
         parentId: replyingTo?.id || null,
-        postId: post._id,
       });
       setNewComment('');
       setReplyingTo(null);
     } catch {
-      // error toast handled upstream
+      // toast already fired in PostCard's handleAddComment
     } finally {
       setIsSubmitting(false);
     }
@@ -224,82 +237,79 @@ export const CommentModal = ({
     const a = comment?.author || {};
     setReplyingTo({ id: comment._id, author: a });
     setNewComment(`@${a.name || 'user'} `);
-    textareaRef.current?.focus();
+    inputRef.current?.focus();
+  }, []);
+
+  const clearReply = useCallback(() => {
+    setReplyingTo(null);
+    setNewComment('');
   }, []);
 
   if (!isOpen && !isClosing) return null;
 
   return createPortal(
-    <ModalOverlay onClick={handleClose} $closing={isClosing}>
-      <ModalContainer onClick={(e) => e.stopPropagation()} $closing={isClosing}>
+    <Overlay onClick={handleClose} $closing={isClosing}>
+      <Container onClick={(e) => e.stopPropagation()} $closing={isClosing}>
         <DragHandle />
 
-        <ModalHeader>
-          <HeaderTitleArea>
+        <Header>
+          <HeaderLeft>
             <HeaderTitle>Conversation</HeaderTitle>
-            <HeaderSubtitle>{post.title || 'Sologram Log'}</HeaderSubtitle>
-          </HeaderTitleArea>
-          <CloseButton onClick={handleClose} aria-label='Close'>
+            <HeaderSub>{post?.title || 'Sologram Log'}</HeaderSub>
+          </HeaderLeft>
+          <CloseBtn onClick={handleClose} aria-label='Close'>
             <FaTimes />
-          </CloseButton>
-        </ModalHeader>
+          </CloseBtn>
+        </Header>
 
-        <CommentsArea>
+        <ScrollArea>
           {isLoading ? (
-            <LoadingState>
-              <LoadingSpinner />
-            </LoadingState>
+            <CenterBox>
+              <Spinner />
+            </CenterBox>
           ) : comments.length === 0 ? (
-            <EmptyState>
+            <EmptyBox>
               <EmptyIcon>🖋️</EmptyIcon>
               <EmptyTitle>No thoughts yet</EmptyTitle>
-              <EmptySubtitle>Begin the discussion below.</EmptySubtitle>
-            </EmptyState>
+              <EmptySub>Begin the discussion below.</EmptySub>
+            </EmptyBox>
           ) : (
-            <CommentsList>
-              {comments.map((comment) => (
-                <CommentGroup key={comment._id}>
+            <List>
+              {comments.map((c) => (
+                <Group key={c._id}>
                   <CommentRow
-                    comment={comment}
+                    comment={c}
                     user={user}
                     onLike={onLikeComment}
                     onDelete={onDeleteComment}
                     onReply={handleReply}
                   />
                   <RepliesSection
-                    comment={comment}
+                    comment={c}
                     user={user}
                     onLike={onLikeComment}
                     onDelete={onDeleteComment}
                   />
-                </CommentGroup>
+                </Group>
               ))}
-            </CommentsList>
+            </List>
           )}
-        </CommentsArea>
+        </ScrollArea>
 
-        <InputSection>
+        <InputArea>
           {replyingTo && (
-            <ReplyIndicator>
-              <span>Replying to @{replyingTo.author.name}</span>
-              <button
-                onClick={() => {
-                  setReplyingTo(null);
-                  setNewComment('');
-                }}
-              >
+            <ReplyBanner>
+              <span>Replying to @{replyingTo.author?.name || 'user'}</span>
+              <button onClick={clearReply}>
                 <FaTimes />
               </button>
-            </ReplyIndicator>
+            </ReplyBanner>
           )}
-          <CommentForm onSubmit={handleSubmit}>
-            <UserAvatar
-              src={user?.avatar || AVATAR_FALLBACK}
-              alt='Your Avatar'
-            />
-            <InputWrapper>
-              <CommentInput
-                ref={textareaRef}
+          <Form onSubmit={handleSubmit}>
+            <UserAvatar src={user?.avatar || AVATAR_FALLBACK} alt='You' />
+            <InputWrap>
+              <Input
+                ref={inputRef}
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 onKeyDown={(e) => {
@@ -307,32 +317,29 @@ export const CommentModal = ({
                 }}
                 placeholder={
                   replyingTo
-                    ? `Reply to @${replyingTo.author.name}…`
+                    ? `Reply to @${replyingTo.author?.name || 'user'}…`
                     : 'Write a thought…'
                 }
               />
-              <SubmitBtn
+              <SendBtn
                 type='submit'
                 disabled={!newComment.trim() || isSubmitting}
+                aria-label='Post comment'
               >
-                {isSubmitting ? (
-                  <LoadingSpinner $size='14px' />
-                ) : (
-                  <FaPaperPlane />
-                )}
-              </SubmitBtn>
-            </InputWrapper>
-          </CommentForm>
-        </InputSection>
-      </ModalContainer>
-    </ModalOverlay>,
+                {isSubmitting ? <SmallSpinner /> : <FaPaperPlane />}
+              </SendBtn>
+            </InputWrap>
+          </Form>
+        </InputArea>
+      </Container>
+    </Overlay>,
     document.body
   );
 };
 
 // ─── Styled Components ───────────────────────────────────────────────────────
 
-const ModalOverlay = styled.div`
+const Overlay = styled.div`
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.85);
@@ -343,8 +350,7 @@ const ModalOverlay = styled.div`
   justify-content: center;
   animation: ${fadeIn} 0.3s ease-out ${(p) => p.$closing && css`reverse`};
 `;
-
-const ModalContainer = styled.div`
+const Container = styled.div`
   width: 100%;
   max-width: 600px;
   height: 80vh;
@@ -355,7 +361,6 @@ const ModalContainer = styled.div`
   animation: ${(p) => (p.$closing ? slideDown : slideUp)} 0.4s
     cubic-bezier(0.19, 1, 0.22, 1) ${(p) => p.$closing && 'forwards'};
 `;
-
 const DragHandle = styled.div`
   width: 40px;
   height: 4px;
@@ -364,8 +369,7 @@ const DragHandle = styled.div`
   border-radius: 2px;
   flex-shrink: 0;
 `;
-
-const ModalHeader = styled.header`
+const Header = styled.header`
   padding: 0 20px 16px;
   display: flex;
   justify-content: space-between;
@@ -373,73 +377,63 @@ const ModalHeader = styled.header`
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
 `;
-
-const HeaderTitleArea = styled.div`
+const HeaderLeft = styled.div`
   display: flex;
   flex-direction: column;
 `;
-
 const HeaderTitle = styled.h2`
   font-size: 1.1rem;
   font-weight: 800;
   color: ${COLORS.textPrimary};
   letter-spacing: -0.02em;
 `;
-
-const HeaderSubtitle = styled.span`
+const HeaderSub = styled.span`
   font-size: 0.75rem;
   color: ${COLORS.accentMint};
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 `;
-
-const CloseButton = styled.button`
+const CloseBtn = styled.button`
   background: none;
   border: none;
   color: ${COLORS.textTertiary};
   font-size: 1.2rem;
   cursor: pointer;
-  transition: color 0.2s;
   &:hover {
     color: ${COLORS.primarySalmon};
   }
 `;
-
-const CommentsArea = styled.div`
+const ScrollArea = styled.div`
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 `;
-
-const CommentsList = styled.div`
+const List = styled.div`
   display: flex;
   flex-direction: column;
 `;
-
-const CommentGroup = styled.div`
+const Group = styled.div`
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 `;
-
 const CommentItem = styled.div`
-  padding: ${(p) => (p.isReply ? '12px 20px 12px 56px' : '20px')};
+  padding: ${(p) => (p.$isReply ? '12px 20px 12px 56px' : '20px')};
   display: flex;
   align-items: flex-start;
   gap: 12px;
   ${(p) =>
-    p.isReply &&
+    p.$isReply &&
     css`
       background: rgba(255, 255, 255, 0.01);
     `}
 `;
-
-const CommentAvatarContainer = styled.div`
+const CommentAvatarWrap = styled.div`
   position: relative;
   flex-shrink: 0;
   width: 40px;
   height: 40px;
   ${(p) =>
-    p.isAuthor &&
+    p.$isAuthor &&
     css`
       &::after {
         content: '';
@@ -451,7 +445,6 @@ const CommentAvatarContainer = styled.div`
       }
     `}
 `;
-
 const CommentAvatar = styled.img`
   width: 40px;
   height: 40px;
@@ -462,19 +455,16 @@ const CommentAvatar = styled.img`
   z-index: 2;
   background: ${COLORS.cardBackground};
 `;
-
 const CommentBody = styled.div`
   flex: 1;
   min-width: 0;
 `;
-
 const CommentHead = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   margin-bottom: 4px;
 `;
-
 const AuthorName = styled.span`
   font-size: 0.85rem;
   font-weight: 700;
@@ -484,7 +474,6 @@ const TimeText = styled.span`
   font-size: 0.7rem;
   color: ${COLORS.textTertiary};
 `;
-
 const CommentText = styled.p`
   font-size: 0.95rem;
   line-height: 1.55;
@@ -492,22 +481,20 @@ const CommentText = styled.p`
   margin-bottom: 10px;
   word-wrap: break-word;
 `;
-
 const CommentFooter = styled.div`
   display: flex;
   gap: 16px;
   align-items: center;
 `;
-
 const LikeBtn = styled.button`
   background: none;
   border: none;
-  color: ${(p) => (p.liked ? COLORS.primarySalmon : COLORS.textTertiary)};
+  cursor: pointer;
+  color: ${(p) => (p.$liked ? COLORS.primarySalmon : COLORS.textTertiary)};
   font-size: 0.8rem;
   display: flex;
   align-items: center;
   gap: 4px;
-  cursor: pointer;
   transition: transform 0.2s;
   &:hover {
     transform: scale(1.05);
@@ -517,7 +504,6 @@ const LikeBtn = styled.button`
     font-weight: 700;
   }
 `;
-
 const ReplyBtn = styled.button`
   background: none;
   border: none;
@@ -529,7 +515,6 @@ const ReplyBtn = styled.button`
     color: ${COLORS.textPrimary};
   }
 `;
-
 const DeleteBtn = styled.button`
   background: none;
   border: none;
@@ -541,11 +526,9 @@ const DeleteBtn = styled.button`
     color: ${COLORS.primarySalmon};
   }
 `;
-
-const RepliesWrapper = styled.div`
+const RepliesWrap = styled.div`
   padding: 0 20px 8px 56px;
 `;
-
 const ViewRepliesBtn = styled.button`
   background: none;
   border: none;
@@ -561,7 +544,6 @@ const ViewRepliesBtn = styled.button`
     color: ${COLORS.primaryMint};
   }
 `;
-
 const MiniSpinner = styled.div`
   width: 12px;
   height: 12px;
@@ -570,15 +552,13 @@ const MiniSpinner = styled.div`
   border-radius: 50%;
   animation: ${spin} 0.8s linear infinite;
 `;
-
-const InputSection = styled.div`
+const InputArea = styled.div`
   padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   background: ${COLORS.cardBackground};
   flex-shrink: 0;
 `;
-
-const ReplyIndicator = styled.div`
+const ReplyBanner = styled.div`
   display: flex;
   justify-content: space-between;
   padding: 8px 14px;
@@ -599,13 +579,11 @@ const ReplyIndicator = styled.div`
     align-items: center;
   }
 `;
-
-const CommentForm = styled.form`
+const Form = styled.form`
   display: flex;
   gap: 12px;
   align-items: center;
 `;
-
 const UserAvatar = styled.img`
   width: 32px;
   height: 32px;
@@ -613,8 +591,7 @@ const UserAvatar = styled.img`
   border: 1.5px solid ${COLORS.primarySalmon};
   flex-shrink: 0;
 `;
-
-const InputWrapper = styled.div`
+const InputWrap = styled.div`
   flex: 1;
   display: flex;
   align-items: center;
@@ -627,8 +604,7 @@ const InputWrapper = styled.div`
     border-color: ${COLORS.primaryMint}50;
   }
 `;
-
-const CommentInput = styled.input`
+const Input = styled.input`
   flex: 1;
   background: none;
   border: none;
@@ -639,8 +615,7 @@ const CommentInput = styled.input`
     color: ${COLORS.textTertiary};
   }
 `;
-
-const SubmitBtn = styled.button`
+const SendBtn = styled.button`
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -662,24 +637,25 @@ const SubmitBtn = styled.button`
     cursor: default;
   }
 `;
-
-const LoadingSpinner = styled.div`
-  width: ${(p) => p.$size || '24px'};
-  height: ${(p) => p.$size || '24px'};
+const Spinner = styled.div`
+  width: 24px;
+  height: 24px;
   border: 2px solid rgba(255, 255, 255, 0.1);
   border-top-color: ${COLORS.primaryMint};
   border-radius: 50%;
   animation: ${spin} 0.8s linear infinite;
 `;
-
-const LoadingState = styled.div`
+const SmallSpinner = styled(Spinner)`
+  width: 14px;
+  height: 14px;
+`;
+const CenterBox = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 60px;
 `;
-
-const EmptyState = styled.div`
+const EmptyBox = styled.div`
   padding: 80px 40px;
   text-align: center;
 `;
@@ -693,7 +669,7 @@ const EmptyTitle = styled.h4`
   margin-bottom: 4px;
   font-size: 1.1rem;
 `;
-const EmptySubtitle = styled.p`
+const EmptySub = styled.p`
   color: ${COLORS.textTertiary};
   font-size: 0.85rem;
 `;
