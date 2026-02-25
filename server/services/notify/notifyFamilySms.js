@@ -2,25 +2,26 @@ const { sendSmsWithRetry } = require('../sms/textbeltClient');
 const recipients = require('../../config/smsRecipients');
 
 const BRAND = 'SoloGram';
-const OPTOUT = ' Stop=End'; // Shorter opt-out to save characters
-const QUOTA_THRESHOLD = 15; // Alert you when credits are low
+const OPTOUT = ' Stop=End';
+const QUOTA_THRESHOLD = 15;
 
-// Helper to check quota and alert you specifically
 async function checkQuota(res) {
   if (
+    res &&
     res.quotaRemaining !== undefined &&
     res.quotaRemaining <= QUOTA_THRESHOLD
   ) {
     console.warn(`⚠️ LOW QUOTA ALERT: ${res.quotaRemaining} credits left.`);
-    // You could also trigger a specific SMS to yourself here if you wanted
   }
 }
 
 const firstName = (n = '') => String(n).split(' ')[0] || 'friend';
-const truncate = (s, n) => (s && s.length > n ? s.slice(0, n - 1) + '...' : s);
+const truncate = (s, n) => {
+  const limit = Math.max(0, n); // Ensure we never pass a negative number
+  return s && s.length > limit ? s.slice(0, limit - 1) + '...' : s;
+};
 
 function makeMessage({ kind, title, url, name, hours }) {
-  // Removed emojis to keep messages in 160-char GSM-7 encoding
   const baseByKind = {
     post: `${BRAND}: ${firstName(name)}, new post: "${title}"`,
     story: `${BRAND}: new story: "${title}"${hours ? ` (${hours}h)` : ''}`,
@@ -30,14 +31,23 @@ function makeMessage({ kind, title, url, name, hours }) {
 
   const base = baseByKind[kind] || baseByKind.default;
   const link = url ? ` ${url}` : '';
-
-  // Combine and ensure we stay under the 160 limit to avoid multi-credit charges
   let fullMessage = `${base}${link}${OPTOUT}`;
 
+  // If the total message is > 160, we need to shrink the TITLE
   if (fullMessage.length > 160) {
     const overflow = fullMessage.length - 160;
-    const shortenedTitle = truncate(title, title.length - overflow);
-    fullMessage = `${base.replace(title, shortenedTitle)}${link}${OPTOUT}`;
+    // Calculate new title length, ensuring at least 10 chars remain
+    const targetTitleLength = Math.max(10, (title?.length || 0) - overflow);
+    const shortenedTitle = truncate(title, targetTitleLength);
+
+    // Reconstruct the message with the shorter title
+    const newBase = base.replace(`"${title}"`, `"${shortenedTitle}"`);
+    fullMessage = `${newBase}${link}${OPTOUT}`;
+
+    // Hard cap at 160 just in case
+    if (fullMessage.length > 160) {
+      fullMessage = fullMessage.slice(0, 157) + '...';
+    }
   }
 
   return fullMessage;
@@ -45,6 +55,8 @@ function makeMessage({ kind, title, url, name, hours }) {
 
 async function notifyFamilySms(kind, payload) {
   const out = [];
+  console.log(`🚀 Starting SMS notifications for kind: ${kind}`);
+
   for (const r of recipients) {
     const title = payload.title || 'New update';
     const message = makeMessage({
@@ -55,15 +67,28 @@ async function notifyFamilySms(kind, payload) {
       hours: payload?.hours,
     });
 
-    let res = await sendSmsWithRetry(r.phone, message);
+    console.log(
+      `📤 Sending to ${r.name}: "${message}" (${message.length} chars)`
+    );
 
-    // Check quota on the first recipient's response
-    if (out.length === 0) await checkQuota(res);
+    try {
+      let res = await sendSmsWithRetry(r.phone, message);
 
-    out.push({ name: r.name, phone: r.phone, ...res });
+      if (out.length === 0) await checkQuota(res);
 
-    // Slight delay to prevent hitting rate limits
-    await new Promise((s) => setTimeout(s, 150));
+      out.push({ name: r.name, phone: r.phone, ...res });
+      console.log(`✅ SMS result for ${r.name}:`, res);
+    } catch (err) {
+      console.error(`❌ SMS failure for ${r.name}:`, err.message);
+      out.push({
+        name: r.name,
+        phone: r.phone,
+        success: false,
+        error: err.message,
+      });
+    }
+
+    await new Promise((s) => setTimeout(s, 200)); // Slightly longer delay
   }
   return out;
 }
