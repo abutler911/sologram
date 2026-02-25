@@ -7,7 +7,7 @@ import React, {
   useMemo,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 import {
   FaUpload,
   FaTimes,
@@ -19,520 +19,34 @@ import {
 } from 'react-icons/fa';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
-import axios from 'axios';
+import { api } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
-import { COLORS, THEME } from '../theme';
+import { COLORS } from '../theme';
 import { useUploadManager } from '../hooks/useUploadManager';
 
-// ── Styled Components ─────────────────────────────────────────────────────────
-
-const PageWrapper = styled.div`
-  background-color: ${COLORS.background};
-  min-height: 100vh;
-  color: ${COLORS.textPrimary};
-  display: flex;
-  flex-direction: column;
-  @supports (-webkit-touch-callout: none) {
-    min-height: -webkit-fill-available;
-  }
-`;
-
-const AppHeader = styled.header`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: ${COLORS.primaryBlueGray};
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  color: ${THEME.header.text};
-`;
-
-const BackButton = styled.button`
-  background: none;
-  border: none;
-  color: ${THEME.header.icon};
-  font-size: 1.25rem;
-  padding: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  transition: all 0.2s ease;
-  &:hover {
-    color: ${COLORS.textPrimary};
-    transform: translateX(-2px);
-  }
-`;
-
-const HeaderTitle = styled.h1`
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0;
-  flex-grow: 1;
-  text-align: center;
-  color: ${THEME.header.text};
-`;
-
-const ShareButton = styled.button`
-  background: none;
-  border: none;
-  color: ${COLORS.accentMint};
-  font-weight: 600;
-  padding: 8px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-  &:hover {
-    color: ${COLORS.accentSalmon};
-    transform: translateY(-1px);
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const MainContent = styled.main`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 16px;
-`;
-
-const MediaPreviewContainer = styled.div`
-  width: 100%;
-  aspect-ratio: 9 / 16;
-  position: relative;
-  background-color: ${COLORS.elevatedBackground};
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid ${COLORS.border};
-`;
-
-const MainPreviewImage = styled.img`
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  display: block;
-`;
-
-const MainPreviewVideo = styled.div`
-  width: 100%;
-  height: 100%;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  video {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    display: block;
-  }
-`;
-
-const VideoIcon = styled.div`
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: ${COLORS.textPrimary};
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const RemoveButton = styled.button`
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: ${COLORS.textPrimary};
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  &:hover {
-    background-color: rgba(233, 137, 115, 0.7);
-    transform: scale(1.1);
-  }
-`;
-
-const UploadOverlay = styled.div`
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  color: ${COLORS.textPrimary};
-  font-size: 0.875rem;
-`;
-
-const ProgressRing = styled.div`
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: 4px solid rgba(255, 255, 255, 0.2);
-  border-top-color: ${COLORS.primaryMint};
-  animation: spin 0.9s linear infinite;
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-`;
-
-const DropzoneArea = styled.div`
-  width: 100%;
-  aspect-ratio: 9 / 16;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px dashed
-    ${(props) => (props.isDragActive ? COLORS.primaryMint : COLORS.border)};
-  background-color: ${COLORS.elevatedBackground};
-  cursor: pointer;
-  transition: all 0.3s ease;
-  &:hover {
-    border-color: ${COLORS.primaryMint};
-    background-color: ${COLORS.buttonHover};
-  }
-`;
-
-const DropzoneContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: ${COLORS.textSecondary};
-  text-align: center;
-  padding: 16px;
-  width: 100%;
-`;
-
-const DragActiveContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: ${COLORS.accentMint};
-  text-align: center;
-  padding: 16px;
-  width: 100%;
-`;
-
-const UploadIcon = styled.div`
-  font-size: 3rem;
-  margin-bottom: 16px;
-  color: ${COLORS.primaryMint};
-`;
-
-const ActionButtonsContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  width: 100%;
-  max-width: 400px;
-  margin-top: 24px;
-`;
-
-const ActionButton = styled.button`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 16px 12px;
-  border-radius: 8px;
-  border: none;
-  background-color: ${COLORS.buttonHover};
-  color: ${COLORS.textPrimary};
-  font-weight: 500;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.3s ease;
-  svg {
-    font-size: 1.5rem;
-    color: ${COLORS.textSecondary};
-    transition: color 0.3s ease;
-  }
-  &:hover {
-    background-color: ${COLORS.primaryMint}20;
-    transform: translateY(-2px);
-    svg {
-      color: ${COLORS.primaryMint};
-    }
-  }
-`;
-
-const ThumbnailContainer = styled.div`
-  display: flex;
-  overflow-x: auto;
-  padding: 12px;
-  gap: 8px;
-  background-color: ${COLORS.elevatedBackground};
-  scrollbar-width: none;
-  border-top: 1px solid ${COLORS.border};
-  border-bottom: 1px solid ${COLORS.border};
-  &::-webkit-scrollbar {
-    display: none;
-  }
-`;
-
-const ThumbnailItem = styled.div`
-  width: 60px;
-  height: 60px;
-  border-radius: 6px;
-  overflow: hidden;
-  flex-shrink: 0;
-  cursor: pointer;
-  border: 2px solid
-    ${(props) => (props.isSelected ? COLORS.primaryMint : 'transparent')};
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s ease;
-  &:hover {
-    transform: scale(1.05);
-  }
-`;
-
-const ThumbnailImage = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-`;
-
-const ThumbnailVideo = styled.div`
-  width: 100%;
-  height: 100%;
-  position: relative;
-  background-color: ${COLORS.elevatedBackground};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-`;
-
-const ThumbnailVideoIcon = styled.div`
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: ${COLORS.textPrimary};
-  border-radius: 50%;
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.6rem;
-`;
-
-const AddMediaThumbnail = styled.div`
-  width: 60px;
-  height: 60px;
-  border-radius: 6px;
-  background-color: ${COLORS.elevatedBackground};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  cursor: pointer;
-  color: ${COLORS.accentBlueGray};
-  font-size: 1.5rem;
-  border: 1px dashed ${COLORS.border};
-  transition: all 0.2s ease;
-  &:hover {
-    background-color: ${COLORS.primaryBlueGray}20;
-    transform: scale(1.05);
-  }
-`;
-
-const TitleContainer = styled.div`
-  padding: 12px 16px 0;
-  border-top: 1px solid ${COLORS.border};
-  background-color: ${COLORS.elevatedBackground};
-`;
-
-const TitleInput = styled.input`
-  width: 100%;
-  background: transparent;
-  border: none;
-  color: ${COLORS.textPrimary};
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 4px 0;
-  outline: none;
-  &::placeholder {
-    color: ${COLORS.textTertiary};
-  }
-`;
-
-const TitleCounter = styled.div`
-  font-size: 0.7rem;
-  text-align: right;
-  color: ${(props) => (props.near ? COLORS.warning : COLORS.textTertiary)};
-  padding: 2px 0 8px;
-`;
-
-const CaptionContainer = styled.div`
-  padding: 8px 16px 16px;
-  background-color: ${COLORS.elevatedBackground};
-`;
-
-const CaptionTextarea = styled.textarea`
-  width: 100%;
-  background: transparent;
-  border: none;
-  color: ${COLORS.textPrimary};
-  font-size: 0.95rem;
-  resize: none;
-  padding: 4px 0;
-  min-height: 48px;
-  outline: none;
-  &::placeholder {
-    color: ${COLORS.textTertiary};
-  }
-`;
-
-const MediaFilesInfo = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-  background-color: ${COLORS.elevatedBackground};
-  font-size: 0.75rem;
-  color: ${COLORS.textSecondary};
-`;
-
-const MediaStats = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const MediaClearButton = styled.button`
-  background: none;
-  border: none;
-  color: ${COLORS.error};
-  font-size: 0.75rem;
-  padding: 4px 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  &:hover {
-    text-decoration: underline;
-  }
-`;
-
-const ErrorMessage = styled.div`
-  background-color: ${COLORS.error}15;
-  border: 1px solid ${COLORS.error}30;
-  color: ${COLORS.error};
-  padding: 8px 16px;
-  margin: 8px 16px;
-  border-radius: 4px;
-  font-size: 0.875rem;
-`;
-
-const PreviewNavigation = styled.div`
-  display: flex;
-  position: absolute;
-  width: 100%;
-  bottom: 16px;
-  justify-content: center;
-  gap: 8px;
-  z-index: 5;
-`;
-
-const PreviewDot = styled.div`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: ${(props) =>
-    props.active ? COLORS.primarySalmon : 'rgba(255,255,255,0.5)'};
-  cursor: pointer;
-  transition: all 0.2s ease;
-  &:hover {
-    transform: scale(1.2);
-  }
-`;
-
-const LoaderOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  color: white;
-  p {
-    margin-top: 16px;
-    font-size: 1rem;
-  }
-`;
-
-const Spinner = styled.div`
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: ${COLORS.primarySalmon};
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-`;
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const TITLE_MAX = 100;
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 const formatFileSize = (bytes) => {
-  if (!bytes) return '0 Bytes';
+  if (!bytes) return '0 B';
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 };
 
 const readFileAsDataURL = (file) =>
   new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
   });
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const CreateStory = () => {
   const navigate = useNavigate();
@@ -542,7 +56,6 @@ const CreateStory = () => {
     loading: authLoading,
   } = useContext(AuthContext);
 
-  // media items: { id, file, previewUrl, type, name, size, uploading, progress, mediaUrl, cloudinaryId, error }
   const [media, setMedia] = useState([]);
   const [title, setTitle] = useState('');
   const [caption, setCaption] = useState('');
@@ -556,7 +69,7 @@ const CreateStory = () => {
     folder: 'sologram',
   });
 
-  // ── Auth guard ──────────────────────────────────────────────────────────────
+  // ── Auth guard ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (
       !authLoading &&
@@ -567,7 +80,7 @@ const CreateStory = () => {
     }
   }, [authLoading, isAuthenticated, user, navigate]);
 
-  // ── Auto-resize textarea ────────────────────────────────────────────────────
+  // ── Auto-resize textarea ───────────────────────────────────────────────────
   useEffect(() => {
     if (textAreaRef.current) {
       textAreaRef.current.style.height = 'auto';
@@ -575,7 +88,7 @@ const CreateStory = () => {
     }
   }, [caption]);
 
-  // ── Scroll selected thumbnail into view ─────────────────────────────────────
+  // ── Scroll selected thumbnail into view ───────────────────────────────────
   useEffect(() => {
     if (!thumbnailContainerRef.current || media.length === 0) return;
     const container = thumbnailContainerRef.current;
@@ -589,14 +102,26 @@ const CreateStory = () => {
     }
   }, [selectedIndex, media.length]);
 
-  // ── Add files ────────────────────────────────────────────────────────────────
+  // ── Cleanup blob URLs on unmount ──────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      media.forEach((item) => {
+        if (item.type === 'video' && item.previewUrl) {
+          try {
+            URL.revokeObjectURL(item.previewUrl);
+          } catch (_) {}
+        }
+      });
+    };
+  }, []); // intentionally empty — runs only on unmount
+
+  // ── Add files ──────────────────────────────────────────────────────────────
   const addFiles = useCallback(
     async (files) => {
       setError('');
 
       if (media.length + files.length > 20) {
-        setError('Maximum 20 media files allowed per story');
-        toast.error('Maximum 20 media files allowed per story');
+        toast.error('Maximum 20 files per story');
         return;
       }
 
@@ -607,26 +132,22 @@ const CreateStory = () => {
         const isImage = file.type.startsWith('image/');
 
         if (isImage && file.size > 20 * 1024 * 1024) {
-          toast.error(`${file.name} exceeds 20MB image limit`);
+          toast.error(`${file.name} exceeds 20 MB`);
           continue;
         }
         if (isVideo && file.size > 300 * 1024 * 1024) {
-          toast.error(`${file.name} exceeds 300MB video limit`);
+          toast.error(`${file.name} exceeds 300 MB`);
           continue;
         }
 
         const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
         let previewUrl = null;
 
-        if (isVideo) {
-          previewUrl = URL.createObjectURL(
-            new Blob([file], { type: file.type })
-          );
-        } else {
-          try {
-            previewUrl = await readFileAsDataURL(file);
-          } catch (_) {}
-        }
+        try {
+          previewUrl = isVideo
+            ? URL.createObjectURL(new Blob([file], { type: file.type }))
+            : await readFileAsDataURL(file);
+        } catch (_) {}
 
         newItems.push({
           id,
@@ -646,21 +167,16 @@ const CreateStory = () => {
       if (newItems.length === 0) return;
 
       setMedia((prev) => {
-        const next = [...prev, ...newItems];
-        // Focus first newly added item
         setSelectedIndex(prev.length);
-        return next;
+        return [...prev, ...newItems];
       });
 
-      // Start Cloudinary uploads immediately — don't wait for submit
-      for (const item of newItems) {
-        startUpload(item.file, item.id, item.type);
-      }
+      for (const item of newItems) startUpload(item.file, item.id, item.type);
     },
     [media.length, startUpload]
   );
 
-  // ── Dropzone ─────────────────────────────────────────────────────────────────
+  // ── Dropzone ───────────────────────────────────────────────────────────────
   const onDrop = useCallback(
     async (accepted, rejected) => {
       rejected.forEach(({ file, errors }) => {
@@ -692,7 +208,7 @@ const CreateStory = () => {
     useFsAccessApi: false,
   });
 
-  // ── Remove item ───────────────────────────────────────────────────────────────
+  // ── Remove ─────────────────────────────────────────────────────────────────
   const removeItem = useCallback(
     (index) => {
       setMedia((prev) => {
@@ -728,19 +244,15 @@ const CreateStory = () => {
     setSelectedIndex(0);
   }, [cancelUpload]);
 
-  // ── Camera / video capture ────────────────────────────────────────────────────
+  // ── Camera capture ─────────────────────────────────────────────────────────
   const captureMedia = useCallback(
     (mediaType) => {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = mediaType === 'video' ? 'video/*' : 'image/*';
       input.capture = 'environment';
-      if (mediaType === 'video') {
-        toast('Maximum video length: 60 seconds', {
-          duration: 3000,
-          icon: '🎥',
-        });
-      }
+      if (mediaType === 'video')
+        toast('Max video length: 60 seconds', { icon: '🎥', duration: 3000 });
       input.onchange = async (e) => {
         const files = Array.from(e.target.files || []);
         if (files.length > 0) await addFiles(files);
@@ -750,20 +262,7 @@ const CreateStory = () => {
     [addFiles]
   );
 
-  // ── Cleanup on unmount ────────────────────────────────────────────────────────
-  useEffect(() => {
-    return () => {
-      media.forEach((item) => {
-        if (item.type === 'video' && item.previewUrl) {
-          try {
-            URL.revokeObjectURL(item.previewUrl);
-          } catch (_) {}
-        }
-      });
-    };
-  }, []); // intentionally empty — runs only on unmount
-
-  // ── Derived state ─────────────────────────────────────────────────────────────
+  // ── Derived state ──────────────────────────────────────────────────────────
   const anyUploading = media.some((m) => m.uploading);
   const anyError = media.some((m) => m.error);
 
@@ -783,58 +282,31 @@ const CreateStory = () => {
     !submitting &&
     title.trim().length > 0;
 
-  // ── Submit — just POST JSON, Cloudinary is already done ──────────────────────
+  // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
-    if (media.length === 0) {
-      toast.error('Please add at least one image or video');
-      return;
-    }
-
-    const trimmedTitle = title.trim();
-    if (!trimmedTitle) {
-      toast.error('Please add a title for your story');
-      return;
-    }
-    if (trimmedTitle.length > TITLE_MAX) {
-      toast.error(`Title must be ${TITLE_MAX} characters or less`);
-      return;
-    }
-    if (anyUploading) {
-      toast.error('Please wait for uploads to finish');
-      return;
-    }
-    if (anyError) {
-      toast.error(
-        'Some files failed to upload. Please remove them and try again.'
-      );
-      return;
-    }
-    if (!navigator.onLine) {
-      toast.error('No internet connection. Please check your network.');
-      return;
-    }
+    if (!media.length) return toast.error('Add at least one image or video');
+    if (!title.trim()) return toast.error('A title is required');
+    if (title.trim().length > TITLE_MAX)
+      return toast.error(`Title must be ${TITLE_MAX} characters or less`);
+    if (anyUploading) return toast.error('Wait for uploads to finish');
+    if (anyError)
+      return toast.error('Some files failed — remove them and try again');
+    if (!navigator.onLine) return toast.error('No internet connection');
 
     setError('');
     setSubmitting(true);
-
-    const toastId = toast.loading('Creating story...');
+    const toastId = toast.loading('Creating story…');
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        '/api/stories',
-        {
-          title: trimmedTitle,
-          caption,
-          media: media.map((m) => ({
-            mediaUrl: m.mediaUrl,
-            cloudinaryId: m.cloudinaryId,
-            mediaType: m.type,
-          })),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
+      await api.createStory({
+        title: title.trim(),
+        caption,
+        media: media.map((m) => ({
+          mediaUrl: m.mediaUrl,
+          cloudinaryId: m.cloudinaryId,
+          mediaType: m.type,
+        })),
+      });
       toast.dismiss(toastId);
       toast.success('Story created!', { icon: '🎉' });
       navigate('/');
@@ -850,78 +322,70 @@ const CreateStory = () => {
     }
   }, [media, title, caption, anyUploading, anyError, navigate]);
 
-  // ── Render ────────────────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────
   if (authLoading) return null;
 
   const selectedItem = media[selectedIndex];
+  const submitLabel = submitting
+    ? 'Posting…'
+    : anyUploading
+    ? 'Uploading…'
+    : 'Publish';
 
   return (
     <PageWrapper>
-      <AppHeader>
-        <BackButton onClick={() => navigate('/')} aria-label='Go back'>
+      {/* ── Top bar ───────────────────────────────────────────────────────── */}
+      <TopBar>
+        <NavBtn onClick={() => navigate('/')} aria-label='Go back'>
           <FaArrowLeft />
-        </BackButton>
-        <HeaderTitle>New Story</HeaderTitle>
-        <ShareButton
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          aria-label={submitting ? 'Posting...' : 'Share'}
-        >
-          {submitting ? 'Posting...' : anyUploading ? 'Uploading...' : 'Share'}
-        </ShareButton>
-      </AppHeader>
+        </NavBtn>
+        <TopBarTitle>New Story</TopBarTitle>
+        <PublishBtn onClick={handleSubmit} disabled={!canSubmit}>
+          {submitLabel}
+        </PublishBtn>
+      </TopBar>
 
       <MainContent>
-        {/* Media count info */}
+        {/* File stats row */}
         {media.length > 0 && (
-          <MediaFilesInfo>
-            <MediaStats>
-              <span>
-                {mediaStats.total} file{mediaStats.total !== 1 ? 's' : ''}
-              </span>
-              {mediaStats.images > 0 && (
-                <span>
-                  • {mediaStats.images} image
-                  {mediaStats.images !== 1 ? 's' : ''}
-                </span>
-              )}
-              {mediaStats.videos > 0 && (
-                <span>
-                  • {mediaStats.videos} video
-                  {mediaStats.videos !== 1 ? 's' : ''}
-                </span>
-              )}
-              {anyUploading && (
-                <span style={{ color: COLORS.primaryMint }}>
-                  • Uploading...
-                </span>
-              )}
-            </MediaStats>
-            <MediaClearButton onClick={removeAll}>
-              <FaTimes size={12} /> Clear all
-            </MediaClearButton>
-          </MediaFilesInfo>
+          <StatsRow>
+            <StatText>
+              {mediaStats.total} file{mediaStats.total !== 1 ? 's' : ''}
+              {mediaStats.images > 0 &&
+                ` · ${mediaStats.images} photo${
+                  mediaStats.images !== 1 ? 's' : ''
+                }`}
+              {mediaStats.videos > 0 &&
+                ` · ${mediaStats.videos} video${
+                  mediaStats.videos !== 1 ? 's' : ''
+                }`}
+              {anyUploading && <UploadingBadge>uploading…</UploadingBadge>}
+            </StatText>
+            <ClearBtn onClick={removeAll}>
+              <FaTimes size={10} /> Clear all
+            </ClearBtn>
+          </StatsRow>
         )}
 
-        {error && <ErrorMessage>{error}</ErrorMessage>}
+        {error && <InlineError>{error}</InlineError>}
 
-        {/* Main preview */}
+        {/* ── Main preview / dropzone ──────────────────────────────────── */}
         {media.length > 0 ? (
-          <MediaPreviewContainer>
-            {selectedItem ? (
-              selectedItem.type === 'image' ? (
+          <PreviewFrame>
+            {selectedItem &&
+              (selectedItem.type === 'image' ? (
                 selectedItem.previewUrl ? (
-                  <MainPreviewImage
+                  <PreviewImg
                     src={selectedItem.previewUrl}
                     alt={`Preview ${selectedIndex + 1}`}
                   />
                 ) : (
-                  <FaImage
-                    style={{ fontSize: '3rem', color: COLORS.textTertiary }}
-                  />
+                  <PlaceholderIcon>
+                    <FaImage />
+                  </PlaceholderIcon>
                 )
               ) : selectedItem.previewUrl ? (
-                <MainPreviewVideo>
+                <PreviewVideoWrap>
                   <video
                     src={selectedItem.previewUrl}
                     controls
@@ -929,191 +393,757 @@ const CreateStory = () => {
                     playsInline
                     preload='metadata'
                   />
-                  <VideoIcon>
+                  <VideoTag>
                     <FaVideo />
-                  </VideoIcon>
-                </MainPreviewVideo>
+                  </VideoTag>
+                </PreviewVideoWrap>
               ) : (
-                <FaVideo
-                  style={{ fontSize: '3rem', color: COLORS.textTertiary }}
-                />
-              )
-            ) : null}
+                <PlaceholderIcon>
+                  <FaVideo />
+                </PlaceholderIcon>
+              ))}
 
             {/* Upload progress overlay */}
             {selectedItem?.uploading && (
-              <UploadOverlay>
-                <ProgressRing />
-                <span>{selectedItem.progress || 0}%</span>
-              </UploadOverlay>
+              <MediaOverlay>
+                <SpinRing />
+                <OverlayText>{selectedItem.progress || 0}%</OverlayText>
+              </MediaOverlay>
             )}
 
             {/* Error overlay */}
             {selectedItem?.error && (
-              <UploadOverlay style={{ background: 'rgba(255,107,107,0.5)' }}>
-                <span>Upload failed</span>
-                <span style={{ fontSize: '0.75rem' }}>
-                  Remove and try again
-                </span>
-              </UploadOverlay>
+              <MediaOverlay $error>
+                <OverlayText>Upload failed</OverlayText>
+                <OverlaySubText>Remove and try again</OverlaySubText>
+              </MediaOverlay>
             )}
 
-            <RemoveButton
+            <RemoveBtn
               onClick={() => removeItem(selectedIndex)}
               aria-label='Remove media'
             >
               <FaTimes />
-            </RemoveButton>
+            </RemoveBtn>
 
+            {/* Pill dots */}
             {media.length > 1 && (
-              <PreviewNavigation>
+              <DotRow>
                 {media.map((_, i) => (
-                  <PreviewDot
+                  <Dot
                     key={i}
-                    active={i === selectedIndex}
+                    $active={i === selectedIndex}
                     onClick={() => setSelectedIndex(i)}
                   />
                 ))}
-              </PreviewNavigation>
+              </DotRow>
             )}
-          </MediaPreviewContainer>
+          </PreviewFrame>
         ) : (
-          <DropzoneArea {...getRootProps()} isDragActive={isDragActive}>
+          <Dropzone {...getRootProps()} $active={isDragActive}>
             <input {...getInputProps()} />
             {isDragActive ? (
-              <DragActiveContent>
-                <UploadIcon>
+              <DropContent>
+                <DropIcon $active>
                   <FaUpload />
-                </UploadIcon>
-                <p>Drop your files here</p>
-              </DragActiveContent>
+                </DropIcon>
+                <DropLabel>Drop your files here</DropLabel>
+              </DropContent>
             ) : (
-              <DropzoneContent>
-                <UploadIcon>
+              <DropContent>
+                <DropIcon>
                   <FaPlusCircle />
-                </UploadIcon>
-                <p>Add photos and videos to your story</p>
-                <ActionButtonsContainer>
-                  <ActionButton
+                </DropIcon>
+                <DropLabel>Add photos &amp; videos to your story</DropLabel>
+                <ActionGrid>
+                  <ActionBtn
                     onClick={(e) => {
                       e.stopPropagation();
                       open();
                     }}
-                    aria-label='Select from gallery'
+                    aria-label='Gallery'
                   >
                     <FaImage />
                     <span>Gallery</span>
-                  </ActionButton>
-                  <ActionButton
+                  </ActionBtn>
+                  <ActionBtn
                     onClick={(e) => {
                       e.stopPropagation();
                       captureMedia('image');
                     }}
-                    aria-label='Take a photo'
+                    aria-label='Camera'
                   >
                     <FaCamera />
                     <span>Camera</span>
-                  </ActionButton>
-                  <ActionButton
+                  </ActionBtn>
+                  <ActionBtn
                     onClick={(e) => {
                       e.stopPropagation();
                       captureMedia('video');
                     }}
-                    aria-label='Record a video'
+                    aria-label='Video'
                   >
                     <FaVideo />
                     <span>Video</span>
-                  </ActionButton>
-                </ActionButtonsContainer>
-              </DropzoneContent>
+                  </ActionBtn>
+                </ActionGrid>
+              </DropContent>
             )}
-          </DropzoneArea>
+          </Dropzone>
         )}
 
-        {/* Thumbnails */}
+        {/* ── Thumbnail strip ──────────────────────────────────────────── */}
         {media.length > 0 && (
-          <ThumbnailContainer ref={thumbnailContainerRef}>
+          <ThumbStrip ref={thumbnailContainerRef}>
             {media.map((item, index) => (
-              <ThumbnailItem
+              <Thumb
                 key={item.id}
-                isSelected={index === selectedIndex}
+                $selected={index === selectedIndex}
                 onClick={() => setSelectedIndex(index)}
               >
                 {item.type === 'image' ? (
                   item.previewUrl ? (
-                    <ThumbnailImage
+                    <ThumbImg
                       src={item.previewUrl}
-                      alt={`Thumbnail ${index + 1}`}
+                      alt={`Thumb ${index + 1}`}
                       loading='lazy'
                     />
                   ) : (
                     <FaImage color={COLORS.textTertiary} />
                   )
                 ) : (
-                  <ThumbnailVideo>
+                  <ThumbVideoWrap>
                     {item.previewUrl ? (
                       <video src={item.previewUrl} />
                     ) : (
                       <FaVideo color={COLORS.textTertiary} />
                     )}
-                    <ThumbnailVideoIcon>
+                    <ThumbVideoIcon>
                       <FaVideo />
-                    </ThumbnailVideoIcon>
-                  </ThumbnailVideo>
+                    </ThumbVideoIcon>
+                  </ThumbVideoWrap>
                 )}
-              </ThumbnailItem>
+                {item.uploading && (
+                  <ThumbOverlay>
+                    <MiniSpinner />
+                  </ThumbOverlay>
+                )}
+                {item.error && <ThumbOverlay $error />}
+              </Thumb>
             ))}
+
             {media.length < 20 && (
-              <AddMediaThumbnail
+              <AddThumb
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   open();
                 }}
-                aria-label='Add more media'
+                aria-label='Add more'
               >
                 <FaPlusCircle />
-              </AddMediaThumbnail>
+              </AddThumb>
             )}
-          </ThumbnailContainer>
+          </ThumbStrip>
         )}
 
-        {/* Title — required, max 100 chars */}
-        <TitleContainer>
-          <TitleInput
+        {/* ── Title ────────────────────────────────────────────────────── */}
+        <FieldBlock>
+          <FieldInput
             value={title}
             onChange={(e) => setTitle(e.target.value.slice(0, TITLE_MAX))}
-            placeholder='Add a title... (required)'
+            placeholder='Title (required)'
             aria-label='Story title'
             maxLength={TITLE_MAX}
+            $bold
           />
-          <TitleCounter near={title.length > TITLE_MAX * 0.85}>
+          <CharCount $warn={title.length > TITLE_MAX * 0.85}>
             {title.length}/{TITLE_MAX}
-          </TitleCounter>
-        </TitleContainer>
+          </CharCount>
+        </FieldBlock>
 
-        {/* Caption — optional */}
-        <CaptionContainer>
-          <CaptionTextarea
+        {/* ── Caption ──────────────────────────────────────────────────── */}
+        <FieldBlock $borderless>
+          <FieldTextarea
             ref={textAreaRef}
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
-            placeholder='Write a caption... (optional)'
+            placeholder='Caption (optional)'
             rows={1}
             aria-label='Story caption'
             maxLength={2200}
           />
-        </CaptionContainer>
+        </FieldBlock>
       </MainContent>
 
+      {/* Full-page submit overlay */}
       {submitting && (
-        <LoaderOverlay>
-          <Spinner />
-          <p>Creating your story...</p>
-        </LoaderOverlay>
+        <SubmitOverlay>
+          <SpinRing $large />
+          <OverlayText>Creating your story…</OverlayText>
+        </SubmitOverlay>
       )}
     </PageWrapper>
   );
 };
 
 export default CreateStory;
+
+// ─── Animations ───────────────────────────────────────────────────────────────
+
+const spin = keyframes`to { transform: rotate(360deg); }`;
+
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to   { opacity: 1; }
+`;
+
+// ─── Page shell ───────────────────────────────────────────────────────────────
+
+const PageWrapper = styled.div`
+  background: ${COLORS.background};
+  min-height: 100vh;
+  color: ${COLORS.textPrimary};
+  display: flex;
+  flex-direction: column;
+
+  @supports (-webkit-touch-callout: none) {
+    min-height: -webkit-fill-available;
+  }
+`;
+
+const MainContent = styled.main`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 32px;
+`;
+
+// ─── Top bar ──────────────────────────────────────────────────────────────────
+
+const TopBar = styled.header`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: ${COLORS.cardBackground};
+  border-bottom: 1px solid ${COLORS.border};
+  position: sticky;
+  top: 0;
+  z-index: 10;
+`;
+
+const NavBtn = styled.button`
+  background: none;
+  border: none;
+  color: ${COLORS.textSecondary};
+  font-size: 1.1rem;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: color 0.2s, transform 0.2s;
+  min-width: 40px;
+
+  &:hover {
+    color: ${COLORS.textPrimary};
+    transform: translateX(-2px);
+  }
+`;
+
+const TopBarTitle = styled.h1`
+  font-size: 1rem;
+  font-weight: 700;
+  color: ${COLORS.textPrimary};
+  margin: 0;
+  flex: 1;
+  text-align: center;
+  letter-spacing: -0.01em;
+`;
+
+const PublishBtn = styled.button`
+  min-width: 68px;
+  padding: 7px 14px;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
+  );
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px ${COLORS.primarySalmon}44;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px ${COLORS.primarySalmon}55;
+  }
+
+  &:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+`;
+
+// ─── Stats row ────────────────────────────────────────────────────────────────
+
+const StatsRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 16px;
+  background: ${COLORS.elevatedBackground};
+  border-bottom: 1px solid ${COLORS.border};
+`;
+
+const StatText = styled.span`
+  font-size: 0.75rem;
+  color: ${COLORS.textSecondary};
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+const UploadingBadge = styled.span`
+  color: ${COLORS.primaryMint};
+  font-weight: 600;
+`;
+
+const ClearBtn = styled.button`
+  background: none;
+  border: none;
+  color: ${COLORS.error};
+  font-size: 0.72rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+  transition: background 0.2s;
+
+  &:hover {
+    background: ${COLORS.error}18;
+  }
+`;
+
+const InlineError = styled.div`
+  background: ${COLORS.error}12;
+  border: 1px solid ${COLORS.error}30;
+  color: ${COLORS.error};
+  padding: 9px 16px;
+  margin: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+`;
+
+// ─── Preview frame ────────────────────────────────────────────────────────────
+
+const PreviewFrame = styled.div`
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  position: relative;
+  background: ${COLORS.elevatedBackground};
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid ${COLORS.border};
+`;
+
+const PreviewImg = styled.img`
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+`;
+
+const PreviewVideoWrap = styled.div`
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  video {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+`;
+
+const VideoTag = styled.div`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+`;
+
+const PlaceholderIcon = styled.div`
+  font-size: 3rem;
+  color: ${COLORS.textTertiary};
+`;
+
+const MediaOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  background: ${(p) =>
+    p.$error ? 'rgba(255,107,107,0.55)' : 'rgba(0,0,0,0.55)'};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+`;
+
+const OverlayText = styled.span`
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+`;
+
+const OverlaySubText = styled.span`
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.75);
+`;
+
+const RemoveBtn = styled.button`
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: background 0.2s, transform 0.2s;
+  z-index: 2;
+
+  &:hover {
+    background: ${COLORS.primarySalmon}cc;
+    transform: scale(1.1);
+  }
+`;
+
+// ─── Pill dots ────────────────────────────────────────────────────────────────
+
+const DotRow = styled.div`
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  z-index: 2;
+`;
+
+const Dot = styled.div`
+  height: 4px;
+  width: ${(p) => (p.$active ? '20px' : '4px')};
+  border-radius: 2px;
+  background: ${(p) => (p.$active ? '#fff' : 'rgba(255,255,255,0.38)')};
+  cursor: pointer;
+  transition: width 0.28s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s;
+`;
+
+// ─── Dropzone ─────────────────────────────────────────────────────────────────
+
+const Dropzone = styled.div`
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed
+    ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.border)};
+  background: ${(p) =>
+    p.$active ? `${COLORS.primarySalmon}08` : COLORS.elevatedBackground};
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+
+  &:hover {
+    border-color: ${COLORS.primarySalmon};
+    background: ${COLORS.primarySalmon}06;
+  }
+`;
+
+const DropContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  gap: 8px;
+`;
+
+const DropIcon = styled.div`
+  font-size: 2.8rem;
+  color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textTertiary)};
+  margin-bottom: 8px;
+  transition: color 0.2s;
+`;
+
+const DropLabel = styled.p`
+  font-size: 0.9rem;
+  color: ${COLORS.textSecondary};
+  margin: 0 0 16px;
+`;
+
+const ActionGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+`;
+
+const ActionBtn = styled.button`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 10px;
+  border-radius: 10px;
+  border: 1px solid ${COLORS.border};
+  background: ${COLORS.cardBackground};
+  color: ${COLORS.textSecondary};
+  font-size: 0.8rem;
+  font-weight: 500;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  svg {
+    font-size: 1.3rem;
+    transition: color 0.2s;
+  }
+
+  &:hover {
+    border-color: ${COLORS.primarySalmon};
+    color: ${COLORS.primarySalmon};
+    background: ${COLORS.primarySalmon}0a;
+    transform: translateY(-2px);
+    svg {
+      color: ${COLORS.primarySalmon};
+    }
+  }
+`;
+
+// ─── Thumbnail strip ──────────────────────────────────────────────────────────
+
+const ThumbStrip = styled.div`
+  display: flex;
+  overflow-x: auto;
+  padding: 10px 12px;
+  gap: 8px;
+  background: ${COLORS.elevatedBackground};
+  border-top: 1px solid ${COLORS.border};
+  border-bottom: 1px solid ${COLORS.border};
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+`;
+
+const Thumb = styled.div`
+  width: 58px;
+  height: 58px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 2px solid
+    ${(p) => (p.$selected ? COLORS.primarySalmon : 'transparent')};
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${COLORS.cardBackground};
+  transition: transform 0.2s, border-color 0.2s;
+  box-shadow: ${(p) =>
+    p.$selected ? `0 0 0 1px ${COLORS.primarySalmon}` : 'none'};
+
+  &:hover {
+    transform: scale(1.06);
+  }
+`;
+
+const ThumbImg = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+`;
+
+const ThumbVideoWrap = styled.div`
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+`;
+
+const ThumbVideoIcon = styled.div`
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.5rem;
+`;
+
+const ThumbOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  background: ${(p) => (p.$error ? `${COLORS.error}88` : 'rgba(0,0,0,0.45)')};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const AddThumb = styled.div`
+  width: 58px;
+  height: 58px;
+  border-radius: 8px;
+  background: ${COLORS.cardBackground};
+  border: 1px dashed ${COLORS.border};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  color: ${COLORS.textTertiary};
+  font-size: 1.4rem;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: ${COLORS.primarySalmon};
+    color: ${COLORS.primarySalmon};
+    background: ${COLORS.primarySalmon}0a;
+    transform: scale(1.06);
+  }
+`;
+
+// ─── Spinners ─────────────────────────────────────────────────────────────────
+
+const SpinRing = styled.div`
+  width: ${(p) => (p.$large ? '48px' : '32px')};
+  height: ${(p) => (p.$large ? '48px' : '32px')};
+  border: ${(p) => (p.$large ? '4px' : '3px')} solid rgba(255, 255, 255, 0.2);
+  border-top-color: ${COLORS.primarySalmon};
+  border-radius: 50%;
+  animation: ${spin} 0.8s linear infinite;
+`;
+
+const MiniSpinner = styled.div`
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: ${COLORS.primaryMint};
+  border-radius: 50%;
+  animation: ${spin} 0.8s linear infinite;
+`;
+
+// ─── Text fields ──────────────────────────────────────────────────────────────
+
+const FieldBlock = styled.div`
+  padding: ${(p) => (p.$borderless ? '8px 16px 16px' : '10px 16px 0')};
+  background: ${COLORS.elevatedBackground};
+  border-top: ${(p) => (p.$borderless ? 'none' : `1px solid ${COLORS.border}`)};
+  margin-top: 1px;
+`;
+
+const FieldInput = styled.input`
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: ${COLORS.textPrimary};
+  font-size: ${(p) => (p.$bold ? '1rem' : '0.95rem')};
+  font-weight: ${(p) => (p.$bold ? 700 : 400)};
+  padding: 4px 0;
+  outline: none;
+
+  &::placeholder {
+    color: ${COLORS.textTertiary};
+  }
+`;
+
+const CharCount = styled.div`
+  font-size: 0.68rem;
+  text-align: right;
+  color: ${(p) => (p.$warn ? COLORS.primarySalmon : COLORS.textTertiary)};
+  padding: 2px 0 8px;
+  transition: color 0.2s;
+`;
+
+const FieldTextarea = styled.textarea`
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: ${COLORS.textPrimary};
+  font-size: 0.9rem;
+  resize: none;
+  padding: 4px 0;
+  min-height: 44px;
+  outline: none;
+  line-height: 1.5;
+
+  &::placeholder {
+    color: ${COLORS.textTertiary};
+  }
+`;
+
+// ─── Submit overlay ───────────────────────────────────────────────────────────
+
+const SubmitOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 100;
+  animation: ${fadeIn} 0.2s ease;
+`;
