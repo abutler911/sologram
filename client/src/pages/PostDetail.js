@@ -1,351 +1,260 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import styled from "styled-components";
-import axios from "axios";
-import { toast } from "react-hot-toast";
-import { format } from "date-fns";
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  useRef,
+  useCallback,
+} from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import styled, { keyframes, css } from 'styled-components';
+import { toast } from 'react-hot-toast';
+import { format } from 'date-fns';
 import {
   FaHeart,
   FaRegHeart,
   FaEdit,
   FaTrash,
-  FaCalendarAlt,
   FaArrowLeft,
   FaChevronLeft,
   FaChevronRight,
-  FaTag,
   FaShare,
-  FaBookmark,
-  FaRegBookmark,
-  FaClock,
   FaTimes,
   FaExpandAlt,
   FaCompressAlt,
-  FaRegComment,
-  FaLocationArrow,
   FaMapMarkerAlt,
-} from "react-icons/fa";
-import { useSwipeable } from "react-swipeable";
-import { AuthContext } from "../context/AuthContext";
-import { useDeleteModal } from "../context/DeleteModalContext";
-import { COLORS } from "../theme";
-import ReactGA from "react-ga4";
+  FaComment,
+  FaEllipsisV,
+} from 'react-icons/fa';
+import { useSwipeable } from 'react-swipeable';
+import { AuthContext } from '../context/AuthContext';
+import { useDeleteModal } from '../context/DeleteModalContext';
+import { api } from '../services/api';
+import { getTransformedImageUrl } from '../utils/cloudinary';
+import { COLORS } from '../theme';
+import authorImg from '../assets/andy.jpg';
+import ReactGA from 'react-ga4';
+
+const AUTHOR_NAME = 'Andrew Butler';
+const AUTHOR_IMAGE = authorImg;
+
+// ─── Animations ───────────────────────────────────────────────────────────────
+
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0);    }
+`;
+
+const heartPop = keyframes`
+  0%   { transform: scale(1);   }
+  30%  { transform: scale(1.5); }
+  60%  { transform: scale(0.9); }
+  100% { transform: scale(1);   }
+`;
+
+const dropIn = keyframes`
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+`;
+
+const shimmer = keyframes`
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+`;
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const PostDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
-  const [showFullscreenMedia, setShowFullscreenMedia] = useState(false);
-  const [mediaHovering, setMediaHovering] = useState(false);
-  const [showMobileControls, setShowMobileControls] = useState(false);
-  const [readingTime, setReadingTime] = useState("< 1 min read");
-  const [showFullscreenControls, setShowFullscreenControls] = useState(true);
-  const contentRef = useRef(null);
-  const fullscreenTimeoutRef = useRef(null);
-  const mobileControlsTimeoutRef = useRef(null);
+  const [showFullscreen, setShowFullscreen] = useState(false);
+  const [showFsControls, setShowFsControls] = useState(true);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const [readingTime, setReadingTime] = useState('< 1 min');
+
+  const fsTimeoutRef = useRef(null);
+  const adminMenuRef = useRef(null);
 
   const { isAuthenticated } = useContext(AuthContext);
   const { showDeleteModal } = useDeleteModal();
-  const navigate = useNavigate();
 
-  // Add scroll progress tracking
+  // ── Scroll progress ─────────────────────────────────────────────────────
   useEffect(() => {
-    const handleScroll = () => {
-      const totalHeight =
-        document.documentElement.scrollHeight - window.innerHeight;
-      const progress = (window.scrollY / totalHeight) * 100;
+    const onScroll = () => {
+      const total = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = total > 0 ? (window.scrollY / total) * 100 : 0;
       setScrollProgress(progress);
     };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Calculate reading time
-  const calculateReadingTime = (content) => {
-    if (!content) return "< 1 min read";
-    const wordsPerMinute = 200;
-    const words = content.trim().split(/\s+/).length;
-    const minutes = Math.ceil(words / wordsPerMinute);
-    return `${minutes} min read`;
-  };
+  // ── Click-away admin menu ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!showAdminMenu) return;
+    const h = (e) => {
+      if (adminMenuRef.current && !adminMenuRef.current.contains(e.target))
+        setShowAdminMenu(false);
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [showAdminMenu]);
 
-  // Navigate to previous media
-  const prevMedia = () => {
-    if (post?.media && post.media.length > 0) {
-      setActiveMediaIndex((prev) =>
-        prev === 0 ? post.media.length - 1 : prev - 1
-      );
-    }
-  };
-
-  // Navigate to next media
-  const nextMedia = () => {
-    if (post?.media && post.media.length > 0) {
-      setActiveMediaIndex((prev) =>
-        prev === post.media.length - 1 ? 0 : prev + 1
-      );
-    }
-  };
-
-  // Handle mobile touch interaction for showing controls
-  const handleMediaTouch = () => {
-    if (window.innerWidth <= 768) {
-      setShowMobileControls(true);
-
-      // Clear existing timeout
-      if (mobileControlsTimeoutRef.current) {
-        clearTimeout(mobileControlsTimeoutRef.current);
-      }
-
-      // Hide controls after 3 seconds of inactivity
-      mobileControlsTimeoutRef.current = setTimeout(() => {
-        setShowMobileControls(false);
-      }, 3000);
-    }
-  };
-
-  // Configure swipe handlers
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: nextMedia,
-    onSwipedRight: prevMedia,
-    preventDefaultTouchmoveEvent: true,
-    trackMouse: true,
-    trackTouch: true,
-  });
-
-  // Fetch post data
+  // ── Fetch post ───────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchPost = async () => {
       try {
         setLoading(true);
+        const data = await api.getPost(id);
+        setPost(data);
 
-        const response = await axios.get(`/api/posts/${id}`);
-        setPost(response.data.data);
-
-        // Calculate reading time
-        if (response.data.data.content) {
-          const time = calculateReadingTime(response.data.data.content);
-          setReadingTime(time);
+        if (data.content) {
+          const words = data.content.trim().split(/\s+/).length;
+          const mins = Math.ceil(words / 200);
+          setReadingTime(`${mins} min read`);
         }
 
-        setError(null);
-        ReactGA.event("view_post", {
-          post_id: response.data.data._id,
-          post_title: response.data.data.caption,
+        ReactGA.event('view_post', {
+          post_id: data._id,
+          post_title: data.title,
         });
       } catch (err) {
-        console.error("Error fetching post:", err);
+        console.error('[PostDetail] fetch error:', err);
         setError(
-          "Failed to load post. It may have been deleted or does not exist."
+          'Failed to load post. It may have been deleted or does not exist.'
         );
-        toast.error("Failed to load post");
+        toast.error('Failed to load post');
       } finally {
         setLoading(false);
       }
     };
-
     fetchPost();
   }, [id]);
 
-  // Cleanup timeouts on unmount
+  // ── Keyboard nav ─────────────────────────────────────────────────────────
   useEffect(() => {
-    return () => {
-      if (mobileControlsTimeoutRef.current) {
-        clearTimeout(mobileControlsTimeoutRef.current);
-      }
-      if (fullscreenTimeoutRef.current) {
-        clearTimeout(fullscreenTimeoutRef.current);
-      }
+    if (!post?.media?.length) return;
+    const onKey = (e) => {
+      if (e.key === 'ArrowLeft') setActiveMediaIndex((p) => Math.max(p - 1, 0));
+      if (e.key === 'ArrowRight')
+        setActiveMediaIndex((p) => Math.min(p + 1, post.media.length - 1));
+      if (e.key === 'Escape' && showFullscreen) setShowFullscreen(false);
     };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [post, showFullscreen]);
+
+  // ── Fullscreen auto-hide controls ────────────────────────────────────────
+  const resetFsTimeout = useCallback(() => {
+    clearTimeout(fsTimeoutRef.current);
+    setShowFsControls(true);
+    fsTimeoutRef.current = setTimeout(() => setShowFsControls(false), 3000);
   }, []);
 
-  const handleDeletePost = () => {
-    if (!post) return;
+  useEffect(() => {
+    if (!showFullscreen) return;
+    resetFsTimeout();
+    document.addEventListener('mousemove', resetFsTimeout);
+    document.addEventListener('touchstart', resetFsTimeout);
+    return () => {
+      clearTimeout(fsTimeoutRef.current);
+      document.removeEventListener('mousemove', resetFsTimeout);
+      document.removeEventListener('touchstart', resetFsTimeout);
+    };
+  }, [showFullscreen, resetFsTimeout]);
 
-    const postPreview =
-      post.title || post.caption || post.content || "this post";
-    const truncatedPreview =
-      postPreview.length > 50
-        ? postPreview.substring(0, 50) + "..."
-        : postPreview;
-
-    showDeleteModal({
-      title: "Delete Post",
-      message:
-        "Are you sure you want to delete this post? This action cannot be undone and all likes, comments, and interactions will be permanently lost.",
-      confirmText: "Delete Post",
-      cancelText: "Keep Post",
-      itemName: truncatedPreview,
-      onConfirm: async () => {
-        try {
-          await axios.delete(`/api/posts/${id}`);
-          toast.success("Post deleted successfully");
-          navigate("/");
-        } catch (err) {
-          console.error("Error deleting post:", err);
-          toast.error("Failed to delete post");
-        }
-      },
-      onCancel: () => {
-        console.log("Post deletion cancelled");
-      },
-      destructive: true,
-    });
-  };
+  // ── Handlers ─────────────────────────────────────────────────────────────
 
   const handleLike = async () => {
-    if (!isAuthenticated || !post) {
-      toast.error("You must be logged in to like posts.");
+    if (!isAuthenticated || !post || isLiked) {
+      if (!isAuthenticated) toast.error('Log in to like posts');
       return;
     }
-
     try {
-      await axios.post(`/api/posts/${id}/like`);
-
+      await api.likePost(id);
       setIsLiked(true);
-      setPost((prevPost) => ({
-        ...prevPost,
-        likes: (prevPost.likes || 0) + 1,
-      }));
-
+      setPost((p) => ({ ...p, likes: (p.likes || 0) + 1 }));
       setIsLikeAnimating(true);
       setTimeout(() => setIsLikeAnimating(false), 500);
-    } catch (error) {
-      console.error("Failed to like post:", error);
-      toast.error("Failed to like post.");
+    } catch (err) {
+      toast.error('Failed to like post');
     }
   };
 
-  // Handle bookmark
-  const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-    toast.success(
-      isBookmarked ? "Removed from bookmarks" : "Added to bookmarks"
-    );
-  };
-
-  // Toggle fullscreen media
-  const toggleFullscreen = () => {
-    setShowFullscreenMedia(!showFullscreenMedia);
-    if (!showFullscreenMedia) {
-      // Show controls when entering fullscreen
-      setShowFullscreenControls(true);
-      resetFullscreenTimeout();
-    } else {
-      // Clear timeout when exiting fullscreen
-      if (fullscreenTimeoutRef.current) {
-        clearTimeout(fullscreenTimeoutRef.current);
-      }
-    }
-  };
-
-  // Reset the auto-hide timer for fullscreen controls
-  const resetFullscreenTimeout = () => {
-    if (fullscreenTimeoutRef.current) {
-      clearTimeout(fullscreenTimeoutRef.current);
-    }
-
-    setShowFullscreenControls(true);
-
-    fullscreenTimeoutRef.current = setTimeout(() => {
-      setShowFullscreenControls(false);
-    }, 3000); // Hide after 3 seconds
-  };
-
-  // Handle user interaction in fullscreen mode
-  const handleFullscreenInteraction = () => {
-    if (showFullscreenMedia) {
-      resetFullscreenTimeout();
-    }
-  };
-
-  // Set up fullscreen interaction listeners
-  useEffect(() => {
-    if (showFullscreenMedia) {
-      // Show controls initially and start timeout
-      resetFullscreenTimeout();
-
-      const handleMouseMove = () => handleFullscreenInteraction();
-      const handleTouchStart = () => handleFullscreenInteraction();
-      const handleKeyDown = () => handleFullscreenInteraction();
-
-      // Add event listeners
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("touchstart", handleTouchStart);
-      document.addEventListener("keydown", handleKeyDown);
-
-      return () => {
-        // Clean up event listeners
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("touchstart", handleTouchStart);
-        document.removeEventListener("keydown", handleKeyDown);
-
-        // Clear timeout
-        if (fullscreenTimeoutRef.current) {
-          clearTimeout(fullscreenTimeoutRef.current);
-        }
-      };
-    }
-  }, [showFullscreenMedia]);
-
-  // Share post
   const handleShare = () => {
     if (navigator.share) {
       navigator
-        .share({
-          title: post.caption,
-          text: post.content?.substring(0, 100) + "...",
-          url: window.location.href,
-        })
-        .catch((err) => console.error("Error sharing:", err));
+        .share({ title: post?.title, url: window.location.href })
+        .catch(() => {});
     } else {
-      // Fallback - copy to clipboard
       navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard");
+      toast.success('Link copied to clipboard');
     }
   };
 
-  // Open location in Google Maps
-  const openInMaps = (location) => {
-    if (!location) return;
-
-    const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(
-      location
-    )}`;
-    window.open(mapsUrl, "_blank", "noopener,noreferrer");
+  const handleDeletePost = () => {
+    if (!post) return;
+    showDeleteModal({
+      title: 'Delete Post?',
+      message:
+        'This will permanently remove this post and all its interactions.',
+      confirmText: 'Delete Post',
+      onConfirm: async () => {
+        try {
+          await api.deletePost(id);
+          toast.success('Post deleted');
+          navigate('/');
+        } catch {
+          toast.error('Failed to delete post');
+        }
+      },
+    });
+    setShowAdminMenu(false);
   };
 
-  // Key press handler for left/right navigation
-  useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (post?.media?.length > 1) {
-        if (e.key === "ArrowLeft") {
-          prevMedia();
-        } else if (e.key === "ArrowRight") {
-          nextMedia();
-        }
-      }
-    };
+  const handleLocationClick = (location) => {
+    const enc = encodeURIComponent(location);
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    window.open(
+      isIOS
+        ? `https://maps.apple.com/?q=${enc}`
+        : `https://www.google.com/maps/search/?api=1&query=${enc}`,
+      '_blank'
+    );
+  };
 
-    window.addEventListener("keydown", handleKeyPress);
-    return () => {
-      window.removeEventListener("keydown", handleKeyPress);
-    };
-  }, [post]);
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () =>
+      post?.media &&
+      setActiveMediaIndex((p) => Math.min(p + 1, post.media.length - 1)),
+    onSwipedRight: () => setActiveMediaIndex((p) => Math.max(p - 1, 0)),
+    trackMouse: true,
+  });
 
+  const mediaCount = post?.media?.length || 0;
+
+  // ── Loading skeleton ─────────────────────────────────────────────────────
   if (loading) {
     return (
       <PageWrapper>
-        <Container>
-          <LoadingMessage>Loading post...</LoadingMessage>
-        </Container>
+        <ProgressBarContainer>
+          <ProgressBar $width='0%' />
+        </ProgressBarContainer>
+        <SkeletonHero />
+        <SkeletonContent>
+          <SkeletonLine $w='60%' $h='2rem' />
+          <SkeletonLine $w='90%' $h='1rem' />
+          <SkeletonLine $w='80%' $h='1rem' />
+          <SkeletonLine $w='40%' $h='1rem' />
+        </SkeletonContent>
       </PageWrapper>
     );
   }
@@ -353,1065 +262,908 @@ const PostDetail = () => {
   if (error || !post) {
     return (
       <PageWrapper>
-        <Container>
-          <ErrorContainer>
-            <ErrorMessage>{error || "Post not found"}</ErrorMessage>
-            <BackButton to="/">
-              <FaArrowLeft />
-              <span>Back to Home</span>
-            </BackButton>
-          </ErrorContainer>
-        </Container>
+        <ErrorWrap>
+          <ErrorMsg>{error || 'Post not found'}</ErrorMsg>
+          <BackBtn to='/'>
+            <FaArrowLeft /> Back to Home
+          </BackBtn>
+        </ErrorWrap>
       </PageWrapper>
     );
   }
 
-  // Format date to calendar date format: MMMM d, yyyy (e.g., March 18, 2025)
-  const formattedDate = format(new Date(post.createdAt), "MMMM d, yyyy");
+  const formattedDate = format(
+    new Date(post.eventDate || post.createdAt),
+    'MMMM d, yyyy'
+  );
 
   return (
     <PageWrapper>
-      {/* Reading Progress Bar */}
+      {/* Reading progress */}
       <ProgressBarContainer>
-        <ProgressBar width={`${scrollProgress}%`} />
+        <ProgressBar $width={`${scrollProgress}%`} />
       </ProgressBarContainer>
 
-      <Container>
-        <BackButton to="/">
-          <FaArrowLeft />
-          <span>Back to Home</span>
-        </BackButton>
+      {/* Back nav */}
+      <TopNav>
+        <BackBtn to='/'>
+          <FaArrowLeft /> Feed
+        </BackBtn>
+      </TopNav>
 
-        <PostContainer>
-          {post.media && post.media.length > 0 && (
-            <MediaSection>
-              <MediaContainer
-                {...swipeHandlers}
-                onMouseEnter={() => setMediaHovering(true)}
-                onMouseLeave={() => setMediaHovering(false)}
-                onTouchStart={handleMediaTouch}
-              >
-                <MediaTrack
-                  style={{
-                    transform: `translateX(-${activeMediaIndex * 100}%)`,
-                  }}
+      <ArticleWrap>
+        {/* ── HERO MEDIA ─────────────────────────────────────────────────── */}
+        {mediaCount > 0 && (
+          <HeroFrame {...swipeHandlers}>
+            <MediaTrack
+              style={{ transform: `translateX(-${activeMediaIndex * 100}%)` }}
+            >
+              {post.media.map((m, i) => (
+                <MediaSlide key={m._id || i}>
+                  {m.mediaType === 'video' ? (
+                    <HeroVid src={m.mediaUrl} controls preload='metadata' />
+                  ) : (
+                    <HeroImg
+                      src={getTransformedImageUrl(m.mediaUrl, {
+                        width: 1200,
+                        height: 1500,
+                        crop: 'fill',
+                      })}
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                      alt={post.title || 'Sologram'}
+                    />
+                  )}
+                </MediaSlide>
+              ))}
+            </MediaTrack>
+
+            {/* Bottom gradient scrim */}
+            <BottomScrim />
+
+            {/* Author overlay — bottom-left */}
+            <AuthorOverlay>
+              <AvatarRing>
+                <Avatar src={AUTHOR_IMAGE} alt={AUTHOR_NAME} />
+              </AvatarRing>
+              <AuthorMeta>
+                <AuthorSig>{AUTHOR_NAME}</AuthorSig>
+                <AuthorDate>
+                  {formattedDate}
+                  {post.location && (
+                    <LocationBtn
+                      onClick={() => handleLocationClick(post.location)}
+                    >
+                      &nbsp;· <FaMapMarkerAlt size={9} /> {post.location}
+                    </LocationBtn>
+                  )}
+                </AuthorDate>
+              </AuthorMeta>
+            </AuthorOverlay>
+
+            {/* Right action rail */}
+            <ActionRail>
+              <RailBtn onClick={handleLike} aria-label='Like post'>
+                <RailIcon
+                  $active={isLiked}
+                  $color={COLORS.primarySalmon}
+                  $animating={isLikeAnimating}
                 >
-                  {post.media.map((media, index) => (
-                    <MediaItem key={index}>
-                      {media.mediaType === "image" ? (
-                        <PostImage
-                          src={media.mediaUrl}
-                          alt={post.caption}
-                          className={media.filter}
-                        />
-                      ) : (
-                        <PostVideo
-                          src={media.mediaUrl}
-                          controls
-                          className={media.filter}
-                        />
-                      )}
-                    </MediaItem>
-                  ))}
-                </MediaTrack>
+                  {isLiked ? <FaHeart /> : <FaRegHeart />}
+                </RailIcon>
+                <RailCount>{post.likes || 0}</RailCount>
+              </RailBtn>
 
-                {/* Media Controls */}
-                <MediaControls>
-                  <ZoomButton onClick={toggleFullscreen}>
-                    {showFullscreenMedia ? <FaCompressAlt /> : <FaExpandAlt />}
-                  </ZoomButton>
-                </MediaControls>
+              <RailBtn onClick={handleShare} aria-label='Share post'>
+                <RailIcon $color={COLORS.primaryMint}>
+                  <FaShare />
+                </RailIcon>
+              </RailBtn>
 
-                {/* Navigation arrows - only show if there are multiple media files */}
-                {post.media.length > 1 && (
-                  <>
-                    <NavButton
-                      className="prev"
-                      onClick={prevMedia}
-                      style={{
-                        opacity:
-                          window.innerWidth <= 768
-                            ? showMobileControls
-                              ? 1
-                              : 0
-                            : mediaHovering
-                            ? 1
-                            : 0,
-                      }}
-                    >
-                      <FaChevronLeft />
-                    </NavButton>
-                    <NavButton
-                      className="next"
-                      onClick={nextMedia}
-                      style={{
-                        opacity:
-                          window.innerWidth <= 768
-                            ? showMobileControls
-                              ? 1
-                              : 0
-                            : mediaHovering
-                            ? 1
-                            : 0,
-                      }}
-                    >
-                      <FaChevronRight />
-                    </NavButton>
-                  </>
-                )}
-              </MediaContainer>
-
-              {/* Media counter and thumbnails - only show if there are multiple media files */}
-              {post.media.length > 1 && (
-                <>
-                  <MediaCounter>
-                    {activeMediaIndex + 1} / {post.media.length}
-                  </MediaCounter>
-
-                  <ThumbnailContainer>
-                    {post.media.map((media, index) => (
-                      <Thumbnail
-                        key={index}
-                        active={index === activeMediaIndex}
-                        onClick={() => setActiveMediaIndex(index)}
-                      />
-                    ))}
-                  </ThumbnailContainer>
-                </>
-              )}
-            </MediaSection>
-          )}
-
-          {/* Location banner - displayed if location exists */}
-          {post.location && (
-            <LocationBanner onClick={() => openInMaps(post.location)}>
-              <LocationIcon>
-                <FaMapMarkerAlt />
-              </LocationIcon>
-              <LocationText>{post.location}</LocationText>
-              <LocationArrow>
-                <FaLocationArrow />
-              </LocationArrow>
-            </LocationBanner>
-          )}
-
-          <ContentContainer>
-            {/* Author Section with Andrew's avatar */}
-            <AuthorSection>
-              <AuthorCircle>A</AuthorCircle>
-              <AuthorInfo>
-                <AuthorName>Andrew</AuthorName>
-                <ReadingTime>
-                  <FaClock />
-                  <span>{readingTime}</span>
-                </ReadingTime>
-              </AuthorInfo>
-            </AuthorSection>
-
-            <PostHeader>
-              <PostTitle>{post.title || post.caption}</PostTitle>
+              <RailBtn
+                onClick={() => setShowFullscreen(true)}
+                aria-label='Fullscreen'
+              >
+                <RailIcon $color={COLORS.textSecondary}>
+                  <FaExpandAlt />
+                </RailIcon>
+              </RailBtn>
 
               {isAuthenticated && (
-                <ActionsContainer>
-                  <EditLink to={`/edit/${post._id}`}>
-                    <FaEdit />
-                    <span>Edit</span>
-                  </EditLink>
-
-                  <DeleteButton onClick={handleDeletePost}>
-                    <FaTrash />
-                    <span>Delete</span>
-                  </DeleteButton>
-                </ActionsContainer>
+                <AdminWrapper ref={adminMenuRef}>
+                  <RailBtn
+                    onClick={() => setShowAdminMenu((v) => !v)}
+                    aria-label='Post options'
+                  >
+                    <RailIcon $color={COLORS.textSecondary}>
+                      <FaEllipsisV />
+                    </RailIcon>
+                  </RailBtn>
+                  {showAdminMenu && (
+                    <AdminDropdown>
+                      <Link
+                        to={`/edit/${post._id}`}
+                        onClick={() => setShowAdminMenu(false)}
+                      >
+                        <FaEdit /> Edit Post
+                      </Link>
+                      <button onClick={handleDeletePost} className='danger'>
+                        <FaTrash /> Delete
+                      </button>
+                    </AdminDropdown>
+                  )}
+                </AdminWrapper>
               )}
-            </PostHeader>
+            </ActionRail>
 
-            <MetaData>
-              <TimeStamp>
-                <FaCalendarAlt />
-                <span>{formattedDate}</span>
-              </TimeStamp>
-
-              <LikesCount>
-                <FaHeart />
-                <span>{post.likes} likes</span>
-              </LikesCount>
-            </MetaData>
-
-            <PostCaption>{post.caption}</PostCaption>
-
-            {post.content && (
-              <PostContent id="post-content" ref={contentRef}>
-                {post.content}
-              </PostContent>
-            )}
-
-            {/* Engagement Bar */}
-            <EngagementBar>
-              <ActionButton
-                onClick={handleLike}
-                className={isLiked ? "active" : ""}
-              >
-                <LikeAnimation className={isLikeAnimating ? "animate" : ""}>
-                  {isLiked ? <FaHeart /> : <FaRegHeart />}
-                </LikeAnimation>
-                <span>Like</span>
-              </ActionButton>
-
-              <ActionButton>
-                <FaRegComment />
-                <span>Comment</span>
-              </ActionButton>
-
-              <ActionButton onClick={handleShare}>
-                <FaShare />
-                <span>Share</span>
-              </ActionButton>
-
-              <ActionButton
-                onClick={handleBookmark}
-                className={isBookmarked ? "active" : ""}
-              >
-                {isBookmarked ? <FaBookmark /> : <FaRegBookmark />}
-                <span>Save</span>
-              </ActionButton>
-            </EngagementBar>
-
-            {post.tags && post.tags.length > 0 && (
-              <TagsContainer id="post-tags">
-                {post.tags.map((tag, index) => (
-                  <Tag key={index}>
-                    <FaTag />
-                    <span>{tag}</span>
-                  </Tag>
-                ))}
-              </TagsContainer>
-            )}
-          </ContentContainer>
-        </PostContainer>
-
-        {/* Floating Share Button */}
-        <FloatingShareButton onClick={handleShare}>
-          <FaShare />
-        </FloatingShareButton>
-
-        {/* Fullscreen Media Modal */}
-        {showFullscreenMedia && (
-          <FullscreenModal>
-            <FullscreenMediaContent>
-              {post.media &&
-              post.media[activeMediaIndex].mediaType === "image" ? (
-                <FullscreenImage
-                  src={post.media[activeMediaIndex].mediaUrl}
-                  alt={post.caption}
-                  className={post.media[activeMediaIndex].filter}
-                />
-              ) : (
-                <FullscreenVideo
-                  src={post.media[activeMediaIndex].mediaUrl}
-                  controls
-                  autoPlay
-                  className={post.media[activeMediaIndex].filter}
-                />
-              )}
-
-              {post.media && post.media.length > 1 && (
-                <>
-                  <FullscreenNavButton
-                    className="prev"
-                    onClick={prevMedia}
-                    style={{ opacity: showFullscreenControls ? 1 : 0 }}
+            {/* Carousel nav */}
+            {mediaCount > 1 && (
+              <>
+                {activeMediaIndex > 0 && (
+                  <NavBtn
+                    $side='left'
+                    onClick={() => setActiveMediaIndex((p) => p - 1)}
                   >
                     <FaChevronLeft />
-                  </FullscreenNavButton>
-                  <FullscreenNavButton
-                    className="next"
-                    onClick={nextMedia}
-                    style={{ opacity: showFullscreenControls ? 1 : 0 }}
+                  </NavBtn>
+                )}
+                {activeMediaIndex < mediaCount - 1 && (
+                  <NavBtn
+                    $side='right'
+                    onClick={() => setActiveMediaIndex((p) => p + 1)}
                   >
                     <FaChevronRight />
-                  </FullscreenNavButton>
-                </>
-              )}
-
-              <CloseFullscreenButton
-                onClick={toggleFullscreen}
-                style={{ opacity: showFullscreenControls ? 1 : 0 }}
-              >
-                <FaTimes />
-              </CloseFullscreenButton>
-            </FullscreenMediaContent>
-            <Backdrop onClick={toggleFullscreen} />
-          </FullscreenModal>
+                  </NavBtn>
+                )}
+                <Dots>
+                  {post.media.map((_, i) => (
+                    <Dot
+                      key={i}
+                      $active={i === activeMediaIndex}
+                      onClick={() => setActiveMediaIndex(i)}
+                    />
+                  ))}
+                </Dots>
+              </>
+            )}
+          </HeroFrame>
         )}
-      </Container>
+
+        {/* ── CONTENT ────────────────────────────────────────────────────── */}
+        <ContentBody>
+          <ContentInner>
+            <PostMeta>
+              <ReadingTime>{readingTime}</ReadingTime>
+              {post.location && (
+                <MetaLocation
+                  onClick={() => handleLocationClick(post.location)}
+                >
+                  <FaMapMarkerAlt size={10} /> {post.location}
+                </MetaLocation>
+              )}
+            </PostMeta>
+
+            <PostTitle>{post.title}</PostTitle>
+
+            {post.caption && <PostCaption>{post.caption}</PostCaption>}
+
+            {post.content && <PostContent>{post.content}</PostContent>}
+
+            {post.tags?.length > 0 && (
+              <TagRow>
+                {post.tags.map((t, i) => (
+                  <Tag key={i}>#{t}</Tag>
+                ))}
+              </TagRow>
+            )}
+
+            {/* Engagement strip */}
+            <EngagementStrip>
+              <EngageBtn onClick={handleLike} $active={isLiked}>
+                <EngageIcon $active={isLiked} $animating={isLikeAnimating}>
+                  {isLiked ? <FaHeart /> : <FaRegHeart />}
+                </EngageIcon>
+                <span>{post.likes || 0} likes</span>
+              </EngageBtn>
+
+              <EngageBtn onClick={handleShare}>
+                <FaShare />
+                <span>Share</span>
+              </EngageBtn>
+            </EngagementStrip>
+          </ContentInner>
+        </ContentBody>
+      </ArticleWrap>
+
+      {/* ── FULLSCREEN MODAL ───────────────────────────────────────────────── */}
+      {showFullscreen && (
+        <FullscreenOverlay onClick={() => setShowFullscreen(false)}>
+          <FullscreenInner onClick={(e) => e.stopPropagation()}>
+            {post.media[activeMediaIndex].mediaType === 'video' ? (
+              <FullscreenVid
+                src={post.media[activeMediaIndex].mediaUrl}
+                controls
+                autoPlay
+              />
+            ) : (
+              <FullscreenImg
+                src={post.media[activeMediaIndex].mediaUrl}
+                alt={post.title}
+              />
+            )}
+
+            <FsClose
+              onClick={() => setShowFullscreen(false)}
+              $visible={showFsControls}
+            >
+              <FaTimes />
+            </FsClose>
+
+            {mediaCount > 1 && (
+              <>
+                {activeMediaIndex > 0 && (
+                  <FsNav
+                    $side='left'
+                    $visible={showFsControls}
+                    onClick={() => setActiveMediaIndex((p) => p - 1)}
+                  >
+                    <FaChevronLeft />
+                  </FsNav>
+                )}
+                {activeMediaIndex < mediaCount - 1 && (
+                  <FsNav
+                    $side='right'
+                    $visible={showFsControls}
+                    onClick={() => setActiveMediaIndex((p) => p + 1)}
+                  >
+                    <FaChevronRight />
+                  </FsNav>
+                )}
+              </>
+            )}
+          </FullscreenInner>
+        </FullscreenOverlay>
+      )}
     </PageWrapper>
   );
 };
 
-// Styled Components
-const PageWrapper = styled.div`
-  background-color: ${COLORS.background};
-  min-height: 100vh;
-  padding: 1rem 0;
+export default PostDetail;
 
-  @media (max-width: 768px) {
-    padding: 0;
+// ─── Styled Components ────────────────────────────────────────────────────────
+
+const PageWrapper = styled.div`
+  background: ${COLORS.background};
+  min-height: 100vh;
+  @font-face {
+    font-family: 'Autography';
+    src: url('/fonts/Autography.woff2') format('woff2');
+    font-display: swap;
   }
 `;
 
+// ── Progress bar ──────────────────────────────────────────────────────────────
+
 const ProgressBarContainer = styled.div`
-  position: sticky;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  height: 4px;
-  background-color: ${COLORS.border};
-  z-index: 100;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  z-index: 200;
 `;
 
 const ProgressBar = styled.div`
   height: 100%;
+  width: ${(p) => p.$width || '0%'};
   background: linear-gradient(
     90deg,
-    ${COLORS.primaryMint},
-    ${COLORS.accentMint}
+    ${COLORS.primarySalmon},
+    ${COLORS.primaryMint}
   );
-  width: ${(props) => props.width || "0%"};
-  transition: width 0.1s;
+  transition: width 0.1s linear;
 `;
 
-const Container = styled.div`
-  max-width: 1000px;
+// ── Top nav ───────────────────────────────────────────────────────────────────
+
+const TopNav = styled.div`
+  padding: 16px 20px 0;
+  max-width: 680px;
   margin: 0 auto;
-  padding: 2rem;
-
-  @media (max-width: 768px) {
-    padding: 0.5rem;
-  }
 `;
 
-const BackButton = styled(Link)`
+const BackBtn = styled(Link)`
   display: inline-flex;
   align-items: center;
-  color: ${COLORS.textSecondary};
+  gap: 8px;
+  color: ${COLORS.textTertiary};
   text-decoration: none;
-  margin-bottom: 2rem;
-  transition: color 0.3s;
-  font-weight: 500;
-
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: color 0.2s;
   &:hover {
-    color: ${COLORS.primaryMint};
-  }
-
-  svg {
-    margin-right: 0.5rem;
+    color: ${COLORS.primarySalmon};
   }
 `;
 
-const LoadingMessage = styled.div`
-  text-align: center;
-  padding: 4rem 0;
-  font-size: 1.125rem;
-  color: ${COLORS.textPrimary};
+// ── Article wrapper ───────────────────────────────────────────────────────────
+
+const ArticleWrap = styled.article`
+  max-width: 680px;
+  margin: 16px auto 80px;
+  animation: ${fadeUp} 0.45s ease both;
 `;
 
-const ErrorContainer = styled.div`
-  text-align: center;
-  padding: 4rem 0;
-`;
+// ── Hero media ────────────────────────────────────────────────────────────────
 
-const ErrorMessage = styled.div`
-  background-color: rgba(255, 107, 107, 0.1);
-  color: ${COLORS.error};
-  padding: 1.5rem;
-  border-radius: 12px;
-  margin-bottom: 2rem;
-  border: 1px solid rgba(255, 107, 107, 0.3);
-`;
-
-const PostContainer = styled.div`
-  background-color: ${COLORS.cardBackground};
-  border-radius: 16px;
-  box-shadow: ${COLORS.shadow};
-  overflow: hidden;
-  border: 1px solid ${COLORS.border};
-
-  @media (max-width: 768px) {
-    margin: 0 -0.5rem;
-    border-radius: 0;
-  }
-`;
-
-const MediaSection = styled.div`
+const HeroFrame = styled.div`
   position: relative;
-  background-color: ${COLORS.elevatedBackground};
   width: 100%;
-`;
-
-const LocationBanner = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  background-color: ${COLORS.elevatedBackground};
-  border-bottom: 1px solid ${COLORS.border};
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: ${COLORS.buttonHover};
-  }
-`;
-
-const LocationIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 10px;
-  color: ${COLORS.primarySalmon};
-  font-size: 16px;
-`;
-
-const LocationText = styled.div`
-  flex: 1;
-  font-size: 14px;
-  color: ${COLORS.textPrimary};
-  font-weight: 500;
-`;
-
-const LocationArrow = styled.div`
-  color: ${COLORS.primaryBlueGray};
-  font-size: 12px;
-  transition: transform 0.2s ease;
-
-  ${LocationBanner}:hover & {
-    transform: translateX(3px);
-    color: ${COLORS.primaryMint};
-  }
-`;
-
-const MediaContainer = styled.div`
-  width: 100%;
+  aspect-ratio: 4 / 5;
+  background: #000;
   overflow: hidden;
-  position: relative;
-  aspect-ratio: 16 / 9;
-  max-height: 70vh;
+  border-radius: 0;
 
-  @media (max-width: 768px) {
-    aspect-ratio: auto;
-    height: auto;
-    max-height: none;
+  @media (min-width: 480px) {
+    border-radius: 8px;
+    aspect-ratio: 4 / 5;
   }
+  -webkit-tap-highlight-color: transparent;
 `;
 
 const MediaTrack = styled.div`
   display: flex;
-  width: 100%;
   height: 100%;
-  transition: transform 0.3s ease-out;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 `;
 
-const MediaItem = styled.div`
+const MediaSlide = styled.div`
   flex: 0 0 100%;
-  width: 100%;
   height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  background-color: ${COLORS.elevatedBackground};
 `;
 
-const PostImage = styled.img`
+const HeroImg = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s ease;
-
-  ${MediaItem}:hover & {
-    transform: scale(1.02);
-  }
-
-  &.filter-warm {
-    filter: saturate(1.5) sepia(0.2) contrast(1.1);
-  }
-
-  &.filter-cool {
-    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
-  }
-
-  &.filter-grayscale {
-    filter: grayscale(1);
-  }
-
-  &.filter-vintage {
-    filter: sepia(0.4) saturate(1.3) contrast(1.2);
-  }
+  display: block;
 `;
 
-const PostVideo = styled.video`
+const HeroVid = styled.video`
   width: 100%;
   height: 100%;
   object-fit: cover;
-
-  &.filter-warm {
-    filter: saturate(1.5) sepia(0.2) contrast(1.1);
-  }
-
-  &.filter-cool {
-    filter: saturate(0.9) hue-rotate(30deg) brightness(1.1);
-  }
-
-  &.filter-grayscale {
-    filter: grayscale(1);
-  }
-
-  &.filter-vintage {
-    filter: sepia(0.4) saturate(1.3) contrast(1.2);
-  }
+  display: block;
 `;
 
-const MediaControls = styled.div`
+// ── Overlays ──────────────────────────────────────────────────────────────────
+
+const BottomScrim = styled.div`
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-  padding: 2rem 1rem 1rem;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  z-index: 10;
-  opacity: 0;
-  transition: opacity 0.3s;
+  inset: auto 0 0 0;
+  height: 45%;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.84) 0%,
+    rgba(0, 0, 0, 0.42) 55%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+`;
 
-  ${MediaContainer}:hover & {
-    opacity: 1;
+const AuthorOverlay = styled.div`
+  position: absolute;
+  bottom: 18px;
+  left: 14px;
+  right: 72px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 2;
+`;
+
+const AvatarRing = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.primaryMint}
+  );
+  flex-shrink: 0;
+`;
+
+const Avatar = styled.img`
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #000;
+  display: block;
+`;
+
+const AuthorMeta = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+`;
+
+const AuthorSig = styled.span`
+  font-family: 'Autography', cursive;
+  font-size: 1.55rem;
+  color: #fff;
+  line-height: 1.3;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const AuthorDate = styled.span`
+  font-size: 0.67rem;
+  color: rgba(255, 255, 255, 0.72);
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+`;
+
+const LocationBtn = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.67rem;
+  color: ${COLORS.accentMint};
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  &:hover {
+    color: #fff;
   }
 `;
 
-const ZoomButton = styled.button`
-  background-color: ${COLORS.primaryBlueGray};
-  color: ${COLORS.textPrimary};
+// ── Right action rail ─────────────────────────────────────────────────────────
+
+const ActionRail = styled.div`
+  position: absolute;
+  right: 12px;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 3;
+`;
+
+const RailBtn = styled.button`
+  background: none;
   border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+`;
+
+const RailIcon = styled.span`
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  width: 2.5rem;
-  height: 2.5rem;
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  font-size: 1.1rem;
+  color: ${(p) => (p.$active ? p.$color : 'rgba(255,255,255,0.92)')};
+  transition: color 0.18s, transform 0.18s, background 0.18s;
 
-  &:hover {
-    background-color: ${COLORS.accentBlueGray};
+  ${(p) =>
+    p.$active &&
+    css`
+      background: ${p.$color}28;
+    `}
+
+  ${(p) =>
+    p.$animating &&
+    css`
+      animation: ${heartPop} 0.35s ease;
+    `}
+
+  ${RailBtn}:hover & {
+    color: ${(p) => p.$color || '#fff'};
+    background: rgba(0, 0, 0, 0.68);
     transform: scale(1.1);
   }
 `;
 
-const NavButton = styled.button`
+const RailCount = styled.span`
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.75);
+  line-height: 1;
+`;
+
+// ── Admin dropdown ────────────────────────────────────────────────────────────
+
+const AdminWrapper = styled.div`
+  position: relative;
+`;
+
+const AdminDropdown = styled.div`
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 12px;
+  min-width: 150px;
+  overflow: hidden;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.65);
+  animation: ${dropIn} 0.18s ease;
+  z-index: 10;
+
+  a,
+  button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: none;
+    color: ${COLORS.textPrimary};
+    font-size: 0.875rem;
+    text-decoration: none;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s;
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+  .danger {
+    color: ${COLORS.error};
+  }
+`;
+
+// ── Carousel nav ──────────────────────────────────────────────────────────────
+
+const NavBtn = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: ${COLORS.primaryBlueGray};
-  color: ${COLORS.textPrimary};
+  ${(p) => p.$side}: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(4px);
   border: none;
-  border-radius: 50%;
-  width: 3rem;
-  height: 3rem;
+  color: #fff;
+  font-size: 0.85rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 10;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-
+  z-index: 2;
+  transition: background 0.15s, transform 0.15s;
   &:hover {
-    background-color: ${COLORS.accentBlueGray};
-    transform: translateY(-50%) scale(1.1);
-  }
-
-  &.prev {
-    left: 1rem;
-  }
-
-  &.next {
-    right: 1rem;
-  }
-
-  @media (max-width: 768px) {
-    width: 2.5rem;
-    height: 2.5rem;
+    background: rgba(0, 0, 0, 0.72);
+    transform: translateY(-50%) scale(1.08);
   }
 `;
 
-const MediaCounter = styled.div`
+const Dots = styled.div`
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background-color: ${COLORS.elevatedBackground};
-  color: ${COLORS.textPrimary};
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  z-index: 10;
-  font-weight: 600;
-  border: 1px solid ${COLORS.border};
-`;
-
-const ThumbnailContainer = styled.div`
-  position: absolute;
-  bottom: 1rem;
-  left: 0;
-  right: 0;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  z-index: 10;
+  gap: 5px;
+  z-index: 2;
 `;
 
-const Thumbnail = styled.div`
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 50%;
-  background-color: ${(props) =>
-    props.active ? COLORS.primaryMint : "rgba(255, 255, 255, 0.5)"};
+const Dot = styled.div`
+  height: 4px;
+  width: ${(p) => (p.$active ? '20px' : '4px')};
+  border-radius: 2px;
+  background: ${(p) => (p.$active ? '#fff' : 'rgba(255,255,255,0.38)')};
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: width 0.28s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s;
+`;
 
-  &:hover {
-    background-color: ${COLORS.primaryMint};
-    transform: scale(1.2);
+// ── Content section ───────────────────────────────────────────────────────────
+
+const ContentBody = styled.div`
+  background: ${COLORS.cardBackground};
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+
+  @media (min-width: 480px) {
+    border-radius: 0 0 8px 8px;
   }
 `;
 
-const ContentContainer = styled.div`
-  padding: 2rem;
-
-  @media (max-width: 768px) {
-    padding: 1.5rem;
-  }
+const ContentInner = styled.div`
+  padding: 22px 20px 28px;
 `;
 
-const AuthorSection = styled.div`
+const PostMeta = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background-color: ${COLORS.elevatedBackground};
-  border-radius: 12px;
-  border: 1px solid ${COLORS.border};
-`;
-
-const AuthorCircle = styled.div`
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background-color: ${COLORS.primarySalmon};
-  color: ${COLORS.textPrimary};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-right: 1rem;
-  border: 2px solid ${COLORS.accentSalmon};
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-`;
-
-const AuthorInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-`;
-
-const AuthorName = styled.span`
-  font-weight: 600;
-  color: ${COLORS.textPrimary};
-  font-size: 1.125rem;
-  margin-bottom: 0.25rem;
+  gap: 14px;
+  margin-bottom: 10px;
 `;
 
 const ReadingTime = styled.span`
-  color: ${COLORS.textSecondary};
-  display: flex;
-  align-items: center;
-  font-size: 0.875rem;
-
-  svg {
-    margin-right: 0.25rem;
-    color: ${COLORS.primaryBlueGray};
-  }
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: ${COLORS.textTertiary};
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
 `;
 
-const PostHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
-
-  @media (max-width: 640px) {
-    flex-direction: column;
+const MetaLocation = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: ${COLORS.primarySalmon};
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  transition: color 0.2s;
+  &:hover {
+    color: ${COLORS.accentSalmon};
   }
 `;
 
 const PostTitle = styled.h1`
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 900;
   color: ${COLORS.textPrimary};
-  margin: 0;
-  font-weight: 700;
-  line-height: 1.2;
-
-  @media (max-width: 640px) {
-    margin-bottom: 1rem;
-    font-size: 1.75rem;
-  }
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin-bottom: 12px;
 `;
 
-const ActionsContainer = styled.div`
-  display: flex;
-  gap: 1rem;
-
-  @media (max-width: 640px) {
-    width: 100%;
-    justify-content: flex-end;
-  }
-`;
-
-const EditLink = styled(Link)`
-  display: flex;
-  align-items: center;
-  background-color: ${COLORS.primaryBlueGray};
-  color: ${COLORS.textPrimary};
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  font-weight: 500;
-
-  &:hover {
-    background-color: ${COLORS.accentBlueGray};
-    transform: translateY(-2px);
-  }
-
-  svg {
-    margin-right: 0.5rem;
-  }
-`;
-
-const DeleteButton = styled.button`
-  display: flex;
-  align-items: center;
-  background-color: ${COLORS.error};
-  color: ${COLORS.textPrimary};
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 500;
-
-  &:hover {
-    background-color: #cc5555;
-    transform: translateY(-2px);
-  }
-
-  svg {
-    margin-right: 0.5rem;
-  }
-`;
-
-const MetaData = styled.div`
-  display: flex;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid ${COLORS.border};
-`;
-
-const TimeStamp = styled.div`
-  display: flex;
-  align-items: center;
-  color: ${COLORS.textSecondary};
-  font-size: 0.875rem;
-  margin-right: 1.5rem;
-
-  svg {
-    margin-right: 0.5rem;
-    color: ${COLORS.primaryBlueGray};
-  }
-`;
-
-const LikesCount = styled.div`
-  display: flex;
-  align-items: center;
-  color: ${COLORS.primarySalmon};
-  font-size: 0.875rem;
-  font-weight: 500;
-
-  svg {
-    margin-right: 0.5rem;
-  }
-`;
-
-const PostCaption = styled.div`
+const PostCaption = styled.p`
   font-size: 1rem;
+  font-weight: 500;
   line-height: 1.6;
   color: ${COLORS.textPrimary};
-  margin-bottom: 1.5rem;
-  font-weight: 500;
+  margin-bottom: 16px;
 `;
 
 const PostContent = styled.div`
-  font-size: 1rem;
-  line-height: 1.7;
+  font-size: 0.95rem;
+  line-height: 1.75;
   color: ${COLORS.textSecondary};
-  margin-bottom: 2rem;
   white-space: pre-line;
-
-  @media (max-width: 640px) {
-    font-size: 0.95rem;
-    line-height: 1.6;
-  }
+  margin-bottom: 20px;
 `;
 
-const EngagementBar = styled.div`
-  display: flex;
-  justify-content: space-between;
-  background-color: ${COLORS.elevatedBackground};
-  padding: 1rem;
-  border-radius: 12px;
-  margin: 2rem 0;
-  border: 1px solid ${COLORS.border};
-`;
-
-const ActionButton = styled.button`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: ${COLORS.textTertiary};
-  transition: all 0.2s ease;
-  gap: 0.25rem;
-
-  &:hover {
-    color: ${COLORS.primaryMint};
-    transform: translateY(-2px);
-  }
-
-  &.active {
-    color: ${COLORS.primarySalmon};
-  }
-
-  svg {
-    font-size: 1.25rem;
-  }
-
-  span {
-    font-size: 0.75rem;
-    font-weight: 500;
-  }
-`;
-
-const LikeAnimation = styled.div`
-  position: relative;
-  display: inline-block;
-
-  &.animate svg {
-    animation: likeEffect 0.5s ease-in-out;
-    color: ${COLORS.primarySalmon};
-  }
-
-  @keyframes likeEffect {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.4);
-    }
-    100% {
-      transform: scale(1);
-    }
-  }
-`;
-
-const TagsContainer = styled.div`
+const TagRow = styled.div`
   display: flex;
   flex-wrap: wrap;
-  margin-top: 1.5rem;
+  gap: 6px;
+  margin-bottom: 24px;
 `;
 
 const Tag = styled.span`
-  background-color: ${COLORS.elevatedBackground};
-  color: ${COLORS.textSecondary};
-  padding: 0.5rem 1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px 12px;
   border-radius: 20px;
-  font-size: 0.875rem;
-  margin-right: 0.75rem;
-  margin-bottom: 0.75rem;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  border: 1px solid ${COLORS.border};
-
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: ${COLORS.textTertiary};
+  transition: color 0.2s, border-color 0.2s;
   &:hover {
-    background-color: ${COLORS.buttonHover};
-    color: ${COLORS.primaryMint};
-    transform: translateY(-2px);
-  }
-
-  svg {
-    font-size: 0.75rem;
-    color: ${COLORS.primarySalmon};
+    color: ${COLORS.accentMint};
+    border-color: ${COLORS.primaryMint}55;
   }
 `;
 
-const FloatingShareButton = styled.button`
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 50%;
-  background-color: ${COLORS.primarySalmon};
-  color: ${COLORS.textPrimary};
+// ── Engagement strip ──────────────────────────────────────────────────────────
+
+const EngagementStrip = styled.div`
   display: flex;
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+`;
+
+const EngageBtn = styled.button`
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 16px rgba(233, 137, 115, 0.4);
+  gap: 8px;
+  background: none;
+  border: 1px solid
+    ${(p) =>
+      p.$active ? COLORS.primarySalmon + '55' : 'rgba(255,255,255,0.08)'};
+  border-radius: 24px;
+  padding: 8px 16px;
+  color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textTertiary)};
+  font-size: 0.82rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 90;
-  border: none;
-
+  transition: all 0.2s;
   &:hover {
-    background-color: ${COLORS.accentSalmon};
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(233, 137, 115, 0.5);
-  }
-
-  svg {
-    font-size: 1.5rem;
-  }
-
-  @media (max-width: 768px) {
-    bottom: 1.5rem;
-    right: 1.5rem;
-    width: 3rem;
-    height: 3rem;
+    border-color: ${COLORS.primarySalmon}55;
+    color: ${COLORS.primarySalmon};
+    background: ${COLORS.primarySalmon}0a;
   }
 `;
 
-const Backdrop = styled.div`
+const EngageIcon = styled.span`
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  color: ${(p) => (p.$active ? COLORS.primarySalmon : 'inherit')};
+
+  ${(p) =>
+    p.$animating &&
+    css`
+      animation: ${heartPop} 0.4s ease;
+    `}
+`;
+
+// ── Fullscreen modal ──────────────────────────────────────────────────────────
+
+const FullscreenOverlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.8);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.96);
   z-index: 1000;
-`;
-
-const FullscreenModal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1100;
+  animation: ${fadeUp} 0.2s ease;
 `;
 
-const FullscreenMediaContent = styled.div`
+const FullscreenInner = styled.div`
   position: relative;
-  width: 90%;
-  height: 90%;
-  z-index: 1101;
+  width: 96vw;
+  height: 96vh;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
 `;
 
-const FullscreenImage = styled.img`
+const FullscreenImg = styled.img`
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  border-radius: 8px;
+  border-radius: 4px;
 `;
 
-const FullscreenVideo = styled.video`
+const FullscreenVid = styled.video`
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  border-radius: 8px;
+  border-radius: 4px;
 `;
 
-const FullscreenNavButton = styled.button`
+const FsClose = styled.button`
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: ${(p) => (p.$visible ? 1 : 0)};
+  transition: opacity 0.3s, background 0.2s;
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+`;
+
+const FsNav = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: ${COLORS.primaryBlueGray};
-  color: ${COLORS.textPrimary};
-  border: none;
+  ${(p) => p.$side}: 0;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  width: 3.5rem;
-  height: 3.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  font-size: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 1102;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-
+  opacity: ${(p) => (p.$visible ? 1 : 0)};
+  transition: opacity 0.3s, background 0.2s;
   &:hover {
-    background-color: ${COLORS.accentBlueGray};
-    transform: translateY(-50%) scale(1.1);
-  }
-
-  &.prev {
-    left: 1rem;
-  }
-
-  &.next {
-    right: 1rem;
-  }
-
-  @media (max-width: 768px) {
-    width: 2.5rem;
-    height: 2.5rem;
+    background: rgba(255, 255, 255, 0.2);
   }
 `;
 
-const CloseFullscreenButton = styled.button`
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background-color: ${COLORS.error};
-  color: ${COLORS.textPrimary};
-  border: none;
-  border-radius: 50%;
-  width: 2.5rem;
-  height: 2.5rem;
+// ── Skeleton loading ──────────────────────────────────────────────────────────
+
+const skeletonShimmer = css`
+  background: linear-gradient(
+    90deg,
+    ${COLORS.cardBackground} 25%,
+    ${COLORS.elevatedBackground} 50%,
+    ${COLORS.cardBackground} 75%
+  );
+  background-size: 600px 100%;
+  animation: ${shimmer} 1.4s ease-in-out infinite;
+`;
+
+const SkeletonHero = styled.div`
+  max-width: 680px;
+  margin: 16px auto 0;
+  aspect-ratio: 4 / 5;
+  ${skeletonShimmer}
+  @media (min-width: 480px) {
+    border-radius: 8px;
+  }
+`;
+
+const SkeletonContent = styled.div`
+  max-width: 680px;
+  margin: 0 auto;
+  background: ${COLORS.cardBackground};
+  padding: 22px 20px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 1102;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-
-  &:hover {
-    background-color: #cc5555;
-    transform: scale(1.1);
-  }
+  flex-direction: column;
+  gap: 14px;
 `;
 
-export default PostDetail;
+const SkeletonLine = styled.div`
+  height: ${(p) => p.$h || '1rem'};
+  width: ${(p) => p.$w || '100%'};
+  border-radius: 4px;
+  ${skeletonShimmer}
+`;
+
+// ── Error ─────────────────────────────────────────────────────────────────────
+
+const ErrorWrap = styled.div`
+  max-width: 480px;
+  margin: 80px auto;
+  text-align: center;
+  padding: 0 20px;
+`;
+
+const ErrorMsg = styled.div`
+  background: rgba(255, 107, 107, 0.1);
+  color: ${COLORS.error};
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 107, 107, 0.25);
+  font-size: 0.95rem;
+`;
