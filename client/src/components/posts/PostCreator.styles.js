@@ -1,6 +1,6 @@
 // client/src/components/posts/PostCreator.styles.js
-import styled from "styled-components";
-import { COLORS } from "../../theme";
+import styled from 'styled-components';
+import { COLORS } from '../../theme';
 
 export const Container = styled.div`
   max-width: 600px;
@@ -92,7 +92,7 @@ export const UploadIcon = styled.div`
 
   svg {
     font-size: 32px;
-    color: ${COLORS.primaryBlueGray};
+    color: ${COLORS.textTertiary};
     transition: color 0.3s ease;
   }
 `;
@@ -118,18 +118,24 @@ export const UploadButton = styled.button`
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: ${COLORS.primarySalmon};
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
+  );
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 20px;
   padding: 12px 24px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 4px 12px ${COLORS.primarySalmon}44;
 
   &:hover {
-    background: ${COLORS.accentSalmon};
+    opacity: 0.9;
     transform: translateY(-1px);
+    box-shadow: 0 6px 16px ${COLORS.primarySalmon}55;
   }
 
   svg {
@@ -156,29 +162,27 @@ export const MediaItemContainer = styled.div`
   border: 2px solid
     ${(p) => (p.isDragging ? COLORS.primarySalmon : COLORS.border)};
   transition: all 0.2s ease;
-  cursor: ${(p) => (p.isDragging ? "grabbing" : "grab")};
-  transform: ${(p) => (p.isDragging ? "scale(1.05)" : "scale(1)")};
-  opacity: ${(p) => (p.isDragging ? "0.8" : "1")};
-  z-index: ${(p) => (p.isDragging ? "10" : "1")};
+  cursor: ${(p) => (p.isDragging ? 'grabbing' : 'grab')};
+  transform: ${(p) => (p.isDragging ? 'scale(1.05)' : 'scale(1)')};
+  opacity: ${(p) => (p.isDragging ? '0.8' : '1')};
+  z-index: ${(p) => (p.isDragging ? '10' : '1')};
 
   &:hover {
-    transform: ${(p) => (p.isDragging ? "scale(1.05)" : "translateY(-2px)")};
+    transform: ${(p) => (p.isDragging ? 'scale(1.05)' : 'translateY(-2px)')};
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
   &:hover .drag-handle {
     opacity: 1;
   }
-
   &:hover .media-actions {
     opacity: 1;
   }
-
   &:hover .drag-indicator {
     opacity: 1;
   }
 
-  &[data-drag-over="true"] {
+  &[data-drag-over='true'] {
     border-color: ${COLORS.primaryMint};
     background: ${COLORS.primaryMint}10;
   }
@@ -265,8 +269,8 @@ export const MediaContent = styled.div`
     background: ${COLORS.cardBackground};
 
     &:before {
-      content: "\\f03e";
-      font-family: "Font Awesome 5 Free";
+      content: '\\f03e';
+      font-family: 'Font Awesome 5 Free';
       font-weight: 900;
       font-size: 1.2rem;
       color: ${COLORS.textTertiary};
@@ -340,11 +344,9 @@ export const ActionButton = styled.button`
   &:hover {
     background: ${COLORS.primarySalmon};
   }
-
   &.remove:hover {
     background: ${COLORS.error};
   }
-
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -452,7 +454,6 @@ export const AddMoreButton = styled.button`
   svg {
     font-size: 20px;
   }
-
   span {
     font-size: 12px;
     font-weight: 500;
@@ -590,6 +591,7 @@ export const IconInput = styled.div`
     margin: 0 12px;
     color: ${COLORS.primarySalmon};
     font-size: 16px;
+    flex-shrink: 0;
   }
 
   input {
@@ -597,9 +599,13 @@ export const IconInput = styled.div`
     border: none;
     background: transparent;
     padding: 12px 12px 12px 0;
-
+    color: ${COLORS.textPrimary};
+    font-size: 14px;
     &:focus {
       outline: none;
+    }
+    &::placeholder {
+      color: ${COLORS.textTertiary};
     }
   }
 `;
@@ -611,9 +617,14 @@ export const TagInputField = styled.input`
   border: none;
   background: transparent;
   padding: 12px 12px 12px 0;
+  color: ${COLORS.textPrimary};
+  font-size: 14px;
 
   &:focus {
     outline: none;
+  }
+  &::placeholder {
+    color: ${COLORS.textTertiary};
   }
 `;
 
@@ -681,32 +692,41 @@ export const ActionBar = styled.div`
 
 export const PostButton = styled.button`
   width: 100%;
-  background: ${COLORS.primarySalmon};
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
+  );
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 16px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 4px 14px ${COLORS.primarySalmon}44;
+  letter-spacing: 0.2px;
 
   &:hover:not(:disabled) {
-    background: ${COLORS.accentSalmon};
+    opacity: 0.92;
     transform: translateY(-1px);
+    box-shadow: 0 8px 20px ${COLORS.primarySalmon}55;
   }
 
   &:disabled {
-    background: ${COLORS.border};
+    opacity: 0.38;
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
   }
 `;
 
 export const ModalOverlay = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -716,39 +736,47 @@ export const ModalOverlay = styled.div`
 
 export const ModalContent = styled.div`
   background: ${COLORS.cardBackground};
-  border-radius: 12px;
+  border-radius: 16px;
   width: 100%;
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
   border: 1px solid ${COLORS.border};
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
 `;
 
 export const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid ${COLORS.border};
+  background: ${COLORS.elevatedBackground};
 
   h3 {
     margin: 0;
     color: ${COLORS.textPrimary};
-    font-size: 1.25rem;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
   }
 `;
 
 export const CloseButton = styled.button`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   background: none;
   border: none;
   color: ${COLORS.textSecondary};
   cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
 
   &:hover {
-    background: ${COLORS.elevatedBackground};
+    background: ${COLORS.border};
     color: ${COLORS.textPrimary};
   }
 `;
@@ -761,7 +789,7 @@ export const Select = styled.select`
   width: 100%;
   background: ${COLORS.elevatedBackground};
   border: 1px solid ${COLORS.border};
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 0.75rem;
   color: ${COLORS.textPrimary};
   font-size: 0.875rem;
@@ -788,7 +816,7 @@ export const Input = styled.input`
   width: 100%;
   background: ${COLORS.elevatedBackground};
   border: 1px solid ${COLORS.border};
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 0.75rem;
   color: ${COLORS.textPrimary};
   font-size: 0.875rem;
@@ -809,7 +837,7 @@ export const ErrorMessage = styled.div`
   border: 1px solid ${COLORS.error}30;
   color: ${COLORS.error};
   padding: 0.75rem;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.875rem;
   display: flex;
   align-items: center;
@@ -821,12 +849,12 @@ export const GenerateButton = styled.button`
   width: 100%;
   background: linear-gradient(
     135deg,
-    ${COLORS.primarySalmon} 0%,
-    ${COLORS.accentSalmon} 100%
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
   );
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 20px;
   padding: 0.875rem;
   font-size: 0.875rem;
   font-weight: 600;
@@ -837,16 +865,19 @@ export const GenerateButton = styled.button`
   justify-content: center;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px ${COLORS.primarySalmon}44;
 
   &:hover:not(:disabled) {
+    opacity: 0.9;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px ${COLORS.primarySalmon}30;
+    box-shadow: 0 6px 16px ${COLORS.primarySalmon}55;
   }
 
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
   }
 `;
 
@@ -856,7 +887,7 @@ export const LoadingSpinner = styled.div`
   border: 2px solid transparent;
   border-top: 2px solid currentColor;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 
   @keyframes spin {
     to {
@@ -873,7 +904,7 @@ export const GeneratedSection = styled.div`
   @keyframes slideIn {
     from {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translateY(16px);
     }
     to {
       opacity: 1;
@@ -886,6 +917,7 @@ export const SectionTitle = styled.h4`
   color: ${COLORS.textPrimary};
   margin: 0 0 1rem 0;
   font-size: 1rem;
+  font-weight: 700;
 `;
 
 export const ContentPreview = styled.div`
@@ -893,16 +925,18 @@ export const ContentPreview = styled.div`
 `;
 
 export const ContentLabel = styled.div`
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: ${COLORS.textSecondary};
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: ${COLORS.textTertiary};
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin-bottom: 0.5rem;
 `;
 
 export const ContentBox = styled.div`
   background: ${COLORS.elevatedBackground};
   border: 1px solid ${COLORS.border};
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 0.75rem;
   color: ${COLORS.textPrimary};
   line-height: 1.5;
@@ -918,10 +952,11 @@ export const TagsPreview = styled.div`
 export const TagPreview = styled.span`
   background: ${COLORS.primarySalmon}20;
   color: ${COLORS.primarySalmon};
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
+  border: 1px solid ${COLORS.primarySalmon}44;
 `;
 
 export const ButtonRow = styled.div`
@@ -935,36 +970,42 @@ export const SecondaryButton = styled.button`
   background: ${COLORS.elevatedBackground};
   color: ${COLORS.textSecondary};
   border: 1px solid ${COLORS.border};
-  border-radius: 6px;
+  border-radius: 20px;
   padding: 0.75rem;
   font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: ${COLORS.border};
+    border-color: ${COLORS.textSecondary};
     color: ${COLORS.textPrimary};
   }
 `;
 
 export const ApplyButton = styled.button`
   flex: 2;
-  background: ${COLORS.primaryMint};
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
+  );
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 20px;
   padding: 0.75rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  box-shadow: 0 4px 12px ${COLORS.primarySalmon}44;
 
   &:hover {
-    background: ${COLORS.accentMint};
+    opacity: 0.9;
     transform: translateY(-1px);
   }
 `;
@@ -1001,6 +1042,8 @@ export const FilterOption = styled.div`
   border-radius: 8px;
   transition: all 0.2s ease;
   opacity: ${(p) => (p.active ? 1 : 0.7)};
+  background: ${(p) =>
+    p.active ? `${COLORS.primarySalmon}12` : 'transparent'};
 
   &:hover {
     opacity: 1;
@@ -1014,6 +1057,9 @@ export const FilterThumbnail = styled.div`
   border-radius: 8px;
   overflow: hidden;
   border: 2px solid ${(p) => (p.active ? COLORS.primarySalmon : COLORS.border)};
+  box-shadow: ${(p) =>
+    p.active ? `0 0 0 1px ${COLORS.primarySalmon}` : 'none'};
+  transition: border-color 0.2s, box-shadow 0.2s;
 
   img {
     width: 100%;
@@ -1049,9 +1095,10 @@ export const FilterThumbnail = styled.div`
 
 export const FilterName = styled.span`
   margin-top: 8px;
-  font-size: 12px;
-  font-weight: ${(p) => (p.active ? "600" : "400")};
+  font-size: 11px;
+  font-weight: ${(p) => (p.active ? '700' : '400')};
   color: ${(p) => (p.active ? COLORS.primarySalmon : COLORS.textSecondary)};
+  transition: color 0.2s;
 `;
 
 export const FilterActionBar = styled.div`
