@@ -20,9 +20,7 @@ import {
   FaShare,
   FaTimes,
   FaExpandAlt,
-  FaCompressAlt,
   FaMapMarkerAlt,
-  FaComment,
   FaEllipsisV,
 } from 'react-icons/fa';
 import { useSwipeable } from 'react-swipeable';
@@ -31,11 +29,7 @@ import { useDeleteModal } from '../context/DeleteModalContext';
 import { api } from '../services/api';
 import { getTransformedImageUrl } from '../utils/cloudinary';
 import { COLORS } from '../theme';
-import authorImg from '../assets/andy.jpg';
 import ReactGA from 'react-ga4';
-
-const AUTHOR_NAME = 'Andrew Butler';
-const AUTHOR_IMAGE = authorImg;
 
 // ─── Animations ───────────────────────────────────────────────────────────────
 
@@ -317,83 +311,13 @@ const PostDetail = () => {
               ))}
             </MediaTrack>
 
-            {/* Bottom gradient scrim */}
-            <BottomScrim />
-
-            {/* Author overlay — bottom-left */}
-            <AuthorOverlay>
-              <AvatarRing>
-                <Avatar src={AUTHOR_IMAGE} alt={AUTHOR_NAME} />
-              </AvatarRing>
-              <AuthorMeta>
-                <AuthorSig>{AUTHOR_NAME}</AuthorSig>
-                <AuthorDate>
-                  {formattedDate}
-                  {post.location && (
-                    <LocationBtn
-                      onClick={() => handleLocationClick(post.location)}
-                    >
-                      &nbsp;· <FaMapMarkerAlt size={9} /> {post.location}
-                    </LocationBtn>
-                  )}
-                </AuthorDate>
-              </AuthorMeta>
-            </AuthorOverlay>
-
-            {/* Right action rail */}
-            <ActionRail>
-              <RailBtn onClick={handleLike} aria-label='Like post'>
-                <RailIcon
-                  $active={isLiked}
-                  $color={COLORS.primarySalmon}
-                  $animating={isLikeAnimating}
-                >
-                  {isLiked ? <FaHeart /> : <FaRegHeart />}
-                </RailIcon>
-                <RailCount>{post.likes || 0}</RailCount>
-              </RailBtn>
-
-              <RailBtn onClick={handleShare} aria-label='Share post'>
-                <RailIcon $color={COLORS.primaryMint}>
-                  <FaShare />
-                </RailIcon>
-              </RailBtn>
-
-              <RailBtn
-                onClick={() => setShowFullscreen(true)}
-                aria-label='Fullscreen'
-              >
-                <RailIcon $color={COLORS.textSecondary}>
-                  <FaExpandAlt />
-                </RailIcon>
-              </RailBtn>
-
-              {isAuthenticated && (
-                <AdminWrapper ref={adminMenuRef}>
-                  <RailBtn
-                    onClick={() => setShowAdminMenu((v) => !v)}
-                    aria-label='Post options'
-                  >
-                    <RailIcon $color={COLORS.textSecondary}>
-                      <FaEllipsisV />
-                    </RailIcon>
-                  </RailBtn>
-                  {showAdminMenu && (
-                    <AdminDropdown>
-                      <Link
-                        to={`/edit/${post._id}`}
-                        onClick={() => setShowAdminMenu(false)}
-                      >
-                        <FaEdit /> Edit Post
-                      </Link>
-                      <button onClick={handleDeletePost} className='danger'>
-                        <FaTrash /> Delete
-                      </button>
-                    </AdminDropdown>
-                  )}
-                </AdminWrapper>
-              )}
-            </ActionRail>
+            {/* Expand to fullscreen button — minimal, top-right corner */}
+            <ExpandBtn
+              onClick={() => setShowFullscreen(true)}
+              aria-label='Fullscreen'
+            >
+              <FaExpandAlt />
+            </ExpandBtn>
 
             {/* Carousel nav */}
             {mediaCount > 1 && (
@@ -469,6 +393,27 @@ const PostDetail = () => {
                 <FaShare />
                 <span>Share</span>
               </EngageBtn>
+
+              {isAuthenticated && (
+                <AdminWrapper ref={adminMenuRef} style={{ marginLeft: 'auto' }}>
+                  <EngageBtn onClick={() => setShowAdminMenu((v) => !v)}>
+                    <FaEllipsisV />
+                  </EngageBtn>
+                  {showAdminMenu && (
+                    <AdminDropdown>
+                      <Link
+                        to={`/edit/${post._id}`}
+                        onClick={() => setShowAdminMenu(false)}
+                      >
+                        <FaEdit /> Edit Post
+                      </Link>
+                      <button onClick={handleDeletePost} className='danger'>
+                        <FaTrash /> Delete
+                      </button>
+                    </AdminDropdown>
+                  )}
+                </AdminWrapper>
+              )}
             </EngagementStrip>
           </ContentInner>
         </ContentBody>
@@ -639,165 +584,32 @@ const HeroVid = styled.video`
   display: block;
 `;
 
-// ── Overlays ──────────────────────────────────────────────────────────────────
+// ── Fullscreen expand button (media top-right) ────────────────────────────────
 
-const BottomScrim = styled.div`
+const ExpandBtn = styled.button`
   position: absolute;
-  inset: auto 0 0 0;
-  height: 45%;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.84) 0%,
-    rgba(0, 0, 0, 0.42) 55%,
-    transparent 100%
-  );
-  pointer-events: none;
-  z-index: 1;
-`;
-
-const AuthorOverlay = styled.div`
-  position: absolute;
-  bottom: 18px;
-  left: 14px;
-  right: 72px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  z-index: 2;
-`;
-
-const AvatarRing = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  padding: 2px;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.primaryMint}
-  );
-  flex-shrink: 0;
-`;
-
-const Avatar = styled.img`
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #000;
-  display: block;
-`;
-
-const AuthorMeta = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-`;
-
-const AuthorSig = styled.span`
-  font-family: 'Autography', cursive;
-  font-size: 1.55rem;
-  color: #fff;
-  line-height: 1.3;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-const AuthorDate = styled.span`
-  font-size: 0.67rem;
-  color: rgba(255, 255, 255, 0.72);
-  letter-spacing: 0.4px;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 2px;
-`;
-
-const LocationBtn = styled.button`
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 0.67rem;
-  color: ${COLORS.accentMint};
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  &:hover {
-    color: #fff;
-  }
-`;
-
-// ── Right action rail ─────────────────────────────────────────────────────────
-
-const ActionRail = styled.div`
-  position: absolute;
+  top: 12px;
   right: 12px;
-  bottom: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  z-index: 3;
-`;
-
-const RailBtn = styled.button`
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  min-width: 44px;
-  min-height: 44px;
-  justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-`;
-
-const RailIcon = styled.span`
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.48);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
-  color: ${(p) => (p.$active ? p.$color : 'rgba(255,255,255,0.92)')};
-  transition: color 0.18s, transform 0.18s, background 0.18s;
-
-  ${(p) =>
-    p.$active &&
-    css`
-      background: ${p.$color}28;
-    `}
-
-  ${(p) =>
-    p.$animating &&
-    css`
-      animation: ${heartPop} 0.35s ease;
-    `}
-
-  ${RailBtn}:hover & {
-    color: ${(p) => p.$color || '#fff'};
-    background: rgba(0, 0, 0, 0.68);
+  cursor: pointer;
+  z-index: 3;
+  transition: background 0.15s, transform 0.15s;
+  &:hover {
+    background: rgba(0, 0, 0, 0.72);
     transform: scale(1.1);
+    color: #fff;
   }
-`;
-
-const RailCount = styled.span`
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.75);
-  line-height: 1;
 `;
 
 // ── Admin dropdown ────────────────────────────────────────────────────────────
