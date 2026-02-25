@@ -1,10 +1,13 @@
-// CloudinaryGallery.js with enhanced SoloGram theme integration
-
-import React, { useState, useEffect, useCallback, useContext } from "react";
-import styled from "styled-components";
-import axios from "axios";
-import { toast } from "react-hot-toast";
-import { format } from "date-fns";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useContext,
+  useRef,
+} from 'react';
+import styled, { keyframes, css } from 'styled-components';
+import { toast } from 'react-hot-toast';
+import { format } from 'date-fns';
 import {
   FaDownload,
   FaTrash,
@@ -16,38 +19,105 @@ import {
   FaCalendarAlt,
   FaCheckSquare,
   FaSquare,
-  FaCamera,
-} from "react-icons/fa";
-import { getTransformedImageUrl } from "../utils/cloudinary";
-import { COLORS, THEME } from "../theme";
-import { AuthContext } from "../context/AuthContext";
-import { useDeleteModal } from "../context/DeleteModalContext";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+  FaLayerGroup,
+} from 'react-icons/fa';
+import { getTransformedImageUrl } from '../utils/cloudinary';
+import { COLORS } from '../theme';
+import { AuthContext } from '../context/AuthContext';
+import { useDeleteModal } from '../context/DeleteModalContext';
+import { useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 
-import LoadingSpinner from "../components/common/LoadingSpinner";
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const formatFileSize = (bytes) => {
+  if (!bytes) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+};
+
+const formatDate = (date) => format(new Date(date), 'MMM d, yyyy');
+
+const toUTCISOFromLocal = (yyyyMmDd, endOfDay = false) => {
+  if (!yyyyMmDd) return null;
+  const t = endOfDay ? 'T23:59:59.999' : 'T00:00:00.000';
+  return new Date(`${yyyyMmDd}${t}`).toISOString();
+};
+
+const groupAssetsByDate = (assets) => {
+  const grouped = {};
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  assets.forEach((asset) => {
+    const date = new Date(asset.created_at);
+    let dateKey, dateLabel;
+
+    if (date.toDateString() === today.toDateString()) {
+      dateKey = 'today';
+      dateLabel = 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      dateKey = 'yesterday';
+      dateLabel = 'Yesterday';
+    } else if (today - date < 7 * 86_400_000) {
+      dateKey = 'thisWeek';
+      dateLabel = 'This Week';
+    } else if (
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    ) {
+      dateKey = 'thisMonth';
+      dateLabel = 'This Month';
+    } else {
+      dateKey = `${date.getFullYear()}-${date.getMonth()}`;
+      dateLabel = format(date, 'MMMM yyyy');
+    }
+
+    if (!grouped[dateKey]) grouped[dateKey] = { label: dateLabel, assets: [] };
+    grouped[dateKey].assets.push(asset);
+  });
+
+  const order = ['today', 'yesterday', 'thisWeek', 'thisMonth'];
+  const ordered = {};
+  order.forEach((k) => {
+    if (grouped[k]) {
+      ordered[k] = grouped[k];
+      delete grouped[k];
+    }
+  });
+  Object.keys(grouped)
+    .sort((a, b) => b.localeCompare(a))
+    .forEach((k) => {
+      ordered[k] = grouped[k];
+    });
+  return ordered;
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const CloudinaryGallery = () => {
-  // Use the existing auth context
   const { user } = useContext(AuthContext);
   const { showDeleteModal } = useDeleteModal();
   const navigate = useNavigate();
 
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [showDebug, setShowDebug] = useState(false);
   const [filters, setFilters] = useState({
-    type: "all", // all, image, video
-    dateRange: "all", // all, today, thisWeek, thisMonth, custom
+    type: 'all',
+    dateRange: 'all',
     startDate: null,
     endDate: null,
   });
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-
   const [stats, setStats] = useState({
     total: 0,
     images: 0,
@@ -56,1846 +126,1478 @@ const CloudinaryGallery = () => {
   });
   const [selectedAssets, setSelectedAssets] = useState([]);
   const [selectMode, setSelectMode] = useState(false);
-  const [bulkActionOpen, setBulkActionOpen] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
 
-  // Verify admin status using the existing auth context
+  const observerRef = useRef();
+
+  // ── Auth guard ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    // Redirect if not admin
-    if (user && user.role !== "admin") {
-      toast.error("You need admin privileges to access this page");
-      navigate("/");
+    if (user && user.role !== 'admin') {
+      toast.error('Admin access required');
+      navigate('/');
     }
   }, [user, navigate]);
 
-  // Load assets from Cloudinary
-  useEffect(() => {
-    fetchAssets();
-  }, [page, filters]);
+  // ── Fetch ──────────────────────────────────────────────────────────────────
+  const fetchAssets = useCallback(async (currentPage, currentFilters) => {
+    if (currentPage === 1) setLoading(true);
+    else setLoadingMore(true);
 
-  // Toggle selection mode
-  const toggleSelectMode = () => {
-    setSelectMode(!selectMode);
-    if (selectMode) {
-      setSelectedAssets([]);
-      setBulkActionOpen(false);
-    }
-  };
-
-  // Toggle selection of an asset
-  const toggleAssetSelection = (e, assetId) => {
-    e.stopPropagation(); // Prevent opening the asset modal
-
-    if (selectedAssets.includes(assetId)) {
-      setSelectedAssets(selectedAssets.filter((id) => id !== assetId));
-    } else {
-      setSelectedAssets([...selectedAssets, assetId]);
-    }
-  };
-
-  // Select all visible assets
-  const selectAllAssets = () => {
-    const allVisibleIds = assets.map((asset) => asset.public_id);
-    setSelectedAssets(allVisibleIds);
-  };
-
-  // Deselect all assets
-  const deselectAllAssets = () => {
-    setSelectedAssets([]);
-  };
-
-  // Perform bulk delete - updated to use global modal
-  const bulkDeleteAssets = async () => {
-    if (selectedAssets.length === 0) return;
-
-    const assetNames = selectedAssets.slice(0, 3).map((publicId) => {
-      const asset = assets.find((a) => a.public_id === publicId);
-      return asset?.public_id.split("/").pop() || publicId;
-    });
-
-    const previewText =
-      selectedAssets.length <= 3
-        ? assetNames.join(", ")
-        : `${assetNames.join(", ")} and ${selectedAssets.length - 3} more`;
-
-    showDeleteModal({
-      title: `Delete ${selectedAssets.length} Assets`,
-      message: `Are you sure you want to delete ${selectedAssets.length} selected assets? This action cannot be undone and will permanently remove these files from Cloudinary.`,
-      confirmText: `Delete ${selectedAssets.length} Assets`,
-      cancelText: "Cancel",
-      itemName: previewText,
-      onConfirm: async () => {
-        const loadingToast = toast.loading(
-          `Deleting ${selectedAssets.length} assets...`
-        );
-
-        let successCount = 0;
-        let failureCount = 0;
-
-        for (const publicId of selectedAssets) {
-          try {
-            await axios.delete(`/api/admin/cloudinary/${publicId}`);
-            successCount++;
-          } catch (error) {
-            console.error(`Error deleting asset ${publicId}:`, error);
-            failureCount++;
-          }
-        }
-
-        // Update toast based on results
-        toast.dismiss(loadingToast);
-        if (failureCount === 0) {
-          toast.success(`Successfully deleted ${successCount} assets`);
-        } else {
-          toast.error(
-            `Deleted ${successCount} assets, but failed to delete ${failureCount} assets`
-          );
-        }
-
-        // Refresh assets
-        fetchAssets();
-
-        // Clear selection
-        setSelectedAssets([]);
-        setBulkActionOpen(false);
-      },
-      onCancel: () => {
-        console.log("Bulk delete cancelled");
-      },
-      destructive: true,
-    });
-  };
-
-  // Bulk download assets
-  const bulkDownloadAssets = () => {
-    if (selectedAssets.length === 0) return;
-
-    // For smaller selections, open each in a new tab
-    if (selectedAssets.length <= 5) {
-      selectedAssets.forEach((publicId) => {
-        const asset = assets.find((asset) => asset.public_id === publicId);
-        if (asset) {
-          window.open(asset.secure_url, "_blank");
-        }
-      });
-      toast.success(`Opened ${selectedAssets.length} assets for download`);
-    } else {
-      // For larger selections, create a text file with all URLs
-      const urls = selectedAssets
-        .map((publicId) => {
-          const asset = assets.find((asset) => asset.public_id === publicId);
-          return asset ? asset.secure_url : null;
-        })
-        .filter(Boolean);
-
-      const urlText = urls.join("\n");
-      const blob = new Blob([urlText], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "cloudinary-assets-urls.txt";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast.success(`Created download list with ${urls.length} assets`);
-    }
-
-    // Keep selection mode active for further operations
-  };
-
-  const fetchAssets = async () => {
     try {
-      // Set loading state
-      if (page === 1) {
-        setLoading(true);
-      } else {
-        setLoadingMore(true);
-      }
-
-      // Convert date filters to ISO strings for the API
-      const apiFilters = { ...filters };
-      // build UTC ISO bounds from a local YYYY-MM-DD string
-      const toUTCISOFromLocal = (yyyyMmDd, endOfDay = false) => {
-        if (!yyyyMmDd) return null;
-        const t = endOfDay ? "T23:59:59.999" : "T00:00:00.000";
-        // Important: no 'Z' here → interpreted as LOCAL time, then we toISOString()
-        const dt = new Date(`${yyyyMmDd}${t}`);
-        return dt.toISOString();
-      };
-
-      if (apiFilters.startDate) {
+      const apiFilters = { ...currentFilters };
+      if (apiFilters.startDate)
         apiFilters.startDate = toUTCISOFromLocal(apiFilters.startDate, false);
-      }
-      if (apiFilters.endDate) {
+      if (apiFilters.endDate)
         apiFilters.endDate = toUTCISOFromLocal(apiFilters.endDate, true);
-      }
 
-      const response = await axios.get("/api/admin/cloudinary", {
-        params: {
-          page,
-          limit: 30,
-          ...apiFilters,
-        },
+      const data = await api.getCloudinaryAssets({
+        page: currentPage,
+        limit: 30,
+        ...apiFilters,
       });
 
-      // Check if response has the expected data structure
-      if (!response.data || !response.data.results) {
-        console.error("Invalid API response format:", response.data);
-        setError(
-          "Invalid response from server. Please contact the administrator."
-        );
-        toast.error("Invalid API response format");
-        return;
-      }
+      if (!data?.results) throw new Error('Invalid response format');
 
-      const { results, totalCount, hasMore, statistics } = response.data;
+      const { results, totalCount, hasMore: more, statistics } = data;
 
-      if (page === 1) {
-        setAssets(results || []);
-      } else {
-        setAssets((prev) => [...prev, ...(results || [])]);
-      }
-
-      setHasMore(!!hasMore);
+      setAssets((prev) =>
+        currentPage === 1 ? results : [...prev, ...results]
+      );
+      setHasMore(!!more);
       setStats({
         total: totalCount || 0,
         images: statistics?.imageCount || 0,
         videos: statistics?.videoCount || 0,
         storage: statistics?.totalStorage || 0,
       });
-
-      // Clear any previous errors
       setError(null);
     } catch (err) {
-      console.error("Error fetching Cloudinary assets:", err);
-      const errorMessage =
+      const msg =
         err.response?.data?.message ||
         err.message ||
-        "Failed to load media assets. Please try again.";
-      setError(
-        `${errorMessage} ${
-          err.response?.status === 500
-            ? "There might be an issue with the Cloudinary configuration."
-            : ""
-        }`
-      );
-      toast.error("Failed to load Cloudinary assets");
-
-      // Set empty assets if it's the first page
-      if (page === 1) {
-        setAssets([]);
-      }
+        'Failed to load media assets';
+      setError(msg);
+      if (currentPage === 1) setAssets([]);
+      toast.error('Failed to load assets');
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, []);
 
-  // Handle infinite scrolling
-  const observer = React.useRef();
-  const lastAssetElementRef = useCallback(
+  useEffect(() => {
+    fetchAssets(page, filters);
+  }, [page, filters, fetchAssets]);
+
+  // ── Infinite scroll ────────────────────────────────────────────────────────
+  const lastItemRef = useCallback(
     (node) => {
       if (loading || loadingMore) return;
-      if (observer.current) observer.current.disconnect();
-
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          setPage((prevPage) => prevPage + 1);
-        }
+      if (observerRef.current) observerRef.current.disconnect();
+      observerRef.current = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting && hasMore) setPage((p) => p + 1);
       });
-
-      if (node) observer.current.observe(node);
+      if (node) observerRef.current.observe(node);
     },
     [loading, loadingMore, hasMore]
   );
 
-  // Updated handleDeleteAsset to use global modal
-  const handleDeleteAsset = async (publicId) => {
-    // Find the asset to get its name or title for the confirmation modal
+  // ── Selection ──────────────────────────────────────────────────────────────
+  const toggleSelectMode = () => {
+    setSelectMode((v) => !v);
+    setSelectedAssets([]);
+  };
+
+  const toggleAssetSelection = (e, id) => {
+    e.stopPropagation();
+    setSelectedAssets((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  // ── Delete single ──────────────────────────────────────────────────────────
+  const handleDeleteAsset = (publicId) => {
     const asset = assets.find((a) => a.public_id === publicId);
-    const assetName = asset?.public_id.split("/").pop() || "this asset";
-    const assetType = asset?.resource_type === "video" ? "video" : "image";
+    const assetName = asset?.public_id.split('/').pop() || 'this asset';
+    const type = asset?.resource_type === 'video' ? 'video' : 'image';
 
     showDeleteModal({
-      title: `Delete ${assetType.charAt(0).toUpperCase() + assetType.slice(1)}`,
-      message: `Are you sure you want to delete this ${assetType}? This action cannot be undone and will permanently remove the file from Cloudinary.`,
-      confirmText: `Delete ${
-        assetType.charAt(0).toUpperCase() + assetType.slice(1)
-      }`,
-      cancelText: "Keep Asset",
+      title: `Delete ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+      message: `This will permanently remove the file from Cloudinary.`,
+      confirmText: `Delete ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+      cancelText: 'Keep Asset',
       itemName: assetName,
       onConfirm: async () => {
         try {
-          await axios.delete(`/api/admin/cloudinary/${publicId}`);
-          toast.success("Asset deleted successfully");
-
-          // Update local state
-          setAssets((prev) =>
-            prev.filter((asset) => asset.public_id !== publicId)
-          );
-          if (selectedAsset?.public_id === publicId) {
-            setSelectedAsset(null);
-          }
-
-          // Update stats
+          await api.deleteCloudinaryAsset(publicId);
+          toast.success('Asset deleted');
+          setAssets((prev) => prev.filter((a) => a.public_id !== publicId));
+          if (selectedAsset?.public_id === publicId) setSelectedAsset(null);
           setStats((prev) => ({
             ...prev,
             total: prev.total - 1,
             images:
-              asset?.resource_type === "image" ? prev.images - 1 : prev.images,
+              asset?.resource_type === 'image' ? prev.images - 1 : prev.images,
             videos:
-              asset?.resource_type === "video" ? prev.videos - 1 : prev.videos,
+              asset?.resource_type === 'video' ? prev.videos - 1 : prev.videos,
           }));
-        } catch (error) {
-          console.error("Error deleting asset:", error);
-
-          // More descriptive error message based on error status
-          if (error.response) {
-            if (error.response.status === 404) {
-              toast.error(
-                "API endpoint not found. Check your API routes configuration."
-              );
-            } else if (error.response.status === 403) {
-              toast.error("Cannot delete assets outside the SoloGram folder.");
-            } else if (error.response.status === 400) {
-              toast.error(error.response.data?.message || "Invalid request.");
-            } else {
-              toast.error(
-                `Server error: ${error.response.data?.message || error.message}`
-              );
-            }
-          } else {
+        } catch (err) {
+          const status = err.response?.status;
+          if (status === 404) toast.error('API endpoint not found');
+          else if (status === 403)
+            toast.error('Cannot delete assets outside the SoloGram folder');
+          else
             toast.error(
-              "Failed to connect to the server. Please check your network connection."
+              err.response?.data?.message || 'Failed to delete asset'
             );
-          }
         }
-      },
-      onCancel: () => {
-        console.log("Asset deletion cancelled");
       },
       destructive: true,
     });
   };
 
+  // ── Bulk delete ────────────────────────────────────────────────────────────
+  const bulkDeleteAssets = () => {
+    if (!selectedAssets.length) return;
+    const preview =
+      selectedAssets
+        .slice(0, 3)
+        .map(
+          (id) =>
+            assets
+              .find((a) => a.public_id === id)
+              ?.public_id.split('/')
+              .pop() || id
+        )
+        .join(', ') +
+      (selectedAssets.length > 3
+        ? ` and ${selectedAssets.length - 3} more`
+        : '');
+
+    showDeleteModal({
+      title: `Delete ${selectedAssets.length} Assets`,
+      message: `This will permanently remove ${selectedAssets.length} files from Cloudinary.`,
+      confirmText: `Delete ${selectedAssets.length} Assets`,
+      cancelText: 'Cancel',
+      itemName: preview,
+      onConfirm: async () => {
+        const toastId = toast.loading(
+          `Deleting ${selectedAssets.length} assets…`
+        );
+        let ok = 0,
+          fail = 0;
+        for (const id of selectedAssets) {
+          try {
+            await api.deleteCloudinaryAsset(id);
+            ok++;
+          } catch {
+            fail++;
+          }
+        }
+        toast.dismiss(toastId);
+        if (fail === 0) toast.success(`Deleted ${ok} assets`);
+        else toast.error(`Deleted ${ok}, failed ${fail}`);
+        fetchAssets(1, filters);
+        setSelectedAssets([]);
+        setSelectMode(false);
+      },
+      destructive: true,
+    });
+  };
+
+  // ── Bulk download ──────────────────────────────────────────────────────────
+  const bulkDownloadAssets = () => {
+    if (!selectedAssets.length) return;
+    if (selectedAssets.length <= 5) {
+      selectedAssets.forEach((id) => {
+        const a = assets.find((x) => x.public_id === id);
+        if (a) window.open(a.secure_url, '_blank');
+      });
+      toast.success(`Opened ${selectedAssets.length} assets`);
+    } else {
+      const urls = selectedAssets
+        .map((id) => assets.find((x) => x.public_id === id)?.secure_url)
+        .filter(Boolean);
+      const blob = new Blob([urls.join('\n')], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'sologram-assets.txt';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(`Download list created (${urls.length} URLs)`);
+    }
+  };
+
   const handleCopyUrl = (url) => {
     navigator.clipboard
       .writeText(url)
-      .then(() => toast.success("URL copied to clipboard"))
-      .catch(() => toast.error("Failed to copy URL"));
+      .then(() => toast.success('URL copied'))
+      .catch(() => toast.error('Failed to copy URL'));
   };
 
   const handleFilterChange = (name, value) => {
-    let newFilters = { ...filters, [name]: value };
-
-    // Reset to page 1 when changing filters
     setPage(1);
-    setFilters(newFilters);
+    setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
   const resetFilters = () => {
     setFilters({
-      type: "all",
-      dateRange: "all",
+      type: 'all',
+      dateRange: 'all',
       startDate: null,
       endDate: null,
     });
     setPage(1);
   };
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
+  // ── Derived ────────────────────────────────────────────────────────────────
+  const groupedAssets = groupAssetsByDate(assets);
+  const groupEntries = Object.entries(groupedAssets);
+  const lastGroupKey = groupEntries[groupEntries.length - 1]?.[0];
+  const activeFilters = filters.type !== 'all' || filters.dateRange !== 'all';
 
-  const formatDate = (date) => {
-    return format(new Date(date), "MMM d, yyyy");
-  };
-
-  const groupAssetsByDate = (assets) => {
-    const grouped = {};
-
-    assets.forEach((asset) => {
-      const date = new Date(asset.created_at);
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      let dateKey;
-      let dateLabel;
-
-      // Group by specific timeframes
-      if (date.toDateString() === today.toDateString()) {
-        dateKey = "today";
-        dateLabel = "Today";
-      } else if (date.toDateString() === yesterday.toDateString()) {
-        dateKey = "yesterday";
-        dateLabel = "Yesterday";
-      } else if (today.getTime() - date.getTime() < 7 * 24 * 60 * 60 * 1000) {
-        dateKey = "thisWeek";
-        dateLabel = "This Week";
-      } else if (
-        date.getMonth() === today.getMonth() &&
-        date.getFullYear() === today.getFullYear()
-      ) {
-        dateKey = "thisMonth";
-        dateLabel = "This Month";
-      } else {
-        // Format by month and year for older content
-        dateKey = `${date.getFullYear()}-${date.getMonth()}`;
-        dateLabel = format(date, "MMMM yyyy");
-      }
-
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = {
-          label: dateLabel,
-          assets: [],
-        };
-      }
-
-      grouped[dateKey].assets.push(asset);
-    });
-
-    // Sort keys by most recent first
-    const orderedGroups = {};
-    const order = ["today", "yesterday", "thisWeek", "thisMonth"];
-
-    // Add the predefined timeframes first
-    order.forEach((key) => {
-      if (grouped[key]) {
-        orderedGroups[key] = grouped[key];
-        delete grouped[key];
-      }
-    });
-
-    // Add the rest in reverse chronological order
-    Object.keys(grouped)
-      .sort((a, b) => b.localeCompare(a))
-      .forEach((key) => {
-        orderedGroups[key] = grouped[key];
-      });
-
-    return orderedGroups;
-  };
-
-  const getVariableAspectRatio = (publicId) => {
-    const sum = publicId
-      .split("")
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const options = ["1 / 1", "4 / 5", "4 / 3", "3 / 4", "16 / 9"];
-    return options[sum % options.length];
-  };
-
-  // Animation variants for framer-motion
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (custom) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: custom * 0.05,
-        duration: 0.3,
-        ease: "easeOut",
-      },
-    }),
-  };
-
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <GalleryContainer>
-      <GalleryHeader>
-        <HeaderTitle>
-          <GalleryIcon>
-            <FaCamera />
-          </GalleryIcon>
-          Media Gallery
-        </HeaderTitle>
-        <HeaderActions>
-          <FilterButton onClick={() => setFilterOpen(!filterOpen)}>
-            <FaFilter /> Filter
-          </FilterButton>
-          <SelectModeButton active={selectMode} onClick={toggleSelectMode}>
-            {selectMode ? (
-              <>
-                <FaCheckSquare /> Exit Selection
-              </>
-            ) : (
-              <>
-                <FaSquare /> Select Items
-              </>
-            )}
-          </SelectModeButton>
-          <StatsContainer>
-            <StatItem>
-              <StatValue>{stats.total}</StatValue>
-              <StatLabel>Total Assets</StatLabel>
-            </StatItem>
-            <StatItem>
-              <StatValue>{stats.images}</StatValue>
-              <StatLabel>Images</StatLabel>
-            </StatItem>
-            <StatItem>
-              <StatValue>{stats.videos}</StatValue>
-              <StatLabel>Videos</StatLabel>
-            </StatItem>
-            <StatItem>
-              <StatValue>{formatFileSize(stats.storage)}</StatValue>
-              <StatLabel>Storage Used</StatLabel>
-            </StatItem>
-          </StatsContainer>
-        </HeaderActions>
-      </GalleryHeader>
+    <Page>
+      {/* ── Page header ──────────────────────────────────────────────────── */}
+      <PageHeader>
+        <HeaderLeft>
+          <HeaderIcon>
+            <FaLayerGroup />
+          </HeaderIcon>
+          <div>
+            <HeaderTitle>Media Library</HeaderTitle>
+            <HeaderSub>Cloudinary asset manager</HeaderSub>
+          </div>
+        </HeaderLeft>
 
+        <HeaderRight>
+          <StatPill>
+            <StatNum>{stats.total}</StatNum>
+            <StatLbl>assets</StatLbl>
+          </StatPill>
+          <StatPill>
+            <StatNum>{stats.images}</StatNum>
+            <StatLbl>photos</StatLbl>
+          </StatPill>
+          <StatPill>
+            <StatNum>{stats.videos}</StatNum>
+            <StatLbl>videos</StatLbl>
+          </StatPill>
+          <StatPill $accent>
+            <StatNum>{formatFileSize(stats.storage)}</StatNum>
+            <StatLbl>used</StatLbl>
+          </StatPill>
+        </HeaderRight>
+      </PageHeader>
+
+      {/* ── Toolbar ──────────────────────────────────────────────────────── */}
+      <Toolbar>
+        <ToolBtn
+          onClick={() => setFilterOpen((v) => !v)}
+          $active={filterOpen || activeFilters}
+        >
+          <FaFilter />
+          Filters
+          {activeFilters && <ActiveDot />}
+        </ToolBtn>
+
+        <ToolBtn
+          onClick={toggleSelectMode}
+          $active={selectMode}
+          $salmon={selectMode}
+        >
+          {selectMode ? <FaCheckSquare /> : <FaSquare />}
+          {selectMode ? 'Exit Select' : 'Select'}
+        </ToolBtn>
+
+        {selectMode && selectedAssets.length > 0 && (
+          <SelectCount>{selectedAssets.length} selected</SelectCount>
+        )}
+        {selectMode && assets.length > 0 && (
+          <>
+            <QuickBtn
+              onClick={() => setSelectedAssets(assets.map((a) => a.public_id))}
+            >
+              All
+            </QuickBtn>
+            <QuickBtn onClick={() => setSelectedAssets([])}>None</QuickBtn>
+          </>
+        )}
+      </Toolbar>
+
+      {/* ── Filter panel ─────────────────────────────────────────────────── */}
       {filterOpen && (
         <FilterPanel>
-          <FilterHeader>
-            <FilterTitle>
-              <FaFilter />
-              Filter Media
-            </FilterTitle>
-            <CloseButton onClick={() => setFilterOpen(false)}>
-              <FaTimes />
-            </CloseButton>
-          </FilterHeader>
-          <FiltersGrid>
+          <FilterRow>
             <FilterGroup>
               <FilterLabel>
                 <FaImage /> Type
               </FilterLabel>
-              <FilterOptions>
-                <FilterOption
-                  active={filters.type === "all"}
-                  onClick={() => handleFilterChange("type", "all")}
-                >
-                  All
-                </FilterOption>
-                <FilterOption
-                  active={filters.type === "image"}
-                  onClick={() => handleFilterChange("type", "image")}
-                >
-                  Images
-                </FilterOption>
-                <FilterOption
-                  active={filters.type === "video"}
-                  onClick={() => handleFilterChange("type", "video")}
-                >
-                  Videos
-                </FilterOption>
-              </FilterOptions>
+              <PillGroup>
+                {['all', 'image', 'video'].map((v) => (
+                  <FilterPill
+                    key={v}
+                    $active={filters.type === v}
+                    onClick={() => handleFilterChange('type', v)}
+                  >
+                    {v === 'all' ? 'All' : v === 'image' ? 'Photos' : 'Videos'}
+                  </FilterPill>
+                ))}
+              </PillGroup>
             </FilterGroup>
 
             <FilterGroup>
               <FilterLabel>
-                <FaCalendarAlt /> Date Range
+                <FaCalendarAlt /> Date
               </FilterLabel>
-              <FilterOptions>
-                <FilterOption
-                  active={filters.dateRange === "all"}
-                  onClick={() => handleFilterChange("dateRange", "all")}
-                >
-                  All Time
-                </FilterOption>
-                <FilterOption
-                  active={filters.dateRange === "today"}
-                  onClick={() => handleFilterChange("dateRange", "today")}
-                >
-                  Today
-                </FilterOption>
-                <FilterOption
-                  active={filters.dateRange === "thisWeek"}
-                  onClick={() => handleFilterChange("dateRange", "thisWeek")}
-                >
-                  This Week
-                </FilterOption>
-                <FilterOption
-                  active={filters.dateRange === "thisMonth"}
-                  onClick={() => handleFilterChange("dateRange", "thisMonth")}
-                >
-                  This Month
-                </FilterOption>
-                <FilterOption
-                  active={filters.dateRange === "custom"}
-                  onClick={() => handleFilterChange("dateRange", "custom")}
-                >
-                  Custom Range
-                </FilterOption>
-              </FilterOptions>
+              <PillGroup>
+                {[
+                  { v: 'all', l: 'All time' },
+                  { v: 'today', l: 'Today' },
+                  { v: 'thisWeek', l: 'This week' },
+                  { v: 'thisMonth', l: 'This month' },
+                  { v: 'custom', l: 'Custom' },
+                ].map(({ v, l }) => (
+                  <FilterPill
+                    key={v}
+                    $active={filters.dateRange === v}
+                    onClick={() => handleFilterChange('dateRange', v)}
+                  >
+                    {l}
+                  </FilterPill>
+                ))}
+              </PillGroup>
             </FilterGroup>
+          </FilterRow>
 
-            {filters.dateRange === "custom" && (
-              <CustomDateRange>
-                <DateInput
-                  type="date"
-                  value={filters.startDate || ""}
-                  onChange={(e) =>
-                    handleFilterChange("startDate", e.target.value)
-                  }
-                  placeholder="Start Date"
-                />
-                <DateInput
-                  type="date"
-                  value={filters.endDate || ""}
-                  onChange={(e) =>
-                    handleFilterChange("endDate", e.target.value)
-                  }
-                  placeholder="End Date"
-                />
-              </CustomDateRange>
-            )}
-          </FiltersGrid>
-          <FilterActions>
-            <ResetButton onClick={resetFilters}>Reset Filters</ResetButton>
-            <ApplyButton onClick={() => setFilterOpen(false)}>
-              Apply Filters
-            </ApplyButton>
-          </FilterActions>
+          {filters.dateRange === 'custom' && (
+            <DateRow>
+              <DateInput
+                type='date'
+                value={filters.startDate || ''}
+                onChange={(e) =>
+                  handleFilterChange('startDate', e.target.value)
+                }
+              />
+              <DateSep>→</DateSep>
+              <DateInput
+                type='date'
+                value={filters.endDate || ''}
+                onChange={(e) => handleFilterChange('endDate', e.target.value)}
+              />
+            </DateRow>
+          )}
+
+          <FilterFooter>
+            <ResetBtn onClick={resetFilters}>Reset</ResetBtn>
+            <ApplyBtn onClick={() => setFilterOpen(false)}>Apply</ApplyBtn>
+          </FilterFooter>
         </FilterPanel>
       )}
 
+      {/* ── Grid / states ─────────────────────────────────────────────────── */}
       {loading && page === 1 ? (
-        <LoadingContainer>
-          <LoadingSpinner
-            text="Loading media assets"
-            size="60px"
-            height="400px"
-          />
-        </LoadingContainer>
+        <LoadingSpinner text='Loading assets' size='60px' height='400px' />
       ) : error ? (
-        <ErrorMessage>
-          <ErrorIcon>
-            <FaCamera />
-          </ErrorIcon>
-          <ErrorText>{error}</ErrorText>
-        </ErrorMessage>
-      ) : assets.length > 0 ? (
-        <>
-          {Object.entries(groupAssetsByDate(assets)).map(([dateKey, group]) => (
-            <DateSection key={dateKey}>
-              <DateHeading>
-                {group.label}
-                <DateCount>{group.assets.length}</DateCount>
-              </DateHeading>
-              <GalleryGrid>
-                {group.assets.map((asset, index) => (
-                  <GalleryItem
-                    ref={
-                      group.assets.length === index + 1 &&
-                      Object.keys(groupAssetsByDate(assets)).pop() === dateKey
-                        ? lastAssetElementRef
-                        : null
-                    }
+        <EmptyState $error>
+          <EmptyIcon $error>
+            <FaImage />
+          </EmptyIcon>
+          <EmptyTitle>Failed to load</EmptyTitle>
+          <EmptyText>{error}</EmptyText>
+        </EmptyState>
+      ) : assets.length === 0 ? (
+        <EmptyState>
+          <EmptyIcon>
+            <FaImage />
+          </EmptyIcon>
+          <EmptyTitle>No assets found</EmptyTitle>
+          <EmptyText>Try adjusting your filters</EmptyText>
+        </EmptyState>
+      ) : (
+        groupEntries.map(([dateKey, group], groupIdx) => (
+          <DateSection key={dateKey}>
+            <SectionHeading>
+              <SectionLabel>{group.label}</SectionLabel>
+              <SectionCount>{group.assets.length}</SectionCount>
+              <SectionLine />
+            </SectionHeading>
+
+            <GalleryGrid>
+              {group.assets.map((asset, idx) => {
+                const isLast =
+                  groupIdx === groupEntries.length - 1 &&
+                  idx === group.assets.length - 1;
+                const checked = selectedAssets.includes(asset.public_id);
+
+                return (
+                  <GridItem
                     key={asset.public_id}
-                    onClick={() => setSelectedAsset(asset)}
-                    aspectRatio={getVariableAspectRatio(asset.public_id)}
-                    initial="hidden"
-                    animate="visible"
-                    custom={index % 20} // Stagger animation in groups of 20
-                    variants={itemVariants}
-                    whileHover={{
-                      y: -5,
-                      boxShadow: `0 8px 24px ${COLORS.primarySalmon}30`,
-                      zIndex: 2,
-                    }}
+                    ref={isLast ? lastItemRef : null}
+                    onClick={() =>
+                      selectMode
+                        ? toggleAssetSelection(
+                            { stopPropagation: () => {} },
+                            asset.public_id
+                          )
+                        : setSelectedAsset(asset)
+                    }
+                    $checked={checked}
+                    $index={idx % 20}
                   >
-                    {asset.resource_type === "image" ? (
-                      <GalleryImage
+                    {asset.resource_type === 'image' ? (
+                      <ItemImg
                         src={getTransformedImageUrl(asset.secure_url, {
                           width: 400,
                           height: 400,
-                          crop: "fill",
-                          quality: "auto",
-                          format: "auto",
+                          crop: 'fill',
+                          quality: 'auto',
+                          format: 'auto',
                         })}
                         alt={asset.public_id}
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.src =
-                            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="300" height="300"><rect width="24" height="24" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="3" text-anchor="middle" fill="%23999">Image Error</text></svg>';
+                          e.target.src = '/placeholder-image.jpg';
                         }}
                       />
                     ) : (
-                      <VideoThumbnail>
-                        <VideoIcon>
-                          <FaVideo />
-                        </VideoIcon>
-                        <VideoPreview
+                      <VideoThumb>
+                        <ItemImg
                           src={getTransformedImageUrl(
-                            asset.secure_url.replace(/\.[^.]+$/, ".jpg"),
+                            asset.secure_url.replace(/\.[^.]+$/, '.jpg'),
                             {
                               width: 400,
                               height: 400,
-                              crop: "fill",
-                              quality: "auto",
-                              format: "auto",
+                              crop: 'fill',
+                              quality: 'auto',
                             }
                           )}
                           alt={asset.public_id}
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src =
-                              'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="300" height="300"><rect width="24" height="24" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="3" text-anchor="middle" fill="%23999">Video</text></svg>';
+                            e.target.src = '/placeholder-image.jpg';
                           }}
                         />
-                      </VideoThumbnail>
+                        <VideoPlay>
+                          <FaVideo />
+                        </VideoPlay>
+                      </VideoThumb>
                     )}
-                    <ItemOverlay className="item-overlay">
-                      <OverlayInfo>
-                        <AssetDate>{formatDate(asset.created_at)}</AssetDate>
-                        <AssetSize>{formatFileSize(asset.bytes)}</AssetSize>
-                      </OverlayInfo>
+
+                    {/* Hover info overlay */}
+                    <ItemOverlay>
+                      <OverlayDate>{formatDate(asset.created_at)}</OverlayDate>
+                      <OverlaySize>{formatFileSize(asset.bytes)}</OverlaySize>
                     </ItemOverlay>
-                    {(selectMode ||
-                      selectedAssets.includes(asset.public_id)) && (
-                      <SelectionOverlay
-                        visible={
-                          selectMode || selectedAssets.includes(asset.public_id)
-                        }
+
+                    {/* Selection checkbox */}
+                    {(selectMode || checked) && (
+                      <CheckOverlay
+                        $checked={checked}
                         onClick={(e) =>
                           toggleAssetSelection(e, asset.public_id)
                         }
                       >
-                        {selectedAssets.includes(asset.public_id) ? (
-                          <FaCheckSquare />
-                        ) : (
-                          <FaSquare />
-                        )}
-                      </SelectionOverlay>
+                        {checked ? <FaCheckSquare /> : <FaSquare />}
+                      </CheckOverlay>
                     )}
-                  </GalleryItem>
-                ))}
-              </GalleryGrid>
-            </DateSection>
-          ))}
-          {loadingMore && (
-            <LoadingMoreContainer>
-              <LoadingSpinner
-                text="Loading more assets"
-                size="40px"
-                height="120px"
-                textSize="0.875rem"
-              />
-            </LoadingMoreContainer>
-          )}
-        </>
-      ) : (
-        <NoAssetsMessage>
-          <EmptyStateIcon>
-            <FaImage />
-          </EmptyStateIcon>
-          <EmptyStateText>
-            No media assets found with the current filters
-          </EmptyStateText>
-        </NoAssetsMessage>
+                  </GridItem>
+                );
+              })}
+            </GalleryGrid>
+          </DateSection>
+        ))
       )}
 
+      {loadingMore && (
+        <LoadingSpinner
+          text='Loading more'
+          size='40px'
+          height='100px'
+          textSize='0.82rem'
+        />
+      )}
+
+      {/* ── Asset detail modal ────────────────────────────────────────────── */}
       {selectedAsset && (
-        <AssetModal onClick={() => setSelectedAsset(null)}>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
-            <ModalHeader>
+        <Modal onClick={() => setSelectedAsset(null)}>
+          <ModalCard onClick={(e) => e.stopPropagation()}>
+            <ModalHead>
               <ModalTitle>Asset Details</ModalTitle>
-              <CloseButton onClick={() => setSelectedAsset(null)}>
+              <CloseBtn onClick={() => setSelectedAsset(null)}>
                 <FaTimes />
-              </CloseButton>
-            </ModalHeader>
+              </CloseBtn>
+            </ModalHead>
+
             <ModalBody>
-              <AssetPreview>
-                {selectedAsset.resource_type === "image" ? (
-                  <PreviewImage
+              <ModalPreview>
+                {selectedAsset.resource_type === 'image' ? (
+                  <ModalImg
                     src={getTransformedImageUrl(selectedAsset.secure_url, {
                       width: 800,
                       height: 800,
-                      crop: "limit",
-                      quality: "auto",
+                      crop: 'limit',
+                      quality: 'auto',
                     })}
                     alt={selectedAsset.public_id}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src =
-                        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="800" height="800"><rect width="24" height="24" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="3" text-anchor="middle" fill="%23999">Image Error</text></svg>';
-                    }}
                   />
                 ) : (
-                  <PreviewVideo controls>
+                  <ModalVid controls>
                     <source
                       src={selectedAsset.secure_url}
-                      type={
-                        selectedAsset.format
-                          ? `video/${selectedAsset.format}`
-                          : "video/mp4"
-                      }
+                      type={`video/${selectedAsset.format || 'mp4'}`}
                     />
-                    Your browser does not support the video tag.
-                  </PreviewVideo>
+                  </ModalVid>
                 )}
-              </AssetPreview>
-              <AssetInfo>
-                <InfoGroup>
-                  <InfoLabel>ID:</InfoLabel>
-                  <InfoValue>{selectedAsset.public_id}</InfoValue>
-                </InfoGroup>
-                <InfoGroup>
-                  <InfoLabel>Folder Path:</InfoLabel>
-                  <InfoValue>{selectedAsset.folder || "Root folder"}</InfoValue>
-                </InfoGroup>
-                <InfoGroup>
-                  <InfoLabel>Type:</InfoLabel>
-                  <InfoValue>
-                    {selectedAsset.resource_type} / {selectedAsset.format}
-                  </InfoValue>
-                </InfoGroup>
-                <InfoGroup>
-                  <InfoLabel>Uploaded:</InfoLabel>
-                  <InfoValue>{formatDate(selectedAsset.created_at)}</InfoValue>
-                </InfoGroup>
-                <InfoGroup>
-                  <InfoLabel>Size:</InfoLabel>
-                  <InfoValue>{formatFileSize(selectedAsset.bytes)}</InfoValue>
-                </InfoGroup>
-                <InfoGroup>
-                  <InfoLabel>Dimensions:</InfoLabel>
-                  <InfoValue>
-                    {selectedAsset.width} x {selectedAsset.height}px
-                  </InfoValue>
-                </InfoGroup>
-                <InfoGroup>
-                  <InfoLabel>URL:</InfoLabel>
-                  <InfoValue className="url">
-                    {selectedAsset.secure_url}
-                  </InfoValue>
-                </InfoGroup>
-              </AssetInfo>
+              </ModalPreview>
+
+              <MetaPanel>
+                {[
+                  { label: 'ID', value: selectedAsset.public_id },
+                  { label: 'Folder', value: selectedAsset.folder || 'Root' },
+                  {
+                    label: 'Type',
+                    value: `${selectedAsset.resource_type} / ${selectedAsset.format}`,
+                  },
+                  {
+                    label: 'Uploaded',
+                    value: formatDate(selectedAsset.created_at),
+                  },
+                  { label: 'Size', value: formatFileSize(selectedAsset.bytes) },
+                  {
+                    label: 'Dimensions',
+                    value: `${selectedAsset.width} × ${selectedAsset.height}px`,
+                  },
+                  {
+                    label: 'URL',
+                    value: selectedAsset.secure_url,
+                    breakAll: true,
+                  },
+                ].map(({ label, value, breakAll }) => (
+                  <MetaRow key={label}>
+                    <MetaLabel>{label}</MetaLabel>
+                    <MetaValue $breakAll={breakAll}>{value}</MetaValue>
+                  </MetaRow>
+                ))}
+              </MetaPanel>
             </ModalBody>
-            <ModalFooter>
-              <ActionButton
-                onClick={() => handleCopyUrl(selectedAsset.secure_url)}
-                color={COLORS.primaryMint}
-              >
-                <FaCopy /> <span>Copy URL</span>
-              </ActionButton>
-              <ActionButton
-                as="a"
+
+            <ModalFoot>
+              <FootBtn onClick={() => handleCopyUrl(selectedAsset.secure_url)}>
+                <FaCopy /> Copy URL
+              </FootBtn>
+              <FootBtn
+                as='a'
                 href={selectedAsset.secure_url}
                 download
-                target="_blank"
-                rel="noopener noreferrer"
-                color={COLORS.success}
+                target='_blank'
+                rel='noopener noreferrer'
+                $mint
               >
-                <FaDownload /> <span>Download</span>
-              </ActionButton>
-              <ActionButton
+                <FaDownload /> Download
+              </FootBtn>
+              <FootBtn
+                $danger
                 onClick={() => handleDeleteAsset(selectedAsset.public_id)}
-                color={COLORS.error}
               >
-                <FaTrash /> <span>Delete</span>
-              </ActionButton>
-            </ModalFooter>
-          </ModalContent>
-        </AssetModal>
+                <FaTrash /> Delete
+              </FootBtn>
+            </ModalFoot>
+          </ModalCard>
+        </Modal>
       )}
+
+      {/* ── Bulk action bar ───────────────────────────────────────────────── */}
       {selectedAssets.length > 0 && (
-        <BulkActionBar visible={selectedAssets.length > 0}>
+        <BulkBar>
           <BulkInfo>
-            <SelectedCount>
-              Selected <span>{selectedAssets.length}</span> items
-            </SelectedCount>
-            <SelectionActions>
-              <SelectionAction onClick={selectAllAssets}>
-                Select All
-              </SelectionAction>
-              <SelectionAction onClick={deselectAllAssets}>
-                Clear
-              </SelectionAction>
-            </SelectionActions>
+            <BulkCount>
+              <strong>{selectedAssets.length}</strong> selected
+            </BulkCount>
           </BulkInfo>
           <BulkActions>
-            <BulkActionButton onClick={bulkDownloadAssets}>
+            <BulkBtn onClick={bulkDownloadAssets}>
               <FaDownload /> Download
-            </BulkActionButton>
-            <BulkActionButton danger onClick={bulkDeleteAssets}>
+            </BulkBtn>
+            <BulkBtn $danger onClick={bulkDeleteAssets}>
               <FaTrash /> Delete
-            </BulkActionButton>
+            </BulkBtn>
           </BulkActions>
-        </BulkActionBar>
+        </BulkBar>
       )}
-    </GalleryContainer>
+    </Page>
   );
 };
 
-// Enhanced Styled Components with SoloGram Theme
-const GalleryContainer = styled.div`
+export default CloudinaryGallery;
+
+// ─── Animations ───────────────────────────────────────────────────────────────
+
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0);    }
+`;
+
+const shimmer = keyframes`
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+`;
+
+const slideUp = keyframes`
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+`;
+
+// ─── Page shell ───────────────────────────────────────────────────────────────
+
+const Page = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
-  background-color: ${COLORS.background};
+  padding: 24px 24px 120px;
+  background: ${COLORS.background};
   min-height: 100vh;
 
   @media (max-width: 768px) {
-    padding: 1rem;
+    padding: 16px 16px 120px;
   }
 `;
 
-const GalleryHeader = styled.div`
+// ─── Header ───────────────────────────────────────────────────────────────────
+
+const PageHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
   flex-wrap: wrap;
-  gap: 1rem;
-  padding: 1.5rem;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.cardBackground} 0%,
-    ${COLORS.elevatedBackground} 100%
-  );
-  border-radius: 12px;
-  border: 1px solid ${COLORS.divider};
-  box-shadow: ${COLORS.shadow};
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 1rem;
-  }
+  gap: 16px;
+  margin-bottom: 20px;
 `;
 
-const HeaderTitle = styled.h1`
-  color: ${COLORS.textPrimary};
-  font-weight: 700;
-  font-size: 1.75rem;
-  margin: 0;
+const HeaderLeft = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-
-  @media (max-width: 768px) {
-    font-size: 1.5rem;
-  }
+  gap: 14px;
 `;
 
-const GalleryIcon = styled.div`
-  width: 40px;
-  height: 40px;
+const HeaderIcon = styled.div`
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   background: linear-gradient(
-    45deg,
+    135deg,
     ${COLORS.primarySalmon},
     ${COLORS.accentSalmon}
   );
-  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 18px;
-  box-shadow: 0 4px 12px rgba(233, 137, 115, 0.3);
+  color: #fff;
+  font-size: 1.1rem;
+  box-shadow: 0 6px 16px ${COLORS.primarySalmon}44;
+  flex-shrink: 0;
 `;
 
-const HeaderActions = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-
-  @media (max-width: 768px) {
-    width: 100%;
-    justify-content: space-between;
-  }
+const HeaderTitle = styled.h1`
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: ${COLORS.textPrimary};
+  letter-spacing: -0.03em;
+  margin: 0 0 2px;
 `;
 
-const FilterButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(
-    45deg,
-    ${COLORS.primaryBlueGray},
-    ${COLORS.accentBlueGray}
-  );
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1.25rem;
+const HeaderSub = styled.p`
+  font-size: 0.72rem;
   font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(101, 142, 169, 0.3);
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(101, 142, 169, 0.4);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  @media (max-width: 767px) {
-    width: 100%;
-    justify-content: center;
-    padding: 0.75rem;
-    border-radius: 6px;
-  }
+  color: ${COLORS.textTertiary};
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 0;
 `;
 
-const StatsContainer = styled.div`
+const HeaderRight = styled.div`
   display: flex;
-  gap: 1.5rem;
-  background-color: ${COLORS.cardBackground};
-  padding: 1rem 1.5rem;
-  border-radius: 12px;
-  box-shadow: ${COLORS.shadow};
-  border: 1px solid ${COLORS.divider};
-
-  @media (max-width: 768px) {
-    flex-wrap: wrap;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-    gap: 1rem;
-    margin-top: 0.5rem;
-    overflow-x: hidden;
-  }
+  gap: 8px;
+  flex-wrap: wrap;
 `;
 
-const StatItem = styled.div`
+const StatPill = styled.div`
+  background: ${(p) =>
+    p.$accent
+      ? `linear-gradient(135deg, ${COLORS.primarySalmon}22, ${COLORS.primaryMint}22)`
+      : COLORS.cardBackground};
+  border: 1px solid
+    ${(p) => (p.$accent ? COLORS.primarySalmon + '44' : COLORS.border)};
+  border-radius: 10px;
+  padding: 8px 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
   min-width: 60px;
-
-  @media (max-width: 768px) {
-    flex: 0 0 calc(50% - 0.5rem);
-    margin-bottom: 0.5rem;
-  }
 `;
 
-const StatValue = styled.div`
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: ${COLORS.primarySalmon};
-
-  @media (max-width: 768px) {
-    font-size: 1rem;
-  }
-`;
-
-const StatLabel = styled.div`
-  font-size: 0.875rem;
-  color: ${COLORS.textSecondary};
-  text-align: center;
-
-  @media (max-width: 768px) {
-    font-size: 0.75rem;
-  }
-`;
-
-const FilterPanel = styled.div`
-  margin-bottom: 2rem;
-  background-color: ${COLORS.cardBackground};
-  border-radius: 12px;
-  box-shadow: ${COLORS.shadow};
-  overflow: hidden;
-  border: 1px solid ${COLORS.divider};
-`;
-
-const FilterHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem 1.5rem;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.elevatedBackground} 0%,
-    ${COLORS.cardBackground} 100%
-  );
-  border-bottom: 1px solid ${COLORS.divider};
-`;
-
-const FilterTitle = styled.h3`
-  margin: 0;
-  color: ${COLORS.textPrimary};
-  font-size: 1.125rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  svg {
-    color: ${COLORS.primaryBlueGray};
-  }
-`;
-
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  color: ${COLORS.textTertiary};
-  cursor: pointer;
+const StatNum = styled.span`
   font-size: 1rem;
+  font-weight: 700;
+  color: ${COLORS.primarySalmon};
+  line-height: 1;
+`;
+
+const StatLbl = styled.span`
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: ${COLORS.textTertiary};
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+`;
+
+// ─── Toolbar ──────────────────────────────────────────────────────────────────
+
+const Toolbar = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  border-radius: 50%;
-  transition: all 0.3s ease;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+`;
+
+const ToolBtn = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 20px;
+  border: 1px solid
+    ${(p) => (p.$active ? COLORS.primarySalmon + '88' : COLORS.border)};
+  background: ${(p) =>
+    p.$salmon
+      ? `linear-gradient(135deg, ${COLORS.primarySalmon}, ${COLORS.accentSalmon})`
+      : p.$active
+      ? COLORS.primarySalmon + '15'
+      : COLORS.cardBackground};
+  color: ${(p) =>
+    p.$salmon
+      ? '#fff'
+      : p.$active
+      ? COLORS.primarySalmon
+      : COLORS.textSecondary};
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
 
   &:hover {
-    background-color: ${COLORS.buttonHover};
-    color: ${COLORS.textPrimary};
-    transform: scale(1.1);
+    border-color: ${COLORS.primarySalmon};
+    color: ${(p) => (p.$salmon ? '#fff' : COLORS.primarySalmon)};
+    background: ${(p) =>
+      p.$salmon
+        ? `linear-gradient(135deg, ${COLORS.accentSalmon}, ${COLORS.primarySalmon})`
+        : COLORS.primarySalmon + '12'};
   }
 `;
 
-const FiltersGrid = styled.div`
-  padding: 1.5rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
+const ActiveDot = styled.span`
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: ${COLORS.primarySalmon};
+  position: absolute;
+  top: 5px;
+  right: 5px;
+`;
 
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    padding: 1rem;
-    gap: 1rem;
+const SelectCount = styled.span`
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: ${COLORS.primarySalmon};
+  padding: 0 4px;
+`;
+
+const QuickBtn = styled.button`
+  background: none;
+  border: 1px solid ${COLORS.border};
+  color: ${COLORS.textTertiary};
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  &:hover {
+    border-color: ${COLORS.primarySalmon};
+    color: ${COLORS.primarySalmon};
   }
+`;
+
+// ─── Filter panel ─────────────────────────────────────────────────────────────
+
+const FilterPanel = styled.div`
+  background: ${COLORS.cardBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  animation: ${fadeUp} 0.2s ease;
+`;
+
+const FilterRow = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-bottom: 16px;
 `;
 
 const FilterGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 10px;
 `;
 
 const FilterLabel = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: ${COLORS.textSecondary};
-  font-weight: 600;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: ${COLORS.textTertiary};
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
 
   svg {
     color: ${COLORS.primaryMint};
   }
 `;
 
-const FilterOptions = styled.div`
+const PillGroup = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 6px;
 `;
 
-const FilterOption = styled.button`
-  background-color: ${(props) =>
-    props.active ? COLORS.primaryBlueGray : COLORS.elevatedBackground};
-  color: ${(props) => (props.active ? "white" : COLORS.textSecondary)};
-  border: 1px solid
-    ${(props) => (props.active ? COLORS.primaryBlueGray : COLORS.border)};
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
+const FilterPill = styled.button`
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.border)};
+  background: ${(p) =>
+    p.$active
+      ? `linear-gradient(135deg, ${COLORS.primarySalmon}, ${COLORS.accentSalmon})`
+      : 'transparent'};
+  color: ${(p) => (p.$active ? '#fff' : COLORS.textSecondary)};
+  font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.3s ease;
+  transition: all 0.18s;
+  box-shadow: ${(p) =>
+    p.$active ? `0 4px 12px ${COLORS.primarySalmon}44` : 'none'};
 
   &:hover {
-    background-color: ${(props) =>
-      props.active ? COLORS.accentBlueGray : COLORS.buttonHover};
-    border-color: ${(props) =>
-      props.active ? COLORS.accentBlueGray : COLORS.primaryBlueGray};
-    transform: translateY(-1px);
+    border-color: ${COLORS.primarySalmon};
+    color: ${(p) => (p.$active ? '#fff' : COLORS.primarySalmon)};
   }
 `;
 
-const CustomDateRange = styled.div`
+const DateRow = styled.div`
   display: flex;
-  gap: 1rem;
-  margin-top: 0.5rem;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 540px) {
     flex-direction: column;
-    gap: 0.5rem;
+    align-items: stretch;
+  }
+`;
+
+const DateSep = styled.span`
+  color: ${COLORS.textTertiary};
+  font-size: 0.9rem;
+  @media (max-width: 540px) {
+    display: none;
   }
 `;
 
 const DateInput = styled.input`
-  padding: 0.75rem;
+  flex: 1;
+  padding: 9px 12px;
+  background: ${COLORS.elevatedBackground};
   border: 1px solid ${COLORS.border};
-  border-radius: 6px;
+  border-radius: 10px;
   color: ${COLORS.textPrimary};
   font-size: 0.875rem;
-  background-color: ${COLORS.elevatedBackground};
-  transition: all 0.3s ease;
+  transition: border-color 0.2s, box-shadow 0.2s;
 
   &:focus {
     outline: none;
-    border-color: ${COLORS.primaryBlueGray};
-    box-shadow: 0 0 0 3px rgba(101, 142, 169, 0.1);
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}22;
   }
 `;
 
-const FilterActions = styled.div`
+const FilterFooter = styled.div`
   display: flex;
   justify-content: flex-end;
-  padding: 1rem 1.5rem;
-  gap: 1rem;
-  border-top: 1px solid ${COLORS.divider};
-  background-color: ${COLORS.elevatedBackground};
-
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid ${COLORS.border};
 `;
 
-const ResetButton = styled.button`
-  background: none;
+const ResetBtn = styled.button`
+  padding: 8px 18px;
   border: 1px solid ${COLORS.border};
+  border-radius: 20px;
+  background: none;
   color: ${COLORS.textSecondary};
-  padding: 0.75rem 1.25rem;
-  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.3s ease;
-
+  transition: all 0.2s;
   &:hover {
-    background-color: ${COLORS.buttonHover};
+    border-color: ${COLORS.textSecondary};
     color: ${COLORS.textPrimary};
-    border-color: ${COLORS.primaryBlueGray};
   }
 `;
 
-const ApplyButton = styled.button`
+const ApplyBtn = styled.button`
+  padding: 8px 22px;
+  border-radius: 20px;
+  border: none;
   background: linear-gradient(
-    45deg,
+    135deg,
     ${COLORS.primarySalmon},
     ${COLORS.accentSalmon}
   );
-  color: white;
-  border: none;
-  padding: 0.75rem 1.25rem;
-  border-radius: 6px;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
   cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(233, 137, 115, 0.3);
-
+  box-shadow: 0 4px 12px ${COLORS.primarySalmon}44;
+  transition: opacity 0.2s, transform 0.2s;
   &:hover {
+    opacity: 0.9;
     transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(233, 137, 115, 0.4);
   }
 `;
+
+// ─── Date sections ────────────────────────────────────────────────────────────
+
+const DateSection = styled.section`
+  margin-bottom: 32px;
+`;
+
+const SectionHeading = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+`;
+
+const SectionLabel = styled.h2`
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: ${COLORS.textSecondary};
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0;
+  white-space: nowrap;
+`;
+
+const SectionCount = styled.span`
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: ${COLORS.primarySalmon};
+  background: ${COLORS.primarySalmon}18;
+  border: 1px solid ${COLORS.primarySalmon}44;
+  padding: 2px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+`;
+
+const SectionLine = styled.div`
+  flex: 1;
+  height: 1px;
+  background: ${COLORS.border};
+`;
+
+// ─── Gallery grid ─────────────────────────────────────────────────────────────
 
 const GalleryGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
 
-  @media (max-width: 767px) {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 0.75rem;
-  }
-
-  @media (max-width: 480px) {
+  @media (max-width: 600px) {
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
+    gap: 8px;
   }
 `;
 
-const GalleryItem = styled(motion.div)`
-  background-color: ${COLORS.cardBackground};
+const GridItem = styled.div`
+  aspect-ratio: 1 / 1;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: ${COLORS.shadow};
   position: relative;
-  aspect-ratio: ${(props) => props.aspectRatio || "1 / 1"};
   cursor: pointer;
-  border: 1px solid ${COLORS.divider};
-  transition: all 0.3s ease;
+  background: ${COLORS.cardBackground};
+  border: 2px solid
+    ${(p) => (p.$checked ? COLORS.primarySalmon : 'transparent')};
+  box-shadow: ${(p) =>
+    p.$checked ? `0 0 0 1px ${COLORS.primarySalmon}` : 'none'};
+  animation: ${fadeUp} 0.3s ease both;
+  animation-delay: ${(p) => p.$index * 0.03}s;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 
   &:hover {
-    border-color: ${COLORS.primarySalmon};
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35),
+      0 0 0 1px ${COLORS.primarySalmon}44;
   }
 
-  &:hover .item-overlay {
+  &:hover .overlay {
     opacity: 1;
   }
 `;
 
-const GalleryImage = styled.img`
+const ItemImg = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
   transition: transform 0.3s ease;
-`;
 
-const VideoThumbnail = styled.div`
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-
-  &:after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.2));
-    pointer-events: none;
+  ${GridItem}:hover & {
+    transform: scale(1.04);
   }
 `;
 
-const VideoPreview = styled.img`
+const VideoThumb = styled.div`
+  position: relative;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
 `;
 
-const VideoIcon = styled.div`
+const VideoPlay = styled.div`
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: linear-gradient(
-    45deg,
-    ${COLORS.primaryBlueGray},
-    ${COLORS.primaryMint}
-  );
-  border-radius: 50%;
   width: 40px;
   height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.primaryMint}
+  );
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #fff;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   z-index: 2;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease;
+  transition: transform 0.2s;
 
-  svg {
-    color: white;
-    font-size: 1.125rem;
-  }
-
-  ${GalleryItem}:hover & {
+  ${GridItem}:hover & {
     transform: translate(-50%, -50%) scale(1.1);
   }
 `;
 
-const ItemOverlay = styled.div`
+const ItemOverlay = styled.div.attrs({ className: 'overlay' })`
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(transparent, rgba(18, 18, 18, 0.8));
-  padding: 1rem;
+  inset: auto 0 0 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78) 0%, transparent 100%);
+  padding: 20px 10px 10px;
   opacity: 0;
-  transition: opacity 0.3s ease;
-`;
-
-const OverlayInfo = styled.div`
+  transition: opacity 0.2s;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  color: white;
 `;
 
-const AssetDate = styled.div`
-  font-size: 0.75rem;
-  font-weight: 500;
+const OverlayDate = styled.span`
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
 `;
 
-const AssetSize = styled.div`
-  font-size: 0.75rem;
-  opacity: 0.8;
+const OverlaySize = styled.span`
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.6);
 `;
 
-const AssetModal = styled.div`
+const CheckOverlay = styled.div`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: ${(p) =>
+    p.$checked ? COLORS.primarySalmon : 'rgba(0,0,0,0.55)'};
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.18s;
+  box-shadow: ${(p) =>
+    p.$checked ? `0 0 0 2px ${COLORS.primarySalmon}` : 'none'};
+
+  &:hover {
+    transform: scale(1.12);
+    background: ${COLORS.primarySalmon};
+  }
+`;
+
+// ─── Empty / error states ─────────────────────────────────────────────────────
+
+const EmptyState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+  background: ${COLORS.cardBackground};
+  border-radius: 16px;
+  border: 1px solid ${COLORS.border};
+  margin-top: 16px;
+`;
+
+const EmptyIcon = styled.div`
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: ${(p) =>
+    p.$error ? `${COLORS.error}18` : COLORS.elevatedBackground};
+  border: 1px solid ${(p) => (p.$error ? `${COLORS.error}44` : COLORS.border)};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: ${(p) => (p.$error ? COLORS.error : COLORS.textTertiary)};
+  margin-bottom: 16px;
+`;
+
+const EmptyTitle = styled.h3`
+  font-size: 1rem;
+  font-weight: 700;
+  color: ${COLORS.textPrimary};
+  margin: 0 0 6px;
+`;
+
+const EmptyText = styled.p`
+  font-size: 0.875rem;
+  color: ${COLORS.textSecondary};
+  max-width: 320px;
+  line-height: 1.5;
+  margin: 0;
+`;
+
+// ─── Asset detail modal ───────────────────────────────────────────────────────
+
+const Modal = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.9);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 2rem;
+  padding: 20px;
   overflow-y: auto;
 
   @media (max-width: 768px) {
-    padding: 1rem;
     align-items: flex-start;
-    padding-bottom: 80px;
+    padding: 12px;
   }
 `;
 
-const ModalContent = styled.div`
-  background-color: ${COLORS.cardBackground};
-  border-radius: 12px;
+const ModalCard = styled.div`
+  background: ${COLORS.cardBackground};
+  border-radius: 16px;
   overflow: hidden;
   width: 100%;
-  max-width: 1000px;
+  max-width: 960px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  border: 1px solid ${COLORS.divider};
-
-  @media (max-width: 768px) {
-    max-height: 100%;
-    border-radius: 8px;
-  }
+  border: 1px solid ${COLORS.border};
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
+  animation: ${fadeUp} 0.25s ease;
 `;
 
-const ModalHeader = styled.div`
+const ModalHead = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid ${COLORS.divider};
-  background: linear-gradient(
-    135deg,
-    ${COLORS.elevatedBackground} 0%,
-    ${COLORS.cardBackground} 100%
-  );
+  padding: 16px 20px;
+  border-bottom: 1px solid ${COLORS.border};
+  background: ${COLORS.elevatedBackground};
 `;
 
 const ModalTitle = styled.h2`
-  margin: 0;
-  font-size: 1.25rem;
+  font-size: 1rem;
+  font-weight: 700;
   color: ${COLORS.textPrimary};
+  letter-spacing: -0.01em;
+  margin: 0;
+`;
+
+const CloseBtn = styled.button`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.07);
+  color: ${COLORS.textSecondary};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  &:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: ${COLORS.textPrimary};
+  }
 `;
 
 const ModalBody = styled.div`
   display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 1.5rem;
-  gap: 1.5rem;
   flex: 1;
-
-  @media (min-width: 768px) {
-    flex-direction: row;
-  }
+  overflow-y: auto;
+  padding: 20px;
+  gap: 20px;
 
   @media (max-width: 768px) {
-    padding: 1rem;
-    gap: 1rem;
+    flex-direction: column;
   }
 `;
 
-const AssetPreview = styled.div`
+const ModalPreview = styled.div`
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 300px;
-  background-color: ${COLORS.elevatedBackground};
-  border-radius: 8px;
+  background: ${COLORS.elevatedBackground};
+  border-radius: 10px;
   overflow: hidden;
-  border: 1px solid ${COLORS.divider};
+  min-height: 280px;
+  border: 1px solid ${COLORS.border};
 `;
 
-const PreviewImage = styled.img`
+const ModalImg = styled.img`
   max-width: 100%;
-  max-height: 500px;
+  max-height: 480px;
   object-fit: contain;
 `;
 
-const PreviewVideo = styled.video`
+const ModalVid = styled.video`
   max-width: 100%;
-  max-height: 500px;
+  max-height: 480px;
 `;
 
-const AssetInfo = styled.div`
-  flex: 0 0 300px;
-  background-color: ${COLORS.elevatedBackground};
-  border-radius: 8px;
-  padding: 1.25rem;
+const MetaPanel = styled.div`
+  flex: 0 0 280px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  height: fit-content;
-  border: 1px solid ${COLORS.divider};
+  gap: 0;
+  background: ${COLORS.elevatedBackground};
+  border-radius: 10px;
+  border: 1px solid ${COLORS.border};
+  overflow: hidden;
 
   @media (max-width: 768px) {
     flex: 1;
-    padding: 1rem;
   }
 `;
 
-const InfoGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-
-  &:not(:last-child) {
-    border-bottom: 1px solid ${COLORS.divider};
-    padding-bottom: 1rem;
-  }
-
-  .url {
-    word-break: break-all;
+const MetaRow = styled.div`
+  padding: 11px 14px;
+  border-bottom: 1px solid ${COLORS.border};
+  &:last-child {
+    border-bottom: none;
   }
 `;
 
-const InfoLabel = styled.div`
-  font-size: 0.75rem;
+const MetaLabel = styled.div`
+  font-size: 0.65rem;
+  font-weight: 700;
   color: ${COLORS.textTertiary};
-  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
+  margin-bottom: 3px;
 `;
 
-const InfoValue = styled.div`
-  font-size: 0.875rem;
+const MetaValue = styled.div`
+  font-size: 0.8rem;
   color: ${COLORS.textPrimary};
+  word-break: ${(p) => (p.$breakAll ? 'break-all' : 'normal')};
+  line-height: 1.4;
 `;
 
-const ModalFooter = styled.div`
+const ModalFoot = styled.div`
   display: flex;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid ${COLORS.border};
+  background: ${COLORS.elevatedBackground};
   justify-content: flex-end;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  border-top: 1px solid ${COLORS.divider};
-  background-color: ${COLORS.elevatedBackground};
 
-  @media (max-width: 768px) {
-    padding: 1rem;
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 0.5rem;
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0));
-  }
-`;
-
-const ActionButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: ${(props) => props.color || COLORS.primaryBlueGray};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-  &:hover {
-    opacity: 0.9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  @media (max-width: 768px) {
-    flex: 1;
-    justify-content: center;
-    font-size: 0.75rem;
-    padding: 0.75rem;
-
-    @media (max-width: 360px) {
-      span {
-        display: none;
-      }
+  @media (max-width: 480px) {
+    justify-content: stretch;
+    > * {
+      flex: 1;
+      justify-content: center;
     }
   }
 `;
 
-const LoadingContainer = styled.div`
-  margin: 2rem 0;
-`;
-
-const LoadingMoreContainer = styled.div`
-  margin: 1rem 0;
-`;
-
-const ErrorMessage = styled.div`
-  text-align: center;
-  padding: 3rem 2rem;
-  color: ${COLORS.error};
-  background-color: ${COLORS.elevatedBackground};
-  border-radius: 12px;
-  margin: 2rem 0;
-  border: 1px solid ${COLORS.divider};
-  display: flex;
-  flex-direction: column;
+const FootBtn = styled.button`
+  display: inline-flex;
   align-items: center;
-  gap: 1rem;
-`;
-
-const ErrorIcon = styled.div`
-  width: 60px;
-  height: 60px;
-  background-color: rgba(255, 107, 107, 0.1);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${COLORS.error};
-  font-size: 24px;
-`;
-
-const ErrorText = styled.div`
-  max-width: 500px;
-  line-height: 1.5;
-`;
-
-const NoAssetsMessage = styled.div`
-  text-align: center;
-  padding: 4rem 2rem;
-  color: ${COLORS.textSecondary};
-  background-color: ${COLORS.elevatedBackground};
-  border-radius: 12px;
-  margin: 1rem 0;
-  border: 1px solid ${COLORS.divider};
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-`;
-
-const EmptyStateIcon = styled.div`
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(
-    45deg,
-    ${COLORS.primaryBlueGray},
-    ${COLORS.primaryMint}
-  );
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 32px;
-  margin-bottom: 0.5rem;
-`;
-
-const EmptyStateText = styled.div`
-  font-size: 1.125rem;
-  max-width: 400px;
-  line-height: 1.5;
-`;
-
-const DateSection = styled.div`
-  margin-top: 2rem;
-  margin-bottom: 1.5rem;
-  position: relative;
-
-  &:first-of-type {
-    margin-top: 0;
-  }
-`;
-
-const DateHeading = styled.h2`
-  font-size: 1.25rem;
-  color: ${COLORS.textPrimary};
-  margin: 0 0 1rem 0;
-  display: flex;
-  align-items: center;
-
-  &:after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: ${COLORS.divider};
-    margin-left: 1rem;
-  }
-
-  @media (max-width: 767px) {
-    font-size: 1.125rem;
-  }
-`;
-
-const DateCount = styled.span`
-  background: linear-gradient(
-    45deg,
-    ${COLORS.primaryBlueGray},
-    ${COLORS.primaryMint}
-  );
-  color: white;
-  font-size: 0.75rem;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: 20px;
+  border: 1px solid
+    ${(p) =>
+      p.$danger
+        ? `${COLORS.error}66`
+        : p.$mint
+        ? `${COLORS.primaryMint}66`
+        : COLORS.border};
+  background: ${(p) =>
+    p.$danger
+      ? `${COLORS.error}15`
+      : p.$mint
+      ? `${COLORS.primaryMint}15`
+      : 'transparent'};
+  color: ${(p) =>
+    p.$danger
+      ? COLORS.error
+      : p.$mint
+      ? COLORS.primaryMint
+      : COLORS.textSecondary};
+  font-size: 0.82rem;
   font-weight: 600;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  margin-left: 0.75rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+
+  &:hover {
+    background: ${(p) =>
+      p.$danger
+        ? `${COLORS.error}28`
+        : p.$mint
+        ? `${COLORS.primaryMint}28`
+        : COLORS.elevatedBackground};
+    color: ${(p) =>
+      p.$danger
+        ? COLORS.error
+        : p.$mint
+        ? COLORS.primaryMint
+        : COLORS.textPrimary};
+    transform: translateY(-1px);
+  }
 `;
 
-const BulkActionBar = styled.div`
+// ─── Bulk action bar ──────────────────────────────────────────────────────────
+
+const BulkBar = styled.div`
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryBlueGray} 0%,
-    ${COLORS.accentBlueGray} 100%
-  );
-  color: white;
-  padding: 1rem;
+  background: ${COLORS.cardBackground};
+  border-top: 1px solid ${COLORS.border};
+  backdrop-filter: blur(12px);
+  padding: 14px 24px;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom, 0));
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 100;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease;
-  transform: translateY(${(props) => (props.visible ? "0" : "100%")});
-  border-top: 1px solid ${COLORS.divider};
+  z-index: 200;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.3);
+  animation: ${slideUp} 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 
+  /* Leave room for AppNav on mobile */
   @media (max-width: 768px) {
+    bottom: 60px;
+    padding: 12px 16px;
+  }
+
+  @media (max-width: 480px) {
     flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
+    gap: 10px;
+    bottom: 60px;
   }
 `;
 
 const BulkInfo = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
-
-  @media (max-width: 768px) {
-    width: 100%;
-    justify-content: space-between;
-  }
+  gap: 12px;
 `;
 
-const SelectedCount = styled.div`
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+const BulkCount = styled.span`
+  font-size: 0.875rem;
+  color: ${COLORS.textSecondary};
 
-  span {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 0.25rem 0.75rem;
-    border-radius: 8px;
-    backdrop-filter: blur(4px);
-  }
-`;
-
-const SelectionActions = styled.div`
-  display: flex;
-  gap: 0.5rem;
-`;
-
-const SelectionAction = styled.button`
-  background: none;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.75rem;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.5);
+  strong {
+    color: ${COLORS.primarySalmon};
+    font-size: 1rem;
   }
 `;
 
 const BulkActions = styled.div`
   display: flex;
-  gap: 0.75rem;
+  gap: 8px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 480px) {
     width: 100%;
-    justify-content: space-around;
+    > * {
+      flex: 1;
+      justify-content: center;
+    }
   }
 `;
 
-const BulkActionButton = styled.button`
-  background-color: ${(props) =>
-    props.danger ? COLORS.error : COLORS.primarySalmon};
-  color: white;
-  border: none;
-  padding: 0.75rem 1.25rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  display: flex;
+const BulkBtn = styled.button`
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  gap: 7px;
+  padding: 9px 20px;
+  border-radius: 20px;
+  border: none;
+  background: ${(p) =>
+    p.$danger
+      ? `linear-gradient(135deg, ${COLORS.error}, #cc4444)`
+      : `linear-gradient(135deg, ${COLORS.primarySalmon}, ${COLORS.accentSalmon})`};
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: ${(p) =>
+    p.$danger
+      ? `0 4px 14px ${COLORS.error}44`
+      : `0 4px 14px ${COLORS.primarySalmon}44`};
+  transition: opacity 0.2s, transform 0.2s;
 
   &:hover {
     opacity: 0.9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    transform: translateY(-1px);
   }
-
   &:disabled {
-    background-color: #ccc;
+    opacity: 0.45;
     cursor: not-allowed;
     transform: none;
   }
 `;
-
-const SelectionOverlay = styled.div`
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  z-index: 5;
-  background: rgba(18, 18, 18, 0.8);
-  border-radius: 6px;
-  padding: 0.5rem;
-  opacity: ${(props) => (props.visible ? 1 : 0)};
-  transition: all 0.3s ease;
-  cursor: pointer;
-  backdrop-filter: blur(4px);
-
-  ${GalleryItem}:hover & {
-    opacity: 1;
-  }
-
-  svg {
-    color: white;
-    font-size: 1.25rem;
-  }
-`;
-
-const SelectModeButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: ${(props) =>
-    props.active ? COLORS.primarySalmon : COLORS.elevatedBackground};
-  color: ${(props) => (props.active ? "white" : COLORS.textSecondary)};
-  border: 1px solid
-    ${(props) => (props.active ? COLORS.primarySalmon : COLORS.border)};
-  border-radius: 8px;
-  padding: 0.75rem 1.25rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: ${(props) =>
-    props.active ? "0 2px 8px rgba(233, 137, 115, 0.3)" : "none"};
-
-  &:hover {
-    background-color: ${(props) =>
-      props.active ? COLORS.accentSalmon : COLORS.buttonHover};
-    transform: translateY(-1px);
-    box-shadow: ${(props) =>
-      props.active
-        ? "0 4px 16px rgba(233, 137, 115, 0.4)"
-        : "0 2px 8px rgba(0, 0, 0, 0.1)"};
-  }
-
-  @media (max-width: 767px) {
-    padding: 0.75rem;
-    font-size: 0.875rem;
-  }
-`;
-
-export default CloudinaryGallery;

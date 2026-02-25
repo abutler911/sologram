@@ -1,8 +1,11 @@
 import axios from 'axios';
 
 /**
- * Single source of truth for all Sologram API calls.
+ * Single source of truth for all SoloGram API calls.
  * Base URL and auth headers are set globally in AuthContext via axios.defaults.
+ *
+ * NOTE: the base helpers already unwrap r.data — never chain .then(r => r.data)
+ * on top of them or you'll get double-unwrap bugs.
  */
 
 const get = (url, params) => axios.get(url, { params }).then((r) => r.data);
@@ -14,7 +17,7 @@ export const api = {
   // ── POSTS ──────────────────────────────────────────────────────────────────
   getPosts: (page = 1, limit = 6) => get('/api/posts', { page, limit }),
   searchPosts: (query) => get('/api/posts/search', { query }),
-  getPost: (id) => get(`/api/posts/${id}`).then((r) => r.data),
+  getPost: (id) => get(`/api/posts/${id}`),
   createPost: (payload) => post('/api/posts', payload),
   updatePost: (id, payload) => put(`/api/posts/${id}`, payload),
   deletePost: (id) => del(`/api/posts/${id}`),
@@ -24,16 +27,15 @@ export const api = {
     post('/api/posts/likes/check-batch', { postIds }),
 
   // ── STORIES ────────────────────────────────────────────────────────────────
-  getStories: () => get('/api/stories').then((r) => r.data),
-  getStory: (id) => get(`/api/stories/${id}`).then((r) => r.data),
-  createStory: (fd) => post('/api/stories', fd),
+  getStories: () => get('/api/stories'),
+  getStory: (id) => get(`/api/stories/${id}`),
+  createStory: (payload) => post('/api/stories', payload),
   archiveStory: (id) => put(`/api/stories/${id}/archive`, {}),
   deleteStory: (id) => del(`/api/stories/${id}`),
 
   // ── ARCHIVED STORIES ───────────────────────────────────────────────────────
-  getArchivedStories: () => get('/api/archived-stories').then((r) => r.data),
-  getArchivedStory: (id) =>
-    get(`/api/archived-stories/${id}`).then((r) => r.data),
+  getArchivedStories: () => get('/api/archived-stories'),
+  getArchivedStory: (id) => get(`/api/archived-stories/${id}`),
   deleteArchivedStory: (id) => del(`/api/archived-stories/${id}`),
 
   // ── THOUGHTS ───────────────────────────────────────────────────────────────
@@ -42,7 +44,7 @@ export const api = {
       page,
       ...(searchQuery && { query: searchQuery }),
     }),
-  getThought: (id) => get(`/api/thoughts/${id}`).then((r) => r.data),
+  getThought: (id) => get(`/api/thoughts/${id}`),
   createThought: (payload) => post('/api/thoughts', payload),
   updateThought: (id, payload) => put(`/api/thoughts/${id}`, payload),
   deleteThought: (id) => del(`/api/thoughts/${id}`),
@@ -50,8 +52,8 @@ export const api = {
   pinThought: (id) => put(`/api/thoughts/${id}/pin`),
 
   // ── COLLECTIONS ────────────────────────────────────────────────────────────
-  getCollections: () => get('/api/collections').then((r) => r.data),
-  getCollection: (id) => get(`/api/collections/${id}`).then((r) => r.data),
+  getCollections: () => get('/api/collections'),
+  getCollection: (id) => get(`/api/collections/${id}`),
   createCollection: (payload) => post('/api/collections', payload),
   updateCollection: (id, p) => put(`/api/collections/${id}`, p),
   deleteCollection: (id) => del(`/api/collections/${id}`),
@@ -72,10 +74,14 @@ export const api = {
     get(`/api/comments/${commentId}/replies`, { page }),
 
   // ── AUTH ───────────────────────────────────────────────────────────────────
-  getMe: () => get('/api/auth/me').then((r) => r.data),
-  updateProfile: (formData) =>
-    put('/api/auth/update-profile', formData).then((r) => r.data),
-  updateBio: (bio) => put('/api/auth/update-bio', { bio }).then((r) => r.data),
+  getMe: () => get('/api/auth/me'),
+  updateProfile: (fd) => put('/api/auth/update-profile', fd),
+  updateBio: (bio) => put('/api/auth/update-bio', { bio }),
   updateNotificationPreferences: (prefs) =>
     post('/api/notifications/preferences', prefs),
+
+  // ── CLOUDINARY (admin) ─────────────────────────────────────────────────────
+  getCloudinaryAssets: (params) => get('/api/admin/cloudinary', params),
+  deleteCloudinaryAsset: (publicId) =>
+    del(`/api/admin/cloudinary/${encodeURIComponent(publicId)}`),
 };
