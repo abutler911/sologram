@@ -569,7 +569,7 @@ const AuthorSig = styled.span`
   font-family: 'Autography', cursive;
   font-size: 1.5rem;
   color: #fff;
-  line-height: 1;
+  line-height: 1.3;
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
   white-space: nowrap;
   overflow: hidden;
