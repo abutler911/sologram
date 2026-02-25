@@ -1,210 +1,148 @@
-import React, { useState, useContext, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import styled, { keyframes } from "styled-components";
-import {
-  FaCamera,
-  FaLock,
-  FaEnvelope,
-  FaEye,
-  FaEyeSlash,
-} from "react-icons/fa";
-import { AuthContext } from "../context/AuthContext";
-import MainLayout from "../components/layout/MainLayout";
-import { COLORS } from "../theme";
+import React, { useState, useContext, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import styled, { keyframes } from 'styled-components';
+import { FaLock, FaEnvelope, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { AuthContext } from '../context/AuthContext';
+import { COLORS } from '../theme';
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   const { login, isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/");
-    }
+    if (isAuthenticated) navigate('/');
   }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
-
+    setError('');
     const success = await login(email, password);
-
     if (success) {
-      navigate("/");
+      navigate('/');
     } else {
-      setError("Invalid email or password. Please try again.");
+      setError('Invalid email or password. Please try again.');
     }
-
     setLoading(false);
   };
 
   return (
-    <MainLayout noNav noFooter>
-      <PageContainer>
-        <AuthForm>
-          {loading && (
-            <LoadingOverlay>
-              <Spinner />
-            </LoadingOverlay>
-          )}
+    <PageContainer>
+      {/* Ambient background glow */}
+      <Glow $pos='top-left' $color={COLORS.primarySalmon} />
+      <Glow $pos='bottom-right' $color={COLORS.primaryMint} />
 
-          <LogoContainer>
-            <LogoIcon>
-              <FaCamera />
-            </LogoIcon>
-            <LogoText>SoloGram</LogoText>
-            <Tagline>One Voice. Infinite Moments.</Tagline>
-          </LogoContainer>
+      <Card>
+        {loading && (
+          <LoadingOverlay>
+            <Spinner />
+          </LoadingOverlay>
+        )}
 
-          <FormTitle>Welcome back</FormTitle>
+        {/* Logo */}
+        <LogoBlock>
+          <LogoSig>SoloGram</LogoSig>
+          <Tagline>One Voice. Infinite Moments.</Tagline>
+        </LogoBlock>
 
-          {error && <ErrorMessage>{error}</ErrorMessage>}
+        <FormTitle>Welcome back</FormTitle>
 
-          <Form onSubmit={handleSubmit}>
-            <FormField>
-              <InputWrap>
-                <IconContainer>
-                  <FaEnvelope />
-                </IconContainer>
-                <StyledInput
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </InputWrap>
-            </FormField>
+        {error && <ErrorMsg>{error}</ErrorMsg>}
 
-            <FormField>
-              <InputWrap>
-                <IconContainer>
-                  <FaLock />
-                </IconContainer>
-                <StyledInput
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <TogglePasswordButton
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  tabIndex={-1}
-                >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
-                </TogglePasswordButton>
-              </InputWrap>
-            </FormField>
+        <Form onSubmit={handleSubmit}>
+          {/* Email */}
+          <Field>
+            <InputWrap>
+              <InputIcon>
+                <FaEnvelope />
+              </InputIcon>
+              <Input
+                type='email'
+                placeholder='Email'
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete='email'
+              />
+            </InputWrap>
+          </Field>
 
-            <RememberForgotRow>
-              <RememberMeContainer>
-                <CustomCheckbox>
-                  <input
-                    type="checkbox"
-                    id="rememberMe"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                  />
-                  <CheckboxMark />
-                </CustomCheckbox>
-                <label htmlFor="rememberMe">Remember me</label>
-              </RememberMeContainer>
-              <ForgotPassword>
-                <Link to="/forgot-password">Forgot password?</Link>
-              </ForgotPassword>
-            </RememberForgotRow>
+          {/* Password */}
+          <Field>
+            <InputWrap>
+              <InputIcon>
+                <FaLock />
+              </InputIcon>
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                placeholder='Password'
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete='current-password'
+              />
+              <ToggleBtn
+                type='button'
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </ToggleBtn>
+            </InputWrap>
+          </Field>
 
-            <SubmitButton type="submit" disabled={loading}>
-              <ButtonContent>
-                {loading ? "Logging in..." : "Log In"}
-              </ButtonContent>
-            </SubmitButton>
-          </Form>
+          {/* Forgot password */}
+          <ForgotRow>
+            <ForgotLink to='/forgot-password'>Forgot password?</ForgotLink>
+          </ForgotRow>
 
-          <Divider>
-            <DividerLine />
-            <DividerText>OR</DividerText>
-            <DividerLine />
-          </Divider>
+          <SubmitBtn type='submit' disabled={loading}>
+            {loading ? 'Signing in…' : 'Sign In'}
+          </SubmitBtn>
+        </Form>
 
-          <SocialLoginSection>
-            <SocialButton type="button">
-              <GoogleIcon>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path
-                    d="M19.99 10.187c0-.82-.069-1.417-.216-2.037H10.2v3.698h5.62c-.113.92-.725 2.303-2.084 3.233l-.02.124 3.028 2.292.21.02c1.926-1.738 3.037-4.296 3.037-7.33z"
-                    fill="#4285F4"
-                  />
-                  <path
-                    d="M10.2 19.93c2.753 0 5.064-.886 6.753-2.414l-3.218-2.436c-.862.587-2.017.997-3.536.997a6.126 6.126 0 0 1-5.801-4.141l-.12.01-3.148 2.38-.041.112c1.677 3.256 5.122 5.492 9.11 5.492z"
-                    fill="#34A853"
-                  />
-                  <path
-                    d="M4.398 11.936a6.008 6.008 0 0 1-.34-1.971c0-.687.125-1.351.329-1.971l-.006-.132-3.188-2.42-.104.05A9.79 9.79 0 0 0 .001 9.965a9.79 9.79 0 0 0 1.088 4.473l3.309-2.502z"
-                    fill="#FBBC05"
-                  />
-                  <path
-                    d="M10.2 3.853c1.914 0 3.206.809 3.943 1.484l2.878-2.746C15.253.985 12.953 0 10.199 0 6.211 0 2.766 2.237 1.09 5.492l3.297 2.503A6.152 6.152 0 0 1 10.2 3.853z"
-                    fill="#EA4335"
-                  />
-                </svg>
-              </GoogleIcon>
-              Continue with Google
-            </SocialButton>
-          </SocialLoginSection>
-
-          <AccountLink>
-            Don't have an account? <Link to="/register">Sign up</Link>
-          </AccountLink>
-        </AuthForm>
-      </PageContainer>
-    </MainLayout>
+        <FootNote>
+          Family member?&nbsp;
+          <a href='mailto:andrew@example.com'>Request access</a>
+        </FootNote>
+      </Card>
+    </PageContainer>
   );
 };
 
-// Animations
+export default Login;
+
+// ─── Animations ───────────────────────────────────────────────────────────────
+
 const spin = keyframes`
   to { transform: rotate(360deg); }
 `;
 
-const fadeIn = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0);    }
 `;
 
 const shake = keyframes`
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-8px); }
-  75% { transform: translateX(8px); }
+  0%, 100% { transform: translateX(0);  }
+  25%       { transform: translateX(-6px); }
+  75%       { transform: translateX(6px);  }
 `;
 
-const pulse = keyframes`
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.02);
-  }
+const glow = keyframes`
+  0%, 100% { opacity: 0.4; transform: scale(1);    }
+  50%       { opacity: 0.65; transform: scale(1.1); }
 `;
 
-// Styled Components
+// ─── Layout ───────────────────────────────────────────────────────────────────
+
 const PageContainer = styled.div`
   min-height: 100vh;
   width: 100%;
@@ -214,43 +152,45 @@ const PageContainer = styled.div`
   padding: 20px;
   background: ${COLORS.background};
   position: relative;
-
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
-        circle at 20% 20%,
-        rgba(233, 137, 115, 0.05) 0%,
-        transparent 50%
-      ),
-      radial-gradient(
-        circle at 80% 80%,
-        rgba(136, 178, 204, 0.05) 0%,
-        transparent 50%
-      );
-    pointer-events: none;
-  }
+  overflow: hidden;
 `;
 
-const AuthForm = styled.div`
+const Glow = styled.div`
+  position: absolute;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: ${(p) => p.$color};
+  filter: blur(120px);
+  opacity: 0.07;
+  animation: ${glow} 6s ease-in-out infinite;
+  pointer-events: none;
+
+  ${(p) => p.$pos === 'top-left' && 'top: -160px; left: -160px;'}
+  ${(p) =>
+    p.$pos === 'bottom-right' &&
+    'bottom: -160px; right: -160px; animation-delay: 3s;'}
+`;
+
+// ─── Card ─────────────────────────────────────────────────────────────────────
+
+const Card = styled.div`
   position: relative;
   width: 100%;
-  max-width: 480px;
+  max-width: 440px;
   background: ${COLORS.cardBackground};
   border: 1px solid ${COLORS.border};
-  border-radius: 16px;
-  padding: 40px;
-  box-shadow: ${COLORS.shadow};
-  animation: ${fadeIn} 0.6s ease-out;
+  border-radius: 20px;
+  padding: 44px 40px 36px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  animation: ${fadeUp} 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
   z-index: 1;
 
-  @media (max-width: 600px) {
-    margin: 0;
+  @media (max-width: 520px) {
     max-width: 100%;
     min-height: 100vh;
     border-radius: 0;
-    padding: 24px 16px;
+    padding: 48px 24px 32px;
     display: flex;
     flex-direction: column;
   }
@@ -259,79 +199,96 @@ const AuthForm = styled.div`
 const LoadingOverlay = styled.div`
   position: absolute;
   inset: 0;
-  background: rgba(30, 30, 30, 0.8);
-  backdrop-filter: blur(4px);
+  background: rgba(18, 18, 18, 0.75);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
-  z-index: 10;
+  border-radius: 20px;
+  z-index: 20;
+
+  @media (max-width: 520px) {
+    border-radius: 0;
+  }
 `;
 
 const Spinner = styled.div`
   width: 40px;
   height: 40px;
   border: 3px solid ${COLORS.border};
-  border-top-color: ${COLORS.primaryBlueGray};
+  border-top-color: ${COLORS.primarySalmon};
   border-radius: 50%;
-  animation: ${spin} 0.8s linear infinite;
+  animation: ${spin} 0.75s linear infinite;
 `;
 
-const LogoContainer = styled.div`
+// ─── Logo ─────────────────────────────────────────────────────────────────────
+
+const LogoBlock = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 36px;
+
+  @font-face {
+    font-family: 'Autography';
+    src: url('/fonts/Autography.woff2') format('woff2');
+    font-display: swap;
+  }
 `;
 
-const LogoIcon = styled.div`
-  color: ${COLORS.primarySalmon};
-  font-size: 48px;
-  filter: drop-shadow(0 4px 6px rgba(233, 137, 115, 0.3));
-  margin-bottom: 8px;
-  animation: ${pulse} 3s ease-in-out infinite;
-`;
-
-const LogoText = styled.h1`
-  font-family: "Mystery Quest", cursive;
-  font-size: 40px;
-  font-weight: 500;
+const LogoSig = styled.h1`
+  font-family: 'Autography', cursive;
+  font-size: 3.2rem;
+  font-weight: 400;
   color: ${COLORS.textPrimary};
+  line-height: 1.2;
   margin: 0 0 4px;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.primaryMint}
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 `;
 
 const Tagline = styled.p`
-  color: ${COLORS.primaryMint};
-  font-size: 14px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: ${COLORS.textTertiary};
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
   margin: 0;
-  text-align: center;
-  letter-spacing: 0.5px;
 `;
+
+// ─── Form ─────────────────────────────────────────────────────────────────────
 
 const FormTitle = styled.h2`
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 1.4rem;
+  font-weight: 700;
   color: ${COLORS.textPrimary};
-  margin-bottom: 24px;
   text-align: center;
+  margin-bottom: 24px;
+  letter-spacing: -0.02em;
 `;
 
-const ErrorMessage = styled.div`
-  background: rgba(255, 107, 107, 0.1);
-  border: 1px solid rgba(255, 107, 107, 0.3);
-  border-radius: 12px;
-  padding: 12px 16px;
+const ErrorMsg = styled.div`
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.28);
+  border-radius: 10px;
+  padding: 11px 16px;
   margin-bottom: 20px;
   color: ${COLORS.error};
-  font-size: 14px;
-  animation: ${shake} 0.5s ease-in-out;
+  font-size: 0.875rem;
   display: flex;
   align-items: center;
   gap: 8px;
+  animation: ${shake} 0.4s ease;
 
   &::before {
-    content: "⚠";
-    font-size: 16px;
+    content: '⚠';
+    font-size: 0.95rem;
   }
 `;
 
@@ -339,9 +296,8 @@ const Form = styled.form`
   width: 100%;
 `;
 
-const FormField = styled.div`
-  margin-bottom: 20px;
-  width: 100%;
+const Field = styled.div`
+  margin-bottom: 16px;
 `;
 
 const InputWrap = styled.div`
@@ -349,28 +305,28 @@ const InputWrap = styled.div`
   width: 100%;
 `;
 
-const IconContainer = styled.div`
+const InputIcon = styled.div`
   position: absolute;
   left: 16px;
   top: 50%;
   transform: translateY(-50%);
   color: ${COLORS.textTertiary};
-  font-size: 16px;
-  z-index: 2;
+  font-size: 0.9rem;
   pointer-events: none;
-  transition: color 0.2s ease;
+  z-index: 1;
+  transition: color 0.2s;
 `;
 
-const StyledInput = styled.input`
+const Input = styled.input`
   width: 100%;
-  height: 56px;
-  padding: 0 48px 0 48px;
+  height: 52px;
+  padding: 0 48px;
   background: ${COLORS.elevatedBackground};
   border: 1px solid ${COLORS.border};
   border-radius: 12px;
-  font-size: 16px;
+  font-size: 0.95rem;
   color: ${COLORS.textPrimary};
-  transition: all 0.2s ease;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 
   &::placeholder {
     color: ${COLORS.textTertiary};
@@ -378,271 +334,106 @@ const StyledInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: ${COLORS.primaryMint};
-    box-shadow: 0 0 0 3px rgba(136, 178, 204, 0.15);
+    border-color: ${COLORS.primarySalmon};
+    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}22;
     background: ${COLORS.cardBackground};
-    transform: translateY(-1px);
 
-    & + ${IconContainer} {
-      color: ${COLORS.primaryMint};
+    ~ ${InputIcon} {
+      color: ${COLORS.primarySalmon};
     }
   }
 `;
 
-const TogglePasswordButton = styled.button`
+const ToggleBtn = styled.button`
   position: absolute;
-  right: 16px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
   color: ${COLORS.textTertiary};
   cursor: pointer;
-  padding: 8px;
+  padding: 6px;
   border-radius: 6px;
-  transition: all 0.2s ease;
-
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
   &:hover {
     color: ${COLORS.textSecondary};
-    background: ${COLORS.elevatedBackground};
-  }
-
-  &:focus {
-    outline: none;
-    color: ${COLORS.primaryMint};
   }
 `;
 
-const RememberForgotRow = styled.div`
+const ForgotRow = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 28px;
+  justify-content: flex-end;
+  margin-bottom: 24px;
 `;
 
-const RememberMeContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  font-size: 14px;
-  color: ${COLORS.textSecondary};
-
-  label {
-    cursor: pointer;
-    user-select: none;
+const ForgotLink = styled(Link)`
+  font-size: 0.82rem;
+  color: ${COLORS.textTertiary};
+  text-decoration: none;
+  transition: color 0.2s;
+  &:hover {
+    color: ${COLORS.primarySalmon};
   }
 `;
 
-const CustomCheckbox = styled.div`
-  position: relative;
-  width: 18px;
-  height: 18px;
-
-  input[type="checkbox"] {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-  }
-`;
-
-const CheckboxMark = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 18px;
-  width: 18px;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 4px;
-  transition: all 0.2s ease;
-
-  &::after {
-    content: "";
-    position: absolute;
-    display: none;
-    left: 5px;
-    top: 2px;
-    width: 4px;
-    height: 8px;
-    border: solid ${COLORS.textPrimary};
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-  }
-
-  ${CustomCheckbox} input:checked ~ & {
-    background: ${COLORS.primaryBlueGray};
-    border-color: ${COLORS.primaryBlueGray};
-  }
-
-  ${CustomCheckbox} input:checked ~ &::after {
-    display: block;
-  }
-
-  ${CustomCheckbox}:hover & {
-    border-color: ${COLORS.primaryMint};
-  }
-`;
-
-const ForgotPassword = styled.div`
-  a {
-    color: ${COLORS.textSecondary};
-    font-size: 14px;
-    text-decoration: none;
-    transition: color 0.2s;
-
-    &:hover {
-      color: ${COLORS.primaryMint};
-      text-decoration: underline;
-    }
-  }
-`;
-
-const SubmitButton = styled.button`
-  position: relative;
+const SubmitBtn = styled.button`
   width: 100%;
-  height: 56px;
-  background: ${COLORS.primaryBlueGray};
-  color: ${COLORS.textPrimary};
+  height: 52px;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.accentSalmon}
+  );
+  color: #fff;
   border: none;
   border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  overflow: hidden;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-  }
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 6px 20px ${COLORS.primarySalmon}44;
 
   &:hover:not(:disabled) {
-    background: ${COLORS.accentBlueGray};
+    opacity: 0.92;
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(101, 142, 169, 0.3);
-
-    &::before {
-      width: 300px;
-      height: 300px;
-    }
+    box-shadow: 0 10px 28px ${COLORS.primarySalmon}55;
   }
 
   &:active:not(:disabled) {
     transform: translateY(0);
-    box-shadow: 0 4px 15px rgba(101, 142, 169, 0.2);
   }
 
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.55;
     cursor: not-allowed;
   }
 `;
 
-const ButtonContent = styled.span`
-  position: relative;
-  z-index: 1;
-`;
+// ─── Footer note ──────────────────────────────────────────────────────────────
 
-const Divider = styled.div`
-  display: flex;
-  align-items: center;
-  width: 100%;
-  margin: 32px 0 24px;
-`;
-
-const DividerLine = styled.div`
-  flex: 1;
-  height: 1px;
-  background: ${COLORS.divider};
-`;
-
-const DividerText = styled.span`
-  padding: 0 16px;
+const FootNote = styled.p`
+  font-size: 0.82rem;
   color: ${COLORS.textTertiary};
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-`;
-
-const SocialLoginSection = styled.div`
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
-`;
-
-const SocialButton = styled.button`
-  width: 100%;
-  height: 48px;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 15px;
-  font-weight: 500;
-  color: ${COLORS.textPrimary};
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${COLORS.cardBackground};
-    border-color: ${COLORS.primaryMint};
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
-
-  &:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  }
-`;
-
-const GoogleIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const AccountLink = styled.p`
-  font-size: 15px;
-  color: ${COLORS.textSecondary};
-  margin: 0;
   text-align: center;
+  margin: 24px 0 0;
 
   a {
-    color: ${COLORS.primaryMint};
+    color: ${COLORS.primarySalmon};
     font-weight: 600;
     text-decoration: none;
-    transition: all 0.2s;
-    margin-left: 4px;
-
+    transition: color 0.2s;
     &:hover {
-      color: ${COLORS.accentMint};
+      color: ${COLORS.accentSalmon};
       text-decoration: underline;
     }
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 520px) {
     margin-top: auto;
     padding-top: 32px;
   }
 `;
-
-export default Login;
