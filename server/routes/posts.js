@@ -104,7 +104,7 @@ router.get('/:postId/comments', optionalAuth, async (req, res) => {
     );
 
     const [total, items] = await Promise.all([
-      Comment.countDocuments({ postId, parentId: null, isDeleted: false }),
+      Comment.countDocuments({ postId, isDeleted: false }), // ALL comments incl. replies for accurate badge count
       Comment.find({ postId, parentId: null, isDeleted: false })
         .populate('author', 'firstName lastName username profileImage')
         .sort({ createdAt: -1 })
