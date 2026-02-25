@@ -152,7 +152,7 @@ const LoadingSpinner = ({
   color, // accent override (falls back to primarySalmon)
 }) => {
   /* Convert size string → number for SVG math */
-  const px = parseFloat(size);
+  const px = parseFloat(size) || 44;
   const cx = px / 2;
   const outerR = cx - 4; /* outer arc radius */
   const innerR = cx - 12; /* inner arc radius */
