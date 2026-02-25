@@ -80,6 +80,10 @@ export const api = {
   updateNotificationPreferences: (prefs) =>
     post('/api/notifications/preferences', prefs),
 
+  // ── AI (admin) ────────────────────────────────────────────────────────────
+  generateAIContent: (payload) =>
+    post('/api/admin/ai-content/generate', payload),
+
   // ── CLOUDINARY (admin) ─────────────────────────────────────────────────────
   getCloudinaryAssets: (params) => get('/api/admin/cloudinary', params),
   deleteCloudinaryAsset: (publicId) =>

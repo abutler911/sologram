@@ -82,6 +82,7 @@ import {
 import { useUploadManager } from '../../hooks/useUploadManager';
 import MediaGridSortable from './MediaGridSortable';
 import { filterToClass, fileToMediaType, FILTERS } from '../../lib/media';
+import { api } from '../../services/api'; // ← PR1: import api service
 
 const PLACEHOLDER_IMG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='sans-serif' fill='%23999999'%3EImage Not Available%3C/text%3E%3C/svg%3E";
@@ -162,6 +163,7 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
     setError('');
   };
 
+  // PR1: axios.post → api.generateAIContent
   const handleGenerate = async () => {
     if (!formData.description.trim()) {
       setError('Please provide a description for your content');
@@ -170,11 +172,8 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
     setIsGenerating(true);
     setError('');
     try {
-      const { data } = await axios.post(
-        '/api/admin/ai-content/generate',
-        formData
-      );
-      setGeneratedContent(data?.data);
+      const data = await api.generateAIContent(formData);
+      setGeneratedContent(data?.data ?? data);
       toast.success('Content generated successfully!');
     } catch (err) {
       setError(err.message || 'Failed to generate content. Please try again.');
@@ -447,7 +446,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const [selectedMediaForFilter, setSelectedMediaForFilter] = useState(null);
 
   const navigate = useNavigate();
-
   const { startUpload, mountedRef } = useUploadManager(setMedia);
 
   const mediaRef = useRef(media);
@@ -523,7 +521,6 @@ function PostCreator({ initialData = null, isEditing = false }) {
             .substring(2, 8)}`;
           const isVideo = fileToMediaType(file) === 'video';
           const previewUrl = await createSafeBlobUrl(file);
-
           return {
             id,
             file,
@@ -540,10 +537,9 @@ function PostCreator({ initialData = null, isEditing = false }) {
       );
 
       setMedia((prev) => [...prev, ...newItems]);
-
       newItems.forEach((item) => {
-        startUpload(item.file, item.id, item.mediaType).catch((error) => {
-          console.error(`Upload failed for ${item.id}:`, error);
+        startUpload(item.file, item.id, item.mediaType).catch((err) => {
+          console.error(`Upload failed for ${item.id}:`, err);
         });
       });
     },
@@ -556,9 +552,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
       'video/*': ['.mp4', '.mov', '.avi', '.webm'],
     },
     onDrop,
-
-    maxSize: 25 * 1024 * 1024,
-    // prevent auto-opening quirks on mobile; we’ll trigger picker manually
+    // PR1: raised from 25 MB to 300 MB so large videos aren't silently rejected
+    maxSize: 300 * 1024 * 1024,
     noClick: true,
     noKeyboard: true,
   });
@@ -608,7 +603,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
   const handleAIContentApply = (generatedContent) => {
     if (generatedContent.title) setTitle(generatedContent.title);
     if (generatedContent.caption) setCaption(generatedContent.caption);
-    if (generatedContent.tags && generatedContent.tags.length > 0) {
+    if (generatedContent.tags?.length > 0) {
       const availableSlots = 5 - tags.length;
       const newTags = generatedContent.tags.slice(0, availableSlots);
       setTags((prev) => [...prev, ...newTags]);
@@ -652,6 +647,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
     setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
+  // PR1: raw axios.post/put → api service
   const handleSubmit = async () => {
     if (media.length === 0) {
       toast.error('Please add at least one photo or video');
@@ -689,47 +685,46 @@ function PostCreator({ initialData = null, isEditing = false }) {
     setIsSubmitting(true);
 
     try {
-      const mediaItems = media.map((item, index) => ({
-        mediaUrl: item.mediaUrl,
-        cloudinaryId: item.cloudinaryId,
-        mediaType: item.mediaType || item.type,
-        filter: item.filter || 'none',
-        order: index,
-        ...(item.isExisting && item._id && { _id: item._id }),
-      }));
-
       const payload = {
         title: title ?? '',
         caption: caption ?? '',
         content: content ?? '',
         tags: tags.join(','),
-        media: mediaItems,
         location: location ?? '',
         date: eventDate,
+        media: media.map((item, index) => ({
+          mediaUrl: item.mediaUrl,
+          cloudinaryId: item.cloudinaryId,
+          mediaType: item.mediaType || item.type,
+          filter: item.filter || 'none',
+          order: index,
+          ...(item.isExisting && item._id && { _id: item._id }),
+        })),
       };
 
       let response;
       if (isEditing) {
-        response = await axios.put(`/api/posts/${initialData._id}`, payload);
+        response = await api.updatePost(initialData._id, payload);
         toast.success('Post updated successfully!');
       } else {
-        const newMediaItems = media
-          .filter((item) => !item.error && !item.isExisting)
-          .map((item, index) => ({
-            mediaUrl: item.mediaUrl,
-            cloudinaryId: item.cloudinaryId,
-            mediaType: item.mediaType || item.type,
-            filter: item.filter || 'none',
-            order: index,
-          }));
-        response = await axios.post('/api/posts', {
+        response = await api.createPost({
           ...payload,
-          media: newMediaItems,
+          media: media
+            .filter((item) => !item.error && !item.isExisting)
+            .map((item, index) => ({
+              mediaUrl: item.mediaUrl,
+              cloudinaryId: item.cloudinaryId,
+              mediaType: item.mediaType || item.type,
+              filter: item.filter || 'none',
+              order: index,
+            })),
         });
         toast.success('Post created successfully!');
       }
 
-      navigate(`/post/${response.data.data._id}`);
+      // api service unwraps r.data — server returns { data: { _id } }
+      const postId = response?.data?._id ?? response?._id;
+      navigate(`/post/${postId}`);
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Please try again';
       toast.error(
