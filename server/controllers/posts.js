@@ -1,5 +1,6 @@
 const Post = require('../models/Post');
 const Like = require('../models/Like');
+const Comment = require('../models/Comment');
 const { cloudinary } = require('../config/cloudinary');
 const { sendEmail } = require('../utils/sendEmail');
 const { notifyFamilySms } = require('../services/notify/notifyFamilySms');
@@ -32,6 +33,21 @@ async function attachLikeCounts(posts) {
   }));
 }
 
+/**
+ * Attach live comment counts (top-level + replies) from Comment collection.
+ * One aggregation for all posts — never trusts stale Post.commentCount.
+ */
+async function attachCommentCounts(posts) {
+  if (!posts.length) return posts;
+  const ids = posts.map((p) => p._id);
+  const agg = await Comment.aggregate([
+    { $match: { postId: { $in: ids }, isDeleted: false } },
+    { $group: { _id: '$postId', count: { $sum: 1 } } },
+  ]);
+  const map = Object.fromEntries(agg.map((r) => [r._id.toString(), r.count]));
+  return posts.map((p) => ({ ...p, commentCount: map[p._id.toString()] ?? 0 }));
+}
+
 // ─── Controllers ────────────────────────────────────────────────────────────
 
 exports.getPosts = async (req, res) => {
@@ -48,7 +64,8 @@ exports.getPosts = async (req, res) => {
       Post.find().sort({ eventDate: -1 }).skip(skip).limit(limit).lean(),
     ]);
 
-    const data = await attachLikeCounts(posts);
+    const withLikes = await attachLikeCounts(posts);
+    const data = await attachCommentCounts(withLikes);
 
     res.json({
       success: true,
@@ -315,7 +332,8 @@ exports.searchPosts = async (req, res) => {
       .limit(50)
       .lean();
 
-    const data = await attachLikeCounts(posts);
+    const withLikes = await attachLikeCounts(posts);
+    const data = await attachCommentCounts(withLikes);
     res.json({ success: true, count: data.length, data });
   } catch (err) {
     console.error('[searchPosts]', err);
