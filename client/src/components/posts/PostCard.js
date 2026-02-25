@@ -15,11 +15,11 @@ import {
   FaRegHeart,
   FaComment,
   FaEllipsisH,
-  FaChevronLeft,
-  FaChevronRight,
   FaMapMarkerAlt,
   FaEdit,
   FaTrash,
+  FaChevronLeft,
+  FaChevronRight,
 } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
@@ -34,41 +34,30 @@ import { COLORS } from '../../theme';
 import authorImg from '../../assets/andy.jpg';
 
 const CommentModal = lazy(() =>
-  import('./CommentModal').then((module) => ({ default: module.CommentModal }))
+  import('./CommentModal').then((m) => ({ default: m.CommentModal }))
 );
 
 const AUTHOR_IMAGE = authorImg;
 const AUTHOR_NAME = 'Andrew Butler';
 
-// ─── ANIMATIONS ───
+// ─── Animations ─────────────────────────────────────────────────────────────
 const fadeIn = keyframes`
-  0% { opacity: 0; transform: translateY(15px); }
-  100% { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(15px); }
+  to   { opacity: 1; transform: translateY(0); }
 `;
-
 const scaleIn = keyframes`
-  0% { transform: scale(0); opacity: 0; }
-  15% { transform: scale(1.25); opacity: 1; }
-  30% { transform: scale(0.95); }
-  45%, 80% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(0); opacity: 0; }
+  0%        { transform: scale(0); opacity: 0; }
+  15%       { transform: scale(1.25); opacity: 1; }
+  30%       { transform: scale(0.95); }
+  45%, 80%  { transform: scale(1); opacity: 1; }
+  100%      { transform: scale(0); opacity: 0; }
 `;
-
 const mintRipple = keyframes`
-  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
-  100% { transform: translate(-50%, -50%) scale(2.8); opacity: 0; }
+  from { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
+  to   { transform: translate(-50%, -50%) scale(2.8); opacity: 0; }
 `;
 
-const fontFaceStyles = css`
-  @font-face {
-    font-family: 'Autography';
-    src: url('/fonts/Autography.woff2') format('woff2');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-  }
-`;
-
+// ─── Component ───────────────────────────────────────────────────────────────
 const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [post, setPost] = useState(initialPost);
@@ -76,7 +65,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const [showActions, setShowActions] = useState(false);
   const [isDoubleTapLiking, setIsDoubleTapLiking] = useState(false);
 
-  // Comment States
+  // Comments
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [comments, setComments] = useState([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
@@ -86,102 +75,19 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
 
   const cardRef = useRef(null);
   const actionsRef = useRef(null);
+
   const { isAuthenticated } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const { showDeleteModal } = useDeleteModal();
   const { likePost, likedPosts, isProcessing } = useContext(LikesContext);
 
   const hasLiked = likedPosts[post?._id] || false;
-  const formattedDate = format(new Date(post.createdAt), 'MMM d, yyyy');
-
-  // --- COMMENT LOGIC ---
-  const fetchComments = useCallback(async () => {
-    if (!post._id) return;
-    setIsLoadingComments(true);
-    try {
-      const data = await api.getComments(post._id);
-      // Backend returns { success: true, comments: [...] }
-      const list = Array.isArray(data.comments) ? data.comments : [];
-      setComments(list);
-
-      // Sync count from authoritative server data
-      const serverCount = data.total ?? data.count ?? list.length;
-      setCommentCount(serverCount);
-    } catch (err) {
-      toast.error('Failed to load comments');
-    } finally {
-      setIsLoadingComments(false);
-    }
-  }, [post._id]);
-
-  const handleOpenComments = useCallback(() => {
-    setShowCommentModal(true);
-    fetchComments();
-  }, [fetchComments]);
-
-  const handleAddComment = useCallback(
-    async (commentData) => {
-      try {
-        const data = await api.addComment(post._id, commentData);
-        const newComment = data.comment || data;
-        setComments((prev) => [newComment, ...prev]);
-
-        // SYNC: Authoritative update to parent count state for main card UI
-        setCommentCount((prev) => prev + 1);
-        return newComment;
-      } catch (err) {
-        toast.error('Could not post comment');
-        throw err;
-      }
-    },
-    [post._id]
+  const formattedDate = format(
+    new Date(post.eventDate || post.createdAt),
+    'MMM d, yyyy'
   );
 
-  const handleDeleteComment = useCallback(async (commentId) => {
-    try {
-      await api.deleteComment(commentId);
-      setComments((prev) => prev.filter((c) => c._id !== commentId));
-
-      // SYNC: Authoritative update to parent count state
-      setCommentCount((prev) => Math.max(0, prev - 1));
-      toast.success('Comment removed');
-    } catch (err) {
-      toast.error('Failed to delete');
-    }
-  }, []);
-
-  const handleLikeComment = useCallback(
-    async (commentId) => {
-      if (!isAuthenticated) return;
-      try {
-        const data = await api.likeComment(commentId);
-        const updated = data.comment || data;
-
-        // SYNC: Immediatley update specific comment object within the array
-        setComments((prev) =>
-          prev.map((c) => (c._id === commentId ? updated : c))
-        );
-      } catch (err) {
-        console.error('Like error:', err);
-      }
-    },
-    [isAuthenticated]
-  );
-
-  // --- LOCATION LOGIC ---
-  const handleLocationClick = useCallback((location) => {
-    const encodedLocation = encodeURIComponent(location);
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-      window.open(`https://maps.apple.com/?q=${encodedLocation}`, '_blank');
-    } else {
-      window.open(
-        `http://googleusercontent.com/maps.google.com/6{encodedLocation}`,
-        '_blank'
-      );
-    }
-  }, []);
-
-  // Intersection Observer
+  // ── Intersection Observer (lazy reveal) ────────────────────────────────────
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -196,20 +102,86 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     return () => observer.disconnect();
   }, []);
 
-  // Actions click-away
+  // ── Click-away for actions menu ────────────────────────────────────────────
   useEffect(() => {
-    const handleOutside = (e) => {
+    if (!showActions) return;
+    const handler = (e) => {
       if (actionsRef.current && !actionsRef.current.contains(e.target))
         setShowActions(false);
     };
-    document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showActions]);
+
+  // ── Comments ────────────────────────────────────────────────────────────────
+  const fetchComments = useCallback(async () => {
+    if (!post._id) return;
+    setIsLoadingComments(true);
+    try {
+      const data = await api.getComments(post._id);
+      setComments(Array.isArray(data.comments) ? data.comments : []);
+      // Sync count from server's authoritative total
+      setCommentCount(data.total ?? data.count ?? 0);
+    } catch {
+      toast.error('Failed to load comments');
+    } finally {
+      setIsLoadingComments(false);
+    }
+  }, [post._id]);
+
+  const handleOpenComments = useCallback(() => {
+    setShowCommentModal(true);
+    fetchComments();
+  }, [fetchComments]);
+
+  const handleAddComment = useCallback(
+    async (commentData) => {
+      const data = await api.addComment(post._id, commentData);
+      const newComment = data.comment || data;
+      setComments((prev) => [newComment, ...prev]);
+      setCommentCount((prev) => prev + 1);
+      return newComment;
+    },
+    [post._id]
+  );
+
+  const handleDeleteComment = useCallback(async (commentId) => {
+    await api.deleteComment(commentId);
+    setComments((prev) => prev.filter((c) => c._id !== commentId));
+    setCommentCount((prev) => Math.max(0, prev - 1));
+    toast.success('Comment removed');
   }, []);
 
+  const handleLikeComment = useCallback(
+    async (commentId) => {
+      if (!isAuthenticated) return;
+      const data = await api.likeComment(commentId);
+      const updated = data.comment || data;
+      setComments((prev) =>
+        prev.map((c) => (c._id === commentId ? updated : c))
+      );
+    },
+    [isAuthenticated]
+  );
+
+  // ── Location ────────────────────────────────────────────────────────────────
+  const handleLocationClick = useCallback((location) => {
+    const encoded = encodeURIComponent(location);
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    // FIX: was broken template literal (`6{encodedLocation}`)
+    window.open(
+      isIOS
+        ? `https://maps.apple.com/?q=${encoded}`
+        : `https://www.google.com/maps/search/?api=1&query=${encoded}`,
+      '_blank'
+    );
+  }, []);
+
+  // ── Likes ───────────────────────────────────────────────────────────────────
   const handleLike = useCallback(async () => {
     if (!isAuthenticated || isProcessing || hasLiked) return;
     likePost(post._id, (updatedPost) => {
-      // Use full updated post data if returned by LikesContext/API
       setPost((prev) => ({
         ...prev,
         likes: updatedPost?.likes ?? (prev.likes || 0) + 1,
@@ -218,23 +190,15 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     });
   }, [post._id, isProcessing, hasLiked, isAuthenticated, likePost, onLike]);
 
-  const handleDoubleTapLike = () => {
+  const handleDoubleTapLike = useCallback(() => {
     if (!isAuthenticated) return;
     if (!hasLiked) handleLike();
     setIsDoubleTapLiking(true);
     setTimeout(() => setIsDoubleTapLiking(false), 900);
-  };
+  }, [isAuthenticated, hasLiked, handleLike]);
 
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: () =>
-      currentMediaIndex < post.media.length - 1 &&
-      setCurrentMediaIndex((c) => c + 1),
-    onSwipedRight: () =>
-      currentMediaIndex > 0 && setCurrentMediaIndex((c) => c - 1),
-    trackMouse: true,
-  });
-
-  const handleDeletePost = () => {
+  // ── Delete ──────────────────────────────────────────────────────────────────
+  const handleDeletePost = useCallback(() => {
     showDeleteModal({
       title: 'Delete Log Entry?',
       message:
@@ -245,13 +209,21 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
           await api.deletePost(post._id);
           if (onDelete) onDelete(post._id);
           toast.success('Log entry removed');
-        } catch (err) {
+        } catch {
           toast.error('Failed to delete entry');
         }
       },
     });
     setShowActions(false);
-  };
+  }, [post._id, showDeleteModal, onDelete]);
+
+  // ── Swipe ───────────────────────────────────────────────────────────────────
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () =>
+      setCurrentMediaIndex((c) => Math.min(c + 1, post.media.length - 1)),
+    onSwipedRight: () => setCurrentMediaIndex((c) => Math.max(c - 1, 0)),
+    trackMouse: true,
+  });
 
   return (
     <CardWrapper ref={cardRef} className={isVisible ? 'visible' : ''}>
@@ -263,7 +235,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
               <StatusDot />
             </AvatarContainer>
             <HeaderInfo>
-              <Signature className='autography-font'>{AUTHOR_NAME}</Signature>
+              <Signature>{AUTHOR_NAME}</Signature>
               <MetaRow>
                 <DateText>{formattedDate}</DateText>
                 {post.location && (
@@ -283,8 +255,8 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
           {isAuthenticated && (
             <ActionsWrapper ref={actionsRef}>
               <MenuToggle
-                onClick={() => setShowActions(!showActions)}
-                aria-label='Menu Options'
+                onClick={() => setShowActions((v) => !v)}
+                aria-label='Post options'
               >
                 <FaEllipsisH />
               </MenuToggle>
@@ -307,8 +279,10 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
             style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
           >
             {post.media?.map((m, i) => (
-              <MediaSlide key={i}>
-                {m.mediaType === 'image' ? (
+              <MediaSlide key={m._id || i}>
+                {m.mediaType === 'video' ? (
+                  <PostVid src={m.mediaUrl} controls preload='metadata' />
+                ) : (
                   <PostImg
                     src={getTransformedImageUrl(m.mediaUrl, {
                       width: 1080,
@@ -316,21 +290,39 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
                       crop: 'fill',
                     })}
                     loading={i === 0 ? 'eager' : 'lazy'}
-                    alt={post.title || 'Sologram Post Image'}
+                    alt={post.title || 'Sologram post'}
                   />
-                ) : (
-                  <PostVid src={m.mediaUrl} controls preload='metadata' />
                 )}
               </MediaSlide>
             ))}
           </MediaTrack>
+
           {post.media?.length > 1 && (
-            <Dots>
-              {post.media.map((_, i) => (
-                <Dot key={i} active={i === currentMediaIndex} />
-              ))}
-            </Dots>
+            <>
+              {currentMediaIndex > 0 && (
+                <NavBtn
+                  $side='left'
+                  onClick={() => setCurrentMediaIndex((c) => c - 1)}
+                >
+                  <FaChevronLeft />
+                </NavBtn>
+              )}
+              {currentMediaIndex < post.media.length - 1 && (
+                <NavBtn
+                  $side='right'
+                  onClick={() => setCurrentMediaIndex((c) => c + 1)}
+                >
+                  <FaChevronRight />
+                </NavBtn>
+              )}
+              <Dots>
+                {post.media.map((_, i) => (
+                  <Dot key={i} $active={i === currentMediaIndex} />
+                ))}
+              </Dots>
+            </>
           )}
+
           {isDoubleTapLiking && (
             <>
               <RippleEffect />
@@ -359,17 +351,18 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
             <BtnGroup>
               <ActionBtn
                 onClick={handleLike}
-                active={hasLiked}
-                color={COLORS.primarySalmon}
+                $active={hasLiked}
+                $color={COLORS.primarySalmon}
               >
-                {hasLiked ? <FaHeart /> : <FaRegHeart />}{' '}
+                {hasLiked ? <FaHeart /> : <FaRegHeart />}
                 <span>{post.likes || 0}</span>
               </ActionBtn>
               <ActionBtn
                 onClick={handleOpenComments}
-                color={COLORS.primaryMint}
+                $color={COLORS.primaryMint}
               >
-                <FaComment /> <span>{commentCount}</span>
+                <FaComment />
+                <span>{commentCount}</span>
               </ActionBtn>
             </BtnGroup>
           </Footer>
@@ -394,19 +387,28 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   );
 });
 
-// ─── STYLED COMPONENTS ───
+PostCard.displayName = 'PostCard';
+export default PostCard;
+
+// ─── Styled Components ───────────────────────────────────────────────────────
 
 const CardWrapper = styled.div`
-  ${fontFaceStyles}
   width: 100%;
   max-width: 600px;
   margin: 0 auto 32px;
   opacity: 0;
   transform: translateY(20px);
-  transition: all 0.7s cubic-bezier(0.2, 1, 0.3, 1);
+  transition: opacity 0.7s cubic-bezier(0.2, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.2, 1, 0.3, 1);
   &.visible {
     opacity: 1;
     transform: translateY(0);
+  }
+
+  @font-face {
+    font-family: 'Autography';
+    src: url('/fonts/Autography.woff2') format('woff2');
+    font-display: swap;
   }
 `;
 
@@ -489,6 +491,7 @@ const DotDivider = styled.span`
 const InlineLocation = styled.button`
   background: none;
   border: none;
+  padding: 0;
   font-size: 0.65rem;
   font-weight: 700;
   color: ${COLORS.primarySalmon};
@@ -498,7 +501,6 @@ const InlineLocation = styled.button`
   align-items: center;
   gap: 4px;
   cursor: pointer;
-  padding: 0;
   &:hover {
     color: ${COLORS.primaryMint};
   }
@@ -533,7 +535,6 @@ const Dropdown = styled.div`
   overflow: hidden;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   animation: ${fadeIn} 0.2s ease-out;
-
   a,
   button {
     padding: 12px 16px;
@@ -580,11 +581,31 @@ const PostImg = styled.img`
   height: 100%;
   object-fit: cover;
 `;
-
 const PostVid = styled.video`
   width: 100%;
   height: 100%;
   object-fit: cover;
+`;
+
+const NavBtn = styled.button`
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  ${(p) => p.$side}: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover {
+    background: rgba(0, 0, 0, 0.7);
+  }
 `;
 
 const Dots = styled.div`
@@ -601,7 +622,8 @@ const Dot = styled.div`
   height: 6px;
   border-radius: 50%;
   background: ${(p) =>
-    p.active ? COLORS.primaryMint : 'rgba(255, 255, 255, 0.3)'};
+    p.$active ? COLORS.primaryMint : 'rgba(255,255,255,0.3)'};
+  transition: background 0.2s;
 `;
 
 const RippleEffect = styled.div`
@@ -647,7 +669,6 @@ const CaptionText = styled.p`
   line-height: 1.6;
   color: ${COLORS.textSecondary};
   margin-bottom: 20px;
-  font-weight: 400;
   white-space: pre-wrap;
 `;
 
@@ -690,22 +711,20 @@ const BtnGroup = styled.div`
 const ActionBtn = styled.button`
   background: none;
   border: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 1.3rem;
-  color: ${(p) => (p.active ? p.color : COLORS.textTertiary)};
-  cursor: pointer;
-  transition: 0.2s;
+  color: ${(p) => (p.$active ? p.$color : COLORS.textTertiary)};
+  transition: color 0.2s, transform 0.2s;
   span {
     font-size: 0.9rem;
     font-weight: 800;
     color: ${COLORS.textSecondary};
   }
   &:hover {
-    color: ${(p) => p.hoverColor || p.color};
+    color: ${(p) => p.$color};
     transform: scale(1.1);
   }
 `;
-
-export default PostCard;

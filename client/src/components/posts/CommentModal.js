@@ -1,4 +1,11 @@
-import React, { useState, useRef, useEffect, useContext } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useContext,
+  useCallback,
+} from 'react';
+import { createPortal } from 'react-dom';
 import styled, { keyframes, css } from 'styled-components';
 import {
   FaTimes,
@@ -6,23 +13,151 @@ import {
   FaRegHeart,
   FaPaperPlane,
   FaTrash,
+  FaChevronDown,
 } from 'react-icons/fa';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { AuthContext } from '../../context/AuthContext';
+import { api } from '../../services/api';
 import { COLORS } from '../../theme';
 import authorImg from '../../assets/andy.jpg';
-import { createPortal } from 'react-dom';
 
 const AVATAR_FALLBACK = authorImg;
-const AUTHOR_IMAGE = authorImg;
 
-// ─── ANIMATIONS ───
-const fadeIn = keyframes`0%{opacity:0}100%{opacity:1}`;
-const slideUp = keyframes`0%{transform:translateY(100%)}100%{transform:translateY(0)}`;
-const slideDown = keyframes`0%{transform:translateY(0)}100%{transform:translateY(100%)}`;
-const spin = keyframes`0%{transform:rotate(0)}100%{transform:rotate(360deg)}`;
+// ─── Animations ─────────────────────────────────────────────────────────────
+const fadeIn = keyframes`from{opacity:0}to{opacity:1}`;
+const slideUp = keyframes`from{transform:translateY(100%)}to{transform:translateY(0)}`;
+const slideDown = keyframes`from{transform:translateY(0)}to{transform:translateY(100%)}`;
+const spin = keyframes`from{transform:rotate(0)}to{transform:rotate(360deg)}`;
 
+// ─── Sub-component: a single comment row (used for both comments & replies) ──
+const CommentRow = ({
+  comment,
+  user,
+  onLike,
+  onDelete,
+  onReply,
+  isReply = false,
+}) => {
+  const a = comment.author || {};
+  const isOwner = user?.id === a?._id?.toString();
+  const isAuthor = a.username === 'andy' || a.name === 'Andrew Butler';
+
+  return (
+    <CommentItem isReply={isReply}>
+      <CommentAvatarContainer isAuthor={isAuthor && !isReply}>
+        <CommentAvatar src={a.avatar || AVATAR_FALLBACK} alt={a.name} />
+      </CommentAvatarContainer>
+      <CommentBody>
+        <CommentHead>
+          <AuthorName>{a.name || 'User'}</AuthorName>
+          <TimeText>
+            {formatDistanceToNow(new Date(comment.createdAt), {
+              addSuffix: true,
+            })}
+          </TimeText>
+        </CommentHead>
+        <CommentText>{comment.text}</CommentText>
+        <CommentFooter>
+          <LikeBtn onClick={() => onLike(comment._id)} liked={comment.hasLiked}>
+            {comment.hasLiked ? <FaHeart /> : <FaRegHeart />}
+            {comment.likes > 0 && <span>{comment.likes}</span>}
+          </LikeBtn>
+          {!isReply && (
+            <ReplyBtn onClick={() => onReply(comment)}>Reply</ReplyBtn>
+          )}
+          {isOwner && (
+            <DeleteBtn onClick={() => onDelete(comment._id)}>
+              <FaTrash />
+            </DeleteBtn>
+          )}
+        </CommentFooter>
+      </CommentBody>
+    </CommentItem>
+  );
+};
+
+// ─── Sub-component: expandable replies section ───────────────────────────────
+const RepliesSection = ({ comment, user, onLike, onDelete }) => {
+  const [replies, setReplies] = useState([]);
+  const [expanded, setExpanded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  const replyCount = comment.replyCount || 0;
+  if (replyCount === 0) return null;
+
+  const handleExpand = async () => {
+    if (!loaded) {
+      setLoading(true);
+      try {
+        const data = await api.getReplies(comment._id);
+        setReplies(data.replies || []);
+        setLoaded(true);
+      } catch {
+        toast.error('Could not load replies');
+      } finally {
+        setLoading(false);
+      }
+    }
+    setExpanded((prev) => !prev);
+  };
+
+  const handleLikeReply = async (replyId) => {
+    try {
+      const data = await api.likeComment(replyId);
+      setReplies((prev) =>
+        prev.map((r) => (r._id === replyId ? data.comment : r))
+      );
+    } catch {
+      /* silent */
+    }
+  };
+
+  const handleDeleteReply = async (replyId) => {
+    try {
+      await api.deleteComment(replyId);
+      setReplies((prev) => prev.filter((r) => r._id !== replyId));
+    } catch {
+      toast.error('Failed to delete reply');
+    }
+  };
+
+  return (
+    <RepliesWrapper>
+      <ViewRepliesBtn onClick={handleExpand}>
+        {loading ? (
+          <MiniSpinner />
+        ) : (
+          <>
+            <FaChevronDown
+              style={{
+                transform: expanded ? 'rotate(180deg)' : 'none',
+                transition: '0.2s',
+              }}
+            />
+            {expanded ? 'Hide' : `View ${replyCount}`}{' '}
+            {replyCount === 1 ? 'reply' : 'replies'}
+          </>
+        )}
+      </ViewRepliesBtn>
+      {expanded &&
+        replies.map((reply) => (
+          <CommentRow
+            key={reply._id}
+            comment={reply}
+            user={user}
+            onLike={handleLikeReply}
+            onDelete={handleDeleteReply}
+            onReply={() => {}}
+            isReply
+          />
+        ))}
+    </RepliesWrapper>
+  );
+};
+
+// ─── Main Modal ──────────────────────────────────────────────────────────────
 export const CommentModal = ({
   isOpen,
   onClose,
@@ -40,36 +175,35 @@ export const CommentModal = ({
   const [isClosing, setIsClosing] = useState(false);
 
   const textareaRef = useRef(null);
-  const modalRef = useRef(null);
 
-  // Lock body scroll and focus input
+  // Lock body scroll; focus input; bind Escape
   useEffect(() => {
     if (!isOpen) return;
     document.body.style.overflow = 'hidden';
     const timer = setTimeout(() => textareaRef.current?.focus(), 400);
-
-    const onEsc = (e) => e.key === 'Escape' && handleClose();
+    const onEsc = (e) => {
+      if (e.key === 'Escape') handleClose();
+    };
     document.addEventListener('keydown', onEsc);
-
     return () => {
       clearTimeout(timer);
       document.body.style.overflow = '';
       document.removeEventListener('keydown', onEsc);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setIsClosing(true);
     setTimeout(() => {
       setIsClosing(false);
       onClose();
     }, 300);
-  };
+  }, [onClose]);
 
   const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
+    e?.preventDefault();
     if (!newComment.trim() || isSubmitting || !isAuthenticated) return;
-
     setIsSubmitting(true);
     try {
       await onAddComment({
@@ -79,30 +213,25 @@ export const CommentModal = ({
       });
       setNewComment('');
       setReplyingTo(null);
-      toast.success('Conversation updated');
-    } catch (err) {
-      toast.error('Failed to post');
+    } catch {
+      // error toast handled upstream
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleReply = (comment) => {
+  const handleReply = useCallback((comment) => {
     const a = comment?.author || {};
     setReplyingTo({ id: comment._id, author: a });
     setNewComment(`@${a.name || 'user'} `);
     textareaRef.current?.focus();
-  };
+  }, []);
 
   if (!isOpen && !isClosing) return null;
 
   return createPortal(
-    <ModalOverlay onClick={handleClose} isClosing={isClosing}>
-      <ModalContainer
-        ref={modalRef}
-        onClick={(e) => e.stopPropagation()}
-        isClosing={isClosing}
-      >
+    <ModalOverlay onClick={handleClose} $closing={isClosing}>
+      <ModalContainer onClick={(e) => e.stopPropagation()} $closing={isClosing}>
         <DragHandle />
 
         <ModalHeader>
@@ -110,101 +239,84 @@ export const CommentModal = ({
             <HeaderTitle>Conversation</HeaderTitle>
             <HeaderSubtitle>{post.title || 'Sologram Log'}</HeaderSubtitle>
           </HeaderTitleArea>
-          <CloseButton onClick={handleClose}>
+          <CloseButton onClick={handleClose} aria-label='Close'>
             <FaTimes />
           </CloseButton>
         </ModalHeader>
 
-        <ModalContent>
-          <CommentsArea>
-            {isLoading ? (
-              <LoadingState>
-                <LoadingSpinner />
-              </LoadingState>
-            ) : comments.length === 0 ? (
-              <EmptyState>
-                <EmptyIcon>🖋️</EmptyIcon>
-                <EmptyTitle>No thoughts yet</EmptyTitle>
-                <EmptySubtitle>Begin the discussion below.</EmptySubtitle>
-              </EmptyState>
-            ) : (
-              <CommentsList>
-                {comments.map((comment) => {
-                  const a = comment.author || {};
-                  // Branding logic for your comments
-                  const isAuthor =
-                    a.username === 'andy' || a.name === 'Andrew Butler';
-
-                  return (
-                    <CommentItem key={comment._id}>
-                      <CommentAvatarContainer isAuthor={isAuthor}>
-                        <CommentAvatar
-                          src={a.avatar || AVATAR_FALLBACK}
-                          alt={a.name}
-                        />
-                      </CommentAvatarContainer>
-                      <CommentBody>
-                        <CommentHead>
-                          <AuthorName>{a.name || 'User'}</AuthorName>
-                          <TimeText>
-                            {formatDistanceToNow(new Date(comment.createdAt), {
-                              addSuffix: true,
-                            })}
-                          </TimeText>
-                        </CommentHead>
-                        <CommentText>{comment.text}</CommentText>
-                        <CommentFooter>
-                          <LikeBtn
-                            onClick={() => onLikeComment(comment._id)}
-                            liked={comment.hasLiked}
-                          >
-                            {comment.hasLiked ? <FaHeart /> : <FaRegHeart />}
-                            {comment.likes > 0 && <span>{comment.likes}</span>}
-                          </LikeBtn>
-                          <ReplyBtn onClick={() => handleReply(comment)}>
-                            Reply
-                          </ReplyBtn>
-                          {user?.id === a?._id && (
-                            <DeleteBtn
-                              onClick={() => onDeleteComment(comment._id)}
-                            >
-                              <FaTrash />
-                            </DeleteBtn>
-                          )}
-                        </CommentFooter>
-                      </CommentBody>
-                    </CommentItem>
-                  );
-                })}
-              </CommentsList>
-            )}
-          </CommentsArea>
-        </ModalContent>
+        <CommentsArea>
+          {isLoading ? (
+            <LoadingState>
+              <LoadingSpinner />
+            </LoadingState>
+          ) : comments.length === 0 ? (
+            <EmptyState>
+              <EmptyIcon>🖋️</EmptyIcon>
+              <EmptyTitle>No thoughts yet</EmptyTitle>
+              <EmptySubtitle>Begin the discussion below.</EmptySubtitle>
+            </EmptyState>
+          ) : (
+            <CommentsList>
+              {comments.map((comment) => (
+                <CommentGroup key={comment._id}>
+                  <CommentRow
+                    comment={comment}
+                    user={user}
+                    onLike={onLikeComment}
+                    onDelete={onDeleteComment}
+                    onReply={handleReply}
+                  />
+                  <RepliesSection
+                    comment={comment}
+                    user={user}
+                    onLike={onLikeComment}
+                    onDelete={onDeleteComment}
+                  />
+                </CommentGroup>
+              ))}
+            </CommentsList>
+          )}
+        </CommentsArea>
 
         <InputSection>
           {replyingTo && (
             <ReplyIndicator>
               <span>Replying to @{replyingTo.author.name}</span>
-              <button onClick={() => setReplyingTo(null)}>
+              <button
+                onClick={() => {
+                  setReplyingTo(null);
+                  setNewComment('');
+                }}
+              >
                 <FaTimes />
               </button>
             </ReplyIndicator>
           )}
           <CommentForm onSubmit={handleSubmit}>
-            <UserAvatar src={user?.avatar || AUTHOR_IMAGE} alt='Your Avatar' />
+            <UserAvatar
+              src={user?.avatar || AVATAR_FALLBACK}
+              alt='Your Avatar'
+            />
             <InputWrapper>
               <CommentInput
                 ref={textareaRef}
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder='Write a thought...'
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) handleSubmit(e);
+                }}
+                placeholder={
+                  replyingTo
+                    ? `Reply to @${replyingTo.author.name}…`
+                    : 'Write a thought…'
+                }
               />
               <SubmitBtn
                 type='submit'
                 disabled={!newComment.trim() || isSubmitting}
               >
                 {isSubmitting ? (
-                  <LoadingSpinner size='14px' />
+                  <LoadingSpinner $size='14px' />
                 ) : (
                   <FaPaperPlane />
                 )}
@@ -218,7 +330,7 @@ export const CommentModal = ({
   );
 };
 
-// ─── STYLED COMPONENTS ───
+// ─── Styled Components ───────────────────────────────────────────────────────
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -229,12 +341,7 @@ const ModalOverlay = styled.div`
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  animation: ${fadeIn} 0.3s ease-out;
-  ${(p) =>
-    p.isClosing &&
-    css`
-      animation: ${fadeIn} 0.3s ease-out reverse;
-    `}
+  animation: ${fadeIn} 0.3s ease-out ${(p) => p.$closing && css`reverse`};
 `;
 
 const ModalContainer = styled.div`
@@ -245,12 +352,8 @@ const ModalContainer = styled.div`
   border-radius: 20px 20px 0 0;
   display: flex;
   flex-direction: column;
-  animation: ${slideUp} 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-  ${(p) =>
-    p.isClosing &&
-    css`
-      animation: ${slideDown} 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-    `}
+  animation: ${(p) => (p.$closing ? slideDown : slideUp)} 0.4s
+    cubic-bezier(0.19, 1, 0.22, 1) ${(p) => p.$closing && 'forwards'};
 `;
 
 const DragHandle = styled.div`
@@ -303,13 +406,6 @@ const CloseButton = styled.button`
   }
 `;
 
-const ModalContent = styled.div`
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-`;
-
 const CommentsArea = styled.div`
   flex: 1;
   overflow-y: auto;
@@ -321,12 +417,20 @@ const CommentsList = styled.div`
   flex-direction: column;
 `;
 
+const CommentGroup = styled.div`
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+`;
+
 const CommentItem = styled.div`
-  padding: 20px;
+  padding: ${(p) => (p.isReply ? '12px 20px 12px 56px' : '20px')};
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  gap: 12px;
+  ${(p) =>
+    p.isReply &&
+    css`
+      background: rgba(255, 255, 255, 0.01);
+    `}
 `;
 
 const CommentAvatarContainer = styled.div`
@@ -334,7 +438,6 @@ const CommentAvatarContainer = styled.div`
   flex-shrink: 0;
   width: 40px;
   height: 40px;
-
   ${(p) =>
     p.isAuthor &&
     css`
@@ -377,7 +480,6 @@ const AuthorName = styled.span`
   font-weight: 700;
   color: ${COLORS.textPrimary};
 `;
-
 const TimeText = styled.span`
   font-size: 0.7rem;
   color: ${COLORS.textTertiary};
@@ -440,11 +542,62 @@ const DeleteBtn = styled.button`
   }
 `;
 
+const RepliesWrapper = styled.div`
+  padding: 0 20px 8px 56px;
+`;
+
+const ViewRepliesBtn = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: ${COLORS.textTertiary};
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 10px;
+  &:hover {
+    color: ${COLORS.primaryMint};
+  }
+`;
+
+const MiniSpinner = styled.div`
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: ${COLORS.primaryMint};
+  border-radius: 50%;
+  animation: ${spin} 0.8s linear infinite;
+`;
+
 const InputSection = styled.div`
   padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   background: ${COLORS.cardBackground};
   flex-shrink: 0;
+`;
+
+const ReplyIndicator = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: ${COLORS.primaryMint}15;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  span {
+    font-size: 0.75rem;
+    color: ${COLORS.primaryMint};
+    font-weight: 700;
+  }
+  button {
+    background: none;
+    border: none;
+    color: ${COLORS.textTertiary};
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
 `;
 
 const CommentForm = styled.form`
@@ -511,10 +664,10 @@ const SubmitBtn = styled.button`
 `;
 
 const LoadingSpinner = styled.div`
-  width: ${(p) => p.size || '24px'};
-  height: ${(p) => p.size || '24px'};
+  width: ${(p) => p.$size || '24px'};
+  height: ${(p) => p.$size || '24px'};
   border: 2px solid rgba(255, 255, 255, 0.1);
-  border-top: 2px solid ${COLORS.primaryMint};
+  border-top-color: ${COLORS.primaryMint};
   border-radius: 50%;
   animation: ${spin} 0.8s linear infinite;
 `;
@@ -543,26 +696,4 @@ const EmptyTitle = styled.h4`
 const EmptySubtitle = styled.p`
   color: ${COLORS.textTertiary};
   font-size: 0.85rem;
-`;
-
-const ReplyIndicator = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 14px;
-  background: ${COLORS.primaryMint}15;
-  border-radius: 12px;
-  margin-bottom: 12px;
-  span {
-    font-size: 0.75rem;
-    color: ${COLORS.primaryMint};
-    font-weight: 700;
-  }
-  button {
-    background: none;
-    border: none;
-    color: ${COLORS.textTertiary};
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-  }
 `;

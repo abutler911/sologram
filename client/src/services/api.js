@@ -2,134 +2,80 @@ import axios from 'axios';
 
 /**
  * Single source of truth for all Sologram API calls.
- * Base configuration and Auth headers are handled by axios defaults in AuthContext.
+ * Base URL and auth headers are set globally in AuthContext via axios.defaults.
  */
 
+const get = (url, params) => axios.get(url, { params }).then((r) => r.data);
+const post = (url, data) => axios.post(url, data).then((r) => r.data);
+const put = (url, data) => axios.put(url, data).then((r) => r.data);
+const del = (url) => axios.delete(url).then((r) => r.data);
+
 export const api = {
-  // ── POSTS ──────────────────────────────────────────────────────────
-  getPosts: (page = 1, limit = 6) =>
-    axios.get('/api/posts', { params: { page, limit } }).then((r) => r.data),
-
-  searchPosts: (query) =>
-    axios.get('/api/posts/search', { params: { query } }).then((r) => r.data),
-
-  getPost: (id) => axios.get(`/api/posts/${id}`).then((r) => r.data.data),
-
-  createPost: (payload) =>
-    axios.post('/api/posts', payload).then((r) => r.data),
-
-  updatePost: (id, payload) =>
-    axios.put(`/api/posts/${id}`, payload).then((r) => r.data),
-
-  deletePost: (id) => axios.delete(`/api/posts/${id}`).then((r) => r.data),
-
-  // Returns updated post object for immediate like count/status sync
-  likePost: (id) => axios.post(`/api/posts/${id}/like`).then((r) => r.data),
-
-  checkLikeStatus: (id) =>
-    axios.get(`/api/posts/${id}/likes/check`).then((r) => r.data),
-
+  // ── POSTS ──────────────────────────────────────────────────────────────────
+  getPosts: (page = 1, limit = 6) => get('/api/posts', { page, limit }),
+  searchPosts: (query) => get('/api/posts/search', { query }),
+  getPost: (id) => get(`/api/posts/${id}`).then((r) => r.data),
+  createPost: (payload) => post('/api/posts', payload),
+  updatePost: (id, payload) => put(`/api/posts/${id}`, payload),
+  deletePost: (id) => del(`/api/posts/${id}`),
+  likePost: (id) => post(`/api/posts/${id}/like`),
+  checkLikeStatus: (id) => get(`/api/posts/${id}/likes/check`),
   batchCheckLikes: (postIds) =>
-    axios.post('/api/posts/likes/check-batch', { postIds }).then((r) => r.data),
+    post('/api/posts/likes/check-batch', { postIds }),
 
-  // ── STORIES ────────────────────────────────────────────────────────
-  getStories: () => axios.get('/api/stories').then((r) => r.data.data),
+  // ── STORIES ────────────────────────────────────────────────────────────────
+  getStories: () => get('/api/stories').then((r) => r.data),
+  getStory: (id) => get(`/api/stories/${id}`).then((r) => r.data),
+  createStory: (fd) => post('/api/stories', fd),
+  archiveStory: (id) => put(`/api/stories/${id}/archive`, {}),
+  deleteStory: (id) => del(`/api/stories/${id}`),
 
-  getStory: (id) => axios.get(`/api/stories/${id}`).then((r) => r.data.data),
-
-  createStory: (formData) =>
-    axios.post('/api/stories', formData).then((r) => r.data),
-
-  archiveStory: (id) =>
-    axios.put(`/api/stories/${id}/archive`, {}).then((r) => r.data),
-
-  deleteStory: (id) => axios.delete(`/api/stories/${id}`).then((r) => r.data),
-
-  // ── ARCHIVED STORIES ───────────────────────────────────────────────
-  getArchivedStories: () =>
-    axios.get('/api/archived-stories').then((r) => r.data.data),
-
+  // ── ARCHIVED STORIES ───────────────────────────────────────────────────────
+  getArchivedStories: () => get('/api/archived-stories').then((r) => r.data),
   getArchivedStory: (id) =>
-    axios.get(`/api/archived-stories/${id}`).then((r) => r.data.data),
+    get(`/api/archived-stories/${id}`).then((r) => r.data),
+  deleteArchivedStory: (id) => del(`/api/archived-stories/${id}`),
 
-  deleteArchivedStory: (id) =>
-    axios.delete(`/api/archived-stories/${id}`).then((r) => r.data),
-
-  // ── THOUGHTS ───────────────────────────────────────────────────────
+  // ── THOUGHTS ───────────────────────────────────────────────────────────────
   getThoughts: (page = 1, searchQuery = '') =>
-    axios
-      .get(searchQuery ? '/api/thoughts/search' : '/api/thoughts', {
-        params: { page, ...(searchQuery && { query: searchQuery }) },
-      })
-      .then((r) => r.data),
+    get(searchQuery ? '/api/thoughts/search' : '/api/thoughts', {
+      page,
+      ...(searchQuery && { query: searchQuery }),
+    }),
+  getThought: (id) => get(`/api/thoughts/${id}`).then((r) => r.data),
+  createThought: (payload) => post('/api/thoughts', payload),
+  updateThought: (id, payload) => put(`/api/thoughts/${id}`, payload),
+  deleteThought: (id) => del(`/api/thoughts/${id}`),
+  likeThought: (id) => put(`/api/thoughts/${id}/like`),
+  pinThought: (id) => put(`/api/thoughts/${id}/pin`),
 
-  getThought: (id) => axios.get(`/api/thoughts/${id}`).then((r) => r.data.data),
-
-  createThought: (payload) =>
-    axios.post('/api/thoughts', payload).then((r) => r.data),
-
-  updateThought: (id, payload) =>
-    axios.put(`/api/thoughts/${id}`, payload).then((r) => r.data),
-
-  deleteThought: (id) =>
-    axios.delete(`/api/thoughts/${id}`).then((r) => r.data),
-
-  likeThought: (id) =>
-    axios.put(`/api/thoughts/${id}/like`).then((r) => r.data),
-
-  pinThought: (id) => axios.put(`/api/thoughts/${id}/pin`).then((r) => r.data),
-
-  // ── COLLECTIONS ────────────────────────────────────────────────────
-  getCollections: () => axios.get('/api/collections').then((r) => r.data.data),
-
-  getCollection: (id) =>
-    axios.get(`/api/collections/${id}`).then((r) => r.data.data),
-
-  createCollection: (payload) =>
-    axios.post('/api/collections', payload).then((r) => r.data),
-
-  updateCollection: (id, payload) =>
-    axios.put(`/api/collections/${id}`, payload).then((r) => r.data),
-
-  deleteCollection: (id) =>
-    axios.delete(`/api/collections/${id}`).then((r) => r.data),
-
+  // ── COLLECTIONS ────────────────────────────────────────────────────────────
+  getCollections: () => get('/api/collections').then((r) => r.data),
+  getCollection: (id) => get(`/api/collections/${id}`).then((r) => r.data),
+  createCollection: (payload) => post('/api/collections', payload),
+  updateCollection: (id, p) => put(`/api/collections/${id}`, p),
+  deleteCollection: (id) => del(`/api/collections/${id}`),
   addPostsToCollection: (id, postIds) =>
-    axios.post(`/api/collections/${id}/posts`, { postIds }).then((r) => r.data),
+    post(`/api/collections/${id}/posts`, { postIds }),
+  removePostFromCollection: (colId, postId) =>
+    del(`/api/collections/${colId}/posts/${postId}`),
 
-  removePostFromCollection: (collectionId, postId) =>
-    axios
-      .delete(`/api/collections/${collectionId}/posts/${postId}`)
-      .then((r) => r.data),
-
-  // ── COMMENTS ───────────────────────────────────────────────────────
-  getCommentCount: (postId) =>
-    axios.get(`/api/posts/${postId}/comments/count`).then((r) => r.data),
-
-  getComments: (postId) =>
-    axios.get(`/api/posts/${postId}/comments`).then((r) => r.data),
-
+  // ── COMMENTS ───────────────────────────────────────────────────────────────
+  getCommentCount: (postId) => get(`/api/posts/${postId}/comments/count`),
+  getComments: (postId, page = 1) =>
+    get(`/api/posts/${postId}/comments`, { page }),
   addComment: (postId, payload) =>
-    axios.post(`/api/posts/${postId}/comments`, payload).then((r) => r.data),
+    post(`/api/posts/${postId}/comments`, payload),
+  likeComment: (commentId) => post(`/api/comments/${commentId}/like`),
+  deleteComment: (commentId) => del(`/api/comments/${commentId}`),
+  getReplies: (commentId, page = 1) =>
+    get(`/api/comments/${commentId}/replies`, { page }),
 
-  // Returns the full updated comment object { comment: { ... } } for UI sync
-  likeComment: (commentId) =>
-    axios.post(`/api/comments/${commentId}/like`).then((r) => r.data),
-
-  deleteComment: (commentId) =>
-    axios.delete(`/api/comments/${commentId}`).then((r) => r.data),
-
-  // ── AUTH ───────────────────────────────────────────────────────────
-  getMe: () => axios.get('/api/auth/me').then((r) => r.data.data),
-
+  // ── AUTH ───────────────────────────────────────────────────────────────────
+  getMe: () => get('/api/auth/me').then((r) => r.data),
   updateProfile: (formData) =>
-    axios.put('/api/auth/update-profile', formData).then((r) => r.data.data),
-
-  updateBio: (bio) =>
-    axios.put('/api/auth/update-bio', { bio }).then((r) => r.data.data),
-
-  updateNotificationPreferences: (preferences) =>
-    axios
-      .post('/api/notifications/preferences', preferences)
-      .then((r) => r.data),
+    put('/api/auth/update-profile', formData).then((r) => r.data),
+  updateBio: (bio) => put('/api/auth/update-bio', { bio }).then((r) => r.data),
+  updateNotificationPreferences: (prefs) =>
+    post('/api/notifications/preferences', prefs),
 };

@@ -1,5 +1,6 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
+
 const {
   getPosts,
   getPost,
@@ -10,45 +11,29 @@ const {
   checkUserLike,
   searchPosts,
   checkUserLikesBatch,
-} = require("../controllers/posts");
-const { protect } = require("../middleware/auth");
-const { postCreationLimiter } = require("../middleware/rateLimiter");
+} = require('../controllers/posts');
+const { protect } = require('../middleware/auth');
+const { postCreationLimiter } = require('../middleware/rateLimiter');
 
-// Import Comment model for the new route
-const Comment = require("../models/Comment");
-const Post = require("../models/Post");
+// ─── IMPORTANT: Specific routes BEFORE param routes ─────────────────────────
 
-// Public routes
-router.get("/", getPosts);
-router.get("/search", searchPosts);
-router.get("/:id", getPost);
+// Public
+router.get('/search', searchPosts);
+router.get('/', getPosts);
 
-router.get("/:id/comments/count", async (req, res) => {
-  try {
-    const { id } = req.params;
-    // If you want to validate ObjectId, uncomment the next 3 lines:
-    // const { isValidObjectId } = require("mongoose");
-    // if (!isValidObjectId(id)) return res.status(400).json({ message: "Invalid post id" });
+// FIX: batch check must be declared before /:id to avoid Express treating
+// "likes" as a post ID. POST /likes/check-batch != POST /:id/like (different
+// segment count) but explicit ordering is clearer and safer.
+router.post('/likes/check-batch', protect, checkUserLikesBatch);
 
-    // Only count non-deleted comments
-    const count = await Comment.countDocuments({
-      postId: id,
-      isDeleted: false,
-    });
-    // Always return 200 with a number (0 if none)
-    return res.status(200).json({ count });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: "Failed to get comment count" });
-  }
-});
+// Param routes (public read, protected write)
+router.get('/:id', getPost);
 
-// Protected routes (require authentication)
-router.post("/", protect, postCreationLimiter, createPost);
-router.put("/:id", protect, updatePost);
-router.delete("/:id", protect, deletePost);
-router.post("/:id/like", protect, likePost);
-router.get("/:id/likes/check", protect, checkUserLike);
-router.post("/likes/check-batch", protect, checkUserLikesBatch);
+router.post('/', protect, postCreationLimiter, createPost);
+router.put('/:id', protect, updatePost);
+router.delete('/:id', protect, deletePost);
+
+router.post('/:id/like', protect, likePost);
+router.get('/:id/likes/check', protect, checkUserLike);
 
 module.exports = router;

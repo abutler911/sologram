@@ -1,99 +1,86 @@
-const Post = require("../models/Post");
-const Like = require("../models/Like");
-const { cloudinary } = require("../config/cloudinary");
-const { sendEmail } = require("../utils/sendEmail");
-const { notifyFamilySms } = require("../services/notify/notifyFamilySms");
+const Post = require('../models/Post');
+const Like = require('../models/Like');
+const { cloudinary } = require('../config/cloudinary');
+const { sendEmail } = require('../utils/sendEmail');
+const { notifyFamilySms } = require('../services/notify/notifyFamilySms');
 const {
   noonUTCFromInputDateStr,
   todayNoonUTC,
-} = require("../utils/dateHelpers");
-
-const User = require("../models/User");
+} = require('../utils/dateHelpers');
+const User = require('../models/User');
 const {
   buildNewPostEmail,
-} = require("../utils/emailTemplates/newPostTemplate");
+} = require('../utils/emailTemplates/newPostTemplate');
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * Given an array of lean post objects, attach the real like count from
+ * the Like collection via a single aggregation.
+ */
+async function attachLikeCounts(posts) {
+  if (!posts.length) return posts;
+  const ids = posts.map((p) => p._id);
+  const agg = await Like.aggregate([
+    { $match: { post: { $in: ids } } },
+    { $group: { _id: '$post', count: { $sum: 1 } } },
+  ]);
+  const map = Object.fromEntries(agg.map((r) => [r._id.toString(), r.count]));
+  return posts.map((p) => ({
+    ...p,
+    likes: map[p._id.toString()] ?? p.likes ?? 0,
+  }));
+}
+
+// ─── Controllers ────────────────────────────────────────────────────────────
 
 exports.getPosts = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(
+      50,
+      Math.max(1, parseInt(req.query.limit, 10) || 10)
+    );
     const skip = (page - 1) * limit;
 
-    const totalPosts = await Post.countDocuments();
+    const [total, posts] = await Promise.all([
+      Post.countDocuments(),
+      Post.find().sort({ eventDate: -1 }).skip(skip).limit(limit).lean(),
+    ]);
 
-    const posts = await Post.find()
-      .sort({ eventDate: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    const data = await attachLikeCounts(posts);
 
-    const postIds = posts.map((post) => post._id);
-
-    let likesMap = {};
-
-    if (postIds.length > 0) {
-      const likes = await Like.aggregate([
-        { $match: { post: { $in: postIds } } },
-        { $group: { _id: "$post", count: { $sum: 1 } } },
-      ]);
-
-      likesMap = likes.reduce((acc, like) => {
-        acc[like._id.toString()] = like.count;
-        return acc;
-      }, {});
-    }
-
-    const postsWithLikes = posts.map((post) => ({
-      ...post,
-      likes: likesMap[post._id.toString()] || 0,
-    }));
-
-    res.status(200).json({
+    res.json({
       success: true,
-      count: postsWithLikes.length,
-      total: totalPosts,
-      totalPages: Math.ceil(totalPosts / limit),
+      count: data.length,
+      total,
+      totalPages: Math.ceil(total / limit),
       currentPage: page,
-      data: postsWithLikes,
+      data,
     });
   } catch (err) {
-    console.error("[POSTS ERROR]", err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-      error: err.message,
-    });
+    console.error('[getPosts]', err);
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
 exports.getPost = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const post = await Post.findById(req.params.id).lean();
+    if (!post)
+      return res
+        .status(404)
+        .json({ success: false, message: 'Post not found' });
 
-    if (!post) {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: post,
-    });
+    // Always return accurate like count for single-post view
+    const [result] = await attachLikeCounts([post]);
+    res.json({ success: true, data: result });
   } catch (err) {
-    console.error(err);
-
-    if (err.kind === "ObjectId") {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found",
-      });
-    }
-
-    res.status(500).json({
+    console.error('[getPost]', err);
+    const status = err.name === 'CastError' ? 404 : 500;
+    res.status(status).json({
       success: false,
-      message: "Server Error",
+      message: status === 404 ? 'Post not found' : 'Server Error',
     });
   }
 };
@@ -110,117 +97,97 @@ exports.createPost = async (req, res) => {
       media = [],
     } = req.body;
 
-    if (typeof media === "string") {
+    if (typeof media === 'string') {
       try {
         media = JSON.parse(media);
-      } catch (err) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid media format. Must be a valid JSON array.",
-        });
+      } catch {
+        return res
+          .status(400)
+          .json({ success: false, message: 'Invalid media JSON' });
       }
     }
 
     if (!title || !caption || !Array.isArray(media)) {
       return res.status(400).json({
         success: false,
-        message: "Title, caption, and media are required",
+        message: 'title, caption, and media are required',
       });
     }
 
     const formattedMedia = media.map((item) => {
-      if (!item.mediaUrl || !item.cloudinaryId) {
-        throw new Error(
-          "Each media item must include mediaUrl and cloudinaryId"
-        );
-      }
-
+      if (!item.mediaUrl || !item.cloudinaryId)
+        throw new Error('Each media item needs mediaUrl and cloudinaryId');
       return {
-        mediaType: item.mediaType || "image",
+        mediaType: item.mediaType || 'image',
         mediaUrl: item.mediaUrl,
         cloudinaryId: item.cloudinaryId,
-        filter: item.filter || "",
-        uploadedAt: new Date(),
+        filter: item.filter || '',
       };
     });
 
     const eventDate = date ? noonUTCFromInputDateStr(date) : todayNoonUTC();
 
-    const postData = {
+    const newPost = await Post.create({
       title,
       caption,
       content,
       location,
       media: formattedMedia,
-      tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
+      tags: tags
+        ? tags
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [],
       eventDate,
-      createdAt: eventDate,
-      postedAt: new Date(),
-      updatedAt: new Date(),
-    };
+    });
 
-    const newPost = await Post.create(postData);
+    const postUrl = `${process.env.APP_PUBLIC_URL || 'https://thesologram.com'}/l/${newPost._id}`;
 
-    const postUrl = `${
-      process.env.APP_PUBLIC_URL || "https://thesologram.com"
-    }/l/${newPost._id}`;
+    // Fire-and-forget notifications — don't block the response
+    notifyFamilySms('post', { title: newPost.title, url: postUrl }).catch((e) =>
+      console.error('[SMS]', e?.message || e)
+    );
 
-    notifyFamilySms("post", { title: newPost.title, url: postUrl })
-      .then((out) =>
-        console.table(
-          out.map(
-            ({ name, phone, success, textId, error, firstAttemptHadLink }) => ({
-              name,
-              phone,
-              success,
-              textId,
-              error,
-              firstAttemptHadLink,
+    User.find({}, 'email')
+      .lean()
+      .then((users) =>
+        Promise.allSettled(
+          users.map((u) =>
+            sendEmail({
+              to: u.email,
+              subject: `📸 New SoloGram Post: ${newPost.title}`,
+              html: buildNewPostEmail({
+                title: newPost.title,
+                caption: newPost.caption,
+                content: newPost.content,
+                postId: newPost._id.toString(),
+              }),
             })
           )
-        )
+        ).then((results) => {
+          const sent = results.filter((r) => r.status === 'fulfilled').length;
+          console.log(`✅ Emails sent: ${sent}/${users.length}`);
+        })
       )
-      .catch((e) => console.error("[SMS notify error]", e?.message || e));
-
-    try {
-      const users = await User.find({});
-
-      for (const user of users) {
-        await sendEmail({
-          to: user.email,
-          subject: `📸 New SoloGram Post: ${newPost.title}`,
-          html: buildNewPostEmail({
-            title: newPost.title,
-            caption: newPost.caption,
-            content: newPost.content,
-            postId: newPost._id.toString(),
-          }),
-        });
-      }
-
-      console.log(`✅ Sent notifications to ${users.length} users.`);
-    } catch (emailErr) {
-      console.error(
-        "❌ Email notification error:",
-        JSON.stringify(emailErr, null, 2)
-      );
-    }
+      .catch((e) => console.error('[Email]', e));
 
     res.status(201).json({ success: true, data: newPost });
   } catch (err) {
-    console.error("Post creation failed:", err);
-    res.status(500).json({ success: false, message: "Server Error" });
+    console.error('[createPost]', err);
+    res
+      .status(500)
+      .json({ success: false, message: err.message || 'Server Error' });
   }
 };
 
 exports.updatePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    if (!post) {
+    if (!post)
       return res
         .status(404)
-        .json({ success: false, message: "Post not found" });
-    }
+        .json({ success: false, message: 'Post not found' });
 
     let {
       title,
@@ -233,81 +200,61 @@ exports.updatePost = async (req, res) => {
       keepMedia = [],
     } = req.body;
 
-    // Handle possible stringified media
-    if (typeof media === "string") {
+    if (typeof media === 'string') {
       try {
         media = JSON.parse(media);
       } catch {
         return res
           .status(400)
-          .json({ success: false, message: "Invalid media JSON" });
+          .json({ success: false, message: 'Invalid media JSON' });
       }
     }
 
-    const keepMediaIds = Array.isArray(keepMedia)
-      ? keepMedia.map((id) => id.toString().trim())
-      : keepMedia.split(",").map((id) => id.trim());
+    const keepIds = (
+      Array.isArray(keepMedia) ? keepMedia : keepMedia.split(',')
+    ).map((id) => id.toString().trim());
 
     const keptMedia = post.media.filter((m) =>
-      keepMediaIds.includes(m._id.toString())
+      keepIds.includes(m._id.toString())
     );
-
     const removedMedia = post.media.filter(
-      (m) => !keepMediaIds.includes(m._id.toString())
+      (m) => !keepIds.includes(m._id.toString())
     );
 
-    for (const media of removedMedia) {
-      if (media.cloudinaryId) {
-        try {
-          await cloudinary.uploader.destroy(media.cloudinaryId);
-        } catch (err) {
-          console.warn(
-            "Failed to delete Cloudinary asset:",
-            media.cloudinaryId,
-            err
-          );
-        }
-      }
-    }
+    // Delete removed assets from Cloudinary (fire-and-forget, don't block save)
+    Promise.allSettled(
+      removedMedia
+        .filter((m) => m.cloudinaryId)
+        .map((m) => cloudinary.uploader.destroy(m.cloudinaryId))
+    ).catch((e) => console.error('[Cloudinary cleanup]', e));
 
-    const keptMediaCloudinaryIds = keptMedia.map((m) => m.cloudinaryId);
+    const keptCloudinaryIds = new Set(keptMedia.map((m) => m.cloudinaryId));
+    const newMedia = (Array.isArray(media) ? media : [])
+      .filter(
+        (item) => item.cloudinaryId && !keptCloudinaryIds.has(item.cloudinaryId)
+      )
+      .map((item) => {
+        if (!item.mediaUrl || !item.cloudinaryId)
+          throw new Error('Each media item needs mediaUrl and cloudinaryId');
+        return {
+          mediaType: item.mediaType || 'image',
+          mediaUrl: item.mediaUrl,
+          cloudinaryId: item.cloudinaryId,
+          filter: item.filter || '',
+        };
+      });
 
-    const newMedia = Array.isArray(media)
-      ? media
-          .filter(
-            (item) =>
-              item.cloudinaryId &&
-              !keptMediaCloudinaryIds.includes(item.cloudinaryId)
-          )
-          .map((item) => {
-            if (!item.mediaUrl || !item.cloudinaryId) {
-              throw new Error(
-                "Each new media item must have mediaUrl and cloudinaryId"
-              );
-            }
-
-            return {
-              mediaType: item.mediaType || "image",
-              mediaUrl: item.mediaUrl,
-              cloudinaryId: item.cloudinaryId,
-              filter: item.filter || "",
-              uploadedAt: new Date(),
-            };
-          })
-      : [];
-
-    // Update post fields
-    if (typeof title !== "undefined") post.title = title;
-    if (typeof caption !== "undefined") post.caption = caption;
-    if (typeof content !== "undefined") post.content = content;
-    if (typeof location !== "undefined") post.location = location;
-    if (typeof tags !== "undefined") {
-      post.tags = tags ? tags.split(",").map((tag) => tag.trim()) : [];
-    }
-
-    post.media = [...keptMedia, ...newMedia];
-    post.updatedAt = new Date();
-
+    if (title !== undefined) post.title = title;
+    if (caption !== undefined) post.caption = caption;
+    if (content !== undefined) post.content = content;
+    if (location !== undefined) post.location = location;
+    if (tags !== undefined)
+      post.tags = tags
+        ? tags
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [];
     if (date) {
       const safe = noonUTCFromInputDateStr(date);
       if (safe) {
@@ -316,53 +263,41 @@ exports.updatePost = async (req, res) => {
       }
     }
 
+    post.media = [...keptMedia, ...newMedia];
     await post.save();
 
-    res.status(200).json({ success: true, data: post });
+    res.json({ success: true, data: post });
   } catch (err) {
-    console.error("Post update failed:", err);
-    res.status(500).json({ success: false, message: "Server Error" });
+    console.error('[updatePost]', err);
+    res
+      .status(500)
+      .json({ success: false, message: err.message || 'Server Error' });
   }
 };
 
 exports.deletePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
+    if (!post)
+      return res
+        .status(404)
+        .json({ success: false, message: 'Post not found' });
 
-    if (!post) {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found",
-      });
-    }
-
-    if (post.media && post.media.length > 0) {
-      for (const media of post.media) {
-        if (media.cloudinaryId) {
-          await cloudinary.uploader.destroy(media.cloudinaryId);
-        }
-      }
-    }
+    // Delete all media assets from Cloudinary
+    await Promise.allSettled(
+      (post.media || [])
+        .filter((m) => m.cloudinaryId)
+        .map((m) => cloudinary.uploader.destroy(m.cloudinaryId))
+    );
 
     await post.deleteOne();
-
-    res.status(200).json({
-      success: true,
-      message: "Post deleted successfully",
-    });
+    res.json({ success: true, message: 'Post deleted' });
   } catch (err) {
-    console.error(err);
-
-    if (err.kind === "ObjectId") {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found",
-      });
-    }
-
-    res.status(500).json({
+    console.error('[deletePost]', err);
+    const status = err.name === 'CastError' ? 404 : 500;
+    res.status(status).json({
       success: false,
-      message: "Server Error",
+      message: status === 404 ? 'Post not found' : 'Server Error',
     });
   }
 };
@@ -370,171 +305,96 @@ exports.deletePost = async (req, res) => {
 exports.searchPosts = async (req, res) => {
   try {
     const { query } = req.query;
+    if (!query?.trim())
+      return res
+        .status(400)
+        .json({ success: false, message: 'Search query is required' });
 
-    if (!query) {
-      return res.status(400).json({
-        success: false,
-        message: "Search query is required",
-      });
-    }
+    const posts = await Post.find({ $text: { $search: query } })
+      .sort({ score: { $meta: 'textScore' } })
+      .limit(50)
+      .lean();
 
-    const posts = await Post.find({ $text: { $search: query } }).sort({
-      createdAt: -1,
-    });
-
-    res.status(200).json({
-      success: true,
-      count: posts.length,
-      data: posts,
-    });
+    const data = await attachLikeCounts(posts);
+    res.json({ success: true, count: data.length, data });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    console.error('[searchPosts]', err);
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
+/**
+ * Like a post — one like per user, not toggleable (Instagram-style).
+ * Uses atomic $inc + Like upsert — no session/transaction needed.
+ */
 exports.likePost = async (req, res) => {
   try {
     const postId = req.params.id;
     const userId = req.user._id;
 
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required to like posts",
-      });
+    // Atomic upsert: if like already exists, this is a no-op
+    const result = await Like.updateOne(
+      { post: postId, user: userId },
+      { $setOnInsert: { post: postId, user: userId } },
+      { upsert: true }
+    );
+
+    const alreadyLiked = result.upsertedCount === 0;
+
+    // Only increment denormalized count on first like
+    if (!alreadyLiked) {
+      await Post.updateOne({ _id: postId }, { $inc: { likes: 1 } });
     }
 
-    console.log(`Like attempt - Post: ${postId}, User: ${userId}`);
+    const post = await Post.findById(postId).lean();
+    if (!post)
+      return res
+        .status(404)
+        .json({ success: false, message: 'Post not found' });
 
-    const session = await Like.startSession();
-    session.startTransaction();
-
-    try {
-      const post = await Post.findById(postId).session(session);
-      if (!post) {
-        throw new Error("Post not found");
-      }
-
-      // Check if the user already liked this post
-      const existingLike = await Like.findOne({
-        post: postId,
-        user: userId,
-      }).session(session);
-
-      if (existingLike) {
-        throw new Error("You have already liked this post");
-      }
-
-      // Create a new like
-      await Like.create([{ post: postId, user: userId }], { session });
-
-      // Increment the like count on the Post
-      post.likes += 1;
-      await post.save({ session });
-
-      await session.commitTransaction();
-      session.endSession();
-
-      res.status(200).json({
-        success: true,
-        data: post,
-      });
-    } catch (err) {
-      await session.abortTransaction();
-      session.endSession();
-
-      if (err.message === "You have already liked this post") {
-        // Return success for duplicate like attempts
-        const post = await Post.findById(postId);
-        return res.status(200).json({
-          success: true,
-          message: "Post already liked",
-          data: post,
-        });
-      }
-
-      throw err;
-    }
+    res.json({ success: true, alreadyLiked, data: post });
   } catch (err) {
-    console.error("Like error:", err.message || err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    console.error('[likePost]', err);
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
 exports.checkUserLike = async (req, res) => {
   try {
-    const { id: postId } = req.params;
-    const userId = req.user._id;
-
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required",
-      });
-    }
-
-    const like = await Like.findOne({ post: postId, user: userId });
-
-    res.status(200).json({
-      success: true,
-      hasLiked: !!like,
-    });
+    const like = await Like.exists({ post: req.params.id, user: req.user._id });
+    res.json({ success: true, hasLiked: !!like });
   } catch (err) {
-    console.error("Check like error:", err.message || err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    console.error('[checkUserLike]', err);
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
 exports.checkUserLikesBatch = async (req, res) => {
   try {
     const { postIds } = req.body;
-    const userId = req.user._id;
-
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required",
-      });
-    }
-
-    if (!Array.isArray(postIds) || postIds.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid or empty post IDs array",
-      });
+    if (!Array.isArray(postIds) || !postIds.length) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'postIds array required' });
     }
 
     const likes = await Like.find({
       post: { $in: postIds },
-      user: userId,
-    });
+      user: req.user._id,
+    })
+      .select('post')
+      .lean();
+    const likedSet = new Set(likes.map((l) => l.post.toString()));
 
-    const results = postIds.map((postId) => ({
-      postId,
-      hasLiked: likes.some(
-        (like) => like.post.toString() === postId.toString()
-      ),
-    }));
-
-    res.status(200).json({
+    res.json({
       success: true,
-      results,
+      results: postIds.map((id) => ({
+        postId: id,
+        hasLiked: likedSet.has(id.toString()),
+      })),
     });
   } catch (err) {
-    console.error("Batch check likes error:", err.message || err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    console.error('[checkUserLikesBatch]', err);
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
