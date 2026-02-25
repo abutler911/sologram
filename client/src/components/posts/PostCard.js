@@ -9,12 +9,12 @@ import React, {
   lazy,
 } from 'react';
 import { Link } from 'react-router-dom';
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 import {
   FaHeart,
   FaRegHeart,
   FaComment,
-  FaEllipsisH,
+  FaEllipsisV,
   FaMapMarkerAlt,
   FaEdit,
   FaTrash,
@@ -40,18 +40,39 @@ const CommentModal = lazy(() =>
 const AUTHOR_IMAGE = authorImg;
 const AUTHOR_NAME = 'Andrew Butler';
 
-const fadeIn = keyframes`from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}`;
+// ─── Animations ───────────────────────────────────────────────────────────────
+
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
+
 const scaleIn = keyframes`
-  0%{transform:scale(0);opacity:0}
-  15%{transform:scale(1.25);opacity:1}
-  30%{transform:scale(0.95)}
-  45%,80%{transform:scale(1);opacity:1}
-  100%{transform:scale(0);opacity:0}
+  0%        { transform: scale(0);    opacity: 0; }
+  15%       { transform: scale(1.3);  opacity: 1; }
+  30%       { transform: scale(0.95);             }
+  45%, 80%  { transform: scale(1);    opacity: 1; }
+  100%      { transform: scale(0);    opacity: 0; }
 `;
-const mintRipple = keyframes`
-  from{transform:translate(-50%,-50%) scale(0.5);opacity:0.8}
-  to{transform:translate(-50%,-50%) scale(2.8);opacity:0}
+
+const heartPop = keyframes`
+  0%   { transform: scale(1);   }
+  30%  { transform: scale(1.4); }
+  60%  { transform: scale(0.9); }
+  100% { transform: scale(1);   }
 `;
+
+const rippleOut = keyframes`
+  from { transform: translate(-50%,-50%) scale(0.4); opacity: 0.9; }
+  to   { transform: translate(-50%,-50%) scale(3.2); opacity: 0;   }
+`;
+
+const dropIn = keyframes`
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+`;
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -62,7 +83,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const [showCommentModal, setShowModal] = useState(false);
   const [comments, setComments] = useState([]);
   const [isLoadingComments, setLoadingC] = useState(false);
-  // Initialize from Post.commentCount, but always sync from server on open
+  const [captionExpanded, setCaptionExp] = useState(false);
   const [commentCount, setCommentCount] = useState(
     initialPost.commentCount || 0
   );
@@ -79,8 +100,9 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     new Date(post.eventDate || post.createdAt),
     'MMM d, yyyy'
   );
+  const mediaCount = post.media?.length || 0;
 
-  // Intersection observer — lazy reveal animation
+  // ── Intersection observer — fade-up reveal ────────────────────────────────
   useEffect(() => {
     const ob = new IntersectionObserver(
       ([e]) => {
@@ -89,13 +111,13 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
           ob.disconnect();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.08 }
     );
     if (cardRef.current) ob.observe(cardRef.current);
     return () => ob.disconnect();
   }, []);
 
-  // Click-away for actions dropdown
+  // ── Click-away for actions dropdown ───────────────────────────────────────
   useEffect(() => {
     if (!showActions) return;
     const h = (e) => {
@@ -115,7 +137,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
       const data = await api.getComments(post._id);
       const list = Array.isArray(data.comments) ? data.comments : [];
       setComments(list);
-      // Always trust the server's total for the count
       if (typeof data.total === 'number') setCommentCount(data.total);
     } catch (err) {
       console.error('[fetchComments]', err);
@@ -144,7 +165,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
         setCommentCount((prev) => prev + 1);
         return newComment;
       } catch (err) {
-        console.error('[addComment]', err?.response?.data || err.message);
         const msg = err?.response?.data?.message || 'Could not post comment';
         toast.error(msg);
         throw err;
@@ -159,8 +179,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
       setComments((prev) => prev.filter((c) => c._id !== commentId));
       setCommentCount((prev) => Math.max(0, prev - 1));
       toast.success('Comment removed');
-    } catch (err) {
-      console.error('[deleteComment]', err?.response?.data || err.message);
+    } catch {
       toast.error('Failed to delete comment');
     }
   }, []);
@@ -177,8 +196,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
         setComments((prev) =>
           prev.map((c) => (c._id === commentId ? data.comment : c))
         );
-      } catch (err) {
-        console.error('[likeComment]', err?.response?.data || err.message);
+      } catch {
         toast.error('Could not update like');
       }
     },
@@ -223,7 +241,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
 
   const handleDeletePost = useCallback(() => {
     showDeleteModal({
-      title: 'Delete Log Entry?',
+      title: 'Delete Post?',
       message:
         'This will permanently remove this post and all its interactions.',
       confirmText: 'Delete Post',
@@ -231,9 +249,9 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
         try {
           await api.deletePost(post._id);
           if (onDelete) onDelete(post._id);
-          toast.success('Log entry removed');
+          toast.success('Post removed');
         } catch {
-          toast.error('Failed to delete entry');
+          toast.error('Failed to delete post');
         }
       },
     });
@@ -241,150 +259,179 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   }, [post._id, showDeleteModal, onDelete]);
 
   const swipeHandlers = useSwipeable({
-    onSwipedLeft: () =>
-      setIdx((c) => Math.min(c + 1, (post.media?.length || 1) - 1)),
+    onSwipedLeft: () => setIdx((c) => Math.min(c + 1, mediaCount - 1)),
     onSwipedRight: () => setIdx((c) => Math.max(c - 1, 0)),
     trackMouse: true,
   });
 
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
-    <CardWrapper ref={cardRef} className={isVisible ? 'visible' : ''}>
-      <Card>
-        <CardHeader>
-          <SignatureArea>
-            <AvatarContainer>
-              <Avatar src={AUTHOR_IMAGE} alt={AUTHOR_NAME} />
-              <StatusDot />
-            </AvatarContainer>
-            <HeaderInfo>
-              <Signature>{AUTHOR_NAME}</Signature>
-              <MetaRow>
-                <DateText>{formattedDate}</DateText>
-                {post.location && (
-                  <>
-                    <DotDivider>•</DotDivider>
-                    <InlineLocation
-                      onClick={() => handleLocationClick(post.location)}
-                    >
-                      <FaMapMarkerAlt size={9} /> {post.location}
-                    </InlineLocation>
-                  </>
-                )}
-              </MetaRow>
-            </HeaderInfo>
-          </SignatureArea>
+    <CardWrapper ref={cardRef} $visible={isVisible}>
+      {/* ── MEDIA FRAME ──────────────────────────────────────────────────── */}
+      <MediaFrame onDoubleClick={handleDoubleTapLike} {...swipeHandlers}>
+        <MediaTrack
+          style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
+        >
+          {post.media?.map((m, i) => (
+            <MediaSlide key={m._id || i}>
+              {m.mediaType === 'video' ? (
+                <PostVid src={m.mediaUrl} controls preload='metadata' />
+              ) : (
+                <PostImg
+                  src={getTransformedImageUrl(m.mediaUrl, {
+                    width: 1080,
+                    height: 1350,
+                    crop: 'fill',
+                  })}
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  alt={post.title || 'Sologram post'}
+                />
+              )}
+            </MediaSlide>
+          ))}
+        </MediaTrack>
+
+        {/* Bottom gradient scrim */}
+        <BottomScrim />
+
+        {/* Author overlay — bottom-left */}
+        <AuthorOverlay>
+          <AvatarRing>
+            <Avatar src={AUTHOR_IMAGE} alt={AUTHOR_NAME} />
+          </AvatarRing>
+          <AuthorMeta>
+            <AuthorSig>{AUTHOR_NAME}</AuthorSig>
+            <AuthorDate>
+              {formattedDate}
+              {post.location && (
+                <LocationInline
+                  onClick={() => handleLocationClick(post.location)}
+                >
+                  &nbsp;· <FaMapMarkerAlt size={9} /> {post.location}
+                </LocationInline>
+              )}
+            </AuthorDate>
+          </AuthorMeta>
+        </AuthorOverlay>
+
+        {/* Right-side action rail */}
+        <ActionRail>
+          <RailBtn
+            onClick={handleLike}
+            $active={hasLiked}
+            aria-label='Like post'
+          >
+            <RailIcon $active={hasLiked} $color={COLORS.primarySalmon}>
+              {hasLiked ? <FaHeart /> : <FaRegHeart />}
+            </RailIcon>
+            <RailCount>{post.likes || 0}</RailCount>
+          </RailBtn>
+
+          <RailBtn onClick={handleOpenComments} aria-label='Open comments'>
+            <RailIcon $color={COLORS.primaryMint}>
+              <FaComment />
+            </RailIcon>
+            <RailCount>{commentCount}</RailCount>
+          </RailBtn>
 
           {isAuthenticated && (
             <ActionsWrapper ref={actionsRef}>
-              <MenuToggle
+              <RailBtn
                 onClick={() => setShowActions((v) => !v)}
-                aria-label='Post options'
+                aria-label='More options'
               >
-                <FaEllipsisH />
-              </MenuToggle>
+                <RailIcon $color={COLORS.textSecondary}>
+                  <FaEllipsisV />
+                </RailIcon>
+              </RailBtn>
+
               {showActions && (
-                <Dropdown>
-                  <Link to={`/edit/${post._id}`}>
-                    <FaEdit /> Edit Post
+                <ActionsDropdown>
+                  <Link
+                    to={`/edit/${post._id}`}
+                    onClick={() => setShowActions(false)}
+                  >
+                    <FaEdit /> Edit
                   </Link>
                   <button onClick={handleDeletePost} className='warn'>
-                    <FaTrash /> Delete Post
+                    <FaTrash /> Delete
                   </button>
-                </Dropdown>
+                </ActionsDropdown>
               )}
             </ActionsWrapper>
           )}
-        </CardHeader>
+        </ActionRail>
 
-        <MediaFrame onDoubleClick={handleDoubleTapLike} {...swipeHandlers}>
-          <MediaTrack
-            style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
-          >
-            {post.media?.map((m, i) => (
-              <MediaSlide key={m._id || i}>
-                {m.mediaType === 'video' ? (
-                  <PostVid src={m.mediaUrl} controls preload='metadata' />
-                ) : (
-                  <PostImg
-                    src={getTransformedImageUrl(m.mediaUrl, {
-                      width: 1080,
-                      height: 1080,
-                      crop: 'fill',
-                    })}
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    alt={post.title || 'Sologram post'}
-                  />
-                )}
-              </MediaSlide>
-            ))}
-          </MediaTrack>
-
-          {post.media?.length > 1 && (
-            <>
-              {currentMediaIndex > 0 && (
-                <NavBtn $side='left' onClick={() => setIdx((c) => c - 1)}>
-                  <FaChevronLeft />
-                </NavBtn>
-              )}
-              {currentMediaIndex < post.media.length - 1 && (
-                <NavBtn $side='right' onClick={() => setIdx((c) => c + 1)}>
-                  <FaChevronRight />
-                </NavBtn>
-              )}
-              <Dots>
-                {post.media.map((_, i) => (
-                  <Dot key={i} $active={i === currentMediaIndex} />
-                ))}
-              </Dots>
-            </>
-          )}
-
-          {isDoubleTapLiking && (
-            <>
-              <RippleEffect />
-              <BigHeart>
-                <FaHeart />
-              </BigHeart>
-            </>
-          )}
-        </MediaFrame>
-
-        <ContentBody>
-          <Link to={`/post/${post._id}`} style={{ textDecoration: 'none' }}>
-            <Title>{post.title}</Title>
-          </Link>
-          <CaptionText>{post.caption || post.content}</CaptionText>
-
-          {post.tags?.length > 0 && (
-            <TagBox>
-              {post.tags.map((t, i) => (
-                <Tag key={i}>#{t}</Tag>
+        {/* Carousel nav + dots */}
+        {mediaCount > 1 && (
+          <>
+            {currentMediaIndex > 0 && (
+              <NavBtn
+                $side='left'
+                onClick={() => setIdx((c) => c - 1)}
+                aria-label='Previous'
+              >
+                <FaChevronLeft />
+              </NavBtn>
+            )}
+            {currentMediaIndex < mediaCount - 1 && (
+              <NavBtn
+                $side='right'
+                onClick={() => setIdx((c) => c + 1)}
+                aria-label='Next'
+              >
+                <FaChevronRight />
+              </NavBtn>
+            )}
+            <Dots>
+              {post.media.map((_, i) => (
+                <Dot key={i} $active={i === currentMediaIndex} />
               ))}
-            </TagBox>
-          )}
+            </Dots>
+          </>
+        )}
 
-          <Footer>
-            <BtnGroup>
-              <ActionBtn
-                onClick={handleLike}
-                $active={hasLiked}
-                $color={COLORS.primarySalmon}
-              >
-                {hasLiked ? <FaHeart /> : <FaRegHeart />}
-                <span>{post.likes || 0}</span>
-              </ActionBtn>
-              <ActionBtn
-                onClick={handleOpenComments}
-                $color={COLORS.primaryMint}
-              >
-                <FaComment />
-                <span>{commentCount}</span>
-              </ActionBtn>
-            </BtnGroup>
-          </Footer>
-        </ContentBody>
-      </Card>
+        {/* Double-tap heart */}
+        {isDoubleTapLiking && (
+          <>
+            <Ripple />
+            <BigHeart>
+              <FaHeart />
+            </BigHeart>
+          </>
+        )}
+      </MediaFrame>
 
+      {/* ── CAPTION BAR ──────────────────────────────────────────────────── */}
+      <ContentBody>
+        <Link to={`/post/${post._id}`} style={{ textDecoration: 'none' }}>
+          <Title>{post.title}</Title>
+        </Link>
+
+        {(post.caption || post.content) && (
+          <CaptionWrap>
+            <CaptionText $expanded={captionExpanded}>
+              {post.caption || post.content}
+            </CaptionText>
+            {(post.caption || post.content || '').length > 120 && (
+              <ExpandBtn onClick={() => setCaptionExp((v) => !v)}>
+                {captionExpanded ? 'less' : 'more'}
+              </ExpandBtn>
+            )}
+          </CaptionWrap>
+        )}
+
+        {post.tags?.length > 0 && (
+          <TagRow>
+            {post.tags.map((t, i) => (
+              <Tag key={i}>#{t}</Tag>
+            ))}
+          </TagRow>
+        )}
+      </ContentBody>
+
+      {/* ── COMMENT MODAL ────────────────────────────────────────────────── */}
       {showCommentModal && (
         <Suspense fallback={null}>
           <CommentModal
@@ -406,307 +453,404 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
 PostCard.displayName = 'PostCard';
 export default PostCard;
 
-// ─── Styled Components ───────────────────────────────────────────────────────
+// ─── Styled Components ────────────────────────────────────────────────────────
 
-const CardWrapper = styled.div`
+const CardWrapper = styled.article`
   width: 100%;
-  max-width: 600px;
-  margin: 0 auto 32px;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.7s cubic-bezier(0.2, 1, 0.3, 1),
-    transform 0.7s cubic-bezier(0.2, 1, 0.3, 1);
-  &.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  max-width: 500px;
+  margin: 0 auto 2px;
+  opacity: ${(p) => (p.$visible ? 1 : 0)};
+  transform: ${(p) => (p.$visible ? 'translateY(0)' : 'translateY(28px)')};
+  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+
   @font-face {
     font-family: 'Autography';
     src: url('/fonts/Autography.woff2') format('woff2');
     font-display: swap;
   }
 `;
-const Card = styled.div`
-  background: ${COLORS.cardBackground};
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-`;
-const CardHeader = styled.div`
-  padding: 18px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-`;
-const SignatureArea = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 14px;
-`;
-const AvatarContainer = styled.div`
-  position: relative;
-`;
-const Avatar = styled.img`
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid ${COLORS.cardBackground};
-  box-shadow: 0 0 0 2px ${COLORS.primarySalmon};
-`;
-const StatusDot = styled.div`
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 10px;
-  height: 10px;
-  background: ${COLORS.primaryMint};
-  border: 2px solid ${COLORS.cardBackground};
-  border-radius: 50%;
-`;
-const HeaderInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-const Signature = styled.div`
-  font-family: 'Autography', cursive;
-  font-size: 1.8rem;
-  color: ${COLORS.textPrimary};
-  line-height: 1;
-`;
-const MetaRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-`;
-const DateText = styled.div`
-  font-size: 0.65rem;
-  color: ${COLORS.textTertiary};
-  text-transform: uppercase;
-  letter-spacing: 1px;
-`;
-const DotDivider = styled.span`
-  color: ${COLORS.textTertiary};
-  font-size: 0.6rem;
-`;
-const InlineLocation = styled.button`
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: ${COLORS.primarySalmon};
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  &:hover {
-    color: ${COLORS.primaryMint};
-  }
-`;
-const ActionsWrapper = styled.div`
-  position: relative;
-`;
-const MenuToggle = styled.button`
-  background: none;
-  border: none;
-  color: ${COLORS.textTertiary};
-  cursor: pointer;
-  padding: 8px;
-  &:hover {
-    color: ${COLORS.primaryMint};
-  }
-`;
-const Dropdown = styled.div`
-  position: absolute;
-  right: 0;
-  top: 40px;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 8px;
-  z-index: 50;
-  min-width: 160px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-  animation: ${fadeIn} 0.2s ease-out;
-  a,
-  button {
-    padding: 12px 16px;
-    border: none;
-    background: none;
-    color: ${COLORS.textPrimary};
-    text-decoration: none;
-    font-size: 0.85rem;
-    text-align: left;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    &:hover {
-      background: rgba(255, 255, 255, 0.05);
-    }
-  }
-  .warn {
-    color: ${COLORS.primarySalmon};
-  }
-`;
+
+// ── Media ─────────────────────────────────────────────────────────────────────
+
 const MediaFrame = styled.div`
   position: relative;
   width: 100%;
-  aspect-ratio: 1/1;
+  aspect-ratio: 4 / 5;
   background: #000;
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
 `;
+
 const MediaTrack = styled.div`
   display: flex;
   height: 100%;
-  transition: transform 0.6s cubic-bezier(0.2, 1, 0.3, 1);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 `;
+
 const MediaSlide = styled.div`
   flex: 0 0 100%;
   height: 100%;
 `;
+
 const PostImg = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 `;
+
 const PostVid = styled.video`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 `;
+
+// ── Overlays ──────────────────────────────────────────────────────────────────
+
+const BottomScrim = styled.div`
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 45%;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.84) 0%,
+    rgba(0, 0, 0, 0.42) 55%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+`;
+
+const AuthorOverlay = styled.div`
+  position: absolute;
+  bottom: 18px;
+  left: 14px;
+  /* leave right gap for the action rail (≈72px) */
+  right: 72px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 2;
+`;
+
+const AvatarRing = styled.div`
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    ${COLORS.primarySalmon},
+    ${COLORS.primaryMint}
+  );
+  flex-shrink: 0;
+`;
+
+const Avatar = styled.img`
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #000;
+  display: block;
+`;
+
+const AuthorMeta = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+`;
+
+const AuthorSig = styled.span`
+  font-family: 'Autography', cursive;
+  font-size: 1.5rem;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const AuthorDate = styled.span`
+  font-size: 0.67rem;
+  color: rgba(255, 255, 255, 0.72);
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+`;
+
+const LocationInline = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.67rem;
+  color: ${COLORS.accentMint};
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  &:hover {
+    color: #fff;
+  }
+`;
+
+// ── Right-side action rail ────────────────────────────────────────────────────
+
+const ActionRail = styled.div`
+  position: absolute;
+  right: 12px;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 3;
+`;
+
+const RailBtn = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  -webkit-tap-highlight-color: transparent;
+  /* min touch target */
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+`;
+
+const RailIcon = styled.span`
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  color: ${(p) => (p.$active ? p.$color : 'rgba(255,255,255,0.92)')};
+  transition: color 0.18s, transform 0.18s, background 0.18s;
+
+  ${(p) =>
+    p.$active &&
+    css`
+      background: ${p.$color}28;
+      animation: ${heartPop} 0.35s ease;
+    `}
+
+  ${RailBtn}:hover & {
+    color: ${(p) => p.$color || '#fff'};
+    background: rgba(0, 0, 0, 0.68);
+    transform: scale(1.1);
+  }
+`;
+
+const RailCount = styled.span`
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.75);
+  line-height: 1;
+`;
+
+// ── Admin actions dropdown ────────────────────────────────────────────────────
+
+const ActionsWrapper = styled.div`
+  position: relative;
+`;
+
+const ActionsDropdown = styled.div`
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 12px;
+  min-width: 140px;
+  overflow: hidden;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.65);
+  animation: ${dropIn} 0.18s ease;
+  z-index: 10;
+
+  a,
+  button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: none;
+    color: ${COLORS.textPrimary};
+    font-size: 0.875rem;
+    text-decoration: none;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s;
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+  .warn {
+    color: ${COLORS.error};
+  }
+`;
+
+// ── Carousel nav ──────────────────────────────────────────────────────────────
+
 const NavBtn = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  ${(p) => p.$side}:12px;
-  background: rgba(0, 0, 0, 0.4);
+  ${(p) => p.$side}: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(4px);
   border: none;
   color: #fff;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  font-size: 0.85rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  z-index: 2;
+  transition: background 0.15s, transform 0.15s;
   &:hover {
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.72);
+    transform: translateY(-50%) scale(1.08);
   }
 `;
+
 const Dots = styled.div`
   position: absolute;
-  bottom: 12px;
+  top: 12px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 6px;
+  gap: 5px;
+  z-index: 2;
 `;
+
 const Dot = styled.div`
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: ${(p) =>
-    p.$active ? COLORS.primaryMint : 'rgba(255,255,255,0.3)'};
-  transition: background 0.2s;
+  height: 4px;
+  width: ${(p) => (p.$active ? '20px' : '4px')};
+  border-radius: 2px;
+  background: ${(p) => (p.$active ? '#fff' : 'rgba(255,255,255,0.38)')};
+  transition: width 0.28s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s ease;
 `;
-const RippleEffect = styled.div`
+
+// ── Double-tap like ───────────────────────────────────────────────────────────
+
+const Ripple = styled.div`
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 100px;
-  height: 100px;
-  border: 3px solid ${COLORS.primaryMint};
+  width: 120px;
+  height: 120px;
+  border: 3px solid ${COLORS.primarySalmon};
   border-radius: 50%;
   pointer-events: none;
-  animation: ${mintRipple} 0.8s ease-out forwards;
+  z-index: 4;
+  animation: ${rippleOut} 0.75s ease-out forwards;
 `;
+
 const BigHeart = styled.div`
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   color: ${COLORS.primarySalmon};
-  font-size: 80px;
+  font-size: 88px;
+  filter: drop-shadow(0 0 24px ${COLORS.primarySalmon}99);
+  pointer-events: none;
+  z-index: 4;
   animation: ${scaleIn} 0.8s ease forwards;
 `;
+
+// ── Caption bar ───────────────────────────────────────────────────────────────
+
 const ContentBody = styled.div`
-  padding: 24px 20px;
+  background: ${COLORS.cardBackground};
+  padding: 13px 16px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
 `;
+
 const Title = styled.h2`
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: ${COLORS.textPrimary};
-  margin-bottom: 6px;
-  line-height: 1.1;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  margin-bottom: 5px;
+  transition: color 0.2s;
   &:hover {
     color: ${COLORS.primaryMint};
   }
 `;
+
+const CaptionWrap = styled.div`
+  margin-bottom: 8px;
+`;
+
 const CaptionText = styled.p`
-  font-size: 0.95rem;
-  line-height: 1.6;
+  font-size: 0.875rem;
+  line-height: 1.55;
   color: ${COLORS.textSecondary};
-  margin-bottom: 20px;
   white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: ${(p) => (p.$expanded ? 'unset' : '3')};
+  overflow: hidden;
 `;
-const TagBox = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 24px;
-`;
-const Tag = styled.span`
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 4px 12px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: ${COLORS.textTertiary};
-  transition: 0.3s;
-  &:hover {
-    color: ${COLORS.primaryMint};
-    border-color: ${COLORS.primaryMint};
-    transform: translateY(-2px);
-  }
-`;
-const Footer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-`;
-const BtnGroup = styled.div`
-  display: flex;
-  gap: 24px;
-`;
-const ActionBtn = styled.button`
+
+const ExpandBtn = styled.button`
   background: none;
   border: none;
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: ${COLORS.textTertiary};
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.3rem;
-  color: ${(p) => (p.$active ? p.$color : COLORS.textTertiary)};
-  transition: color 0.2s, transform 0.2s;
-  span {
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: ${COLORS.textSecondary};
-  }
+  margin-top: 2px;
+  display: block;
+  transition: color 0.15s;
   &:hover {
-    color: ${(p) => p.$color};
-    transform: scale(1.1);
+    color: ${COLORS.textPrimary};
+  }
+`;
+
+const TagRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+`;
+
+const Tag = styled.span`
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: ${COLORS.textTertiary};
+  transition: color 0.2s, border-color 0.2s;
+  &:hover {
+    color: ${COLORS.accentMint};
+    border-color: ${COLORS.primaryMint}55;
   }
 `;
