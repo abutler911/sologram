@@ -479,19 +479,10 @@ const NOIR = {
 // ─── Styled Components ────────────────────────────────────────────────────────
 
 const CardWrapper = styled.article`
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&family=Instrument+Sans:wght@400;500;600&display=swap');
-
   width: 100%;
-  max-width: 480px;
-  margin: 0 auto 32px;
   background: ${NOIR.warmWhite};
   overflow: hidden;
-
-  /* Sharp top, barely-there bottom rounding */
-  border-radius: 0 0 4px 4px;
-
-  /* Accent line at top — the card's signature */
-  box-shadow: 0 2px 0 0 ${NOIR.salmon}, 0 30px 80px rgba(0, 0, 0, 0.18);
+  position: relative;
 
   /* Reveal animation */
   opacity: ${(p) => (p.$visible ? 1 : 0)};
@@ -499,8 +490,7 @@ const CardWrapper = styled.article`
   transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Pseudo-element for the gradient top rule */
-  position: relative;
+  /* Gradient accent line at top */
   &::before {
     content: '';
     position: absolute;
@@ -510,6 +500,30 @@ const CardWrapper = styled.article`
     height: 2px;
     background: linear-gradient(90deg, ${NOIR.salmon} 0%, ${NOIR.sage} 100%);
     z-index: 10;
+  }
+
+  /* ── Mobile — full bleed, cards flush to screen edges ────────── */
+  @media (max-width: 639px) {
+    max-width: 100%;
+    margin: 0 0 2px;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* ── Tablet — centred card with soft shadow ─────────────────── */
+  @media (min-width: 640px) and (max-width: 1023px) {
+    max-width: 560px;
+    margin: 0 auto 24px;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 2px 0 0 ${NOIR.salmon}, 0 20px 48px rgba(0, 0, 0, 0.13);
+  }
+
+  /* ── Desktop — narrower card, more breathing room ───────────── */
+  @media (min-width: 1024px) {
+    max-width: 480px;
+    margin: 0 auto 32px;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 2px 0 0 ${NOIR.salmon}, 0 30px 80px rgba(0, 0, 0, 0.18);
   }
 `;
 
