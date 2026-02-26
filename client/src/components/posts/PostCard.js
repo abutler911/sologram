@@ -367,6 +367,19 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
           <Title>{post.title}</Title>
         </Link>
 
+        <Dateline>
+          {post.location && (
+            <DatelineLocation
+              onClick={() => handleLocationClick(post.location)}
+            >
+              <FaMapMarkerAlt />
+              {post.location}
+            </DatelineLocation>
+          )}
+          {post.location && <DatelineDot>·</DatelineDot>}
+          <span>{formattedDate}</span>
+        </Dateline>
+
         {(post.caption || post.content) && (
           <CaptionWrap>
             <CaptionText $expanded={captionExpanded}>
@@ -406,13 +419,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
           </ActionBtn>
 
           <ActionSep />
-
-          {post.location && (
-            <LocationBtn onClick={() => handleLocationClick(post.location)}>
-              <FaMapMarkerAlt />
-              {post.location}
-            </LocationBtn>
-          )}
 
           {isAuthenticated && (
             <ActionsWrapper ref={actionsRef}>
@@ -913,35 +919,54 @@ const ActionSep = styled.span`
   flex: 1;
 `;
 
-const LocationBtn = styled.button`
+// ── Dateline — location + date under title ───────────────────────────────────
+
+const Dateline = styled.div`
   display: flex;
   align-items: center;
-  gap: 5px;
-  background: none;
-  border: none;
-  cursor: pointer;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
   font-family: 'DM Mono', 'Courier New', monospace;
   font-size: 0.6rem;
   font-weight: 300;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: ${NOIR.ash};
-  padding: 5px 0;
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1;
+`;
+
+const DatelineLocation = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: ${NOIR.ash};
   transition: color 0.2s;
 
   svg {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
     flex-shrink: 0;
   }
 
   &:hover {
     color: ${NOIR.sage};
   }
+`;
+
+const DatelineDot = styled.span`
+  color: ${NOIR.dust};
+  font-size: 0.65rem;
+  line-height: 1;
 `;
 
 // ── Admin actions dropdown ────────────────────────────────────────────────────
@@ -961,7 +986,7 @@ const MoreBtn = styled.button`
   width: 28px;
   height: 28px;
   color: ${NOIR.ash};
-  border-radius: 2px;
+  border-radius: 0;
   transition: color 0.15s, background 0.15s;
 
   svg {
@@ -981,7 +1006,7 @@ const ActionsDropdown = styled.div`
   right: 0;
   background: ${NOIR.warmWhite};
   border: 1px solid ${NOIR.dust};
-  border-radius: 4px;
+  border-radius: 0;
   min-width: 130px;
   overflow: hidden;
   box-shadow: 0 12px 32px rgba(10, 10, 11, 0.14);
