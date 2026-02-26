@@ -31,6 +31,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { getTransformedImageUrl } from '../../utils/cloudinary';
 import { COLORS } from '../../theme';
+import { useLikeBurst } from '../animations/LikeBurst';
 import authorImg from '../../assets/andy.jpg';
 
 const CommentModal = lazy(() =>
@@ -92,6 +93,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const actionsRef = useRef(null);
 
   const { isAuthenticated, user } = useContext(AuthContext);
+  const { triggerBurst, BurstPortal } = useLikeBurst();
   const { showDeleteModal } = useDeleteModal();
   const { likePost, likedPosts, isProcessing } = useContext(LikesContext);
 
@@ -404,7 +406,11 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
         {/* ── ACTION BAR — horizontal ──────────────────────────────────── */}
         <ActionBar>
           <ActionBtn
-            onClick={handleLike}
+            onClick={(e) => {
+              handleLike(e);
+              if (!hasLiked && isAuthenticated && !isProcessing)
+                triggerBurst(e);
+            }}
             $active={hasLiked}
             disabled={!isAuthenticated || isProcessing}
             aria-label='Like post'
@@ -462,6 +468,9 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
           />
         </Suspense>
       )}
+
+      {/* ── LIKE BURST ─────────────────────────────────────────────── */}
+      <BurstPortal />
     </CardWrapper>
   );
 });

@@ -14,6 +14,7 @@ import {
 import { moodEmojis, moodColors } from '../../utils/themeConstants';
 import { COLORS } from '../../theme';
 import { toast } from 'react-hot-toast';
+import { useLikeBurst } from '../animations/LikeBurst';
 import { formatDistanceToNow } from 'date-fns';
 
 // ─── Design tokens — mirrors PostCard's NOIR palette ─────────────────────────
@@ -50,6 +51,7 @@ const ThoughtCard = ({
   onDelete,
 }) => {
   const [likeAnimating, setLikeAnimating] = useState(false);
+  const { triggerBurst, BurstPortal } = useLikeBurst();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -64,10 +66,11 @@ const ThoughtCard = ({
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  const onLike = () => {
+  const onLike = (e) => {
     setLikeAnimating(true);
     setTimeout(() => setLikeAnimating(false), 500);
     handleLike(thought._id);
+    if (!thought.userHasLiked) triggerBurst(e);
   };
 
   const onShare = () => {
@@ -171,7 +174,7 @@ const ThoughtCard = ({
         <FooterRight>
           {/* Like */}
           <ActionBtn
-            onClick={onLike}
+            onClick={(e) => onLike(e)}
             $active={thought.userHasLiked}
             $animating={likeAnimating}
             aria-label='Like'
@@ -228,6 +231,9 @@ const ThoughtCard = ({
           )}
         </FooterRight>
       </Footer>
+
+      {/* ── LIKE BURST ──────────────────────────────────────────── */}
+      <BurstPortal />
     </Card>
   );
 };
