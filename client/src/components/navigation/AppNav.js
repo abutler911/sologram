@@ -54,13 +54,13 @@ const AppNav = ({ onSearch, onClearSearch }) => {
   const logoClickTimes = useRef([]);
 
   const handleLogoClick = (e) => {
+    e.preventDefault(); // always block navigation so clicks don't reset the counter
     const now = Date.now();
     logoClickTimes.current = [
       ...logoClickTimes.current.filter((t) => now - t < 5000),
       now,
     ];
     if (logoClickTimes.current.length >= 4) {
-      e.preventDefault();
       logoClickTimes.current = [];
       setEasterOpen(true);
     }
