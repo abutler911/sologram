@@ -16,18 +16,28 @@ import { COLORS } from '../../theme';
 import { toast } from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 
+// ─── Design tokens — mirrors PostCard's NOIR palette ─────────────────────────
+const NOIR = {
+  ink: '#0a0a0b',
+  warmWhite: '#faf9f7',
+  dust: '#e8e4dd',
+  ash: '#a09a91',
+  charcoal: '#3a3632',
+  border: 'rgba(10,10,11,0.08)',
+  salmon: '#e87c5a',
+  sage: '#7aab8c',
+};
+
 /**
- * ThoughtCard — SoloGram original aesthetic
+ * ThoughtCard — Editorial Noir aesthetic
  *
- * Single-author journal entry design:
- *   - Left 3px bar in the mood's color — tone at a glance
- *   - Content first, no header above it
- *   - Metadata (mood · time · actions) quietly at the bottom
- *   - No avatar column — there's only one author
- *
- * Props (backward-compatible):
- *   thought, defaultUser, formatDate, handleLike,
- *   handleRetweet, handlePin, canCreateThought, onDelete
+ * Mirrors PostCard's design language:
+ *   - Warm white (#faf9f7) card surface
+ *   - Left mood bar — 2px, flat, full height
+ *   - Cormorant Garamond display / DM Mono metadata / Instrument Sans body
+ *   - Sharp corners throughout — no border-radius on the card itself
+ *   - Tags: DM Mono bordered chips matching PostCard
+ *   - Footer: mono timestamps + minimal icon actions
  */
 
 const ThoughtCard = ({
@@ -43,7 +53,7 @@ const ThoughtCard = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // Close ··· menu on outside click
+  // Close menu on outside click
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e) => {
@@ -80,7 +90,7 @@ const ThoughtCard = ({
 
   const moodColor = thought.mood
     ? moodColors[thought.mood]?.primary
-    : COLORS.primarySalmon;
+    : NOIR.salmon;
   const moodEmoji = thought.mood ? moodEmojis[thought.mood] : null;
   const moodLabel = thought.mood
     ? thought.mood.charAt(0).toUpperCase() + thought.mood.slice(1)
@@ -88,35 +98,33 @@ const ThoughtCard = ({
 
   return (
     <Card $moodColor={moodColor} $pinned={thought.pinned}>
-      {/* ── Pinned label ──────────────────────────────────────── */}
+      {/* ── Pinned label ───────────────────────────────────────── */}
       {thought.pinned && (
         <PinnedLabel>
           <FaThumbtack /> Pinned
         </PinnedLabel>
       )}
 
-      {/* ── Content — the hero ────────────────────────────────── */}
+      {/* ── Content — the hero ─────────────────────────────────── */}
       <Content>{thought.content}</Content>
 
-      {/* ── Optional image ────────────────────────────────────── */}
+      {/* ── Optional image ─────────────────────────────────────── */}
       {thought.media?.mediaUrl && (
         <MediaWrap>
           <img src={thought.media.mediaUrl} alt='' />
         </MediaWrap>
       )}
 
-      {/* ── Tags ──────────────────────────────────────────────── */}
+      {/* ── Tags ───────────────────────────────────────────────── */}
       {thought.tags?.length > 0 && (
         <TagRow>
           {thought.tags.map((tag, i) => (
-            <Tag key={i} $moodColor={moodColor}>
-              #{tag}
-            </Tag>
+            <Tag key={i}>#{tag}</Tag>
           ))}
         </TagRow>
       )}
 
-      {/* ── Footer: mood · time | actions ─────────────────────── */}
+      {/* ── Footer: mood · time | actions ──────────────────────── */}
       <Footer>
         <FooterLeft>
           {moodEmoji && (
@@ -154,6 +162,7 @@ const ThoughtCard = ({
               >
                 <FaEllipsisH />
               </ActionBtn>
+
               {menuOpen && (
                 <MenuDropdown>
                   <MenuItem
@@ -193,203 +202,206 @@ const ThoughtCard = ({
 
 export default ThoughtCard;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Keyframes
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Animations ───────────────────────────────────────────────────────────────
+
 const heartPop = keyframes`
-  0%   { transform: scale(1); }
+  0%   { transform: scale(1);   }
   35%  { transform: scale(1.4); }
   65%  { transform: scale(0.88); }
-  100% { transform: scale(1); }
+  100% { transform: scale(1);   }
 `;
 
 const menuSlide = keyframes`
   from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0)  scale(1); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
 `;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Card
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Card ─────────────────────────────────────────────────────────────────────
+
 const Card = styled.article`
   position: relative;
-  padding: 16px 16px 14px 20px;
-  border-radius: 10px;
+  padding: 18px 20px 16px 24px;
+  background: ${NOIR.warmWhite};
 
-  /*
-   * Layered background:
-   *   1. cardBackground — lifts the card off the page
-   *   2. mood color wash at 5% opacity — felt more than seen
-   * We use a CSS gradient trick to stack them without needing
-   * two elements: color-mix would need a modern browser, so we
-   * just overlay the mood tint on the solid base.
-   */
-  background: linear-gradient(
-      135deg,
-      ${(p) => p.$moodColor || COLORS.primarySalmon}14 0%,
-      ${(p) => p.$moodColor || COLORS.primarySalmon}09 60%,
-      transparent 100%
-    ),
-    ${COLORS.cardBackground};
+  /* No border-radius — sharp editorial geometry */
+  border-radius: 0;
 
-  transition: background 0.2s;
-
-  /* Left mood bar */
+  /* Left mood bar — full height, 2px, flat */
   &::before {
     content: '';
     position: absolute;
     left: 0;
-    top: 12px;
-    bottom: 12px;
-    width: 3px;
-    background: ${(p) => p.$moodColor || COLORS.primarySalmon};
-    border-radius: 0 2px 2px 0;
-    opacity: ${(p) => (p.$pinned ? 1 : 0.5)};
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: ${(p) => p.$moodColor || NOIR.salmon};
+    opacity: ${(p) => (p.$pinned ? 1 : 0.45)};
     transition: opacity 0.2s;
   }
 
-  &:hover {
-    background: linear-gradient(
-        135deg,
-        ${(p) => p.$moodColor || COLORS.primarySalmon}22 0%,
-        ${(p) => p.$moodColor || COLORS.primarySalmon}12 60%,
-        transparent 100%
-      ),
-      ${COLORS.cardBackground};
-    &::before {
-      opacity: 1;
-    }
+  /* Hairline bottom separator */
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 24px;
+    right: 20px;
+    height: 1px;
+    background: ${NOIR.border};
   }
 
-  /* Pinned: slightly stronger wash + full bar */
+  &:hover::before {
+    opacity: 1;
+  }
+
+  /* Pinned: very subtle warm tint */
   ${(p) =>
     p.$pinned &&
-    `
-    background:
-      linear-gradient(
-        135deg,
-        ${p.$moodColor || COLORS.primarySalmon}28 0%,
-        ${p.$moodColor || COLORS.primarySalmon}14 60%,
-        transparent 100%
-      ),
-      ${COLORS.cardBackground};
-  `}
+    css`
+      background: linear-gradient(
+        to right,
+        rgba(232, 124, 90, 0.04) 0%,
+        ${NOIR.warmWhite} 80px
+      );
+    `}
 `;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Pinned
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Pinned label ─────────────────────────────────────────────────────────────
+
 const PinnedLabel = styled.div`
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: ${COLORS.textTertiary};
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.58rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  color: ${NOIR.ash};
   margin-bottom: 10px;
 
   svg {
-    font-size: 0.6rem;
-    color: ${COLORS.primarySalmon};
+    font-size: 0.58rem;
+    color: ${NOIR.salmon};
+    opacity: 0.7;
   }
 `;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Content — the hero
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Content ──────────────────────────────────────────────────────────────────
+
 const Content = styled.p`
-  margin: 0 0 12px;
-  color: ${COLORS.textPrimary};
+  margin: 0 0 14px;
+  font-family: 'Instrument Sans', sans-serif;
   font-size: 0.9375rem;
-  line-height: 1.45;
-  letter-spacing: -0.1px;
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
+  color: ${NOIR.charcoal};
   white-space: pre-wrap;
   word-break: break-word;
 `;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Media
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Media ────────────────────────────────────────────────────────────────────
+
 const MediaWrap = styled.div`
-  margin-bottom: 12px;
-  border-radius: 12px;
+  margin-bottom: 14px;
   overflow: hidden;
-  border: 1px solid ${COLORS.border};
+  /* Sharp corners — no border-radius */
+  border: 1px solid ${NOIR.dust};
 
   img {
     width: 100%;
     max-height: 380px;
     object-fit: cover;
     display: block;
+    /* Match PostCard image treatment */
+    filter: saturate(0.88) contrast(1.04);
+    transition: filter 0.3s ease;
+  }
+
+  &:hover img {
+    filter: saturate(1) contrast(1.02);
   }
 `;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Tags
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Tags — mirrors PostCard Tag exactly ──────────────────────────────────────
+
 const TagRow = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 5px;
+  margin-bottom: 14px;
 `;
 
 const Tag = styled.span`
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: ${(p) => p.$moodColor || COLORS.primaryBlueGray};
-  opacity: 0.85;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  padding: 3px 9px;
+  border-radius: 0;
+  border: 1px solid ${NOIR.dust};
+  color: ${NOIR.ash};
+  text-transform: lowercase;
   cursor: pointer;
-  transition: opacity 0.12s;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+
   &:hover {
-    opacity: 1;
-    text-decoration: underline;
+    color: ${NOIR.sage};
+    border-color: ${NOIR.sage};
+    background: rgba(122, 171, 140, 0.06);
   }
 `;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Footer
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Footer ───────────────────────────────────────────────────────────────────
+
 const Footer = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid ${NOIR.border};
   margin-top: 2px;
 `;
 
 const FooterLeft = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
   flex: 1;
 `;
+
+// ─── Mood chip — borderless DM Mono, mood color text ─────────────────────────
 
 const MoodChip = styled.div`
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 8px 3px 5px;
-  border-radius: 99px;
-  background: ${(p) => p.$moodColor || COLORS.primarySalmon}18;
-  border: 1px solid ${(p) => p.$moodColor || COLORS.primarySalmon}30;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: ${(p) => p.$moodColor || COLORS.primarySalmon};
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: ${(p) => p.$moodColor || NOIR.salmon};
   white-space: nowrap;
   flex-shrink: 0;
+  /* No pill border — just color + emoji, very minimal */
+  opacity: 0.8;
 
   span:first-child {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
+    opacity: 1;
   }
 `;
 
 const Timestamp = styled.time`
-  font-size: 0.75rem;
-  color: ${COLORS.textTertiary};
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.6rem;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: ${NOIR.ash};
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -398,25 +410,32 @@ const Timestamp = styled.time`
 const FooterRight = styled.div`
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 0;
   flex-shrink: 0;
 `;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Action buttons
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Action buttons ───────────────────────────────────────────────────────────
+
 const ActionBtn = styled.button`
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 7px;
+  gap: 5px;
+  padding: 5px 8px;
   border: none;
   background: none;
-  border-radius: 8px;
   cursor: pointer;
-  font-size: 0.82rem;
-  color: ${(p) => (p.$active ? COLORS.heartRed : COLORS.textTertiary)};
-  transition: color 0.12s, background 0.12s;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: ${(p) => (p.$active ? NOIR.salmon : NOIR.ash)};
+  transition: color 0.15s;
+
+  svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
 
   ${(p) =>
     p.$animating &&
@@ -427,19 +446,20 @@ const ActionBtn = styled.button`
     `}
 
   &:hover {
-    background: ${COLORS.elevatedBackground};
-    color: ${(p) => (p.$active ? COLORS.heartRed : COLORS.textSecondary)};
+    color: ${(p) => (p.$active ? NOIR.salmon : NOIR.ink)};
+    svg {
+      transform: scale(1.15);
+    }
   }
 `;
 
 const ActionCount = styled.span`
-  font-size: 0.78rem;
-  font-weight: 500;
+  font-size: 0.65rem;
+  line-height: 1;
 `;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ··· Menu
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Admin dropdown ───────────────────────────────────────────────────────────
+
 const MenuWrap = styled.div`
   position: relative;
 `;
@@ -449,12 +469,12 @@ const MenuDropdown = styled.div`
   right: 0;
   bottom: calc(100% + 6px);
   z-index: 50;
-  background: ${COLORS.cardBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 12px;
-  min-width: 140px;
-  padding: 5px;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  background: ${NOIR.warmWhite};
+  border: 1px solid ${NOIR.dust};
+  border-radius: 0; /* sharp — matches PostCard ActionsDropdown */
+  min-width: 130px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(10, 10, 11, 0.14);
   animation: ${menuSlide} 0.13s ease;
 `;
 
@@ -463,25 +483,27 @@ const MenuItem = styled.button`
   align-items: center;
   gap: 9px;
   width: 100%;
-  padding: 8px 11px;
+  padding: 11px 14px;
   background: none;
   border: none;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   cursor: pointer;
   text-align: left;
   text-decoration: none;
-  color: ${(p) => (p.$danger ? COLORS.error : COLORS.textPrimary)};
-  transition: background 0.1s;
+  color: ${(p) => (p.$danger ? '#c0392b' : NOIR.charcoal)};
+  transition: background 0.12s;
 
   svg {
-    font-size: 0.75rem;
-    color: ${(p) => (p.$danger ? COLORS.error : COLORS.textTertiary)};
+    width: 11px;
+    height: 11px;
+    opacity: 0.6;
+    color: ${(p) => (p.$danger ? '#c0392b' : NOIR.ash)};
   }
 
   &:hover {
-    background: ${(p) =>
-      p.$danger ? `${COLORS.error}12` : COLORS.elevatedBackground};
+    background: rgba(10, 10, 11, 0.04);
   }
 `;
