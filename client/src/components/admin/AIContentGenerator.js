@@ -327,7 +327,6 @@ const GeneratedContentCard = styled(Card)`
 
 const ContentSection = styled.div`
   margin-bottom: 20px;
-
   &:last-child {
     margin-bottom: 0;
   }
@@ -424,12 +423,10 @@ const HistoryList = styled.div`
   &::-webkit-scrollbar {
     width: 4px;
   }
-
   &::-webkit-scrollbar-track {
     background: ${COLORS.elevatedBackground};
     border-radius: 2px;
   }
-
   &::-webkit-scrollbar-thumb {
     background: ${COLORS.border};
     border-radius: 2px;
@@ -535,8 +532,8 @@ const AIContentGenerator = () => {
 
   const [formData, setFormData] = useState({
     description: '',
-    contentType: 'general',
-    tone: 'casual',
+    contentType: 'photography',
+    tone: 'thoughtful',
     additionalContext: '',
   });
 
@@ -548,24 +545,25 @@ const AIContentGenerator = () => {
   const [error, setError] = useState('');
   const [copiedStates, setCopiedStates] = useState({});
 
+  // ── Content types that reflect Andrew's actual life ──────────────────────
   const contentTypes = [
-    { value: 'general', label: 'General Post' },
-    { value: 'product', label: 'Product Showcase' },
-    { value: 'behind-scenes', label: 'Behind the Scenes' },
-    { value: 'educational', label: 'Educational' },
-    { value: 'lifestyle', label: 'Lifestyle' },
-    { value: 'announcement', label: 'Announcement' },
+    { value: 'photography', label: 'Photography' },
+    { value: 'aviation', label: 'Aviation & Training' },
+    { value: 'observation', label: 'Observation' },
+    { value: 'music', label: 'Piano & Music' },
+    { value: 'travel', label: 'Travel & Utah' },
+    { value: 'thought', label: 'Thought' },
+    { value: 'reading', label: 'Reading' },
   ];
 
+  // ── Tones that match Andrew's voice ──────────────────────────────────────
   const tones = [
-    { value: 'casual', label: 'Casual & Friendly' },
-    { value: 'professional', label: 'Professional' },
-    { value: 'playful', label: 'Fun & Playful' },
-    { value: 'inspirational', label: 'Inspirational' },
-    { value: 'minimalist', label: 'Clean & Minimal' },
+    { value: 'thoughtful', label: 'Thoughtful' },
+    { value: 'dry', label: 'Dry & Understated' },
+    { value: 'reflective', label: 'Reflective' },
+    { value: 'observational', label: 'Observational' },
   ];
 
-  // Check auth on mount
   useEffect(() => {
     if (!isAuthenticated || user?.role !== 'admin') {
       toast.error('You need admin access to use this feature');
@@ -573,7 +571,6 @@ const AIContentGenerator = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
-  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -581,19 +578,16 @@ const AIContentGenerator = () => {
     }
   }, [formData.description]);
 
-  // Fetch history when toggled
   useEffect(() => {
-    if (showHistory) {
-      fetchContentHistory();
-    }
+    if (showHistory) fetchContentHistory();
   }, [showHistory]);
 
   const fetchContentHistory = async () => {
     try {
       const { data } = await axios.get('/api/admin/ai-content/history');
       setContentHistory(data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch history:', error);
+    } catch (err) {
+      console.error('Failed to fetch history:', err);
       setContentHistory([]);
     }
   };
@@ -606,30 +600,26 @@ const AIContentGenerator = () => {
 
   const handleGenerate = async () => {
     if (!formData.description.trim()) {
-      setError('Please provide a description for your content');
+      setError('Describe what you want to post about');
       return;
     }
-
     setIsGenerating(true);
     setError('');
-
     try {
       const { data } = await axios.post(
         '/api/admin/ai-content/generate',
         formData
       );
       setGeneratedContent(data.data);
-      toast.success('Content generated successfully!', {
+      toast.success('Content generated!', {
         style: {
           background: COLORS.cardBackground,
           color: COLORS.textPrimary,
           border: `1px solid ${COLORS.border}`,
         },
       });
-    } catch (error) {
-      setError(
-        error.message || 'Failed to generate content. Please try again.'
-      );
+    } catch (err) {
+      setError(err.message || 'Failed to generate content. Please try again.');
       toast.error('Failed to generate content', {
         style: {
           background: COLORS.cardBackground,
@@ -644,26 +634,21 @@ const AIContentGenerator = () => {
 
   const handleSaveContent = async () => {
     if (!generatedContent) return;
-
     setIsSaving(true);
     try {
       await axios.post('/api/admin/ai-content/save', {
         ...generatedContent,
         originalDescription: formData.description,
       });
-
-      toast.success('Content saved to history!', {
+      toast.success('Saved to history!', {
         style: {
           background: COLORS.cardBackground,
           color: COLORS.textPrimary,
           border: `1px solid ${COLORS.border}`,
         },
       });
-
-      if (showHistory) {
-        fetchContentHistory();
-      }
-    } catch (error) {
+      if (showHistory) fetchContentHistory();
+    } catch {
       toast.error('Failed to save content', {
         style: {
           background: COLORS.cardBackground,
@@ -679,58 +664,46 @@ const AIContentGenerator = () => {
   const handleCopyField = async (content, fieldName) => {
     try {
       await navigator.clipboard.writeText(content);
-
       setCopiedStates((prev) => ({ ...prev, [fieldName]: true }));
-
-      toast.success(`${fieldName} copied to clipboard!`, {
+      toast.success(`${fieldName} copied!`, {
         style: {
           background: COLORS.cardBackground,
           color: COLORS.textPrimary,
           border: `1px solid ${COLORS.border}`,
         },
       });
-
-      // Reset copied state after 2 seconds
-      setTimeout(() => {
-        setCopiedStates((prev) => ({ ...prev, [fieldName]: false }));
-      }, 2000);
-    } catch (error) {
-      toast.error(`Failed to copy ${fieldName.toLowerCase()}`, {
-        style: {
-          background: COLORS.cardBackground,
-          color: COLORS.error,
-          border: `1px solid ${COLORS.error}30`,
-        },
-      });
+      setTimeout(
+        () => setCopiedStates((prev) => ({ ...prev, [fieldName]: false })),
+        2000
+      );
+    } catch {
+      toast.error(`Failed to copy ${fieldName.toLowerCase()}`);
     }
   };
 
   const handleUseContent = (content) => {
-    const contentText = `Title: ${content.title}\n\nCaption: ${
+    const text = `Title: ${content.title}\n\nCaption: ${
       content.caption
-    }\n\nTags: ${content.tags?.map((tag) => `#${tag}`).join(' ') || ''}`;
-
+    }\n\nTags: ${content.tags?.map((t) => `#${t}`).join(' ') || ''}`;
     navigator.clipboard
-      .writeText(contentText)
-      .then(() => {
-        toast.success('Content copied to clipboard!', {
+      .writeText(text)
+      .then(() =>
+        toast.success('Copied to clipboard!', {
           style: {
             background: COLORS.cardBackground,
             color: COLORS.textPrimary,
             border: `1px solid ${COLORS.border}`,
           },
-        });
-      })
-      .catch(() => {
-        toast.error('Failed to copy content');
-      });
+        })
+      )
+      .catch(() => toast.error('Failed to copy content'));
   };
 
   const resetForm = () => {
     setFormData({
       description: '',
-      contentType: 'general',
-      tone: 'casual',
+      contentType: 'photography',
+      tone: 'thoughtful',
       additionalContext: '',
     });
     setGeneratedContent(null);
@@ -738,14 +711,10 @@ const AIContentGenerator = () => {
     setCopiedStates({});
   };
 
-  const goBack = () => {
-    navigate('/');
-  };
-
   return (
     <PageWrapper>
       <AppHeader>
-        <BackButton onClick={goBack} aria-label='Go back'>
+        <BackButton onClick={() => navigate('/')} aria-label='Go back'>
           <FaArrowLeft />
         </BackButton>
         <HeaderTitle>
@@ -758,7 +727,7 @@ const AIContentGenerator = () => {
       </AppHeader>
 
       <MainContent>
-        {/* Input Form */}
+        {/* ── Input Form ─────────────────────────────────────────────────── */}
         <Card>
           <CardHeader>
             <FaEdit color={COLORS.primaryMint} />
@@ -766,33 +735,31 @@ const AIContentGenerator = () => {
           </CardHeader>
           <CardBody>
             <FormGroup>
-              <Label>Content Description *</Label>
+              <Label>What do you want to post about? *</Label>
               <TextArea
                 ref={textareaRef}
                 name='description'
                 value={formData.description}
                 onChange={handleInputChange}
-                placeholder="Describe what your post is about... (e.g., 'New product launch - innovative wireless headphones')"
+                placeholder="Describe it in your own words... (e.g., 'shot some street portraits downtown SLC last night, the light was doing something strange')"
                 rows='3'
                 maxLength='500'
                 required
               />
-              <CharacterCount>
-                {formData.description.length}/500 characters
-              </CharacterCount>
+              <CharacterCount>{formData.description.length}/500</CharacterCount>
             </FormGroup>
 
             <InputRow>
               <FormGroup>
-                <Label>Content Type</Label>
+                <Label>Type</Label>
                 <Select
                   name='contentType'
                   value={formData.contentType}
                   onChange={handleInputChange}
                 >
-                  {contentTypes.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
+                  {contentTypes.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
                     </option>
                   ))}
                 </Select>
@@ -805,9 +772,9 @@ const AIContentGenerator = () => {
                   value={formData.tone}
                   onChange={handleInputChange}
                 >
-                  {tones.map((tone) => (
-                    <option key={tone.value} value={tone.value}>
-                      {tone.label}
+                  {tones.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
                     </option>
                   ))}
                 </Select>
@@ -815,12 +782,12 @@ const AIContentGenerator = () => {
             </InputRow>
 
             <FormGroup>
-              <Label>Additional Context (Optional)</Label>
+              <Label>Anything else? (Optional)</Label>
               <TextArea
                 name='additionalContext'
                 value={formData.additionalContext}
                 onChange={handleInputChange}
-                placeholder='Any additional details, target audience, or specific requirements...'
+                placeholder='Mood, specific moment, what caught your eye, how it connected to something bigger...'
                 rows='2'
                 maxLength='200'
               />
@@ -839,21 +806,18 @@ const AIContentGenerator = () => {
             >
               {isGenerating ? (
                 <>
-                  <LoadingSpinner />
-                  Generating...
+                  <LoadingSpinner /> Generating...
                 </>
               ) : (
                 <>
-                  <FaMagic />
-                  Generate Content
+                  <FaMagic /> Generate
                 </>
               )}
             </GenerateButton>
 
             <ButtonRow>
               <SecondaryButton onClick={resetForm}>
-                <FaTimes />
-                Reset
+                <FaTimes /> Reset
               </SecondaryButton>
               <HistoryToggle onClick={() => setShowHistory(!showHistory)}>
                 <FaHistory />
@@ -863,7 +827,7 @@ const AIContentGenerator = () => {
           </CardBody>
         </Card>
 
-        {/* Generated Content */}
+        {/* ── Generated Content ───────────────────────────────────────────── */}
         {generatedContent && (
           <GeneratedContentCard>
             <CardHeader>
@@ -909,9 +873,8 @@ const AIContentGenerator = () => {
                   <CopyButton
                     onClick={() =>
                       handleCopyField(
-                        generatedContent.tags
-                          ?.map((tag) => `#${tag}`)
-                          .join(' ') || '',
+                        generatedContent.tags?.map((t) => `#${t}`).join(' ') ||
+                          '',
                         'Tags'
                       )
                     }
@@ -922,8 +885,8 @@ const AIContentGenerator = () => {
                   </CopyButton>
                 </ContentHeader>
                 <TagsContainer>
-                  {generatedContent.tags?.map((tag, index) => (
-                    <Tag key={index}>#{tag}</Tag>
+                  {generatedContent.tags?.map((tag, i) => (
+                    <Tag key={i}>#{tag}</Tag>
                   ))}
                 </TagsContainer>
               </ContentSection>
@@ -939,15 +902,14 @@ const AIContentGenerator = () => {
                 <PrimaryButton
                   onClick={() => handleUseContent(generatedContent)}
                 >
-                  <FaCopy />
-                  Copy All
+                  <FaCopy /> Copy All
                 </PrimaryButton>
               </ButtonRow>
             </CardBody>
           </GeneratedContentCard>
         )}
 
-        {/* Content History */}
+        {/* ── Content History ─────────────────────────────────────────────── */}
         {showHistory && (
           <Card>
             <CardHeader>

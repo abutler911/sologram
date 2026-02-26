@@ -1,133 +1,162 @@
 // controllers/aiContent.js
-const OpenAI = require("openai");
-const GeneratedContent = require("../models/GeneratedContent");
-const { logger } = require("../utils/logger");
+const OpenAI = require('openai');
+const GeneratedContent = require('../models/GeneratedContent');
+const { logger } = require('../utils/logger');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Build dynamic prompts based on content type
+// ─── Who Andrew is — baked into every generation ─────────────────────────────
+//
+// Andrew Butler. Lives in Herriman, Utah (Salt Lake valley).
+// Currently in Delta Air Lines first officer training on the Airbus A220.
+// Quiet, introverted, thoughtful. Dry sense of humor — understated, never
+// performs enthusiasm. Smart but not showy about it.
+// Values: inclusivity, fairness, people thinking for themselves.
+// Shoots street photography and portraits. Very beginner pianist.
+// Reads psych thrillers. Loves Utah — the landscape, not the politics.
+//
+// Voice: Like someone who notices things other people walk past, then says
+// something quietly true about it. Never inspirational-poster energy.
+// Never preachy. Never fluff.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SYSTEM_PROMPT = `
+You are writing content for Andrew Butler's personal platform, SoloGram.
+
+Andrew is a Delta Air Lines first officer candidate currently deep in A220 type training in Salt Lake City, Utah. He shoots street photography and portraits, is learning piano (very much a beginner — he would be the first to tell you), reads psych thrillers, and thinks a lot about fairness, independent thinking, and why people believe what they believe.
+
+His voice: thoughtful and a little dry. He notices things. He doesn't overexplain them. He has a quiet confidence that doesn't need to announce itself. He would never write something that sounds like a motivational poster, an influencer caption, or a conservative political talking point. He's not trying to grow a brand — he's documenting a life.
+
+When writing for Andrew:
+- Sound like a real person, not a content creator
+- Dry wit is welcome — performed enthusiasm is not
+- Specific and grounded beats vague and inspirational every time
+- Utah and the West are home — reference the landscape, the light, the scale when relevant
+- Aviation training is a background hum — the discipline, the surreal experience of learning a new aircraft, the lifestyle of it
+- Street photography means seeing people honestly — not glamorizing, not judging
+- Piano is humbling and he knows it — self-aware humor about being a beginner is fine
+- No emojis. Ever.
+- No hashtag culture in the caption itself
+- Never preachy, never vague, never generic
+`.trim();
+
 const buildPrompt = (
   description,
   contentType,
   tone,
-  additionalContext = ""
+  additionalContext = ''
 ) => {
-  const basePrompts = {
-    general: "Write a clever and engaging social media post",
-    product:
-      "Create a witty, engaging product showcase caption that highlights the product's uniqueness and appeal",
-    "behind-scenes":
-      "Write an authentic and personal behind-the-scenes caption that tells a fun or insightful story",
-    educational:
-      "Write a smart and digestible educational caption that teaches something interesting or useful",
-    lifestyle:
-      "Write a stylish, relatable lifestyle caption that paints a vibe or sets a mood",
-    announcement:
-      "Write a bold and exciting caption that makes an announcement feel fun and fresh",
+  // Content-type specific framing
+  const typeFraming = {
+    photography: `This is about a photograph or a shoot. Focus on what was seen, what the light did, what the moment held. Avoid photography clichés ("captured the essence of", "frozen in time"). Be specific.`,
+
+    aviation: `This is about aviation — training, flying, the A220, the lifestyle. The A220 is Andrew's current aircraft in type training at Delta. Ground it in real detail: the cockpit, the procedures, the strange loop of learning something enormous. Dry humor about the process is good.`,
+
+    observation: `This is a standalone observation — something Andrew noticed, thought about, or found worth saying. Could be about people, places, systems, ideas. Keep it honest and specific. One clean thought, not a lecture.`,
+
+    music: `This is about learning piano. Andrew is a genuine beginner. Lean into the humility and the occasional absurdity of being a grown adult learning to read music. Warm but self-aware.`,
+
+    travel: `This is about a place — Utah, the West, somewhere Andrew has been. The landscape here is real: the Wasatch, the salt flats, the desert light. Reference it honestly rather than generically.`,
+
+    thought: `This is a short personal reflection — something on Andrew's mind. Keep it tight. One idea, expressed clearly. Not a journal entry, not a hot take. Just something true.`,
+
+    reading: `This is about a book — likely a psych thriller. What it made him think about, not a review. Connect it to something real if possible.`,
+
+    general: `Write a grounded, specific post that sounds like Andrew. No category constraints.`,
   };
 
+  // Tone modifiers — all within Andrew's range, just different registers
   const toneModifiers = {
-    casual:
-      "Use a friendly, confident tone like you're talking to a smart friend. Avoid clichés.",
-    professional:
-      "Keep it polished and articulate, but still personal and engaging. No buzzwords.",
-    playful: "Inject humor, sarcasm, or witty metaphors. No emojis.",
-    inspirational:
-      "Be poetic and thought-provoking, not cheesy or preachy. Avoid overused motivational lines.",
-    minimalist:
-      "Keep it ultra short, cool, and clever. Every word should matter.",
+    thoughtful: `Measured and observant. The kind of thing you say when you've been sitting with something for a while. Not overthought — just considered.`,
+    dry: `Understated. The humor is in what's left unsaid or the gap between the thing and how it's described. Deadpan works. Irony is fine.`,
+    reflective: `Inward-looking without being navel-gazing. Honest about uncertainty. Doesn't need to resolve into a lesson.`,
+    observational: `Outward-looking. Something noticed in the world — a person, a place, a system, a pattern. Described precisely, without over-interpreting.`,
   };
 
   return `
-You are an expert solo content creator writing for a visual-first social media platform called SoloGram. You are the only user, and the content reflects your personality: smart, fun, and free of fluff. Never use emojis.
+${SYSTEM_PROMPT}
 
-Write content with the following constraints:
-- Title (max 60 characters): A sharp, clever title that hooks attention
-- Caption (max 500 characters): Witty, playful, or introspective tone based on input. No emojis. Avoid clichés and generic influencer speak.
-- Tags: Up to 5 relevant, lowercase single-word hashtags without the # symbol
+---
 
-Description: ${description}
-${additionalContext ? `Context: ${additionalContext}` : ""}
+Generate a SoloGram post with the following:
 
-Tone: ${toneModifiers[tone] || toneModifiers.casual}
+CONTENT TYPE: ${typeFraming[contentType] || typeFraming.general}
 
-Respond in JSON format:
+TONE: ${toneModifiers[tone] || toneModifiers.thoughtful}
+
+WHAT IT'S ABOUT: ${description}
+${additionalContext ? `ADDITIONAL CONTEXT: ${additionalContext}` : ''}
+
+---
+
+Respond in JSON format only — no preamble, no explanation:
 {
-  "title": "Title here",
-  "caption": "Caption here (max 500 characters)",
-  "tags": ["tag1", "tag2", "tag3"]
+  "title": "Sharp, specific title (max 60 characters — no clickbait, no questions unless they're genuinely good ones)",
+  "caption": "The post itself (max 500 characters). Grounded, specific, in Andrew's voice. No emojis. No generic phrases.",
+  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]
 }
+
+Tags should be specific and real — not just #photography or #life. Think: #a220, #streetphotography, #saltlake, #pianobeginner, #deltatraining — things that actually describe the post.
 `.trim();
 };
 
-// Parse OpenAI response and ensure proper format
+// ─── Parse OpenAI response ────────────────────────────────────────────────────
 const parseResponse = (content) => {
   try {
-    // Try to parse as JSON first
     const parsed = JSON.parse(content);
-
-    // Validate required fields and provide defaults
     return {
-      title: parsed.title || "Untitled Post",
-      caption: parsed.caption || "Check out this amazing content!",
-      tags: Array.isArray(parsed.tags)
-        ? parsed.tags.slice(0, 5)
-        : ["content", "social", "post"],
-      altText: parsed.altText || "",
+      title: parsed.title || 'Untitled',
+      caption: parsed.caption || '',
+      tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
+      altText: parsed.altText || '',
     };
   } catch (error) {
-    // If JSON parsing fails, try to extract content manually
     logger.warn(
-      "Failed to parse OpenAI JSON response, attempting manual extraction",
+      'Failed to parse OpenAI JSON response, attempting manual extraction',
       {
         context: { content, error: error.message },
       }
     );
-
     return {
-      title: "Generated Content",
+      title: 'Generated Content',
       caption:
-        content.length > 200 ? content.substring(0, 200) + "..." : content,
-      tags: ["content", "ai", "generated"],
-      altText: "",
+        content.length > 200 ? content.substring(0, 200) + '...' : content,
+      tags: [],
+      altText: '',
     };
   }
 };
 
+// ─── Generate ─────────────────────────────────────────────────────────────────
 exports.generateContent = async (req, res, next) => {
-  console.log("🔥 Hitting /generate", {
-    user: req.user,
-    body: req.body,
-  });
+  console.log('🔥 Hitting /generate', { user: req.user, body: req.body });
 
   try {
     const {
       description,
-      contentType = "general",
-      tone = "casual",
-      additionalContext = "",
+      contentType = 'photography',
+      tone = 'thoughtful',
+      additionalContext = '',
     } = req.body;
 
-    // Validate required fields
     if (!description || description.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Content description is required",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: 'Content description is required' });
     }
 
     if (description.length > 500) {
       return res.status(400).json({
         success: false,
-        message: "Description must be less than 500 characters",
+        message: 'Description must be less than 500 characters',
       });
     }
 
-    logger.info("AI content generation started", {
+    logger.info('AI content generation started', {
       context: {
-        event: "ai_content_generation",
+        event: 'ai_content_generation',
         userId: req.user._id.toString(),
         contentType,
         tone,
@@ -142,30 +171,23 @@ exports.generateContent = async (req, res, next) => {
       additionalContext
     );
 
-    // Call OpenAI API
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: prompt }],
       max_tokens: 600,
-      temperature: 0.7,
+      temperature: 0.75, // slightly higher — gives more character
       top_p: 1,
-      frequency_penalty: 0.3,
-      presence_penalty: 0.3,
+      frequency_penalty: 0.4, // discourages repeated phrases
+      presence_penalty: 0.4, // encourages covering new ground
     });
 
     const generatedContent = parseResponse(
       completion.choices[0].message.content
     );
 
-    // Log successful generation
-    logger.info("AI content generated successfully", {
+    logger.info('AI content generated successfully', {
       context: {
-        event: "ai_content_generated",
+        event: 'ai_content_generated',
         userId: req.user._id.toString(),
         tokensUsed: completion.usage?.total_tokens || 0,
       },
@@ -185,36 +207,36 @@ exports.generateContent = async (req, res, next) => {
       },
     });
   } catch (error) {
-    logger.error("AI content generation failed", {
+    logger.error('AI content generation failed', {
       context: {
-        event: "ai_content_generation_error",
+        event: 'ai_content_generation_error',
         userId: req.user._id.toString(),
         error: error.message,
       },
     });
 
-    // Handle specific OpenAI errors
-    if (error.code === "insufficient_quota") {
+    if (error.code === 'insufficient_quota') {
       return res.status(429).json({
         success: false,
-        message: "AI service quota exceeded. Please try again later.",
+        message: 'AI service quota exceeded. Please try again later.',
       });
     }
 
-    if (error.code === "rate_limit_exceeded") {
+    if (error.code === 'rate_limit_exceeded') {
       return res.status(429).json({
         success: false,
-        message: "Too many requests. Please wait a moment before trying again.",
+        message: 'Too many requests. Please wait a moment.',
       });
     }
 
     res.status(500).json({
       success: false,
-      message: "Failed to generate content. Please try again.",
+      message: 'Failed to generate content. Please try again.',
     });
   }
 };
 
+// ─── Save ─────────────────────────────────────────────────────────────────────
 exports.saveGeneratedContent = async (req, res, next) => {
   try {
     const {
@@ -230,44 +252,33 @@ exports.saveGeneratedContent = async (req, res, next) => {
     const savedContent = await GeneratedContent.create({
       userId: req.user._id,
       originalDescription,
-      generatedContent: {
-        title,
-        caption,
-        tags,
-        altText,
-      },
+      generatedContent: { title, caption, tags, altText },
       contentType,
       tone,
     });
 
-    logger.info("Generated content saved", {
+    logger.info('Generated content saved', {
       context: {
-        event: "ai_content_saved",
+        event: 'ai_content_saved',
         userId: req.user._id.toString(),
         contentId: savedContent._id.toString(),
       },
     });
 
-    res.status(201).json({
-      success: true,
-      data: savedContent,
-    });
+    res.status(201).json({ success: true, data: savedContent });
   } catch (error) {
-    logger.error("Failed to save generated content", {
+    logger.error('Failed to save generated content', {
       context: {
-        event: "ai_content_save_error",
+        event: 'ai_content_save_error',
         userId: req.user._id.toString(),
         error: error.message,
       },
     });
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to save content",
-    });
+    res.status(500).json({ success: false, message: 'Failed to save content' });
   }
 };
 
+// ─── History ──────────────────────────────────────────────────────────────────
 exports.getContentHistory = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -286,28 +297,23 @@ exports.getContentHistory = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: contents,
-      pagination: {
-        current: page,
-        pages: Math.ceil(total / limit),
-        total,
-      },
+      pagination: { current: page, pages: Math.ceil(total / limit), total },
     });
   } catch (error) {
-    logger.error("Failed to fetch content history", {
+    logger.error('Failed to fetch content history', {
       context: {
-        event: "ai_content_history_error",
+        event: 'ai_content_history_error',
         userId: req.user._id.toString(),
         error: error.message,
       },
     });
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch content history",
-    });
+    res
+      .status(500)
+      .json({ success: false, message: 'Failed to fetch content history' });
   }
 };
 
+// ─── Delete ───────────────────────────────────────────────────────────────────
 exports.deleteContentHistory = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -318,36 +324,32 @@ exports.deleteContentHistory = async (req, res, next) => {
     });
 
     if (!content) {
-      return res.status(404).json({
-        success: false,
-        message: "Content not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: 'Content not found' });
     }
 
-    logger.info("Generated content deleted", {
+    logger.info('Generated content deleted', {
       context: {
-        event: "ai_content_deleted",
+        event: 'ai_content_deleted',
         userId: req.user._id.toString(),
         contentId: id,
       },
     });
 
-    res.status(200).json({
-      success: true,
-      message: "Content deleted successfully",
-    });
+    res
+      .status(200)
+      .json({ success: true, message: 'Content deleted successfully' });
   } catch (error) {
-    logger.error("Failed to delete content", {
+    logger.error('Failed to delete content', {
       context: {
-        event: "ai_content_delete_error",
+        event: 'ai_content_delete_error',
         userId: req.user._id.toString(),
         error: error.message,
       },
     });
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to delete content",
-    });
+    res
+      .status(500)
+      .json({ success: false, message: 'Failed to delete content' });
   }
 };
