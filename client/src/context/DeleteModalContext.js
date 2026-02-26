@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState } from 'react';
 
 const DeleteModalContext = createContext();
 
 export const useDeleteModal = () => {
   const context = useContext(DeleteModalContext);
   if (!context) {
-    throw new Error("useDeleteModal must be used within a DeleteModalProvider");
+    throw new Error('useDeleteModal must be used within a DeleteModalProvider');
   }
   return context;
 };
@@ -15,10 +15,10 @@ export const DeleteModalProvider = ({ children }) => {
   const [deleteConfig, setDeleteConfig] = useState({});
 
   const showDeleteModal = ({
-    title = "Delete Item",
-    message = "Are you sure you want to delete this item? This action cannot be undone.",
-    confirmText = "Delete",
-    cancelText = "Cancel",
+    title = 'Delete Item',
+    message = 'Are you sure you want to delete this item? This action cannot be undone.',
+    confirmText = 'Delete',
+    cancelText = 'Cancel',
     onConfirm,
     onCancel,
     itemName = null,

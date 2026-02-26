@@ -1,6 +1,34 @@
-import React from "react";
-import { useDeleteModal } from "../context/DeleteModalContext";
-import { COLORS, THEME } from "../theme";
+import React from 'react';
+import styled, { keyframes, css } from 'styled-components';
+import { useDeleteModal } from '../context/DeleteModalContext';
+import { FaTrash } from 'react-icons/fa';
+
+// ─── NOIR tokens — matches PostCard / ThoughtCard ─────────────────────────────
+const NOIR = {
+  ink: '#0a0a0b',
+  warmWhite: '#faf9f7',
+  dust: '#e8e4dd',
+  ash: '#a09a91',
+  charcoal: '#3a3632',
+  border: 'rgba(10,10,11,0.08)',
+  salmon: '#e87c5a',
+  sage: '#7aab8c',
+  error: '#c0392b',
+};
+
+// ─── Animations ───────────────────────────────────────────────────────────────
+
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to   { opacity: 1; }
+`;
+
+const slideUp = keyframes`
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+`;
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const DeleteConfirmationModal = () => {
   const { isOpen, deleteConfig, handleConfirm, handleCancel } =
@@ -8,174 +36,194 @@ const DeleteConfirmationModal = () => {
 
   if (!isOpen) return null;
 
-  const { title, message, confirmText, cancelText, itemName, destructive } =
-    deleteConfig;
+  const {
+    title = 'Delete Item',
+    message = 'Are you sure? This action cannot be undone.',
+    confirmText = 'Delete',
+    cancelText = 'Cancel',
+    itemName = null,
+    destructive = true,
+  } = deleteConfig;
 
   return (
-    <div style={styles.overlay}>
-      <div style={styles.modal}>
-        <div style={styles.header}>
-          <h3 style={styles.title}>{title}</h3>
-        </div>
+    <Overlay onClick={handleCancel}>
+      <Modal onClick={(e) => e.stopPropagation()}>
+        {/* Salmon accent line at top — matches PostCard */}
+        <AccentLine />
 
-        <div style={styles.body}>
-          <div style={styles.iconContainer}>
-            <svg
-              width="48"
-              height="48"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke={COLORS.error}
-              strokeWidth="2"
-              style={styles.warningIcon}
-            >
-              <path d="M3 6h18l-1.5 14.5H4.5L3 6zM8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              <line x1="10" y1="11" x2="10" y2="17" />
-              <line x1="14" y1="11" x2="14" y2="17" />
-            </svg>
-          </div>
+        <ModalHeader>
+          <IconWrap $destructive={destructive}>
+            <FaTrash />
+          </IconWrap>
+          <Title>{title}</Title>
+        </ModalHeader>
 
-          <p style={styles.message}>{message}</p>
+        <ModalBody>
+          <Message>{message}</Message>
 
-          {itemName && (
-            <div style={styles.itemHighlight}>
-              <strong>"{itemName}"</strong>
-            </div>
-          )}
-        </div>
+          {itemName && <ItemName>&ldquo;{itemName}&rdquo;</ItemName>}
+        </ModalBody>
 
-        <div style={styles.footer}>
-          <button
-            onClick={handleCancel}
-            style={styles.cancelButton}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor =
-                THEME.button.secondary.hoverBackground;
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor =
-                THEME.button.secondary.background;
-            }}
-          >
-            {cancelText}
-          </button>
-
-          <button
-            onClick={handleConfirm}
-            style={{
-              ...styles.confirmButton,
-              backgroundColor: destructive
-                ? COLORS.error
-                : THEME.button.action.background,
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = destructive
-                ? "#c9302c"
-                : THEME.button.action.hoverBackground;
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = destructive
-                ? COLORS.error
-                : THEME.button.action.background;
-            }}
-          >
+        <ModalFooter>
+          <CancelBtn onClick={handleCancel}>{cancelText}</CancelBtn>
+          <ConfirmBtn onClick={handleConfirm} $destructive={destructive}>
             {confirmText}
-          </button>
-        </div>
-      </div>
-    </div>
+          </ConfirmBtn>
+        </ModalFooter>
+      </Modal>
+    </Overlay>
   );
 };
 
-const styles = {
-  overlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-    backdropFilter: "blur(4px)",
-  },
-  modal: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: "12px",
-    boxShadow: `0 20px 40px ${COLORS.shadow}`,
-    maxWidth: "400px",
-    width: "90%",
-    maxHeight: "90vh",
-    overflow: "hidden",
-    border: `1px solid ${COLORS.border}`,
-  },
-  header: {
-    padding: "20px 24px 12px",
-    borderBottom: `1px solid ${COLORS.divider}`,
-  },
-  title: {
-    margin: 0,
-    fontSize: "20px",
-    fontWeight: "600",
-    color: COLORS.textPrimary,
-  },
-  body: {
-    padding: "20px 24px",
-    textAlign: "center",
-  },
-  iconContainer: {
-    marginBottom: "16px",
-    display: "flex",
-    justifyContent: "center",
-  },
-  warningIcon: {
-    opacity: 0.8,
-  },
-  message: {
-    margin: "0 0 16px",
-    fontSize: "16px",
-    lineHeight: "1.5",
-    color: COLORS.textSecondary,
-  },
-  itemHighlight: {
-    padding: "8px 12px",
-    backgroundColor: COLORS.elevatedBackground,
-    borderRadius: "6px",
-    border: `1px solid ${COLORS.border}`,
-    fontSize: "14px",
-    color: COLORS.textPrimary,
-  },
-  footer: {
-    padding: "16px 24px 24px",
-    display: "flex",
-    gap: "12px",
-    justifyContent: "flex-end",
-  },
-  cancelButton: {
-    padding: "10px 20px",
-    border: `1px solid ${COLORS.border}`,
-    borderRadius: "8px",
-    backgroundColor: THEME.button.secondary.background,
-    color: THEME.button.secondary.text,
-    fontSize: "14px",
-    fontWeight: "500",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-    outline: "none",
-  },
-  confirmButton: {
-    padding: "10px 20px",
-    border: "none",
-    borderRadius: "8px",
-    color: "#FFFFFF",
-    fontSize: "14px",
-    fontWeight: "500",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-    outline: "none",
-  },
-};
-
 export default DeleteConfirmationModal;
+
+// ─── Styled Components ────────────────────────────────────────────────────────
+
+const Overlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 11, 0.62);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  animation: ${fadeIn} 0.15s ease;
+`;
+
+const Modal = styled.div`
+  position: relative;
+  background: ${NOIR.warmWhite};
+  border: 1px solid ${NOIR.dust};
+  border-radius: 0;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 2px 0 0 ${NOIR.salmon}, 0 24px 60px rgba(10, 10, 11, 0.28);
+  overflow: hidden;
+  animation: ${slideUp} 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+`;
+
+const AccentLine = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, ${NOIR.salmon} 0%, ${NOIR.sage} 100%);
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid ${NOIR.border};
+`;
+
+const IconWrap = styled.div`
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: ${(p) => (p.$destructive ? NOIR.error : NOIR.salmon)};
+  font-size: 0.9rem;
+  opacity: 0.8;
+
+  /* Subtle left bar like ThoughtCard mood bar */
+  border-left: 2px solid ${(p) => (p.$destructive ? NOIR.error : NOIR.salmon)};
+  padding-left: 10px;
+`;
+
+const Title = styled.h3`
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
+  font-weight: 600;
+  font-size: 1.35rem;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  color: ${NOIR.ink};
+  margin: 0;
+  line-height: 1.2;
+`;
+
+const ModalBody = styled.div`
+  padding: 18px 24px 20px;
+`;
+
+const Message = styled.p`
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: ${NOIR.charcoal};
+  margin: 0 0 14px;
+  opacity: 0.85;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const ItemName = styled.div`
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: ${NOIR.ash};
+  padding: 8px 12px;
+  border-left: 2px solid ${NOIR.dust};
+  background: rgba(10, 10, 11, 0.02);
+  margin-top: 4px;
+`;
+
+const ModalFooter = styled.div`
+  display: flex;
+  gap: 10px;
+  padding: 14px 24px 22px;
+  border-top: 1px solid ${NOIR.border};
+  justify-content: flex-end;
+`;
+
+const baseBtn = css`
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+`;
+
+const CancelBtn = styled.button`
+  ${baseBtn}
+  background: transparent;
+  color: ${NOIR.ash};
+  border-color: ${NOIR.dust};
+
+  &:hover {
+    color: ${NOIR.ink};
+    border-color: ${NOIR.ash};
+    background: rgba(10, 10, 11, 0.03);
+  }
+`;
+
+const ConfirmBtn = styled.button`
+  ${baseBtn}
+  background: ${(p) => (p.$destructive ? NOIR.error : NOIR.salmon)};
+  color: #fff;
+  border-color: ${(p) => (p.$destructive ? NOIR.error : NOIR.salmon)};
+
+  &:hover {
+    background: ${(p) => (p.$destructive ? '#a93226' : '#d4694a')};
+    border-color: ${(p) => (p.$destructive ? '#a93226' : '#d4694a')};
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
