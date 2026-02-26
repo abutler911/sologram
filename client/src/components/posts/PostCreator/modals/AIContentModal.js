@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import axios from "axios";
-import { toast } from "react-hot-toast";
+import React, { useState } from 'react';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import {
   ModalOverlay,
   ModalContent,
@@ -25,35 +25,36 @@ import {
   ButtonRow,
   SecondaryButton,
   ApplyButton,
-} from "../../PostCreator.styles";
-import { FaTimes, FaMagic } from "react-icons/fa";
+} from '../../PostCreator.styles';
+import { FaTimes, FaMagic } from 'react-icons/fa';
 
 export default function AIContentModal({ isOpen, onClose, onApplyContent }) {
   const [formData, setFormData] = useState({
-    description: "",
-    contentType: "general",
-    tone: "casual",
-    additionalContext: "",
+    description: '',
+    contentType: 'photography',
+    tone: 'thoughtful',
+    additionalContext: '',
   });
   const [generatedContent, setGeneratedContent] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
+  // ── Mirrors AIContentGenerator.js — keep these in sync ───────────────────
   const contentTypes = [
-    { value: "general", label: "General Post" },
-    { value: "product", label: "Product Showcase" },
-    { value: "behind-scenes", label: "Behind the Scenes" },
-    { value: "educational", label: "Educational" },
-    { value: "lifestyle", label: "Lifestyle" },
-    { value: "announcement", label: "Announcement" },
+    { value: 'photography', label: 'Photography' },
+    { value: 'aviation', label: 'Aviation & Training' },
+    { value: 'observation', label: 'Observation' },
+    { value: 'music', label: 'Piano & Music' },
+    { value: 'travel', label: 'Travel & Utah' },
+    { value: 'thought', label: 'Thought' },
+    { value: 'reading', label: 'Reading' },
   ];
 
   const tones = [
-    { value: "casual", label: "Casual & Friendly" },
-    { value: "professional", label: "Professional" },
-    { value: "playful", label: "Fun & Playful" },
-    { value: "inspirational", label: "Inspirational" },
-    { value: "minimalist", label: "Clean & Minimal" },
+    { value: 'thoughtful', label: 'Thoughtful' },
+    { value: 'dry', label: 'Dry & Understated' },
+    { value: 'reflective', label: 'Reflective' },
+    { value: 'observational', label: 'Observational' },
   ];
 
   if (!isOpen) return null;
@@ -63,27 +64,27 @@ export default function AIContentModal({ isOpen, onClose, onApplyContent }) {
 
   const handleGenerate = async () => {
     if (!formData.description.trim()) {
-      setError("Please provide a description for your content");
+      setError('Describe what you want to post about');
       return;
     }
     setIsGenerating(true);
-    setError("");
+    setError('');
 
     try {
       const { data } = await axios.post(
-        "/api/admin/ai-content/generate",
+        '/api/admin/ai-content/generate',
         formData,
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         }
       );
       setGeneratedContent(data?.data);
-      toast.success("Content generated successfully!");
+      toast.success('Content generated!');
     } catch (err) {
       setError(
-        err?.response?.data?.message || err.message || "Something went wrong."
+        err?.response?.data?.message || err.message || 'Something went wrong.'
       );
-      toast.error("Failed to generate content");
+      toast.error('Failed to generate content');
     } finally {
       setIsGenerating(false);
     }
@@ -93,26 +94,23 @@ export default function AIContentModal({ isOpen, onClose, onApplyContent }) {
     if (!generatedContent) return;
     onApplyContent(generatedContent);
     onClose();
-    setGeneratedContent(null);
-    setFormData({
-      description: "",
-      contentType: "general",
-      tone: "casual",
-      additionalContext: "",
-    });
-    setError("");
+    resetForm();
   };
 
   const handleClose = () => {
     onClose();
+    resetForm();
+  };
+
+  const resetForm = () => {
     setGeneratedContent(null);
     setFormData({
-      description: "",
-      contentType: "general",
-      tone: "casual",
-      additionalContext: "",
+      description: '',
+      contentType: 'photography',
+      tone: 'thoughtful',
+      additionalContext: '',
     });
-    setError("");
+    setError('');
   };
 
   return (
@@ -127,24 +125,24 @@ export default function AIContentModal({ isOpen, onClose, onApplyContent }) {
 
         <ModalBody>
           <FormGroup>
-            <Label>Content Description *</Label>
+            <Label>What do you want to post about? *</Label>
             <Input
-              name="description"
+              name='description'
               value={formData.description}
               onChange={onChange}
-              placeholder="Describe what your post is about..."
-              maxLength="500"
+              placeholder='Describe it in your own words...'
+              maxLength='500'
             />
-            <div style={{ textAlign: "right", fontSize: 12 }}>
+            <div style={{ textAlign: 'right', fontSize: 12 }}>
               {formData.description.length}/500
             </div>
           </FormGroup>
 
           <InputRow>
             <FormGroup>
-              <Label>Content Type</Label>
+              <Label>Type</Label>
               <Select
-                name="contentType"
+                name='contentType'
                 value={formData.contentType}
                 onChange={onChange}
               >
@@ -158,7 +156,7 @@ export default function AIContentModal({ isOpen, onClose, onApplyContent }) {
 
             <FormGroup>
               <Label>Tone</Label>
-              <Select name="tone" value={formData.tone} onChange={onChange}>
+              <Select name='tone' value={formData.tone} onChange={onChange}>
                 {tones.map((t) => (
                   <option key={t.value} value={t.value}>
                     {t.label}
@@ -169,13 +167,13 @@ export default function AIContentModal({ isOpen, onClose, onApplyContent }) {
           </InputRow>
 
           <FormGroup>
-            <Label>Additional Context (Optional)</Label>
+            <Label>Anything else? (Optional)</Label>
             <Input
-              name="additionalContext"
+              name='additionalContext'
               value={formData.additionalContext}
               onChange={onChange}
-              placeholder="Any additional details..."
-              maxLength="200"
+              placeholder='Mood, specific moment, what caught your eye...'
+              maxLength='200'
             />
           </FormGroup>
 
@@ -192,13 +190,11 @@ export default function AIContentModal({ isOpen, onClose, onApplyContent }) {
           >
             {isGenerating ? (
               <>
-                <LoadingSpinner />
-                Generating...
+                <LoadingSpinner /> Generating...
               </>
             ) : (
               <>
-                <FaMagic />
-                Generate Content
+                <FaMagic /> Generate Content
               </>
             )}
           </GenerateButton>
