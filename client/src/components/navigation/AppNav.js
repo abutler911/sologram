@@ -66,6 +66,22 @@ const AppNav = ({ onSearch, onClearSearch }) => {
     }
   };
 
+  // ── Long press → A220 flyby ────────────────────────────────────────────────
+  const [planeFlying, setPlaneFlying] = useState(false);
+  const longPressTimer = useRef(null);
+
+  const handleLogoPointerDown = (e) => {
+    e.preventDefault();
+    longPressTimer.current = setTimeout(() => {
+      setPlaneFlying(true);
+      setTimeout(() => setPlaneFlying(false), 3200);
+    }, 600);
+  };
+
+  const handleLogoPointerUp = () => {
+    clearTimeout(longPressTimer.current);
+  };
+
   // ── sync URL search param → local state ───────────────────────────────────
   useEffect(() => {
     const q = new URLSearchParams(location.search).get('search') || '';
@@ -182,7 +198,13 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       <TopBar>
         <TopBarInner>
           {/* onClick fires the hidden click counter — no visible change */}
-          <Logo to='/' onClick={handleLogoClick}>
+          <Logo
+            to='/'
+            onClick={handleLogoClick}
+            onPointerDown={handleLogoPointerDown}
+            onPointerUp={handleLogoPointerUp}
+            onPointerLeave={handleLogoPointerUp}
+          >
             <LogoIcon>
               <FaCamera />
             </LogoIcon>
@@ -221,7 +243,13 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       <Sidebar>
         <SideInner>
           {/* onClick fires the hidden click counter — no visible change */}
-          <SideLogoLink to='/' onClick={handleLogoClick}>
+          <SideLogoLink
+            to='/'
+            onClick={handleLogoClick}
+            onPointerDown={handleLogoPointerDown}
+            onPointerUp={handleLogoPointerUp}
+            onPointerLeave={handleLogoPointerUp}
+          >
             <LogoIcon small>
               <FaCamera />
             </LogoIcon>
@@ -558,6 +586,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       {/* ════════════════════════════════════════════════════════════════════ */}
       {/*  EASTER EGG — 4× logo clicks in 5s → secret code modal              */}
       {/* ════════════════════════════════════════════════════════════════════ */}
+      {planeFlying && <PlaneFlightOverlay />}
       {easterOpen && <EasterEggModal onClose={() => setEasterOpen(false)} />}
     </>
   );
@@ -1495,4 +1524,116 @@ const BrowseItemName = styled.span`
 const BrowseItemSub = styled.span`
   font-size: 0.72rem;
   color: ${COLORS.textTertiary};
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A220 FLYBY
+// ─────────────────────────────────────────────────────────────────────────────
+
+const flyAcross = keyframes`
+  0%   { transform: translateX(-120px) translateY(0px)   scaleX(1); opacity: 0; }
+  5%   { opacity: 1; }
+  30%  { transform: translateX(30vw)   translateY(-40px) scaleX(1); }
+  60%  { transform: translateX(65vw)   translateY(-18px) scaleX(1); }
+  90%  { transform: translateX(105vw)  translateY(-50px) scaleX(1); opacity: 1; }
+  100% { transform: translateX(110vw)  translateY(-55px) scaleX(1); opacity: 0; }
+`;
+
+const contrailFade = keyframes`
+  0%   { opacity: 0.55; width: 0px; }
+  20%  { opacity: 0.4;  width: 80px; }
+  80%  { opacity: 0.15; width: 160px; }
+  100% { opacity: 0;    width: 200px; }
+`;
+
+const PlaneFlightOverlay = () => (
+  <PlaneStage>
+    <PlaneRig>
+      {/* twin contrail lines */}
+      <Contrail $top='10px' />
+      <Contrail $top='16px' $delay='0.08s' />
+      {/* the plane — Airbus A220 silhouette via emoji + label */}
+      <PlaneSvg viewBox='0 0 64 32' xmlns='http://www.w3.org/2000/svg'>
+        {/* fuselage */}
+        <ellipse cx='32' cy='16' rx='28' ry='5' fill='#e8e4dd' />
+        {/* nose cone */}
+        <path d='M60 16 Q68 14 70 16 Q68 18 60 16Z' fill='#c8c4bc' />
+        {/* tail fin */}
+        <path d='M6 16 Q4 6 10 8 L14 16Z' fill='#e8e4dd' />
+        {/* horizontal stabilisers */}
+        <path d='M8 16 Q6 22 12 21 L14 16Z' fill='#d4d0c8' />
+        <path d='M8 16 Q6 10 12 11 L14 16Z' fill='#d4d0c8' />
+        {/* main wing */}
+        <path d='M28 16 Q30 4 44 6 L44 16Z' fill='#dedad2' />
+        <path d='M28 16 Q30 28 44 26 L44 16Z' fill='#d0ccc4' />
+        {/* engine pods */}
+        <ellipse cx='40' cy='10' rx='5' ry='2.5' fill='#b8b4ac' />
+        <ellipse cx='40' cy='22' rx='5' ry='2.5' fill='#b8b4ac' />
+        {/* windows strip */}
+        <rect
+          x='20'
+          y='13.5'
+          width='34'
+          height='2'
+          rx='1'
+          fill='rgba(100,160,220,0.5)'
+        />
+        {/* airline stripe — salmon nod to the app */}
+        <rect
+          x='4'
+          y='14.5'
+          width='56'
+          height='1.5'
+          rx='0.75'
+          fill='#e87c5a'
+          opacity='0.7'
+        />
+      </PlaneSvg>
+      <PlaneLabel>A220</PlaneLabel>
+    </PlaneRig>
+  </PlaneStage>
+);
+
+const PlaneStage = styled.div`
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+`;
+
+const PlaneRig = styled.div`
+  position: absolute;
+  top: 28%;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  animation: ${flyAcross} 3.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.18));
+`;
+
+const Contrail = styled.div`
+  position: absolute;
+  right: 100%;
+  top: ${(p) => p.$top || '12px'};
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6));
+  border-radius: 1px;
+  animation: ${contrailFade} 3.2s ease forwards;
+  animation-delay: ${(p) => p.$delay || '0s'};
+`;
+
+const PlaneSvg = styled.svg`
+  width: 96px;
+  height: 48px;
+`;
+
+const PlaneLabel = styled.span`
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.5);
+  margin-left: 6px;
+  white-space: nowrap;
 `;
