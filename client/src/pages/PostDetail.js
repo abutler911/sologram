@@ -79,7 +79,7 @@ const PostDetail = () => {
   const { isAuthenticated } = useContext(AuthContext);
   const { showDeleteModal } = useDeleteModal();
 
-  // ── Scroll progress ─────────────────────────────────────────────────────
+  // ── Scroll progress ──────────────────────────────────────────────────────
   useEffect(() => {
     const onScroll = () => {
       const total = document.documentElement.scrollHeight - window.innerHeight;
@@ -106,7 +106,14 @@ const PostDetail = () => {
     const fetchPost = async () => {
       try {
         setLoading(true);
-        const data = await api.getPost(id);
+        const raw = await api.getPost(id);
+
+        // api.getPost returns { success: true, data: { _id, title, media, ... } }
+        // Unwrap .data so the component always works with the plain post object.
+        // The fallback (raw itself) keeps things working if the service layer
+        // ever returns the post directly.
+        const data = raw?.data ?? raw;
+
         setPost(data);
 
         if (data.content) {
@@ -177,7 +184,7 @@ const PostDetail = () => {
       setPost((p) => ({ ...p, likes: (p.likes || 0) + 1 }));
       setIsLikeAnimating(true);
       setTimeout(() => setIsLikeAnimating(false), 500);
-    } catch (err) {
+    } catch {
       toast.error('Failed to like post');
     }
   };
@@ -271,6 +278,8 @@ const PostDetail = () => {
     'MMMM d, yyyy'
   );
 
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <PageWrapper>
       {/* Reading progress */}
@@ -286,7 +295,7 @@ const PostDetail = () => {
       </TopNav>
 
       <ArticleWrap>
-        {/* ── HERO MEDIA ─────────────────────────────────────────────────── */}
+        {/* ── HERO MEDIA ──────────────────────────────────────────────────── */}
         {mediaCount > 0 && (
           <HeroFrame {...swipeHandlers}>
             <MediaTrack
@@ -311,7 +320,6 @@ const PostDetail = () => {
               ))}
             </MediaTrack>
 
-            {/* Expand to fullscreen button — minimal, top-right corner */}
             <ExpandBtn
               onClick={() => setShowFullscreen(true)}
               aria-label='Fullscreen'
@@ -319,7 +327,6 @@ const PostDetail = () => {
               <FaExpandAlt />
             </ExpandBtn>
 
-            {/* Carousel nav */}
             {mediaCount > 1 && (
               <>
                 {activeMediaIndex > 0 && (
@@ -352,7 +359,7 @@ const PostDetail = () => {
           </HeroFrame>
         )}
 
-        {/* ── CONTENT ────────────────────────────────────────────────────── */}
+        {/* ── CONTENT ─────────────────────────────────────────────────────── */}
         <ContentBody>
           <ContentInner>
             <PostMeta>
@@ -380,7 +387,6 @@ const PostDetail = () => {
               </TagRow>
             )}
 
-            {/* Engagement strip */}
             <EngagementStrip>
               <EngageBtn onClick={handleLike} $active={isLiked}>
                 <EngageIcon $active={isLiked} $animating={isLikeAnimating}>
@@ -419,7 +425,7 @@ const PostDetail = () => {
         </ContentBody>
       </ArticleWrap>
 
-      {/* ── FULLSCREEN MODAL ───────────────────────────────────────────────── */}
+      {/* ── FULLSCREEN MODAL ────────────────────────────────────────────────── */}
       {showFullscreen && (
         <FullscreenOverlay onClick={() => setShowFullscreen(false)}>
           <FullscreenInner onClick={(e) => e.stopPropagation()}>
@@ -479,11 +485,6 @@ export default PostDetail;
 const PageWrapper = styled.div`
   background: ${COLORS.background};
   min-height: 100vh;
-  @font-face {
-    font-family: 'Autography';
-    src: url('/fonts/Autography.woff2') format('woff2');
-    font-display: swap;
-  }
 `;
 
 // ── Progress bar ──────────────────────────────────────────────────────────────
@@ -550,12 +551,11 @@ const HeroFrame = styled.div`
   background: #000;
   overflow: hidden;
   border-radius: 0;
+  -webkit-tap-highlight-color: transparent;
 
   @media (min-width: 480px) {
     border-radius: 8px;
-    aspect-ratio: 4 / 5;
   }
-  -webkit-tap-highlight-color: transparent;
 `;
 
 const MediaTrack = styled.div`
@@ -583,8 +583,6 @@ const HeroVid = styled.video`
   object-fit: cover;
   display: block;
 `;
-
-// ── Fullscreen expand button (media top-right) ────────────────────────────────
 
 const ExpandBtn = styled.button`
   position: absolute;
