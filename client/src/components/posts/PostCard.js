@@ -514,7 +514,7 @@ const CardWrapper = styled.article`
   @media (min-width: 640px) and (max-width: 1023px) {
     max-width: 560px;
     margin: 0 auto 24px;
-    border-radius: 0 0 6px 6px;
+    border-radius: 0;
     box-shadow: 0 2px 0 0 ${NOIR.salmon}, 0 20px 48px rgba(0, 0, 0, 0.13);
   }
 
@@ -522,7 +522,7 @@ const CardWrapper = styled.article`
   @media (min-width: 1024px) {
     max-width: 480px;
     margin: 0 auto 32px;
-    border-radius: 0 0 4px 4px;
+    border-radius: 0;
     box-shadow: 0 2px 0 0 ${NOIR.salmon}, 0 30px 80px rgba(0, 0, 0, 0.18);
   }
 `;
