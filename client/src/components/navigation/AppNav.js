@@ -30,26 +30,7 @@ import {
 } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
 import { COLORS } from '../../theme';
-
-/**
- * AppNav — Instagram-style navigation
- *
- * ─ Mobile  (<960px) ─────────────────────────────────────────────────────────
- *   Top bar : Logo + right-side icons (archive, avatar)
- *   Bottom  : 5-tab bar, icon-only — Home · Search · Create · Thoughts · Profile
- *   Create  : Tap + → slide-up bottom sheet (2×2 grid)
- *   Search  : Tap 🔍 → full-screen takeover
- *
- * ─ Desktop (≥960px) ─────────────────────────────────────────────────────────
- *   Left sidebar: 240px (full) / 72px (1200px+ goes back to full for ultra-wide)
- *   Sidebar items: logo · Home · Search · Thoughts · Collections · Create · Archive
- *   Admin section: Gallery · AI Content
- *   Bottom: username/avatar · Logout
- *
- * ─ Global ───────────────────────────────────────────────────────────────────
- *   ⌘K / Ctrl+K  → command palette
- *   Esc          → close any open overlay
- */
+import EasterEggModal from '../easter/easterEggModal';
 
 const AppNav = ({ onSearch, onClearSearch }) => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
@@ -67,6 +48,23 @@ const AppNav = ({ onSearch, onClearSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const searchInputRef = useRef(null);
+
+  // ── Easter egg — 4 clicks on logo within 5 seconds ────────────────────────
+  const [easterOpen, setEasterOpen] = useState(false);
+  const logoClickTimes = useRef([]);
+
+  const handleLogoClick = (e) => {
+    const now = Date.now();
+    logoClickTimes.current = [
+      ...logoClickTimes.current.filter((t) => now - t < 5000),
+      now,
+    ];
+    if (logoClickTimes.current.length >= 4) {
+      e.preventDefault();
+      logoClickTimes.current = [];
+      setEasterOpen(true);
+    }
+  };
 
   // ── sync URL search param → local state ───────────────────────────────────
   useEffect(() => {
@@ -99,6 +97,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
         setSearchOpen(false);
         setCreateOpen(false);
         setPaletteOpen(false);
+        setEasterOpen(false);
       }
     };
     window.addEventListener('keydown', handler);
@@ -143,12 +142,10 @@ const AppNav = ({ onSearch, onClearSearch }) => {
     navigate(to);
   };
 
-  // avatar initials
   const initials = user?.username
     ? user.username.slice(0, 2).toUpperCase()
     : '?';
 
-  // command palette items
   const paletteItems = useMemo(() => {
     const base = [
       { label: 'Home', icon: <FaHome />, to: '/' },
@@ -184,7 +181,8 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       {/* ════════════════════════════════════════════════════════════════════ */}
       <TopBar>
         <TopBarInner>
-          <Logo to='/'>
+          {/* onClick fires the hidden click counter — no visible change */}
+          <Logo to='/' onClick={handleLogoClick}>
             <LogoIcon>
               <FaCamera />
             </LogoIcon>
@@ -222,8 +220,8 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       {/* ════════════════════════════════════════════════════════════════════ */}
       <Sidebar>
         <SideInner>
-          {/* Logo */}
-          <SideLogoLink to='/'>
+          {/* onClick fires the hidden click counter — no visible change */}
+          <SideLogoLink to='/' onClick={handleLogoClick}>
             <LogoIcon small>
               <FaCamera />
             </LogoIcon>
@@ -232,7 +230,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
 
           <SideDivider />
 
-          {/* Primary nav */}
           <SideNav>
             <SideNavLink to='/' $active={isActive('/')}>
               <SideIcon>
@@ -286,7 +283,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
 
           <SideSpacer />
 
-          {/* Admin section */}
           {isAdmin && (
             <>
               <SideSectionLabel>Admin</SideSectionLabel>
@@ -314,7 +310,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
             </>
           )}
 
-          {/* Profile + logout */}
           <SideNav>
             {isAuthenticated ? (
               <>
@@ -341,7 +336,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
             )}
           </SideNav>
 
-          {/* ⌘K shortcut hint */}
           <PaletteButton onClick={() => setPaletteOpen(true)}>
             <FaMagic />
             <PaletteButtonLabel>⌘K</PaletteButtonLabel>
@@ -354,14 +348,12 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       {/* ════════════════════════════════════════════════════════════════════ */}
       <BottomBar>
         <BottomBarInner>
-          {/* Home */}
           <BottomTab to='/' $active={isActive('/')}>
             <BottomIcon $active={isActive('/')}>
               <FaHome />
             </BottomIcon>
           </BottomTab>
 
-          {/* Search */}
           <BottomTabButton
             onClick={() => setSearchOpen(true)}
             $active={searchOpen}
@@ -371,7 +363,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
             </BottomIcon>
           </BottomTabButton>
 
-          {/* Create — center square */}
           {canCreate ? (
             <BottomTabButton
               onClick={() => setCreateOpen(true)}
@@ -389,14 +380,12 @@ const AppNav = ({ onSearch, onClearSearch }) => {
             </BottomTab>
           )}
 
-          {/* Thoughts */}
           <BottomTab to='/thoughts' $active={isActive('/thoughts')}>
             <BottomIcon $active={isActive('/thoughts')}>
               <FaLightbulb />
             </BottomIcon>
           </BottomTab>
 
-          {/* Profile / Admin */}
           {isAdmin ? (
             <BottomTab
               to='/media-gallery'
@@ -425,7 +414,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       </BottomBar>
 
       {/* ════════════════════════════════════════════════════════════════════ */}
-      {/*  SEARCH OVERLAY — full-screen mobile / centered card desktop         */}
+      {/*  SEARCH OVERLAY                                                      */}
       {/* ════════════════════════════════════════════════════════════════════ */}
       {searchOpen && (
         <SearchOverlay>
@@ -460,7 +449,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 Cancel
               </SearchCancelBtn>
             </SearchRow>
-
             <SearchBody>
               {searchQuery ? (
                 <SearchActiveHint>
@@ -497,7 +485,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 <CreateCardName>Post</CreateCardName>
                 <CreateCardSub>Photo or video</CreateCardSub>
               </CreateCard>
-
               <CreateCard
                 onClick={() => goCreate('/create-story')}
                 $color={COLORS.primaryMint}
@@ -508,7 +495,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 <CreateCardName>Story</CreateCardName>
                 <CreateCardSub>Gone in 24h</CreateCardSub>
               </CreateCard>
-
               <CreateCard
                 onClick={() => goCreate('/thoughts/create')}
                 $color={COLORS.primaryBlueGray}
@@ -519,7 +505,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 <CreateCardName>Thought</CreateCardName>
                 <CreateCardSub>What's on your mind</CreateCardSub>
               </CreateCard>
-
               <CreateCard
                 onClick={() => goCreate('/collections/create')}
                 $color={COLORS.accentSalmon}
@@ -531,8 +516,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 <CreateCardSub>Group your posts</CreateCardSub>
               </CreateCard>
             </CreateGrid>
-
-            {/* Browse — destinations no longer in the bottom tab bar */}
             <SheetDivider />
             <SheetTitle>Browse</SheetTitle>
             <BrowseList>
@@ -545,7 +528,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                   <BrowseItemSub>Browse your curated groups</BrowseItemSub>
                 </BrowseItemText>
               </BrowseItem>
-
               {canCreate && (
                 <BrowseItem onClick={() => goCreate('/story-archive')}>
                   <BrowseItemIcon $color={COLORS.primaryBlueGray}>
@@ -572,6 +554,11 @@ const AppNav = ({ onSearch, onClearSearch }) => {
           navigate={navigate}
         />
       )}
+
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/*  EASTER EGG — 4× logo clicks in 5s → secret code modal              */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {easterOpen && <EasterEggModal onClose={() => setEasterOpen(false)} />}
     </>
   );
 };
@@ -638,7 +625,7 @@ export default AppNav;
 // ─────────────────────────────────────────────────────────────────────────────
 // Keyframes
 // ─────────────────────────────────────────────────────────────────────────────
-const fadeIn = keyframes`from { opacity: 0 }             to { opacity: 1 }`;
+const fadeIn = keyframes`from { opacity: 0 }              to { opacity: 1 }`;
 const slideUp = keyframes`from { transform: translateY(100%) } to { transform: translateY(0) }`;
 const popIn = keyframes`from { transform: scale(.95); opacity: 0 } to { transform: scale(1); opacity: 1 }`;
 const dropDown = keyframes`from { transform: translateY(-8px); opacity: 0 } to { transform: translateY(0); opacity: 1 }`;
@@ -671,7 +658,7 @@ const LogoText = styled.span`
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TOP BAR  (mobile only)
+// TOP BAR
 // ─────────────────────────────────────────────────────────────────────────────
 const TopBar = styled.header`
   position: sticky;
@@ -751,8 +738,6 @@ const AvatarButton = styled.button`
 // ─────────────────────────────────────────────────────────────────────────────
 // DESKTOP LEFT SIDEBAR
 // ─────────────────────────────────────────────────────────────────────────────
-
-/* Sidebar widths exposed as CSS custom props so MainLayout can consume them */
 const SIDEBAR_FULL = '240px';
 const SIDEBAR_NARROW = '72px';
 
@@ -764,13 +749,13 @@ const Sidebar = styled.aside`
     left: 0;
     top: 0;
     bottom: 0;
-    width: ${SIDEBAR_NARROW}; /* narrow by default at 960-1200 */
+    width: ${SIDEBAR_NARROW};
     z-index: 300;
     background: ${COLORS.background};
     border-right: 1px solid ${COLORS.border};
   }
   @media (min-width: 1200px) {
-    width: ${SIDEBAR_FULL}; /* full labels at 1200+ */
+    width: ${SIDEBAR_FULL};
   }
 `;
 
@@ -797,11 +782,10 @@ const SideLogoLink = styled(Link)`
   border-radius: 12px;
   height: 48px;
   transition: background 0.15s;
+  justify-content: center;
   &:hover {
     background: ${COLORS.elevatedBackground};
   }
-  /* narrow — centre the icon */
-  justify-content: center;
   @media (min-width: 1200px) {
     justify-content: flex-start;
   }
@@ -828,7 +812,6 @@ const SideNav = styled.nav`
   padding: 0 8px;
 `;
 
-/* Shared shape for anchor + button sidebar rows */
 const sideItemBase = css`
   display: flex;
   align-items: center;
@@ -844,13 +827,11 @@ const sideItemBase = css`
   text-align: left;
   position: relative;
   transition: background 0.12s, color 0.12s;
-  justify-content: center; /* narrow: icon centred */
-
+  justify-content: center;
   background: ${(p) =>
     p.$active ? `${COLORS.primarySalmon}12` : 'transparent'};
   color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textSecondary)};
 
-  /* Active bar */
   ${(p) =>
     p.$active &&
     css`
@@ -883,7 +864,6 @@ const sideItemBase = css`
       }
     `}
 
-  /* full: left-align */
   @media (min-width: 1200px) {
     justify-content: flex-start;
     padding: 11px 12px;
@@ -1066,7 +1046,6 @@ const BottomAvatarIcon = styled.div`
   transition: border-color 0.14s, color 0.14s;
 `;
 
-/* Center "+" create button — a flat rounded square (Instagram-style) */
 const CreateSquare = styled.div`
   width: 36px;
   height: 36px;
@@ -1082,7 +1061,6 @@ const CreateSquare = styled.div`
   font-size: 1rem;
   box-shadow: 0 3px 12px ${COLORS.primarySalmon}45;
   transition: transform 0.12s, box-shadow 0.12s;
-
   ${BottomTabButton}:active & {
     transform: scale(0.91);
     box-shadow: 0 1px 6px ${COLORS.primarySalmon}30;
@@ -1100,9 +1078,7 @@ const SearchOverlay = styled.div`
   display: flex;
   flex-direction: column;
   animation: ${fadeIn} 0.12s ease;
-
   @media (min-width: 960px) {
-    /* Desktop: dim backdrop + centred card */
     background: rgba(0, 0, 0, 0.52);
     backdrop-filter: blur(5px);
     align-items: center;
@@ -1116,7 +1092,6 @@ const SearchCard = styled.div`
   flex-direction: column;
   width: 100%;
   height: 100%;
-
   @media (min-width: 960px) {
     height: auto;
     max-width: 580px;
@@ -1149,12 +1124,10 @@ const SearchBox = styled.div`
   border: 1px solid ${COLORS.border};
   border-radius: 12px;
   padding: 9px 12px;
-
   svg {
     color: ${COLORS.textTertiary};
     flex-shrink: 0;
   }
-
   input {
     flex: 1;
     background: none;
@@ -1267,7 +1240,6 @@ const CreateSheet = styled.div`
   border-bottom: none;
   padding: 8px 16px calc(36px + env(safe-area-inset-bottom));
   animation: ${slideUp} 0.22s cubic-bezier(0.34, 1.15, 0.64, 1);
-
   @media (min-width: 960px) {
     width: auto;
     min-width: 380px;
@@ -1317,7 +1289,6 @@ const CreateCard = styled.button`
   cursor: pointer;
   text-align: left;
   transition: all 0.13s ease;
-
   &:hover {
     background: ${COLORS.buttonHover};
     border-color: ${(p) => p.$color}45;
@@ -1345,7 +1316,6 @@ const CreateCardName = styled.span`
   font-weight: 700;
   color: ${COLORS.textPrimary};
 `;
-
 const CreateCardSub = styled.span`
   font-size: 0.7rem;
   color: ${COLORS.textTertiary};
@@ -1385,12 +1355,10 @@ const PaletteInputRow = styled.div`
   gap: 10px;
   padding: 14px 16px;
   border-bottom: 1px solid ${COLORS.border};
-
   svg {
     color: ${COLORS.primarySalmon};
     flex-shrink: 0;
   }
-
   input {
     flex: 1;
     background: none;
@@ -1434,10 +1402,8 @@ const PaletteRow = styled.button`
   font-weight: 600;
   text-align: left;
   transition: background 0.1s;
-
   &:hover {
     background: ${COLORS.elevatedBackground};
-    ${/* inner elements */ ''}
   }
 `;
 
@@ -1448,7 +1414,6 @@ const PaletteRowIcon = styled.span`
   color: ${COLORS.textSecondary};
   font-size: 0.95rem;
   flex-shrink: 0;
-
   ${PaletteRow}:hover & {
     color: ${COLORS.primarySalmon};
   }
@@ -1522,13 +1487,11 @@ const BrowseItemText = styled.div`
   flex-direction: column;
   gap: 1px;
 `;
-
 const BrowseItemName = styled.span`
   font-size: 0.9rem;
   font-weight: 600;
   color: ${COLORS.textPrimary};
 `;
-
 const BrowseItemSub = styled.span`
   font-size: 0.72rem;
   color: ${COLORS.textTertiary};

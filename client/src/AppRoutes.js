@@ -45,6 +45,12 @@ const AIContentGenerator = React.lazy(() =>
   import('./components/admin/AIContentGenerator')
 );
 
+// ── Vault (Easter egg destinations) ──────────────────────────────────────────
+const SoloGramWrapped = React.lazy(() =>
+  import('./pages/vault/SologramWrapped')
+);
+const HackerTerminal = React.lazy(() => import('./pages/vault/HackerTerminal'));
+
 const LoadingFallback = () => <LoadingSpinner />;
 
 const StandardLayout = ({ children, headerProps }) => (
@@ -225,6 +231,10 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
             </AdminRoute>
           }
         />
+
+        {/* ── Vault — Easter egg destinations (no auth, no nav wrapper) ── */}
+        <Route path='/vault/wrapped' element={<SoloGramWrapped />} />
+        <Route path='/vault/terminal' element={<HackerTerminal />} />
 
         {/* 404 — must be last */}
         <Route path='*' element={<NotFound />} />
