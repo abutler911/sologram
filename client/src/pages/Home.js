@@ -95,11 +95,7 @@ const PostsGrid = memo(
         {posts.map((post, index) => {
           const isLast = index === posts.length - 1;
           return (
-            <GridItem
-              key={post._id}
-              ref={isLast ? sentinelRef : null}
-              isPWA={isPWA}
-            >
+            <GridItem key={post._id} ref={isLast ? sentinelRef : null}>
               <PostCard
                 post={post}
                 index={index}
@@ -243,7 +239,6 @@ const Home = forwardRef((props, ref) => {
   // Optimistic local updates — write straight into the RQ cache, no refetch needed
   const handlePostDelete = useCallback(
     (deletedId) => {
-      // Remove from infinite feed cache
       queryClient.setQueryData(postKeys.infiniteFeed(), (old) => {
         if (!old) return old;
         return {
@@ -254,7 +249,6 @@ const Home = forwardRef((props, ref) => {
           })),
         };
       });
-      // Also remove from search cache if active
       if (isSearching && searchQuery) {
         queryClient.setQueryData(postKeys.search(searchQuery), (old) => {
           if (!old) return old;
@@ -355,31 +349,41 @@ const PageWrapper = styled.div`
 const HomeContainer = styled.div`
   max-width: 935px;
   margin: 0 auto;
-  padding: ${(p) => (p.isPWA ? '0.5rem' : '1.5rem 1rem')};
+
+  /* On mobile, no side padding — cards go full bleed */
+  @media (max-width: 639px) {
+    padding: ${(p) => (p.isPWA ? '0.5rem 0 0' : '1rem 0 0')};
+  }
+
+  /* Tablet and up — restore comfortable side padding */
+  @media (min-width: 640px) {
+    padding: ${(p) => (p.isPWA ? '0.5rem 1rem' : '1.5rem 1rem')};
+  }
 `;
 
 const PostGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
+  /* Single-column feed — cards centre themselves via their own max-width */
+  display: flex;
+  flex-direction: column;
 
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  /* On mobile: no gap, cards are separated by the 2px margin in CardWrapper */
+  @media (max-width: 639px) {
+    gap: 0;
+  }
+
+  /* Tablet and up: breathing room between cards */
+  @media (min-width: 640px) {
+    gap: 2rem;
   }
 `;
 
 const GridItem = styled.div`
-  background-color: ${COLORS.cardBackground};
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px ${COLORS.shadow};
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px ${COLORS.shadow};
-  }
+  /*
+    No border-radius, no overflow:hidden, no box-shadow here —
+    PostCard owns all of its own visual treatment.
+    This is just a transparent structural wrapper for the sentinel ref.
+  */
+  width: 100%;
 `;
 
 const AboutBannerWrapper = styled.div`
@@ -394,7 +398,11 @@ const AboutBannerWrapper = styled.div`
   border: 1px solid ${COLORS.border};
   border-radius: 8px;
   padding: 1rem 1.25rem;
-  margin-bottom: 1.5rem;
+  margin: 0 1rem 1.5rem;
+
+  @media (min-width: 640px) {
+    margin: 0 0 1.5rem;
+  }
 `;
 
 const BannerContent = styled.div`
@@ -444,7 +452,11 @@ const SearchResultsWrapper = styled.div`
   border: 1px solid ${COLORS.border};
   border-radius: 8px;
   padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
+  margin: 0 1rem 1rem;
+
+  @media (min-width: 640px) {
+    margin: 0 0 1rem;
+  }
 `;
 
 const SearchResultsText = styled.span`
