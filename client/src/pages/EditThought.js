@@ -11,7 +11,7 @@ import {
   useDeleteThought,
 } from '../hooks/queries/useThoughts';
 
-// ─── Design tokens — NOIR palette ────────────────────────────────────────────
+// ─── Design tokens ────────────────────────────────────────────────────────────
 const NOIR = {
   ink: '#0a0a0b',
   warmWhite: '#faf9f7',
@@ -23,7 +23,7 @@ const NOIR = {
   sage: '#7aab8c',
 };
 
-const MAX_CONTENT_LENGTH = 280;
+const MAX_CONTENT = 280;
 const MAX_TAGS = 5;
 
 const EditThought = () => {
@@ -41,11 +41,9 @@ const EditThought = () => {
   const updateThought = useUpdateThought();
   const deleteThought = useDeleteThought();
 
-  // ── Unwrap API response — same pattern as PostDetail ─────────────────────
-  // useThought returns { success: true, data: { _id, content, tags, ... } }
+  // Unwrap API envelope { success, data: { _id, content, ... } }
   const thought = thoughtResponse?.data ?? thoughtResponse;
 
-  // ── Seed form once data arrives ───────────────────────────────────────────
   useEffect(() => {
     if (thought) {
       setContent(thought.content || '');
@@ -53,17 +51,14 @@ const EditThought = () => {
     }
   }, [thought]);
 
-  // ── Auth guard ────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/login');
-    } else if (!isLoading && !isAdmin) {
+    if (!isLoading && !isAuthenticated) navigate('/login');
+    else if (!isLoading && !isAdmin) {
       navigate('/');
       toast.error("You don't have permission to edit thoughts");
     }
   }, [isAuthenticated, isAdmin, isLoading, navigate]);
 
-  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!content.trim()) {
@@ -73,39 +68,32 @@ const EditThought = () => {
     try {
       await updateThought.mutateAsync({
         id,
-        payload: {
-          content,
-          // Backend does JSON.parse(tags) — must send as JSON string
-          tags: JSON.stringify(tags),
-        },
+        payload: { content, tags: JSON.stringify(tags) },
       });
-      // /thoughts/:id doesn't exist as a route — go back to the feed
       navigate('/thoughts');
     } catch {
-      // error toast handled in the hook
+      /* handled in hook */
     }
   };
 
-  // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = async () => {
     try {
       await deleteThought.mutateAsync(id);
       navigate('/thoughts');
     } catch {
-      // error toast handled in the hook
+      /* handled in hook */
     }
   };
 
-  // ── Tag helpers ───────────────────────────────────────────────────────────
   const addTag = () => {
     const tag = tagInput.trim().toLowerCase();
     if (!tag) return;
     if (tags.includes(tag)) {
-      toast.error(`Tag "${tag}" already added`);
+      toast.error(`"${tag}" already added`);
       return;
     }
     if (tags.length >= MAX_TAGS) {
-      toast.error(`Maximum ${MAX_TAGS} tags allowed`);
+      toast.error(`Max ${MAX_TAGS} tags`);
       return;
     }
     setTags([...tags, tag]);
@@ -113,100 +101,96 @@ const EditThought = () => {
   };
 
   const handleTagKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
+    if (['Enter', ',', ' '].includes(e.key)) {
       e.preventDefault();
       addTag();
     }
   };
 
-  const removeTag = (tagToRemove) =>
-    setTags(tags.filter((t) => t !== tagToRemove));
-
+  const removeTag = (t) => setTags(tags.filter((x) => x !== t));
   const isSubmitting = updateThought.isPending || deleteThought.isPending;
-  const remaining = MAX_CONTENT_LENGTH - content.length;
-  const nearLimit = remaining <= MAX_CONTENT_LENGTH * 0.1;
+  const remaining = MAX_CONTENT - content.length;
+  const nearLimit = remaining <= MAX_CONTENT * 0.1;
 
-  // ── Loading ───────────────────────────────────────────────────────────────
-  if (isLoading) {
+  if (isLoading)
     return (
-      <PageWrapper>
-        <Container>
-          <LoadingState>
-            <LoadingBar />
-            <LoadingBar $w='60%' />
-            <LoadingBar $w='40%' />
-          </LoadingState>
-        </Container>
-      </PageWrapper>
+      <Shell>
+        <Inner>
+          <SkeletonGroup>
+            <SkeletonBar $w='30%' $h='12px' />
+            <SkeletonBar $w='100%' $h='180px' $mt='28px' />
+            <SkeletonBar $w='100%' $h='44px' $mt='12px' />
+            <SkeletonBar $w='40%' $h='36px' $mt='24px' />
+          </SkeletonGroup>
+        </Inner>
+      </Shell>
     );
-  }
 
-  // ── Error ─────────────────────────────────────────────────────────────────
-  if (error || !thought) {
+  if (error || !thought)
     return (
-      <PageWrapper>
-        <Container>
-          <ErrorBox>
-            <ErrorText>{error?.message || 'Thought not found'}</ErrorText>
+      <Shell>
+        <Inner>
+          <ErrorCard>
+            <ErrorMsg>{error?.message || 'Thought not found'}</ErrorMsg>
             <BackLink to='/thoughts'>
               <FaArrowLeft /> Back to Thoughts
             </BackLink>
-          </ErrorBox>
-        </Container>
-      </PageWrapper>
+          </ErrorCard>
+        </Inner>
+      </Shell>
     );
-  }
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <PageWrapper>
-      <Container>
-        {/* ── Header ──────────────────────────────────────────────────────── */}
-        <PageHeader>
+    <Shell>
+      <Inner>
+        {/* ── Masthead ────────────────────────────────────────────────────── */}
+        <Masthead>
           <BackLink to='/thoughts'>
             <FaArrowLeft />
             <span>Thoughts</span>
           </BackLink>
           <PageTitle>Edit Thought</PageTitle>
-        </PageHeader>
+        </Masthead>
 
-        {/* ── Form card ───────────────────────────────────────────────────── */}
-        <FormCard onSubmit={handleSubmit}>
-          {/* Content */}
-          <FieldGroup>
-            <TextAreaWrapper>
-              <ContentArea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="What's on your mind?"
-                maxLength={MAX_CONTENT_LENGTH}
-                required
-              />
-              <CharCount $warning={nearLimit}>{remaining}</CharCount>
-            </TextAreaWrapper>
-          </FieldGroup>
+        {/* ── Editor ──────────────────────────────────────────────────────── */}
+        <EditorForm onSubmit={handleSubmit}>
+          {/* Content — borderless textarea, bottom rule only */}
+          <ContentBlock>
+            <ContentArea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="What's on your mind?"
+              maxLength={MAX_CONTENT}
+              required
+            />
+            {/* Progress bar replaces the overlapping corner counter */}
+            <ProgressRow>
+              <ProgressTrack>
+                <ProgressFill
+                  $pct={(content.length / MAX_CONTENT) * 100}
+                  $warn={nearLimit}
+                />
+              </ProgressTrack>
+              <ProgressCount $warn={nearLimit}>{remaining}</ProgressCount>
+            </ProgressRow>
+          </ContentBlock>
 
           {/* Tags */}
-          <FieldGroup>
-            <FieldLabel>
-              Tags <FieldHint>(optional · up to {MAX_TAGS})</FieldHint>
-            </FieldLabel>
-            <TagsArea>
+          <TagsBlock>
+            <BlockLabel>
+              Tags <BlockHint>optional · up to {MAX_TAGS}</BlockHint>
+            </BlockLabel>
+            <TagsRow>
               {tags.map((tag, i) => (
-                <TagChip key={i}>
+                <TagPill key={i}>
                   #{tag}
-                  <ChipRemove
-                    type='button'
-                    onClick={() => removeTag(tag)}
-                    aria-label={`Remove ${tag}`}
-                  >
+                  <PillX type='button' onClick={() => removeTag(tag)}>
                     <FaTimes />
-                  </ChipRemove>
-                </TagChip>
+                  </PillX>
+                </TagPill>
               ))}
               {tags.length < MAX_TAGS && (
-                <TagInlineInput
-                  type='text'
+                <TagInput
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={handleTagKeyDown}
@@ -214,83 +198,90 @@ const EditThought = () => {
                   placeholder='add tag…'
                 />
               )}
-            </TagsArea>
-          </FieldGroup>
+            </TagsRow>
+          </TagsBlock>
+
+          {/* Feed preview — shows the Cormorant headline split */}
+          {content.trim() && (
+            <PreviewBlock>
+              <BlockLabel>Feed preview</BlockLabel>
+              <PreviewHeadline>
+                {content.split('\n')[0].slice(0, 120)}
+              </PreviewHeadline>
+              {content.split('\n').slice(1).join('\n').trim() && (
+                <PreviewBody>
+                  {content.split('\n').slice(1).join('\n').trim().slice(0, 80)}
+                  {content.split('\n').slice(1).join('\n').trim().length > 80 &&
+                    '…'}
+                </PreviewBody>
+              )}
+            </PreviewBlock>
+          )}
 
           {/* Actions */}
-          <ActionRow>
+          <ActionsRow>
             <DeleteBtn
               type='button'
               onClick={() => setShowDeleteModal(true)}
               disabled={isSubmitting}
             >
-              <FaTrash />
-              Delete
+              <FaTrash /> Delete
             </DeleteBtn>
             <SaveBtn type='submit' disabled={isSubmitting || !content.trim()}>
               <FaCheck />
               {updateThought.isPending ? 'Saving…' : 'Save Changes'}
             </SaveBtn>
-          </ActionRow>
-        </FormCard>
-      </Container>
+          </ActionsRow>
+        </EditorForm>
+      </Inner>
 
-      {/* ── Delete confirmation modal ──────────────────────────────────────── */}
+      {/* ── Delete confirmation ──────────────────────────────────────────── */}
       {showDeleteModal && (
-        <ModalBackdrop onClick={() => setShowDeleteModal(false)}>
-          <ModalBox onClick={(e) => e.stopPropagation()}>
+        <Backdrop onClick={() => setShowDeleteModal(false)}>
+          <Modal onClick={(e) => e.stopPropagation()}>
             <ModalTitle>Delete Thought?</ModalTitle>
             <ModalBody>
               This thought will be permanently removed. This action cannot be
               undone.
             </ModalBody>
-            <ModalActions>
-              <ModalCancelBtn
+            <ModalFooter>
+              <ModalCancel
                 onClick={() => setShowDeleteModal(false)}
                 disabled={isSubmitting}
               >
                 Cancel
-              </ModalCancelBtn>
-              <ModalConfirmBtn onClick={handleDelete} disabled={isSubmitting}>
+              </ModalCancel>
+              <ModalDelete onClick={handleDelete} disabled={isSubmitting}>
                 {deleteThought.isPending ? 'Deleting…' : 'Delete'}
-              </ModalConfirmBtn>
-            </ModalActions>
-          </ModalBox>
-        </ModalBackdrop>
+              </ModalDelete>
+            </ModalFooter>
+          </Modal>
+        </Backdrop>
       )}
-    </PageWrapper>
+    </Shell>
   );
 };
 
 export default EditThought;
 
-// ─── Animations ───────────────────────────────────────────────────────────────
+// ─── Keyframes ────────────────────────────────────────────────────────────────
 
 const fadeUp = keyframes`
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 `;
 
 const shimmer = keyframes`
-  0%   { background-position: -400px 0; }
-  100% { background-position:  400px 0; }
-`;
-
-const skeletonBg = `
-  background: linear-gradient(90deg, ${NOIR.dust} 25%, ${NOIR.warmWhite} 50%, ${NOIR.dust} 75%);
-  background-size: 400px 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
+  0%   { background-position: -500px 0; }
+  100% { background-position:  500px 0; }
 `;
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
-const PageWrapper = styled.div`
+const Shell = styled.div`
   min-height: 100vh;
   background: ${NOIR.warmWhite};
-  padding: 0 0 80px;
-  animation: ${fadeUp} 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 
-  /* Sidebar offsets — match AppNav */
   @media (min-width: 960px) {
     margin-left: 72px;
     width: calc(100% - 72px);
@@ -302,53 +293,52 @@ const PageWrapper = styled.div`
   }
 `;
 
-const Container = styled.div`
+const Inner = styled.div`
   width: 100%;
-  max-width: 640px;
+  max-width: 600px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 24px 80px;
   box-sizing: border-box;
+  animation: ${fadeUp} 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 `;
 
-// ─── Header ───────────────────────────────────────────────────────────────────
+// ─── Masthead ─────────────────────────────────────────────────────────────────
 
-const PageHeader = styled.div`
+const Masthead = styled.div`
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  padding: 28px 0 24px;
-
-  /* Gradient accent line top — PostCard signature */
+  padding: 32px 0 24px;
+  margin-bottom: 0;
   position: relative;
+
+  /* Salmon-to-sage accent line at top of page */
   &::before {
     content: '';
     position: absolute;
     top: 0;
-    left: -20px;
-    right: -20px;
+    left: -24px;
+    right: -24px;
     height: 2px;
-    background: linear-gradient(90deg, ${NOIR.salmon} 0%, ${NOIR.sage} 100%);
+    background: linear-gradient(90deg, ${NOIR.salmon}, ${NOIR.sage});
   }
 `;
 
 const BackLink = styled(Link)`
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   font-family: 'DM Mono', 'Courier New', monospace;
-  font-size: 0.65rem;
-  font-weight: 400;
-  letter-spacing: 0.08em;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: ${NOIR.ash};
   text-decoration: none;
   transition: color 0.15s;
-
   svg {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
   }
-
   &:hover {
     color: ${NOIR.salmon};
   }
@@ -356,168 +346,200 @@ const BackLink = styled(Link)`
 
 const PageTitle = styled.h1`
   font-family: 'Cormorant Garamond', 'Georgia', serif;
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1.7rem;
+  font-weight: 400;
   font-style: italic;
   letter-spacing: -0.02em;
   color: ${NOIR.ink};
   margin: 0;
+  line-height: 1;
 `;
 
-// ─── Form card ────────────────────────────────────────────────────────────────
+// ─── Editor form ──────────────────────────────────────────────────────────────
 
-const FormCard = styled.form`
-  background: ${NOIR.warmWhite};
-  border: 1px solid ${NOIR.dust};
-  border-top: none; /* header's accent line serves as the top edge */
-  padding: 24px 0 0;
+/* No card/border — the page background is the writing surface.
+   Fields are separated by bottom rules only, like a printed form. */
+const EditorForm = styled.form`
+  padding-top: 28px;
 `;
 
-const FieldGroup = styled.div`
-  margin-bottom: 20px;
-`;
+// ─── Content block ────────────────────────────────────────────────────────────
 
-const FieldLabel = styled.label`
-  display: block;
-  font-family: 'DM Mono', 'Courier New', monospace;
-  font-size: 0.62rem;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: ${NOIR.ash};
-  margin-bottom: 8px;
-`;
-
-const FieldHint = styled.span`
-  font-size: 0.58rem;
-  opacity: 0.7;
-  text-transform: none;
-  letter-spacing: 0;
-`;
-
-// ─── Textarea ─────────────────────────────────────────────────────────────────
-
-const TextAreaWrapper = styled.div`
-  position: relative;
+const ContentBlock = styled.div`
+  margin-bottom: 28px;
 `;
 
 const ContentArea = styled.textarea`
+  display: block;
   width: 100%;
-  min-height: 160px;
-  padding: 16px;
+  padding: 0 0 14px;
   box-sizing: border-box;
-  background: rgba(10, 10, 11, 0.02);
-  border: 1px solid ${NOIR.dust};
-  border-radius: 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid ${NOIR.dust};
   font-family: 'Instrument Sans', sans-serif;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.65;
+  font-size: 1.05rem;
+  line-height: 1.72;
   color: ${NOIR.charcoal};
-  resize: vertical;
-  transition: border-color 0.15s;
+  resize: none;
+  outline: none;
+  min-height: 160px;
+  transition: border-color 0.2s;
 
   &::placeholder {
-    color: ${NOIR.ash};
+    color: ${NOIR.dust};
   }
-
   &:focus {
-    outline: none;
-    border-color: ${NOIR.salmon};
-    background: ${NOIR.warmWhite};
+    border-bottom-color: ${NOIR.salmon};
   }
 `;
 
-const CharCount = styled.div`
-  position: absolute;
-  bottom: 10px;
-  right: 12px;
-  font-family: 'DM Mono', 'Courier New', monospace;
-  font-size: 0.6rem;
-  letter-spacing: 0.04em;
-  color: ${(p) => (p.$warning ? NOIR.salmon : NOIR.ash)};
-  pointer-events: none;
+/* Thin progress bar + numeric counter below the textarea */
+const ProgressRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
 `;
 
-// ─── Tags ─────────────────────────────────────────────────────────────────────
+const ProgressTrack = styled.div`
+  flex: 1;
+  height: 2px;
+  background: ${NOIR.dust};
+  overflow: hidden;
+`;
 
-const TagsArea = styled.div`
+const ProgressFill = styled.div`
+  height: 100%;
+  width: ${(p) => Math.min(p.$pct, 100)}%;
+  background: ${(p) => (p.$warn ? NOIR.salmon : NOIR.sage)};
+  transition: width 0.1s linear, background 0.2s;
+`;
+
+const ProgressCount = styled.span`
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.05em;
+  color: ${(p) => (p.$warn ? NOIR.salmon : NOIR.ash)};
+  flex-shrink: 0;
+  min-width: 20px;
+  text-align: right;
+  transition: color 0.2s;
+`;
+
+// ─── Tags block ───────────────────────────────────────────────────────────────
+
+const TagsBlock = styled.div`
+  margin-bottom: 28px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid ${NOIR.dust};
+`;
+
+const BlockLabel = styled.div`
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: ${NOIR.ash};
+  margin-bottom: 10px;
+`;
+
+const BlockHint = styled.span`
+  font-size: 0.55rem;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.65;
+`;
+
+const TagsRow = styled.div`
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  padding: 10px 12px;
-  border: 1px solid ${NOIR.dust};
-  min-height: 44px;
-  background: rgba(10, 10, 11, 0.02);
-  transition: border-color 0.15s;
-
-  &:focus-within {
-    border-color: ${NOIR.salmon};
-    background: ${NOIR.warmWhite};
-  }
+  min-height: 28px;
 `;
 
-const TagChip = styled.span`
+const TagPill = styled.span`
   display: inline-flex;
   align-items: center;
   gap: 5px;
   font-family: 'DM Mono', 'Courier New', monospace;
   font-size: 0.6rem;
-  font-weight: 400;
   letter-spacing: 0.05em;
-  padding: 3px 8px;
+  padding: 4px 9px;
   border: 1px solid ${NOIR.dust};
   color: ${NOIR.ash};
   transition: border-color 0.15s, color 0.15s;
-
   &:hover {
     border-color: ${NOIR.salmon};
     color: ${NOIR.salmon};
   }
 `;
 
-const ChipRemove = styled.button`
+const PillX = styled.button`
   display: flex;
   align-items: center;
   background: none;
   border: none;
   padding: 0;
   cursor: pointer;
-  color: ${NOIR.ash};
-  font-size: 0.5rem;
-  transition: color 0.15s;
+  color: inherit;
+  font-size: 0.45rem;
+  opacity: 0.55;
+  transition: opacity 0.15s;
   &:hover {
-    color: ${NOIR.salmon};
+    opacity: 1;
   }
 `;
 
-const TagInlineInput = styled.input`
+const TagInput = styled.input`
   background: none;
   border: none;
   outline: none;
   font-family: 'Instrument Sans', sans-serif;
   font-size: 0.85rem;
   color: ${NOIR.charcoal};
-  min-width: 100px;
+  min-width: 80px;
   flex: 1;
-
   &::placeholder {
-    color: ${NOIR.ash};
-    font-size: 0.78rem;
+    color: ${NOIR.dust};
   }
 `;
 
-// ─── Action row ───────────────────────────────────────────────────────────────
+// ─── Preview block ────────────────────────────────────────────────────────────
 
-const ActionRow = styled.div`
+const PreviewBlock = styled.div`
+  margin-bottom: 28px;
+  padding: 16px 18px;
+  border-left: 2px solid ${NOIR.dust};
+  background: rgba(10, 10, 11, 0.02);
+`;
+
+const PreviewHeadline = styled.p`
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  font-style: italic;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: ${NOIR.ink};
+  margin: 0 0 6px;
+`;
+
+const PreviewBody = styled.p`
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: ${NOIR.ash};
+  margin: 0;
+`;
+
+// ─── Actions ─────────────────────────────────────────────────────────────────
+
+const ActionsRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 20px 0 0;
-  border-top: 1px solid ${NOIR.border};
-  margin-top: 4px;
 `;
 
 const DeleteBtn = styled.button`
@@ -525,28 +547,25 @@ const DeleteBtn = styled.button`
   align-items: center;
   gap: 7px;
   background: none;
-  border: 1px solid rgba(192, 57, 43, 0.25);
+  border: 1px solid rgba(192, 57, 43, 0.22);
   color: #c0392b;
   font-family: 'DM Mono', 'Courier New', monospace;
-  font-size: 0.62rem;
-  font-weight: 400;
-  letter-spacing: 0.08em;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 9px 16px;
+  padding: 10px 18px;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
-
   svg {
-    width: 11px;
-    height: 11px;
+    width: 10px;
+    height: 10px;
   }
-
   &:hover:not(:disabled) {
     background: rgba(192, 57, 43, 0.06);
     border-color: #c0392b;
   }
   &:disabled {
-    opacity: 0.45;
+    opacity: 0.4;
     cursor: not-allowed;
   }
 `;
@@ -559,35 +578,32 @@ const SaveBtn = styled.button`
   border: 1px solid ${NOIR.salmon};
   color: ${NOIR.warmWhite};
   font-family: 'DM Mono', 'Courier New', monospace;
-  font-size: 0.62rem;
-  font-weight: 400;
-  letter-spacing: 0.08em;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 9px 20px;
+  padding: 10px 22px;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
-
   svg {
-    width: 11px;
-    height: 11px;
+    width: 10px;
+    height: 10px;
   }
-
   &:hover:not(:disabled) {
     background: ${NOIR.charcoal};
     border-color: ${NOIR.charcoal};
   }
   &:disabled {
-    opacity: 0.45;
+    opacity: 0.4;
     cursor: not-allowed;
   }
 `;
 
 // ─── Delete modal ─────────────────────────────────────────────────────────────
 
-const ModalBackdrop = styled.div`
+const Backdrop = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(10, 10, 11, 0.55);
+  background: rgba(10, 10, 11, 0.5);
   backdrop-filter: blur(4px);
   z-index: 500;
   display: flex;
@@ -596,20 +612,20 @@ const ModalBackdrop = styled.div`
   padding: 20px;
 `;
 
-const ModalBox = styled.div`
+const Modal = styled.div`
   background: ${NOIR.warmWhite};
   border: 1px solid ${NOIR.dust};
   border-top: 2px solid ${NOIR.salmon};
-  max-width: 400px;
+  max-width: 360px;
   width: 100%;
-  padding: 28px 24px 24px;
-  box-shadow: 0 20px 60px rgba(10, 10, 11, 0.2);
+  padding: 26px 22px 20px;
+  box-shadow: 0 20px 60px rgba(10, 10, 11, 0.18);
 `;
 
 const ModalTitle = styled.h3`
   font-family: 'Cormorant Garamond', 'Georgia', serif;
-  font-size: 1.4rem;
-  font-weight: 600;
+  font-size: 1.3rem;
+  font-weight: 400;
   font-style: italic;
   color: ${NOIR.ink};
   margin: 0 0 10px;
@@ -617,27 +633,27 @@ const ModalTitle = styled.h3`
 
 const ModalBody = styled.p`
   font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.88rem;
+  font-size: 0.87rem;
   line-height: 1.6;
   color: ${NOIR.ash};
-  margin: 0 0 24px;
+  margin: 0 0 20px;
 `;
 
-const ModalActions = styled.div`
+const ModalFooter = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 `;
 
-const ModalCancelBtn = styled.button`
+const ModalCancel = styled.button`
   background: none;
   border: 1px solid ${NOIR.dust};
   color: ${NOIR.ash};
   font-family: 'DM Mono', 'Courier New', monospace;
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 8px 16px;
+  padding: 8px 14px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
   &:hover {
@@ -645,20 +661,19 @@ const ModalCancelBtn = styled.button`
     color: ${NOIR.charcoal};
   }
   &:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
+    opacity: 0.4;
   }
 `;
 
-const ModalConfirmBtn = styled.button`
+const ModalDelete = styled.button`
   background: #c0392b;
   border: 1px solid #c0392b;
   color: ${NOIR.warmWhite};
   font-family: 'DM Mono', 'Courier New', monospace;
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 8px 16px;
+  padding: 8px 14px;
   cursor: pointer;
   transition: background 0.15s;
   &:hover:not(:disabled) {
@@ -666,29 +681,36 @@ const ModalConfirmBtn = styled.button`
     border-color: #96281b;
   }
   &:disabled {
-    opacity: 0.45;
+    opacity: 0.4;
     cursor: not-allowed;
   }
 `;
 
-// ─── Loading skeleton ─────────────────────────────────────────────────────────
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-const LoadingState = styled.div`
+const SkeletonGroup = styled.div`
   padding: 40px 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
 `;
 
-const LoadingBar = styled.div`
-  height: ${(p) => p.$h || '18px'};
+const SkeletonBar = styled.div`
+  height: ${(p) => p.$h || '14px'};
   width: ${(p) => p.$w || '100%'};
-  ${skeletonBg}
+  margin-top: ${(p) => p.$mt || '8px'};
+  background: linear-gradient(
+    90deg,
+    ${NOIR.dust} 25%,
+    ${NOIR.warmWhite} 50%,
+    ${NOIR.dust} 75%
+  );
+  background-size: 500px 100%;
+  animation: ${shimmer} 1.4s ease-in-out infinite;
 `;
 
 // ─── Error ────────────────────────────────────────────────────────────────────
 
-const ErrorBox = styled.div`
+const ErrorCard = styled.div`
   padding: 60px 0;
   display: flex;
   flex-direction: column;
@@ -696,13 +718,13 @@ const ErrorBox = styled.div`
   gap: 20px;
 `;
 
-const ErrorText = styled.div`
+const ErrorMsg = styled.div`
   font-family: 'Instrument Sans', sans-serif;
   font-size: 0.9rem;
   color: #c0392b;
-  background: rgba(192, 57, 43, 0.06);
-  border: 1px solid rgba(192, 57, 43, 0.2);
+  background: rgba(192, 57, 43, 0.05);
+  border: 1px solid rgba(192, 57, 43, 0.18);
   padding: 14px 20px;
-  text-align: center;
   max-width: 400px;
+  text-align: center;
 `;
