@@ -14,6 +14,18 @@ import { useDeleteModal } from '../../context/DeleteModalContext';
 import { COLORS } from '../../theme';
 import { useStories, useDeleteStory } from '../../hooks/queries/useStories';
 
+// ─── NOIR tokens ──────────────────────────────────────────────────────────────
+const NOIR = {
+  ink: '#0a0a0b',
+  warmWhite: '#faf9f7',
+  dust: '#e8e4dd',
+  ash: '#a09a91',
+  charcoal: '#3a3632',
+  border: 'rgba(10,10,11,0.08)',
+  salmon: '#e87c5a',
+  sage: '#7aab8c',
+};
+
 const EnhancedStories = ({ isPWA = false }) => {
   // ── Data ──────────────────────────────────────────────────────────────────
   const { data: stories = [], isLoading: loading, error } = useStories();
@@ -22,7 +34,7 @@ const EnhancedStories = ({ isPWA = false }) => {
   // ── UI state ──────────────────────────────────────────────────────────────
   const [activeStory, setActiveStory] = useState(null);
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [progress, setProgress] = useState(0); // 0–1, drives pill fill
   const [localIsPWA, setLocalIsPWA] = useState(
     window.matchMedia('(display-mode: standalone)').matches
   );
@@ -42,13 +54,16 @@ const EnhancedStories = ({ isPWA = false }) => {
   }, []);
 
   // ── Story progression (RAF-based) ─────────────────────────────────────────
+  // NOTE: progress is 0→1 driven by RAF. PillFill has NO css transition —
+  // that was causing the timer to look frozen (transition fought RAF updates).
   const nextStoryItem = useCallback(() => {
     if (activeStory && activeStoryIndex < activeStory.media.length - 1) {
       setActiveStoryIndex((p) => p + 1);
-      setTimeLeft(10);
+      setProgress(0);
     } else {
       setActiveStory(null);
       setActiveStoryIndex(0);
+      setProgress(0);
     }
   }, [activeStory, activeStoryIndex]);
 
@@ -66,9 +81,9 @@ const EnhancedStories = ({ isPWA = false }) => {
         const duration = 10_000;
         const tick = () => {
           const elapsed = Date.now() - start;
-          const progress = Math.min(elapsed / duration, 1);
-          setTimeLeft(10 - progress * 10);
-          if (progress < 1) rafId = requestAnimationFrame(tick);
+          const p = Math.min(elapsed / duration, 1);
+          setProgress(p);
+          if (p < 1) rafId = requestAnimationFrame(tick);
           else nextStoryItem();
         };
         rafId = requestAnimationFrame(tick);
@@ -112,17 +127,18 @@ const EnhancedStories = ({ isPWA = false }) => {
   const openStory = (story) => {
     setActiveStory(story);
     setActiveStoryIndex(0);
-    setTimeLeft(10);
+    setProgress(0);
   };
   const closeStory = () => {
     setActiveStory(null);
     setActiveStoryIndex(0);
+    setProgress(0);
   };
 
   const handleNext = () => {
     if (activeStory && activeStoryIndex < activeStory.media.length - 1) {
       setActiveStoryIndex((p) => p + 1);
-      setTimeLeft(10);
+      setProgress(0);
     } else {
       closeStory();
     }
@@ -131,7 +147,7 @@ const EnhancedStories = ({ isPWA = false }) => {
   const handlePrev = () => {
     if (activeStoryIndex > 0) {
       setActiveStoryIndex((p) => p - 1);
-      setTimeLeft(10);
+      setProgress(0);
     }
   };
 
@@ -152,7 +168,7 @@ const EnhancedStories = ({ isPWA = false }) => {
   const getExpirationTime = (story) => {
     if (!story?.expiresAt) return '';
     const diffMs = new Date(story.expiresAt) - new Date();
-    if (diffMs <= 0) return 'Expiring…';
+    if (diffMs <= 0) return 'Expiring...';
     const h = Math.floor(diffMs / 3_600_000);
     const m = Math.floor((diffMs % 3_600_000) / 60_000);
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
@@ -209,12 +225,13 @@ const EnhancedStories = ({ isPWA = false }) => {
 
   if (activeStories.length === 0 && !isAuthenticated) return null;
 
+  const currentMedia = activeStory?.media?.[activeStoryIndex];
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
       <StoriesContainer>
         <StoriesWrapper ref={storiesRef}>
-          {/* ── Create Story card ─────────────────────────────────────── */}
           {isAuthenticated && (
             <CreateCard onClick={() => navigate('/create-story')}>
               <CreateThumb>
@@ -226,7 +243,6 @@ const EnhancedStories = ({ isPWA = false }) => {
             </CreateCard>
           )}
 
-          {/* ── Story cards ───────────────────────────────────────────── */}
           {activeStories.map((story) => {
             const firstMedia = story.media?.[0];
             const thumbUrl = firstMedia
@@ -261,28 +277,54 @@ const EnhancedStories = ({ isPWA = false }) => {
         </StoriesWrapper>
       </StoriesContainer>
 
-      {/* ── STORY VIEWER ────────────────────────────────────────────────── */}
+      {/* ── STORY VIEWER ──────────────────────────────────────────────────── */}
       {activeStory && (
         <StoryModal>
-          {/* Progress pills */}
+          {/* ── Media — full bleed background ─────────────────────────── */}
+          <StoryContent>
+            {currentMedia?.mediaType === 'video' ? (
+              <StoryVideo
+                src={currentMedia.mediaUrl}
+                autoPlay
+                playsInline
+                onEnded={handleNext}
+              />
+            ) : (
+              <StoryImage
+                src={currentMedia?.mediaUrl}
+                alt={activeStory.title || 'Story'}
+              />
+            )}
+          </StoryContent>
+
+          {/* ── Grain overlay — matches PostCard ──────────────────────── */}
+          <GrainOverlay />
+
+          {/* ── Top scrim ─────────────────────────────────────────────── */}
+          <TopScrim />
+
+          {/* ── Bottom scrim ──────────────────────────────────────────── */}
+          <BottomScrim />
+
+          {/* ── Progress pills ────────────────────────────────────────── */}
+          {/* PillFill has NO css transition — RAF handles smoothness      */}
           <ProgressTrack>
-            {activeStory.media.map((_, i) => {
-              const progress =
+            {activeStory.media.map((m, i) => {
+              const pillProgress =
                 i < activeStoryIndex
                   ? 1
-                  : i === activeStoryIndex &&
-                    activeStory.media[i].mediaType !== 'video'
-                  ? (10 - timeLeft) / 10
+                  : i === activeStoryIndex && m.mediaType !== 'video'
+                  ? progress
                   : 0;
               return (
                 <PillTrack key={i}>
-                  <PillFill $progress={progress} $complete={progress >= 1} />
+                  <PillFill style={{ width: `${pillProgress * 100}%` }} />
                 </PillTrack>
               );
             })}
           </ProgressTrack>
 
-          {/* Top controls */}
+          {/* ── Top controls: close + delete ──────────────────────────── */}
           <ViewerControls>
             <ControlBtn onClick={closeStory} aria-label='Close story'>
               <FaTimes />
@@ -298,31 +340,31 @@ const EnhancedStories = ({ isPWA = false }) => {
             )}
           </ViewerControls>
 
-          {/* Media */}
-          <StoryContent>
-            {activeStory.media[activeStoryIndex].mediaType === 'video' ? (
-              <StoryVideo
-                src={activeStory.media[activeStoryIndex].mediaUrl}
-                controls
-                autoPlay
-                onEnded={handleNext}
-                playsInline
-              />
-            ) : (
-              <StoryImage
-                src={activeStory.media[activeStoryIndex].mediaUrl}
-                alt={activeStory.title}
-              />
-            )}
-          </StoryContent>
-
-          {/* Bottom info bar */}
+          {/* ── Bottom info: author · title · caption · expiry ────────── */}
           <ViewerInfoBar>
-            <ViewerTitle>{activeStory.title || 'Story'}</ViewerTitle>
-            <ViewerExpiry>{getExpirationTime(activeStory)}</ViewerExpiry>
+            <AuthorRow>
+              <AuthorName>Andrew Butler</AuthorName>
+              <ExpiryBadge>{getExpirationTime(activeStory)}</ExpiryBadge>
+            </AuthorRow>
+
+            {activeStory.title && (
+              <ViewerTitle>{activeStory.title}</ViewerTitle>
+            )}
+
+            {activeStory.caption && (
+              <ViewerCaption>{activeStory.caption}</ViewerCaption>
+            )}
+
+            {/* Slide counter if multi-media */}
+            {activeStory.media.length > 1 && (
+              <SlideCounter>
+                {String(activeStoryIndex + 1).padStart(2, '0')} /{' '}
+                {String(activeStory.media.length).padStart(2, '0')}
+              </SlideCounter>
+            )}
           </ViewerInfoBar>
 
-          {/* Tap zones */}
+          {/* ── Tap zones (left = prev, right = next) ─────────────────── */}
           <TapZones>
             <TapZone onClick={handlePrev} />
             <TapZone onClick={handleNext} />
@@ -350,6 +392,11 @@ const fadeIn = keyframes`
 const slideUp = keyframes`
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0);    }
+`;
+
+const slideUpViewer = keyframes`
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
 `;
 
 // ─── Shelf ────────────────────────────────────────────────────────────────────
@@ -399,12 +446,9 @@ const StoryCard = styled.div`
 `;
 
 const ringStyle = css`
-  /* gradient ring via box-shadow + padding trick */
   padding: 2px;
   background: ${(p) =>
-    p.$isOwn
-      ? `linear-gradient(135deg, ${COLORS.primarySalmon}, ${COLORS.primaryMint})`
-      : !p.$viewed
+    p.$isOwn || !p.$viewed
       ? `linear-gradient(135deg, ${COLORS.primarySalmon}, ${COLORS.primaryMint})`
       : COLORS.border};
 `;
@@ -600,17 +644,19 @@ const ErrorMessage = styled.p`
   font-size: 0.875rem;
 `;
 
-// ─── Story viewer ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// STORY VIEWER — Editorial Noir
+// ─────────────────────────────────────────────────────────────────────────────
 
 const StoryModal = styled.div`
   position: fixed;
   inset: 0;
-  background: #000;
+  background: ${NOIR.ink};
   z-index: 1000;
   display: flex;
   flex-direction: column;
   touch-action: none;
-  animation: ${fadeIn} 0.2s ease;
+  animation: ${fadeIn} 0.18s ease;
 
   @supports (padding: env(safe-area-inset-top)) {
     padding-top: env(safe-area-inset-top, 0);
@@ -618,19 +664,23 @@ const StoryModal = styled.div`
   }
 `;
 
+// ── Full-bleed media ──────────────────────────────────────────────────────────
+
 const StoryContent = styled.div`
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000;
+  background: ${NOIR.ink};
 `;
 
 const StoryImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* Match PostCard's editorial desaturation */
+  filter: saturate(0.88) contrast(1.04);
 `;
 
 const StoryVideo = styled.video`
@@ -640,7 +690,50 @@ const StoryVideo = styled.video`
   outline: none;
 `;
 
-// ─── Progress pills ───────────────────────────────────────────────────────────
+// ── Overlays ──────────────────────────────────────────────────────────────────
+
+const GrainOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+  mix-blend-mode: overlay;
+`;
+
+const TopScrim = styled.div`
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 22%;
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 10, 11, 0.72) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 3;
+`;
+
+const BottomScrim = styled.div`
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 48%;
+  background: linear-gradient(
+    to top,
+    rgba(10, 10, 11, 0.88) 0%,
+    rgba(10, 10, 11, 0.32) 55%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 3;
+`;
+
+// ── Progress pills ─────────────────────────────────────────────────────────────
+// Width is driven by inline style from RAF — NO css transition here.
+// A transition would introduce lag that makes the bar look broken.
 
 const ProgressTrack = styled.div`
   position: absolute;
@@ -649,75 +742,72 @@ const ProgressTrack = styled.div`
   right: 0;
   display: flex;
   gap: 4px;
-  padding: 12px 12px 8px;
+  padding: 14px 14px 0;
   z-index: 10;
   pointer-events: none;
 
   @supports (padding-top: env(safe-area-inset-top)) {
-    padding-top: calc(12px + env(safe-area-inset-top, 0));
+    padding-top: calc(14px + env(safe-area-inset-top, 0));
   }
 `;
 
 const PillTrack = styled.div`
   flex: 1;
-  height: 3px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.28);
+  height: 2px;
+  background: rgba(255, 255, 255, 0.2);
   overflow: hidden;
 `;
 
+// No styled-component for PillFill — width is set via inline style from RAF
+// Wrapping in styled would re-create the component on every progress tick
 const PillFill = styled.div`
   height: 100%;
-  width: ${(p) => (p.$complete ? '100%' : `${(p.$progress || 0) * 100}%`)};
-  background: linear-gradient(
-    90deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.primaryMint}
-  );
-  border-radius: 2px;
-  transition: width 0.1s linear;
-  box-shadow: 0 0 6px ${COLORS.primarySalmon}66;
+  background: linear-gradient(90deg, ${NOIR.salmon}, ${NOIR.sage});
+  /* NO transition — RAF handles smoothness at 60fps */
+  will-change: width;
 `;
 
-// ─── Top controls ─────────────────────────────────────────────────────────────
+// ── Top controls ──────────────────────────────────────────────────────────────
 
 const ViewerControls = styled.div`
   position: absolute;
-  top: 16px;
+  top: 18px;
   right: 14px;
   z-index: 11;
   display: flex;
-  gap: 10px;
+  gap: 8px;
 
   @supports (padding-top: env(safe-area-inset-top)) {
-    top: calc(16px + env(safe-area-inset-top, 0));
+    top: calc(18px + env(safe-area-inset-top, 0));
   }
 `;
 
 const ControlBtn = styled.button`
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 0;
+  border: 1px solid
+    ${(p) => (p.$danger ? 'rgba(192,57,43,0.4)' : 'rgba(255,255,255,0.15)')};
   background: ${(p) =>
-    p.$danger ? `${COLORS.error}cc` : 'rgba(0, 0, 0, 0.5)'};
+    p.$danger ? 'rgba(192,57,43,0.35)' : 'rgba(10,10,11,0.45)'};
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
+  transition: background 0.15s, transform 0.15s;
 
   &:hover {
-    background: ${(p) => (p.$danger ? COLORS.error : 'rgba(0, 0, 0, 0.75)')};
-    transform: scale(1.08);
+    background: ${(p) =>
+      p.$danger ? 'rgba(192,57,43,0.7)' : 'rgba(10,10,11,0.75)'};
+    transform: scale(1.05);
   }
 `;
 
-// ─── Bottom info bar ──────────────────────────────────────────────────────────
+// ── Bottom info bar ───────────────────────────────────────────────────────────
 
 const ViewerInfoBar = styled.div`
   position: absolute;
@@ -725,35 +815,81 @@ const ViewerInfoBar = styled.div`
   left: 0;
   right: 0;
   z-index: 10;
-  padding: 28px 18px 20px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, transparent 100%);
+  padding: 0 20px 24px;
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 6px;
   pointer-events: none;
 
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
-    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0));
   }
 `;
 
-const ViewerTitle = styled.span`
-  font-size: 1rem;
-  font-weight: 700;
-  color: #fff;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
-  letter-spacing: -0.01em;
+const AuthorRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
 `;
 
-const ViewerExpiry = styled.span`
-  font-size: 0.72rem;
+const AuthorName = styled.span`
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.6rem;
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+`;
+
+const ExpiryBadge = styled.span`
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.58rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: ${NOIR.sage};
+  opacity: 0.85;
+`;
+
+const ViewerTitle = styled.h2`
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
   font-weight: 600;
-  color: ${COLORS.accentMint};
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
-  letter-spacing: 0.3px;
+  font-style: italic;
+  font-size: 2rem;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0;
+  text-shadow: 0 2px 16px rgba(10, 10, 11, 0.5);
 `;
 
-// ─── Tap zones ────────────────────────────────────────────────────────────────
+const ViewerCaption = styled.p`
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+  letter-spacing: 0.01em;
+  /* Clamp to 3 lines so long captions don't crowd the frame */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-shadow: 0 1px 8px rgba(10, 10, 11, 0.6);
+`;
+
+const SlideCounter = styled.span`
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.58rem;
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 4px;
+`;
+
+// ── Tap zones ─────────────────────────────────────────────────────────────────
 
 const TapZones = styled.div`
   position: absolute;
