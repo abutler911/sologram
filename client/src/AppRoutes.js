@@ -47,7 +47,7 @@ const AIContentGenerator = React.lazy(() =>
 
 // ── Vault (Easter egg destinations) ──────────────────────────────────────────
 const SoloGramWrapped = React.lazy(() =>
-  import('./pages/vault/SologramWrapped')
+  import('./pages/vault/SoloGramWrapped')
 );
 const HackerTerminal = React.lazy(() => import('./pages/vault/HackerTerminal'));
 
