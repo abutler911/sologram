@@ -371,6 +371,15 @@ const FeedWrapper = styled.div`
   min-height: 100vh;
   background: ${COLORS.background};
   animation: ${fadeUp} 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  /* Push content right to clear the fixed sidebar — mirrors sidebar widths
+     in AppNav: 72px at 960-1199px, 240px at 1200px+ */
+  @media (min-width: 960px) {
+    margin-left: 72px;
+  }
+  @media (min-width: 1200px) {
+    margin-left: 240px;
+  }
 `;
 
 // ── Sticky header ─────────────────────────────────────────────────────────────
