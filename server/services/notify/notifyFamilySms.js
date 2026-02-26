@@ -7,8 +7,7 @@ const QUOTA_THRESHOLD = 15;
 
 async function checkQuota(res) {
   if (
-    res &&
-    res.quotaRemaining !== undefined &&
+    res?.quotaRemaining !== undefined &&
     res.quotaRemaining <= QUOTA_THRESHOLD
   ) {
     console.warn(`⚠️ LOW QUOTA ALERT: ${res.quotaRemaining} credits left.`);
@@ -17,11 +16,13 @@ async function checkQuota(res) {
 
 const firstName = (n = '') => String(n).split(' ')[0] || 'friend';
 const truncate = (s, n) => {
-  const limit = Math.max(0, n); // Ensure we never pass a negative number
+  const limit = Math.max(0, n);
   return s && s.length > limit ? s.slice(0, limit - 1) + '...' : s;
 };
 
-function makeMessage({ kind, title, url, name, hours }) {
+function makeMessage({ kind, title, name, hours }) {
+  // URL intentionally omitted — Textbelt blocks outbound URLs.
+  // Recipients open the app directly from the notification.
   const baseByKind = {
     post: `${BRAND}: ${firstName(name)}, new post: "${title}"`,
     story: `${BRAND}: new story: "${title}"${hours ? ` (${hours}h)` : ''}`,
@@ -29,25 +30,22 @@ function makeMessage({ kind, title, url, name, hours }) {
     default: `${BRAND}: update: "${title}"`,
   };
 
-  const base = baseByKind[kind] || baseByKind.default;
-  const link = url ? ` ${url}` : '';
-  let fullMessage = `${base}${link}${OPTOUT}`;
+  let fullMessage = `${baseByKind[kind] || baseByKind.default}${OPTOUT}`;
 
-  // If the total message is > 160, we need to shrink the TITLE
+  // Shrink title if message exceeds 160 chars
   if (fullMessage.length > 160) {
     const overflow = fullMessage.length - 160;
-    // Calculate new title length, ensuring at least 10 chars remain
-    const targetTitleLength = Math.max(10, (title?.length || 0) - overflow);
-    const shortenedTitle = truncate(title, targetTitleLength);
+    const targetTitleLen = Math.max(10, (title?.length || 0) - overflow);
+    const shortTitle = truncate(title, targetTitleLen);
+    const base = (baseByKind[kind] || baseByKind.default).replace(
+      `"${title}"`,
+      `"${shortTitle}"`
+    );
+    fullMessage = `${base}${OPTOUT}`;
 
-    // Reconstruct the message with the shorter title
-    const newBase = base.replace(`"${title}"`, `"${shortenedTitle}"`);
-    fullMessage = `${newBase}${link}${OPTOUT}`;
-
-    // Hard cap at 160 just in case
-    if (fullMessage.length > 160) {
+    // Hard cap just in case
+    if (fullMessage.length > 160)
       fullMessage = fullMessage.slice(0, 157) + '...';
-    }
   }
 
   return fullMessage;
@@ -62,7 +60,6 @@ async function notifyFamilySms(kind, payload) {
     const message = makeMessage({
       kind,
       title,
-      url: payload?.url,
       name: r.name,
       hours: payload?.hours,
     });
@@ -72,10 +69,8 @@ async function notifyFamilySms(kind, payload) {
     );
 
     try {
-      let res = await sendSmsWithRetry(r.phone, message);
-
+      const res = await sendSmsWithRetry(r.phone, message);
       if (out.length === 0) await checkQuota(res);
-
       out.push({ name: r.name, phone: r.phone, ...res });
       console.log(`✅ SMS result for ${r.name}:`, res);
     } catch (err) {
@@ -88,8 +83,9 @@ async function notifyFamilySms(kind, payload) {
       });
     }
 
-    await new Promise((s) => setTimeout(s, 200)); // Slightly longer delay
+    await new Promise((s) => setTimeout(s, 200));
   }
+
   return out;
 }
 
