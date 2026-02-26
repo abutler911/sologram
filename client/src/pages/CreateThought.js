@@ -16,33 +16,35 @@ import { AuthContext } from '../context/AuthContext';
 import MainLayout from '../components/layout/MainLayout';
 import { COLORS } from '../theme';
 
-// AI Content Generator Modal Component
+// AI Content Generator Modal — inline for CreateThought
 const AIContentModal = ({ isOpen, onClose, onApplyContent, currentMood }) => {
   const [formData, setFormData] = useState({
     description: '',
-    contentType: 'general',
-    tone: 'casual',
+    contentType: 'thought',
+    tone: 'thoughtful',
     additionalContext: '',
   });
   const [generatedContent, setGeneratedContent] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
 
+  // ── Andrew's actual content categories ───────────────────────────────────
   const contentTypes = [
-    { value: 'general', label: 'General Thought' },
-    { value: 'reflection', label: 'Personal Reflection' },
-    { value: 'inspiration', label: 'Inspiration' },
-    { value: 'creative', label: 'Creative Expression' },
-    { value: 'observation', label: 'Life Observation' },
-    { value: 'gratitude', label: 'Gratitude' },
+    { value: 'thought', label: 'Thought' },
+    { value: 'observation', label: 'Observation' },
+    { value: 'photography', label: 'Photography' },
+    { value: 'aviation', label: 'Aviation & Training' },
+    { value: 'reading', label: 'Reading' },
+    { value: 'music', label: 'Piano & Music' },
+    { value: 'travel', label: 'Travel & Utah' },
   ];
 
+  // ── Andrew's voice ────────────────────────────────────────────────────────
   const tones = [
-    { value: 'casual', label: 'Casual & Friendly' },
     { value: 'thoughtful', label: 'Thoughtful' },
-    { value: 'playful', label: 'Fun & Playful' },
-    { value: 'inspirational', label: 'Inspirational' },
-    { value: 'minimalist', label: 'Clean & Minimal' },
+    { value: 'dry', label: 'Dry & Understated' },
+    { value: 'reflective', label: 'Reflective' },
+    { value: 'observational', label: 'Observational' },
   ];
 
   const handleInputChange = (e) => {
@@ -53,7 +55,7 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent, currentMood }) => {
 
   const handleGenerate = async () => {
     if (!formData.description.trim()) {
-      setError('Please provide a description for your thought');
+      setError('Describe what you want to post about');
       return;
     }
 
@@ -61,7 +63,6 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent, currentMood }) => {
     setError('');
 
     try {
-      // Add mood context to the request
       const requestData = {
         ...formData,
         additionalContext:
@@ -86,29 +87,49 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent, currentMood }) => {
     if (generatedContent) {
       onApplyContent(generatedContent);
       onClose();
+      setGeneratedContent(null);
+      setFormData({
+        description: '',
+        contentType: 'thought',
+        tone: 'thoughtful',
+        additionalContext: '',
+      });
+      setError('');
     }
+  };
+
+  const handleClose = () => {
+    onClose();
+    setGeneratedContent(null);
+    setFormData({
+      description: '',
+      contentType: 'thought',
+      tone: 'thoughtful',
+      additionalContext: '',
+    });
+    setError('');
   };
 
   if (!isOpen) return null;
 
   return (
-    <ModalOverlay onClick={onClose}>
+    <ModalOverlay onClick={handleClose}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
           <h3>✨ Generate AI Content</h3>
-          <CloseButton onClick={onClose}>
+          <CloseButton onClick={handleClose}>
             <FaTimes />
           </CloseButton>
         </ModalHeader>
 
         <ModalBody>
           <FormGroup>
-            <Label>What's your thought about? *</Label>
+            <Label>What do you want to post about? *</Label>
             <Input
               name='description'
               value={formData.description}
               onChange={handleInputChange}
-              placeholder="Describe what you want to share... (e.g., 'Reflection on morning coffee routine')"
+              placeholder='Describe it in your own words...'
               maxLength='300'
             />
             <CharCount>{formData.description.length}/300</CharCount>
@@ -116,7 +137,7 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent, currentMood }) => {
 
           <InputRow>
             <FormGroup>
-              <Label>Content Type</Label>
+              <Label>Type</Label>
               <Select
                 name='contentType'
                 value={formData.contentType}
@@ -147,12 +168,12 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent, currentMood }) => {
           </InputRow>
 
           <FormGroup>
-            <Label>Additional Context (Optional)</Label>
+            <Label>Anything else? (Optional)</Label>
             <Input
               name='additionalContext'
               value={formData.additionalContext}
               onChange={handleInputChange}
-              placeholder='Any specific details or style preferences...'
+              placeholder='Mood, what sparked it, anything else worth knowing...'
               maxLength='150'
             />
           </FormGroup>
@@ -241,7 +262,6 @@ const CreateThought = () => {
     { value: 'amused', label: 'Amused', emoji: '😄' },
   ];
 
-  // Updated mood colors to match new theme
   const moodColors = {
     inspired: COLORS.primaryKhaki,
     reflective: COLORS.primaryBlueGray,
@@ -254,15 +274,12 @@ const CreateThought = () => {
   };
 
   const handleAIContentApply = (generatedContent) => {
-    // Apply the content
     setContent(generatedContent.caption || generatedContent.title || '');
 
-    // Add suggested tags (limit to available slots)
     if (generatedContent.tags && generatedContent.tags.length > 0) {
       const availableSlots = 5 - tags.length;
       const newTags = generatedContent.tags.slice(0, availableSlots);
       setTags((prev) => [...prev, ...newTags]);
-
       if (newTags.length > 0) {
         toast.success(`Applied content and added ${newTags.length} tags!`);
       } else {
@@ -276,15 +293,11 @@ const CreateThought = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     if (file.size > 25 * 1024 * 1024) {
       toast.error('Image size should be less than 25MB');
       return;
     }
-
     setMedia(file);
-
-    // Create preview
     const reader = new FileReader();
     reader.onload = () => {
       setPreview(reader.result);
@@ -295,20 +308,16 @@ const CreateThought = () => {
   const removeImage = () => {
     setMedia(null);
     setPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const addTag = (tagText = null) => {
     const tagToAdd = tagText || currentTag.trim();
-
     if (!tagToAdd || tags.includes(tagToAdd)) return;
     if (tags.length >= 5) {
       toast.error('Maximum 5 tags allowed');
       return;
     }
-
     setTags([...tags, tagToAdd]);
     setCurrentTag('');
   };
@@ -316,9 +325,7 @@ const CreateThought = () => {
   const handleTagInputKeyDown = (e) => {
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
-      if (currentTag.trim()) {
-        addTag();
-      }
+      if (currentTag.trim()) addTag();
     } else if (e.key === 'Backspace' && !currentTag && tags.length > 0) {
       setTags(tags.slice(0, -1));
     }
@@ -328,9 +335,7 @@ const CreateThought = () => {
     const value = e.target.value;
     if (value.includes(' ')) {
       const tagText = value.split(' ')[0].trim();
-      if (tagText) {
-        addTag(tagText);
-      }
+      if (tagText) addTag(tagText);
     } else {
       setCurrentTag(value);
     }
@@ -342,12 +347,10 @@ const CreateThought = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!content.trim()) {
       toast.error('Please enter some content');
       return;
     }
-
     if (content.length > 800) {
       toast.error('Content must be 800 characters or less');
       return;
@@ -355,18 +358,12 @@ const CreateThought = () => {
 
     try {
       setLoading(true);
-
       const formData = new FormData();
       formData.append('content', content);
       formData.append('mood', mood);
       formData.append('tags', JSON.stringify(tags));
-
-      if (media) {
-        formData.append('media', media);
-      }
-
+      if (media) formData.append('media', media);
       await axios.post('/api/thoughts', formData);
-
       toast.success('Thought created successfully!');
       navigate('/thoughts');
     } catch (err) {
@@ -530,7 +527,8 @@ const CreateThought = () => {
   );
 };
 
-// Existing styled components remain the same...
+// ─── Styled Components ────────────────────────────────────────────────────────
+
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
   min-height: 100vh;
@@ -542,7 +540,6 @@ const Header = styled.div`
   flex-direction: column;
   padding: 0 2rem;
   margin-bottom: 2rem;
-
   @media (max-width: 768px) {
     padding: 0 1rem;
   }
@@ -555,11 +552,9 @@ const BackLink = styled(Link)`
   text-decoration: none;
   margin-bottom: 1rem;
   transition: color 0.3s;
-
   &:hover {
     color: ${COLORS.primarySalmon};
   }
-
   svg {
     margin-right: 0.5rem;
   }
@@ -581,7 +576,6 @@ const FormGroup = styled.div`
   margin-bottom: 1.5rem;
 `;
 
-// New styled components for AI integration
 const ContentHeader = styled.div`
   display: flex;
   justify-content: space-between;
@@ -607,18 +601,15 @@ const AIButton = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
   &:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
-
   svg {
     font-size: 1rem;
   }
 `;
 
-// Modal styled components
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -650,7 +641,6 @@ const ModalHeader = styled.div`
   align-items: center;
   padding: 1.5rem;
   border-bottom: 1px solid ${COLORS.border};
-
   h3 {
     margin: 0;
     color: ${COLORS.textPrimary};
@@ -665,7 +655,6 @@ const CloseButton = styled.button`
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 4px;
-
   &:hover {
     background: ${COLORS.elevatedBackground};
     color: ${COLORS.textPrimary};
@@ -692,13 +681,11 @@ const Input = styled.input`
   padding: 0.75rem;
   color: ${COLORS.textPrimary};
   font-size: 0.875rem;
-
   &:focus {
     outline: none;
     border-color: ${COLORS.primarySalmon};
     box-shadow: 0 0 0 3px ${COLORS.primarySalmon}20;
   }
-
   &::placeholder {
     color: ${COLORS.textTertiary};
   }
@@ -713,7 +700,6 @@ const Select = styled.select`
   color: ${COLORS.textPrimary};
   font-size: 0.875rem;
   cursor: pointer;
-
   &:focus {
     outline: none;
     border-color: ${COLORS.primarySalmon};
@@ -725,7 +711,6 @@ const InputRow = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
-
   @media (max-width: 480px) {
     grid-template-columns: 1fr;
   }
@@ -771,12 +756,10 @@ const GenerateButton = styled.button`
   justify-content: center;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
-
   &:hover:not(:disabled) {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px ${COLORS.primarySalmon}30;
   }
-
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -791,7 +774,6 @@ const LoadingSpinner = styled.div`
   border-top: 2px solid currentColor;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-
   @keyframes spin {
     to {
       transform: rotate(360deg);
@@ -803,7 +785,6 @@ const GeneratedSection = styled.div`
   border-top: 1px solid ${COLORS.border};
   padding-top: 1.5rem;
   animation: slideIn 0.3s ease;
-
   @keyframes slideIn {
     from {
       opacity: 0;
@@ -821,18 +802,15 @@ const SectionTitle = styled.h4`
   margin: 0 0 1rem 0;
   font-size: 1rem;
 `;
-
 const ContentPreview = styled.div`
   margin-bottom: 1rem;
 `;
-
 const ContentLabel = styled.div`
   font-size: 0.8rem;
   font-weight: 500;
   color: ${COLORS.textSecondary};
   margin-bottom: 0.5rem;
 `;
-
 const ContentBox = styled.div`
   background: ${COLORS.elevatedBackground};
   border: 1px solid ${COLORS.border};
@@ -842,13 +820,11 @@ const ContentBox = styled.div`
   line-height: 1.5;
   font-size: 0.875rem;
 `;
-
 const TagsPreview = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 `;
-
 const TagPreview = styled.span`
   background: ${COLORS.primarySalmon}20;
   color: ${COLORS.primarySalmon};
@@ -874,7 +850,6 @@ const SecondaryButton = styled.button`
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
-
   &:hover {
     background: ${COLORS.border};
     color: ${COLORS.textPrimary};
@@ -892,14 +867,12 @@ const ApplyButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-
   &:hover {
     background: ${COLORS.accentMint};
     transform: translateY(-1px);
   }
 `;
 
-// Existing styled components continue...
 const ContentTextarea = styled.textarea`
   width: 100%;
   background-color: ${COLORS.cardBackground};
@@ -910,12 +883,10 @@ const ContentTextarea = styled.textarea`
   font-size: 1.125rem;
   min-height: 150px;
   resize: vertical;
-
   &:focus {
     outline: none;
     border-color: ${COLORS.primarySalmon};
   }
-
   &::placeholder {
     color: ${COLORS.textTertiary};
   }
@@ -924,7 +895,6 @@ const ContentTextarea = styled.textarea`
 const MoodSelector = styled.div`
   margin-bottom: 1.5rem;
 `;
-
 const MoodOptions = styled.div`
   display: flex;
   flex-wrap: wrap;
@@ -932,22 +902,19 @@ const MoodOptions = styled.div`
 `;
 
 const MoodOption = styled.button`
-  background-color: ${(props) =>
-    props.selected ? props.moodColor : COLORS.elevatedBackground};
-  color: ${(props) =>
-    props.selected ? COLORS.textPrimary : COLORS.textSecondary};
+  background-color: ${(p) =>
+    p.selected ? p.moodColor : COLORS.elevatedBackground};
+  color: ${(p) => (p.selected ? COLORS.textPrimary : COLORS.textSecondary)};
   border: none;
   border-radius: 999px;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
-
   &:hover {
-    background-color: ${(props) => props.moodColor};
+    background-color: ${(p) => p.moodColor};
     color: ${COLORS.textPrimary};
   }
-
   span {
     margin-right: 0.25rem;
   }
@@ -968,13 +935,11 @@ const TagInputField = styled.input`
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
   transition: border-color 0.3s ease;
-
   &:focus {
     outline: none;
     border-color: ${COLORS.primarySalmon};
     box-shadow: 0 0 0 3px rgba(211, 119, 106, 0.1);
   }
-
   &::placeholder {
     color: ${COLORS.textTertiary};
   }
@@ -986,42 +951,20 @@ const TagInputPreview = styled.div`
   right: 1rem;
   transform: translateY(-50%);
   background-color: rgba(
-    ${(props) => {
-      const hexColor = props.moodColor || COLORS.primarySalmon;
-      const r = parseInt(hexColor.slice(1, 3), 16);
-      const g = parseInt(hexColor.slice(3, 5), 16);
-      const b = parseInt(hexColor.slice(5, 7), 16);
-      return `${r}, ${g}, ${b}, 0.15`;
+    ${(p) => {
+      const h = p.moodColor || COLORS.primarySalmon;
+      const r = parseInt(h.slice(1, 3), 16),
+        g = parseInt(h.slice(3, 5), 16),
+        b = parseInt(h.slice(5, 7), 16);
+      return `${r},${g},${b},0.15`;
     }}
   );
-  color: ${(props) => props.moodColor || COLORS.primarySalmon};
+  color: ${(p) => p.moodColor || COLORS.primarySalmon};
   padding: 0.25rem 0.5rem;
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 500;
-  border: 1px solid
-    rgba(
-      ${(props) => {
-        const hexColor = props.moodColor || COLORS.primarySalmon;
-        const r = parseInt(hexColor.slice(1, 3), 16);
-        const g = parseInt(hexColor.slice(3, 5), 16);
-        const b = parseInt(hexColor.slice(5, 7), 16);
-        return `${r}, ${g}, ${b}, 0.3`;
-      }}
-    );
   pointer-events: none;
-  animation: fadeIn 0.2s ease-in;
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-50%) scale(0.9);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(-50%) scale(1);
-    }
-  }
 `;
 
 const TagsContainer = styled.div`
@@ -1036,17 +979,6 @@ const TagsContainer = styled.div`
   min-height: 2.5rem;
   align-items: flex-start;
   align-content: flex-start;
-
-  &:empty::before {
-    content: 'Your tags will appear here...';
-    color: ${COLORS.textTertiary};
-    font-size: 0.875rem;
-    font-style: italic;
-    display: flex;
-    align-items: center;
-    height: 100%;
-    min-height: 1rem;
-  }
 `;
 
 const Tag = styled.div`
@@ -1054,33 +986,20 @@ const Tag = styled.div`
   align-items: center;
   gap: 0.5rem;
   background-color: rgba(
-    ${(props) => {
-      const hexColor = props.moodColor || COLORS.primarySalmon;
-      const r = parseInt(hexColor.slice(1, 3), 16);
-      const g = parseInt(hexColor.slice(3, 5), 16);
-      const b = parseInt(hexColor.slice(5, 7), 16);
-      return `${r}, ${g}, ${b}, 0.2`;
+    ${(p) => {
+      const h = p.moodColor || COLORS.primarySalmon;
+      const r = parseInt(h.slice(1, 3), 16),
+        g = parseInt(h.slice(3, 5), 16),
+        b = parseInt(h.slice(5, 7), 16);
+      return `${r},${g},${b},0.2`;
     }}
   );
-  color: ${(props) => props.moodColor || COLORS.primarySalmon};
+  color: ${(p) => p.moodColor || COLORS.primarySalmon};
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
   font-size: 0.875rem;
   font-weight: 500;
   transition: all 0.2s ease;
-
-  &:hover {
-    background-color: rgba(
-      ${(props) => {
-        const hexColor = props.moodColor || COLORS.primarySalmon;
-        const r = parseInt(hexColor.slice(1, 3), 16);
-        const g = parseInt(hexColor.slice(3, 5), 16);
-        const b = parseInt(hexColor.slice(5, 7), 16);
-        return `${r}, ${g}, ${b}, 0.3`;
-      }}
-    );
-    transform: translateY(-1px);
-  }
 `;
 
 const RemoveTagButton = styled.button`
@@ -1097,7 +1016,6 @@ const RemoveTagButton = styled.button`
   height: 16px;
   border-radius: 50%;
   transition: all 0.2s ease;
-
   &:hover {
     background-color: rgba(255, 255, 255, 0.2);
     transform: scale(1.1);
@@ -1120,13 +1038,11 @@ const UploadButton = styled.button`
   padding: 1rem 2rem;
   cursor: pointer;
   transition: all 0.3s;
-
   &:hover {
     background-color: ${COLORS.elevatedBackground};
     border-color: ${COLORS.primarySalmon};
     color: ${COLORS.textPrimary};
   }
-
   svg {
     font-size: 1.125rem;
   }
@@ -1137,7 +1053,6 @@ const ImagePreview = styled.div`
   border-radius: 8px;
   overflow: hidden;
   max-height: 300px;
-
   img {
     width: 100%;
     max-height: 300px;
@@ -1161,7 +1076,6 @@ const RemoveImageButton = styled.button`
   color: white;
   cursor: pointer;
   transition: background-color 0.3s;
-
   &:hover {
     background-color: rgba(255, 0, 0, 0.7);
   }
@@ -1182,11 +1096,9 @@ const SubmitButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.3s;
-
   &:hover {
     background-color: #cc6e5f;
   }
-
   &:disabled {
     background-color: ${COLORS.elevatedBackground};
     color: ${COLORS.textTertiary};
@@ -1198,11 +1110,9 @@ const AccessDenied = styled.div`
   text-align: center;
   padding: 4rem 2rem;
   color: ${COLORS.textPrimary};
-
   h2 {
     margin-bottom: 1rem;
   }
-
   p {
     color: ${COLORS.textSecondary};
     margin-bottom: 2rem;
@@ -1220,47 +1130,29 @@ const ProgressBar = styled.div`
   border-radius: 5px;
   background-color: ${COLORS.elevatedBackground};
   margin-bottom: 0.5rem;
-
   &::after {
-    content: '${(props) => props.charCount}/800';
+    content: '${(p) => p.charCount}/800';
     position: absolute;
     top: -1.75rem;
     right: 0;
     font-size: 0.85rem;
-    color: ${(props) =>
-      props.charCount > 800 ? COLORS.error : COLORS.textTertiary};
+    color: ${(p) => (p.charCount > 800 ? COLORS.error : COLORS.textTertiary)};
   }
-
   &::before {
     content: '';
     display: block;
     height: 100%;
-    width: ${(props) =>
-      props.charCount > 800 ? '100%' : `${props.percentage}%`};
-    background-color: ${(props) => {
-      const c = props.charCount;
-      const p = props.percentage;
+    width: ${(p) => (p.charCount > 800 ? '100%' : `${p.percentage}%`)};
+    background-color: ${(p) => {
+      const c = p.charCount,
+        pct = p.percentage;
       if (c > 800) return COLORS.error;
-      if (p > 90) return COLORS.error;
-      if (p > 65) return COLORS.warning;
+      if (pct > 90) return COLORS.error;
+      if (pct > 65) return COLORS.warning;
       return COLORS.primaryMint;
     }};
     border-radius: 5px;
     transition: width 0.3s ease, background-color 0.3s ease;
-    animation: ${(props) =>
-      props.charCount > 800 ? 'pulseRed 1s infinite ease-in-out' : 'none'};
-  }
-
-  @keyframes pulseRed {
-    0% {
-      box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7);
-    }
-    70% {
-      box-shadow: 0 0 0 8px rgba(255, 77, 77, 0);
-    }
-    100% {
-      box-shadow: 0 0 0 0 rgba(255, 77, 77, 0);
-    }
   }
 `;
 

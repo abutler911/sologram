@@ -132,29 +132,31 @@ const getSafeImageSrc = (mediaItem) => {
 const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
   const [formData, setFormData] = useState({
     description: '',
-    contentType: 'general',
-    tone: 'casual',
+    contentType: 'photography',
+    tone: 'thoughtful',
     additionalContext: '',
   });
   const [generatedContent, setGeneratedContent] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
 
+  // ── Andrew's actual content categories ──────────────────────────────────
   const contentTypes = [
-    { value: 'general', label: 'General Post' },
-    { value: 'product', label: 'Product Showcase' },
-    { value: 'behind-scenes', label: 'Behind the Scenes' },
-    { value: 'educational', label: 'Educational' },
-    { value: 'lifestyle', label: 'Lifestyle' },
-    { value: 'announcement', label: 'Announcement' },
+    { value: 'photography', label: 'Photography' },
+    { value: 'aviation', label: 'Aviation & Training' },
+    { value: 'observation', label: 'Observation' },
+    { value: 'music', label: 'Piano & Music' },
+    { value: 'travel', label: 'Travel & Utah' },
+    { value: 'thought', label: 'Thought' },
+    { value: 'reading', label: 'Reading' },
   ];
 
+  // ── Andrew's voice ───────────────────────────────────────────────────────
   const tones = [
-    { value: 'casual', label: 'Casual & Friendly' },
-    { value: 'professional', label: 'Professional' },
-    { value: 'playful', label: 'Fun & Playful' },
-    { value: 'inspirational', label: 'Inspirational' },
-    { value: 'minimalist', label: 'Clean & Minimal' },
+    { value: 'thoughtful', label: 'Thoughtful' },
+    { value: 'dry', label: 'Dry & Understated' },
+    { value: 'reflective', label: 'Reflective' },
+    { value: 'observational', label: 'Observational' },
   ];
 
   if (!isOpen) return null;
@@ -228,7 +230,7 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
               name='description'
               value={formData.description}
               onChange={handleInputChange}
-              placeholder='Describe what your post is about...'
+              placeholder='Describe what you want to post about...'
               maxLength='500'
             />
             <CharCount>{formData.description.length}/500</CharCount>
