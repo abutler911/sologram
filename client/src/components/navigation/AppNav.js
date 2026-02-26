@@ -185,9 +185,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       <TopBar>
         <TopBarInner>
           <Logo to='/'>
-            <LogoIcon>
-              <FaCamera />
-            </LogoIcon>
             <LogoText>SoloGram</LogoText>
           </Logo>
 
@@ -224,9 +221,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
         <SideInner>
           {/* Logo */}
           <SideLogoLink to='/'>
-            <LogoIcon small>
-              <FaCamera />
-            </LogoIcon>
+            <NarrowMark>S</NarrowMark>
             <SideLogoText>SoloGram</SideLogoText>
           </SideLogoLink>
 
@@ -646,20 +641,24 @@ const dropDown = keyframes`from { transform: translateY(-8px); opacity: 0 } to {
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared atoms
 // ─────────────────────────────────────────────────────────────────────────────
-const LogoIcon = styled.div`
-  width: ${(p) => (p.small ? '28px' : '30px')};
-  height: ${(p) => (p.small ? '28px' : '30px')};
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
+const NarrowMark = styled.span`
+  font-family: 'Autography', cursive;
+  font-size: 2rem;
+  line-height: 1.3;
   background: linear-gradient(
     135deg,
     ${COLORS.primarySalmon},
-    ${COLORS.accentSalmon}
+    ${COLORS.primaryMint}
   );
-  color: #fff;
-  font-size: ${(p) => (p.small ? '0.7rem' : '0.78rem')};
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   flex-shrink: 0;
+  /* Visible only in narrow sidebar — hidden when full LogoText is shown */
+  display: block;
+  @media (min-width: 1200px) {
+    display: none;
+  }
 `;
 
 const LogoText = styled.span`
