@@ -433,7 +433,7 @@ const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-function PostCreator({ initialData = null, isEditing = false }) {
+function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
   const [media, setMedia] = useState([]);
   const [title, setTitle] = useState(initialData?.title || '');
   const [caption, setCaption] = useState(initialData?.caption || '');
@@ -733,7 +733,15 @@ function PostCreator({ initialData = null, isEditing = false }) {
         };
 
         response = await api.updatePost(initialData._id, payload);
+
+        // Let the parent invalidate the RQ cache before navigating so the
+        // feed and detail page both reflect the update immediately.
+        if (onSuccess) await onSuccess(initialData._id);
+
         toast.success('Post updated successfully!');
+        // For edits we already know the ID — no need to parse the response.
+        navigate(`/post/${initialData._id}`);
+        return; // early return — skip the create navigation path below
       } else {
         const payload = {
           title: title ?? '',
@@ -757,12 +765,14 @@ function PostCreator({ initialData = null, isEditing = false }) {
         toast.success('Post created successfully!');
       }
 
-      // api service may return the unwrapped data object or the full response —
-      // handle both shapes gracefully.
-      const postId =
-        response?.data?._id ?? // { data: { _id } }
-        response?._id ?? // { _id } directly
-        initialData?._id; // fallback for edit if response is unexpected
+      // For new posts, parse the ID from the response.
+      const postId = response?.data?._id ?? response?._id;
+
+      if (!postId) {
+        // Response shape unexpected — go home rather than /post/undefined
+        navigate('/');
+        return;
+      }
 
       navigate(`/post/${postId}`);
     } catch (error) {

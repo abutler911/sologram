@@ -1,10 +1,11 @@
 // client/src/pages/EditPost.js
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { FaEdit } from 'react-icons/fa';
 import { COLORS } from '../theme';
-import { usePost } from '../hooks/queries/usePosts';
+import { usePost, postKeys } from '../hooks/queries/usePosts';
+import { useQueryClient } from '@tanstack/react-query';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const PostCreator = lazy(() => import('../components/posts/PostCreator'));
@@ -19,6 +20,20 @@ const EditPost = () => {
   // Unwrap .data if present, otherwise fall back to the response itself
   // so this works regardless of how the hook is configured.
   const post = postResponse?.data ?? postResponse;
+  const queryClient = useQueryClient();
+
+  // Called by PostCreator after a successful update — invalidates both the
+  // single-post cache and the infinite feed so everything reflects the changes
+  // immediately without a manual reload.
+  const handleSuccess = useCallback(
+    async (postId) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: postKeys.detail(postId) }),
+        queryClient.invalidateQueries({ queryKey: postKeys.infiniteFeed() }),
+      ]);
+    },
+    [queryClient]
+  );
 
   if (isLoading) {
     return (
@@ -65,7 +80,11 @@ const EditPost = () => {
             </LoadingContainer>
           }
         >
-          <PostCreator initialData={post} isEditing={true} />
+          <PostCreator
+            initialData={post}
+            isEditing={true}
+            onSuccess={handleSuccess}
+          />
         </Suspense>
       </Container>
     </PageWrapper>
