@@ -42,11 +42,6 @@ const AUTHOR_NAME = 'Andrew Butler';
 
 // ─── Animations ───────────────────────────────────────────────────────────────
 
-const fadeUp = keyframes`
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-`;
-
 const scaleIn = keyframes`
   0%        { transform: scale(0);    opacity: 0; }
   15%       { transform: scale(1.3);  opacity: 1; }
@@ -70,6 +65,11 @@ const rippleOut = keyframes`
 const dropIn = keyframes`
   from { opacity: 0; transform: translateY(-8px) scale(0.96); }
   to   { opacity: 1; transform: translateY(0)    scale(1);    }
+`;
+
+const revealUp = keyframes`
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
 `;
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -292,78 +292,41 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
           ))}
         </MediaTrack>
 
+        {/* Grain overlay */}
+        <GrainOverlay />
+
         {/* Bottom gradient scrim */}
         <BottomScrim />
 
+        {/* Carousel dots — top center */}
+        {mediaCount > 1 && (
+          <Dots>
+            {post.media.map((_, i) => (
+              <Dot key={i} $active={i === currentMediaIndex} />
+            ))}
+          </Dots>
+        )}
+
+        {/* Media index counter — top right */}
+        {mediaCount > 1 && (
+          <MediaIndex>
+            {String(currentMediaIndex + 1).padStart(2, '0')} /{' '}
+            {String(mediaCount).padStart(2, '0')}
+          </MediaIndex>
+        )}
+
         {/* Author overlay — bottom-left */}
         <AuthorOverlay>
-          <AvatarRing>
+          <AvatarWrap>
             <Avatar src={AUTHOR_IMAGE} alt={AUTHOR_NAME} />
-          </AvatarRing>
+          </AvatarWrap>
           <AuthorMeta>
             <AuthorSig>{AUTHOR_NAME}</AuthorSig>
-            <AuthorDate>
-              {formattedDate}
-              {post.location && (
-                <LocationInline
-                  onClick={() => handleLocationClick(post.location)}
-                >
-                  &nbsp;· <FaMapMarkerAlt size={9} /> {post.location}
-                </LocationInline>
-              )}
-            </AuthorDate>
+            <AuthorDate>{formattedDate}</AuthorDate>
           </AuthorMeta>
         </AuthorOverlay>
 
-        {/* Right-side action rail */}
-        <ActionRail>
-          <RailBtn
-            onClick={handleLike}
-            $active={hasLiked}
-            aria-label='Like post'
-          >
-            <RailIcon $active={hasLiked} $color={COLORS.primarySalmon}>
-              {hasLiked ? <FaHeart /> : <FaRegHeart />}
-            </RailIcon>
-            <RailCount>{post.likes || 0}</RailCount>
-          </RailBtn>
-
-          <RailBtn onClick={handleOpenComments} aria-label='Open comments'>
-            <RailIcon $color={COLORS.primaryMint}>
-              <FaComment />
-            </RailIcon>
-            <RailCount>{commentCount}</RailCount>
-          </RailBtn>
-
-          {isAuthenticated && (
-            <ActionsWrapper ref={actionsRef}>
-              <RailBtn
-                onClick={() => setShowActions((v) => !v)}
-                aria-label='More options'
-              >
-                <RailIcon $color={COLORS.textSecondary}>
-                  <FaEllipsisV />
-                </RailIcon>
-              </RailBtn>
-
-              {showActions && (
-                <ActionsDropdown>
-                  <Link
-                    to={`/edit/${post._id}`}
-                    onClick={() => setShowActions(false)}
-                  >
-                    <FaEdit /> Edit
-                  </Link>
-                  <button onClick={handleDeletePost} className='warn'>
-                    <FaTrash /> Delete
-                  </button>
-                </ActionsDropdown>
-              )}
-            </ActionsWrapper>
-          )}
-        </ActionRail>
-
-        {/* Carousel nav + dots */}
+        {/* Carousel nav arrows */}
         {mediaCount > 1 && (
           <>
             {currentMediaIndex > 0 && (
@@ -384,11 +347,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
                 <FaChevronRight />
               </NavBtn>
             )}
-            <Dots>
-              {post.media.map((_, i) => (
-                <Dot key={i} $active={i === currentMediaIndex} />
-              ))}
-            </Dots>
           </>
         )}
 
@@ -403,7 +361,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
         )}
       </MediaFrame>
 
-      {/* ── CAPTION BAR ──────────────────────────────────────────────────── */}
+      {/* ── CONTENT BODY ─────────────────────────────────────────────────── */}
       <ContentBody>
         <Link to={`/post/${post._id}`} style={{ textDecoration: 'none' }}>
           <Title>{post.title}</Title>
@@ -429,6 +387,58 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
             ))}
           </TagRow>
         )}
+
+        {/* ── ACTION BAR — horizontal ──────────────────────────────────── */}
+        <ActionBar>
+          <ActionBtn
+            onClick={handleLike}
+            $active={hasLiked}
+            disabled={!isAuthenticated || isProcessing}
+            aria-label='Like post'
+          >
+            {hasLiked ? <FaHeart /> : <FaRegHeart />}
+            <span>{post.likes || 0}</span>
+          </ActionBtn>
+
+          <ActionBtn onClick={handleOpenComments} aria-label='Open comments'>
+            <FaComment />
+            <span>{commentCount}</span>
+          </ActionBtn>
+
+          <ActionSep />
+
+          {post.location && (
+            <LocationBtn onClick={() => handleLocationClick(post.location)}>
+              <FaMapMarkerAlt />
+              {post.location}
+            </LocationBtn>
+          )}
+
+          {isAuthenticated && (
+            <ActionsWrapper ref={actionsRef}>
+              <MoreBtn
+                onClick={() => setShowActions((v) => !v)}
+                aria-label='More options'
+              >
+                <FaEllipsisV />
+              </MoreBtn>
+
+              {showActions && (
+                <ActionsDropdown>
+                  <Link
+                    to={`/edit/${post._id}`}
+                    onClick={() => setShowActions(false)}
+                  >
+                    <FaEdit /> Edit
+                  </Link>
+                  <button onClick={handleDeletePost} className='warn'>
+                    <FaTrash /> Delete
+                  </button>
+                </ActionsDropdown>
+              )}
+            </ActionsWrapper>
+          )}
+        </ActionBar>
       </ContentBody>
 
       {/* ── COMMENT MODAL ────────────────────────────────────────────────── */}
@@ -453,21 +463,53 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
 PostCard.displayName = 'PostCard';
 export default PostCard;
 
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+
+const NOIR = {
+  ink: '#0a0a0b',
+  warmWhite: '#faf9f7',
+  dust: '#e8e4dd',
+  ash: '#a09a91',
+  charcoal: '#3a3632',
+  border: 'rgba(10,10,11,0.08)',
+  salmon: '#e87c5a',
+  sage: '#7aab8c',
+};
+
 // ─── Styled Components ────────────────────────────────────────────────────────
 
 const CardWrapper = styled.article`
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&family=Instrument+Sans:wght@400;500;600&display=swap');
+
   width: 100%;
-  max-width: 500px;
-  margin: 0 auto 2px;
+  max-width: 480px;
+  margin: 0 auto 32px;
+  background: ${NOIR.warmWhite};
+  overflow: hidden;
+
+  /* Sharp top, barely-there bottom rounding */
+  border-radius: 0 0 4px 4px;
+
+  /* Accent line at top — the card's signature */
+  box-shadow: 0 2px 0 0 ${NOIR.salmon}, 0 30px 80px rgba(0, 0, 0, 0.18);
+
+  /* Reveal animation */
   opacity: ${(p) => (p.$visible ? 1 : 0)};
   transform: ${(p) => (p.$visible ? 'translateY(0)' : 'translateY(28px)')};
-  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 
-  @font-face {
-    font-family: 'Autography';
-    src: url('/fonts/Autography.woff2') format('woff2');
-    font-display: swap;
+  /* Pseudo-element for the gradient top rule */
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, ${NOIR.salmon} 0%, ${NOIR.sage} 100%);
+    z-index: 10;
   }
 `;
 
@@ -499,6 +541,13 @@ const PostImg = styled.img`
   height: 100%;
   object-fit: cover;
   display: block;
+  /* Slight desaturation — editorial, not saturated social */
+  filter: saturate(0.88) contrast(1.04);
+  transition: filter 0.4s ease;
+
+  ${CardWrapper}:hover & {
+    filter: saturate(1) contrast(1.02);
+  }
 `;
 
 const PostVid = styled.video`
@@ -510,42 +559,87 @@ const PostVid = styled.video`
 
 // ── Overlays ──────────────────────────────────────────────────────────────────
 
+/* Film grain — adds analog texture without a real image */
+const GrainOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+  mix-blend-mode: overlay;
+`;
+
 const BottomScrim = styled.div`
   position: absolute;
   inset: auto 0 0 0;
-  height: 45%;
+  height: 52%;
   background: linear-gradient(
     to top,
-    rgba(0, 0, 0, 0.84) 0%,
-    rgba(0, 0, 0, 0.42) 55%,
+    rgba(10, 10, 11, 0.76) 0%,
+    rgba(10, 10, 11, 0.32) 48%,
     transparent 100%
   );
   pointer-events: none;
-  z-index: 1;
+  z-index: 3;
 `;
+
+// ── Carousel dots — top center ────────────────────────────────────────────────
+
+const Dots = styled.div`
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  z-index: 5;
+`;
+
+const Dot = styled.div`
+  height: 3px;
+  border-radius: 2px;
+  background: ${(p) => (p.$active ? '#fff' : 'rgba(255,255,255,0.35)')};
+  width: ${(p) => (p.$active ? '22px' : '3px')};
+  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s ease;
+`;
+
+// ── Media index counter — top right ──────────────────────────────────────────
+
+const MediaIndex = styled.span`
+  position: absolute;
+  top: 15px;
+  right: 16px;
+  z-index: 5;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.6rem;
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.5);
+`;
+
+// ── Author overlay — bottom-left ──────────────────────────────────────────────
 
 const AuthorOverlay = styled.div`
   position: absolute;
-  bottom: 18px;
-  left: 14px;
-  /* leave right gap for the action rail (≈72px) */
-  right: 72px;
+  bottom: 20px;
+  left: 18px;
+  /* leave right gap for nav arrows if needed */
+  right: 56px;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  z-index: 2;
+  align-items: flex-end;
+  gap: 11px;
+  z-index: 5;
 `;
 
-const AvatarRing = styled.div`
-  width: 38px;
-  height: 38px;
+const AvatarWrap = styled.div`
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  padding: 2px;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.primaryMint}
-  );
+  overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
   flex-shrink: 0;
 `;
 
@@ -554,204 +648,68 @@ const Avatar = styled.img`
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #000;
   display: block;
+  /* Do not inherit media desaturation */
+  filter: none !important;
 `;
 
 const AuthorMeta = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
 `;
 
 const AuthorSig = styled.span`
-  font-family: 'Autography', cursive;
-  font-size: 1.5rem;
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.55rem;
   color: #fff;
-  line-height: 1.3;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 `;
 
 const AuthorDate = styled.span`
-  font-size: 0.67rem;
-  color: rgba(255, 255, 255, 0.72);
-  letter-spacing: 0.4px;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 2px;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.6rem;
+  font-weight: 300;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.52);
+  text-transform: uppercase;
 `;
 
-const LocationInline = styled.button`
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 0.67rem;
-  color: ${COLORS.accentMint};
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  &:hover {
-    color: #fff;
-  }
-`;
-
-// ── Right-side action rail ────────────────────────────────────────────────────
-
-const ActionRail = styled.div`
-  position: absolute;
-  right: 12px;
-  bottom: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  z-index: 3;
-`;
-
-const RailBtn = styled.button`
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  -webkit-tap-highlight-color: transparent;
-  /* min touch target */
-  min-width: 44px;
-  min-height: 44px;
-  justify-content: center;
-`;
-
-const RailIcon = styled.span`
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.48);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.15rem;
-  color: ${(p) => (p.$active ? p.$color : 'rgba(255,255,255,0.92)')};
-  transition: color 0.18s, transform 0.18s, background 0.18s;
-
-  ${(p) =>
-    p.$active &&
-    css`
-      background: ${p.$color}28;
-      animation: ${heartPop} 0.35s ease;
-    `}
-
-  ${RailBtn}:hover & {
-    color: ${(p) => p.$color || '#fff'};
-    background: rgba(0, 0, 0, 0.68);
-    transform: scale(1.1);
-  }
-`;
-
-const RailCount = styled.span`
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.75);
-  line-height: 1;
-`;
-
-// ── Admin actions dropdown ────────────────────────────────────────────────────
-
-const ActionsWrapper = styled.div`
-  position: relative;
-`;
-
-const ActionsDropdown = styled.div`
-  position: absolute;
-  bottom: calc(100% + 8px);
-  right: 0;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 12px;
-  min-width: 140px;
-  overflow: hidden;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.65);
-  animation: ${dropIn} 0.18s ease;
-  z-index: 10;
-
-  a,
-  button {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 12px 16px;
-    border: none;
-    background: none;
-    color: ${COLORS.textPrimary};
-    font-size: 0.875rem;
-    text-decoration: none;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.15s;
-    &:hover {
-      background: rgba(255, 255, 255, 0.06);
-    }
-  }
-  .warn {
-    color: ${COLORS.error};
-  }
-`;
-
-// ── Carousel nav ──────────────────────────────────────────────────────────────
+// ── Carousel nav arrows ───────────────────────────────────────────────────────
 
 const NavBtn = styled.button`
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   ${(p) => p.$side}: 12px;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.48);
-  backdrop-filter: blur(4px);
-  border: none;
-  color: #fff;
-  font-size: 0.85rem;
+  background: rgba(10, 10, 11, 0.44);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 2;
+  z-index: 4;
   transition: background 0.15s, transform 0.15s;
+
   &:hover {
-    background: rgba(0, 0, 0, 0.72);
+    background: rgba(10, 10, 11, 0.7);
     transform: translateY(-50%) scale(1.08);
   }
-`;
-
-const Dots = styled.div`
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 5px;
-  z-index: 2;
-`;
-
-const Dot = styled.div`
-  height: 4px;
-  width: ${(p) => (p.$active ? '20px' : '4px')};
-  border-radius: 2px;
-  background: ${(p) => (p.$active ? '#fff' : 'rgba(255,255,255,0.38)')};
-  transition: width 0.28s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s ease;
 `;
 
 // ── Double-tap like ───────────────────────────────────────────────────────────
@@ -762,10 +720,10 @@ const Ripple = styled.div`
   left: 50%;
   width: 120px;
   height: 120px;
-  border: 3px solid ${COLORS.primarySalmon};
+  border: 2px solid ${NOIR.salmon};
   border-radius: 50%;
   pointer-events: none;
-  z-index: 4;
+  z-index: 6;
   animation: ${rippleOut} 0.75s ease-out forwards;
 `;
 
@@ -774,43 +732,60 @@ const BigHeart = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: ${COLORS.primarySalmon};
+  color: ${NOIR.salmon};
   font-size: 88px;
-  filter: drop-shadow(0 0 24px ${COLORS.primarySalmon}99);
+  filter: drop-shadow(0 0 24px ${NOIR.salmon}99);
   pointer-events: none;
-  z-index: 4;
+  z-index: 6;
   animation: ${scaleIn} 0.8s ease forwards;
 `;
 
-// ── Caption bar ───────────────────────────────────────────────────────────────
+// ── Content Body ──────────────────────────────────────────────────────────────
 
 const ContentBody = styled.div`
-  background: ${COLORS.cardBackground};
-  padding: 13px 16px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  background: ${NOIR.warmWhite};
+  padding: 18px 20px 20px;
+  position: relative;
+
+  /* Hairline rule at top */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20px;
+    right: 20px;
+    height: 1px;
+    background: ${NOIR.border};
+  }
 `;
 
 const Title = styled.h2`
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: ${COLORS.textPrimary};
-  letter-spacing: -0.03em;
-  line-height: 1.2;
-  margin-bottom: 5px;
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
+  font-weight: 600;
+  font-size: 1.45rem;
+  color: ${NOIR.ink};
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 8px;
+  display: block;
   transition: color 0.2s;
+
   &:hover {
-    color: ${COLORS.primaryMint};
+    color: ${NOIR.salmon};
   }
 `;
 
 const CaptionWrap = styled.div`
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 `;
 
 const CaptionText = styled.p`
-  font-size: 0.875rem;
-  line-height: 1.55;
-  color: ${COLORS.textSecondary};
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: ${NOIR.charcoal};
+  font-weight: 400;
+  letter-spacing: 0.01em;
   white-space: pre-wrap;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -822,35 +797,214 @@ const ExpandBtn = styled.button`
   background: none;
   border: none;
   padding: 0;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: ${COLORS.textTertiary};
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: ${NOIR.ash};
   cursor: pointer;
-  margin-top: 2px;
+  margin-top: 4px;
   display: block;
   transition: color 0.15s;
+
   &:hover {
-    color: ${COLORS.textPrimary};
+    color: ${NOIR.ink};
   }
 `;
 
 const TagRow = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 5px;
+  margin-bottom: 14px;
 `;
 
 const Tag = styled.span`
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: ${COLORS.textTertiary};
-  transition: color 0.2s, border-color 0.2s;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  padding: 3px 9px;
+  border-radius: 2px;
+  border: 1px solid ${NOIR.dust};
+  color: ${NOIR.ash};
+  text-transform: lowercase;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+
   &:hover {
-    color: ${COLORS.accentMint};
-    border-color: ${COLORS.primaryMint}55;
+    color: ${NOIR.sage};
+    border-color: ${NOIR.sage};
+    background: rgba(122, 171, 140, 0.06);
+  }
+`;
+
+// ── Action bar — horizontal ───────────────────────────────────────────────────
+
+const ActionBar = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding-top: 14px;
+  border-top: 1px solid ${NOIR.border};
+  margin-top: 4px;
+`;
+
+const ActionBtn = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px 0;
+  color: ${(p) => (p.$active ? NOIR.salmon : NOIR.charcoal)};
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  transition: color 0.2s;
+
+  /* Slight icon pop on liked */
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+    ${(p) =>
+      p.$active &&
+      css`
+        animation: ${heartPop} 0.35s ease;
+      `}
+  }
+
+  & + & {
+    margin-left: 20px;
+  }
+
+  &:hover:not(:disabled) {
+    color: ${(p) => (p.$active ? NOIR.salmon : NOIR.ink)};
+    svg {
+      transform: scale(1.15);
+    }
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+`;
+
+const ActionSep = styled.span`
+  flex: 1;
+`;
+
+const LocationBtn = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.6rem;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: ${NOIR.ash};
+  padding: 5px 0;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s;
+
+  svg {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    color: ${NOIR.sage};
+  }
+`;
+
+// ── Admin actions dropdown ────────────────────────────────────────────────────
+
+const ActionsWrapper = styled.div`
+  position: relative;
+  margin-left: 8px;
+`;
+
+const MoreBtn = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  color: ${NOIR.ash};
+  border-radius: 2px;
+  transition: color 0.15s, background 0.15s;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  &:hover {
+    color: ${NOIR.ink};
+    background: rgba(10, 10, 11, 0.05);
+  }
+`;
+
+const ActionsDropdown = styled.div`
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: ${NOIR.warmWhite};
+  border: 1px solid ${NOIR.dust};
+  border-radius: 4px;
+  min-width: 130px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(10, 10, 11, 0.14);
+  animation: ${dropIn} 0.16s ease;
+  z-index: 10;
+
+  a,
+  button {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 11px 14px;
+    border: none;
+    background: none;
+    color: ${NOIR.charcoal};
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-decoration: none;
+    text-align: left;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+    transition: background 0.12s;
+
+    svg {
+      width: 12px;
+      height: 12px;
+      opacity: 0.7;
+    }
+
+    &:hover {
+      background: rgba(10, 10, 11, 0.04);
+    }
+  }
+
+  .warn {
+    color: #c0392b;
   }
 `;
