@@ -30,7 +30,7 @@ import {
 } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
 import { COLORS } from '../../theme';
-import EasterEggModal from '../easter/easterEggModal';
+import EasterEggModal from '../easter/EasterEggModal';
 
 const AppNav = ({ onSearch, onClearSearch }) => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
