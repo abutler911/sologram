@@ -33,6 +33,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <!-- Google Fonts -->
+    <!-- Inter + Pacifico — used across the rest of the app -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
       rel="stylesheet"
@@ -41,6 +42,19 @@
       href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
       rel="stylesheet"
     />
+
+    <!--
+      PostCard editorial fonts — all three combined into one request to
+      minimise round-trips:
+        • Cormorant Garamond  — author name (italic) + post title (serif)
+        • DM Mono             — dates, counts, tags, location, expand btn
+        • Instrument Sans     — caption body copy
+    -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,300;1,400&family=DM+Mono:wght@300;400&family=Instrument+Sans:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
     <!-- Mystery Quest loads non-blocking — not in the critical path -->
     <link
       href="https://fonts.googleapis.com/css2?family=Mystery+Quest&display=swap"
@@ -66,14 +80,27 @@
           CSS loads after the preload fires, confusing the browser)
       Both warnings were noise with no performance benefit. The @font-face
       declarations in CSS handle loading correctly without any preload hints.
+
+      NOTE: Autography is no longer used in PostCard after the Editorial Noir
+      redesign (replaced by Cormorant Garamond). The @font-face block for
+      Autography can be safely removed from PostCard.jsx if it is not
+      referenced anywhere else in the app.
     -->
 
     <!-- Minimal critical CSS -->
     <style>
-      @supports (font-display: swap) {
-        * {
-          font-display: swap;
-        }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      /* Prevent flash of unstyled text — match app background */
+      html,
+      body {
+        background-color: #121212;
+        margin: 0;
+        padding: 0;
       }
     </style>
 
