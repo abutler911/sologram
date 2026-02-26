@@ -29,18 +29,6 @@ const NOIR = {
   sage: '#7aab8c',
 };
 
-/**
- * ThoughtCard — Editorial Noir aesthetic
- *
- * Mirrors PostCard's design language:
- *   - Warm white (#faf9f7) card surface
- *   - Left mood bar — 2px, flat, full height
- *   - Cormorant Garamond display / DM Mono metadata / Instrument Sans body
- *   - Sharp corners throughout — no border-radius on the card itself
- *   - Tags: DM Mono bordered chips matching PostCard
- *   - Footer: mono timestamps + minimal icon actions
- */
-
 const ThoughtCard = ({
   thought,
   defaultUser,
@@ -55,7 +43,6 @@ const ThoughtCard = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // Close menu on outside click
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e) => {
@@ -99,8 +86,6 @@ const ThoughtCard = ({
     ? thought.mood.charAt(0).toUpperCase() + thought.mood.slice(1)
     : null;
 
-  // ── Content splitting: first line/sentence becomes display headline ──────
-  // Priority: newline break → sentence break (. ! ?) → whole text as headline
   const splitContent = (text = '') => {
     const newlineIdx = text.indexOf('\n');
     if (newlineIdx > 0) {
@@ -132,25 +117,21 @@ const ThoughtCard = ({
 
   return (
     <Card $moodColor={moodColor} $pinned={thought.pinned}>
-      {/* ── Pinned label ───────────────────────────────────────── */}
       {thought.pinned && (
         <PinnedLabel>
           <FaThumbtack /> Pinned
         </PinnedLabel>
       )}
 
-      {/* ── Content — headline + optional body ──────────────── */}
       <Headline>{headline}</Headline>
       {body && <Body>{body}</Body>}
 
-      {/* ── Optional image ─────────────────────────────────────── */}
       {thought.media?.mediaUrl && (
         <MediaWrap>
           <img src={thought.media.mediaUrl} alt='' />
         </MediaWrap>
       )}
 
-      {/* ── Tags ───────────────────────────────────────────────── */}
       {thought.tags?.length > 0 && (
         <TagRow>
           {thought.tags.map((tag, i) => (
@@ -159,7 +140,6 @@ const ThoughtCard = ({
         </TagRow>
       )}
 
-      {/* ── Footer: mood · time | actions ──────────────────────── */}
       <Footer>
         <FooterLeft>
           {moodEmoji && (
@@ -172,7 +152,6 @@ const ThoughtCard = ({
         </FooterLeft>
 
         <FooterRight>
-          {/* Like */}
           <ActionBtn
             onClick={(e) => onLike(e)}
             $active={thought.userHasLiked}
@@ -183,12 +162,10 @@ const ThoughtCard = ({
             {thought.likes > 0 && <ActionCount>{thought.likes}</ActionCount>}
           </ActionBtn>
 
-          {/* Share */}
           <ActionBtn onClick={onShare} aria-label='Share'>
             <FaShare />
           </ActionBtn>
 
-          {/* Admin ··· */}
           {canCreateThought && (
             <MenuWrap ref={menuRef}>
               <ActionBtn
@@ -232,7 +209,6 @@ const ThoughtCard = ({
         </FooterRight>
       </Footer>
 
-      {/* ── LIKE BURST ──────────────────────────────────────────── */}
       <BurstPortal />
     </Card>
   );
@@ -260,21 +236,19 @@ const Card = styled.article`
   position: relative;
   padding: 18px 20px 16px 24px;
   background: ${NOIR.warmWhite};
-
-  /* No border-radius — sharp editorial geometry */
   border-radius: 0;
 
-  /* Left mood bar — full height, 2px, flat */
+  /* Left mood bar — width and opacity shift for pinned */
   &::before {
     content: '';
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
-    width: 2px;
+    width: ${(p) => (p.$pinned ? '3px' : '2px')};
     background: ${(p) => p.$moodColor || NOIR.salmon};
-    opacity: ${(p) => (p.$pinned ? 1 : 0.45)};
-    transition: opacity 0.2s;
+    opacity: ${(p) => (p.$pinned ? 0.7 : 0.45)};
+    transition: width 0.2s, opacity 0.2s;
   }
 
   /* Hairline bottom separator */
@@ -290,44 +264,35 @@ const Card = styled.article`
 
   &:hover::before {
     opacity: 1;
+    width: ${(p) => (p.$pinned ? '3px' : '2px')};
   }
-
-  /* Pinned: very subtle warm tint */
-  ${(p) =>
-    p.$pinned &&
-    css`
-      background: linear-gradient(
-        to right,
-        rgba(232, 124, 90, 0.04) 0%,
-        ${NOIR.warmWhite} 80px
-      );
-    `}
 `;
 
-// ─── Pinned label ─────────────────────────────────────────────────────────────
+// ─── Pinned label — badge style ───────────────────────────────────────────────
 
 const PinnedLabel = styled.div`
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 5px;
   font-family: 'DM Mono', 'Courier New', monospace;
   font-size: 0.58rem;
-  font-weight: 400;
-  letter-spacing: 0.1em;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: ${NOIR.ash};
-  margin-bottom: 10px;
+  color: ${NOIR.salmon};
+  background: rgba(232, 124, 90, 0.1);
+  padding: 3px 8px 3px 6px;
+  margin-bottom: 12px;
 
   svg {
-    font-size: 0.58rem;
-    color: ${NOIR.salmon};
-    opacity: 0.7;
+    font-size: 0.52rem;
+    opacity: 0.8;
+    transform: rotate(45deg);
   }
 `;
 
-// ─── Content — headline + body ───────────────────────────────────────────────
+// ─── Content ──────────────────────────────────────────────────────────────────
 
-/* First line/sentence: Cormorant Garamond display size — the entry point */
 const Headline = styled.p`
   margin: 0 0 10px;
   font-family: 'Cormorant Garamond', 'Georgia', serif;
@@ -340,7 +305,6 @@ const Headline = styled.p`
   word-break: break-word;
 `;
 
-/* Remainder of the thought: Instrument Sans body */
 const Body = styled.p`
   margin: 0 0 14px;
   font-family: 'Instrument Sans', sans-serif;
@@ -359,7 +323,6 @@ const Body = styled.p`
 const MediaWrap = styled.div`
   margin-bottom: 14px;
   overflow: hidden;
-  /* Sharp corners — no border-radius */
   border: 1px solid ${NOIR.dust};
 
   img {
@@ -367,7 +330,6 @@ const MediaWrap = styled.div`
     max-height: 380px;
     object-fit: cover;
     display: block;
-    /* Match PostCard image treatment */
     filter: saturate(0.88) contrast(1.04);
     transition: filter 0.3s ease;
   }
@@ -377,7 +339,7 @@ const MediaWrap = styled.div`
   }
 `;
 
-// ─── Tags — mirrors PostCard Tag exactly ──────────────────────────────────────
+// ─── Tags ─────────────────────────────────────────────────────────────────────
 
 const TagRow = styled.div`
   display: flex;
@@ -426,8 +388,6 @@ const FooterLeft = styled.div`
   flex: 1;
 `;
 
-// ─── Mood chip — borderless DM Mono, mood color text ─────────────────────────
-
 const MoodChip = styled.div`
   display: inline-flex;
   align-items: center;
@@ -440,7 +400,6 @@ const MoodChip = styled.div`
   color: ${(p) => p.$moodColor || NOIR.salmon};
   white-space: nowrap;
   flex-shrink: 0;
-  /* No pill border — just color + emoji, very minimal */
   opacity: 0.8;
 
   span:first-child {
@@ -524,7 +483,7 @@ const MenuDropdown = styled.div`
   z-index: 50;
   background: ${NOIR.warmWhite};
   border: 1px solid ${NOIR.dust};
-  border-radius: 0; /* sharp — matches PostCard ActionsDropdown */
+  border-radius: 0;
   min-width: 130px;
   overflow: hidden;
   box-shadow: 0 12px 32px rgba(10, 10, 11, 0.14);

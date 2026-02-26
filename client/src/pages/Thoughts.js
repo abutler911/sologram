@@ -429,10 +429,13 @@ const FeedTitle = styled.h1`
   flex-shrink: 0;
   line-height: 1;
 
-  /* AppNav TopBar already identifies the app on mobile —
-     hide the redundant page title so two sticky bars don't stack */
+  /* Mobile: shrink to a quiet section label so it doesn't compete
+     with the AppNav TopBar sitting directly above it */
   @media (max-width: 959px) {
-    display: none;
+    font-size: 0.95rem;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    color: ${NOIR.ash};
   }
 `;
 
