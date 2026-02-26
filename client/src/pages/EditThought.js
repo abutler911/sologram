@@ -1,16 +1,27 @@
 // client/src/pages/EditThought.js
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { toast } from 'react-hot-toast';
-import { FaArrowLeft, FaEdit, FaTimes, FaCheck, FaTrash } from 'react-icons/fa';
+import { FaArrowLeft, FaTimes, FaCheck, FaTrash } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
-import MainLayout from '../components/layout/MainLayout';
 import {
   useThought,
   useUpdateThought,
   useDeleteThought,
 } from '../hooks/queries/useThoughts';
+
+// ─── Design tokens — NOIR palette ────────────────────────────────────────────
+const NOIR = {
+  ink: '#0a0a0b',
+  warmWhite: '#faf9f7',
+  dust: '#e8e4dd',
+  ash: '#a09a91',
+  charcoal: '#3a3632',
+  border: 'rgba(10,10,11,0.08)',
+  salmon: '#e87c5a',
+  sage: '#7aab8c',
+};
 
 const MAX_CONTENT_LENGTH = 280;
 const MAX_TAGS = 5;
@@ -21,18 +32,20 @@ const EditThought = () => {
   const { isAuthenticated, user } = useContext(AuthContext);
   const isAdmin = user?.role === 'admin';
 
-  // Local form state
   const [content, setContent] = useState('');
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // React Query
-  const { data: thought, isLoading, error } = useThought(id);
+  const { data: thoughtResponse, isLoading, error } = useThought(id);
   const updateThought = useUpdateThought();
   const deleteThought = useDeleteThought();
 
-  // Seed form state once data arrives
+  // ── Unwrap API response — same pattern as PostDetail ─────────────────────
+  // useThought returns { success: true, data: { _id, content, tags, ... } }
+  const thought = thoughtResponse?.data ?? thoughtResponse;
+
+  // ── Seed form once data arrives ───────────────────────────────────────────
   useEffect(() => {
     if (thought) {
       setContent(thought.content || '');
@@ -40,7 +53,7 @@ const EditThought = () => {
     }
   }, [thought]);
 
-  // Auth guard
+  // ── Auth guard ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       navigate('/login');
@@ -50,14 +63,7 @@ const EditThought = () => {
     }
   }, [isAuthenticated, isAdmin, isLoading, navigate]);
 
-  // Page title
-  useEffect(() => {
-    document.title = thought ? `Edit Thought | SoloGram` : 'SoloGram';
-    return () => {
-      document.title = 'SoloGram';
-    };
-  }, [thought]);
-
+  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!content.trim()) {
@@ -65,13 +71,22 @@ const EditThought = () => {
       return;
     }
     try {
-      await updateThought.mutateAsync({ id, payload: { content, tags } });
-      navigate(`/thoughts/${id}`);
+      await updateThought.mutateAsync({
+        id,
+        payload: {
+          content,
+          // Backend does JSON.parse(tags) — must send as JSON string
+          tags: JSON.stringify(tags),
+        },
+      });
+      // /thoughts/:id doesn't exist as a route — go back to the feed
+      navigate('/thoughts');
     } catch {
       // error toast handled in the hook
     }
   };
 
+  // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = async () => {
     try {
       await deleteThought.mutateAsync(id);
@@ -81,14 +96,7 @@ const EditThought = () => {
     }
   };
 
-  // Tag helpers
-  const handleTagKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
-      e.preventDefault();
-      addTag();
-    }
-  };
-
+  // ── Tag helpers ───────────────────────────────────────────────────────────
   const addTag = () => {
     const tag = tagInput.trim().toLowerCase();
     if (!tag) return;
@@ -104,427 +112,597 @@ const EditThought = () => {
     setTagInput('');
   };
 
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
+      e.preventDefault();
+      addTag();
+    }
+  };
+
   const removeTag = (tagToRemove) =>
-    setTags(tags.filter((tag) => tag !== tagToRemove));
+    setTags(tags.filter((t) => t !== tagToRemove));
 
   const isSubmitting = updateThought.isPending || deleteThought.isPending;
+  const remaining = MAX_CONTENT_LENGTH - content.length;
+  const nearLimit = remaining <= MAX_CONTENT_LENGTH * 0.1;
 
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <MainLayout>
-        <PageWrapper>
-          <Container>
-            <LoadingMessage>Loading thought...</LoadingMessage>
-          </Container>
-        </PageWrapper>
-      </MainLayout>
-    );
-  }
-
-  if (error || !thought) {
-    return (
-      <MainLayout>
-        <PageWrapper>
-          <Container>
-            <ErrorContainer>
-              <ErrorMessage>
-                {error?.message || 'Thought not found'}
-              </ErrorMessage>
-              <BackLink to='/thoughts'>
-                <FaArrowLeft />
-                <span>Back to Thoughts</span>
-              </BackLink>
-            </ErrorContainer>
-          </Container>
-        </PageWrapper>
-      </MainLayout>
-    );
-  }
-
-  return (
-    <MainLayout>
       <PageWrapper>
         <Container>
-          <Header>
-            <BackLink to={`/thoughts/${id}`}>
-              <FaArrowLeft />
-              <span>Back to Thought</span>
-            </BackLink>
-            <PageTitle>
-              <FaEdit />
-              <span>Edit Thought</span>
-            </PageTitle>
-          </Header>
-
-          <Form onSubmit={handleSubmit}>
-            <FormGroup>
-              <TextAreaWrapper>
-                <Textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="What's on your mind?"
-                  maxLength={MAX_CONTENT_LENGTH}
-                  required
-                />
-                <CharCount warning={content.length > MAX_CONTENT_LENGTH * 0.9}>
-                  {content.length}/{MAX_CONTENT_LENGTH}
-                </CharCount>
-              </TextAreaWrapper>
-            </FormGroup>
-
-            <FormGroup>
-              <Label>Tags (optional)</Label>
-              <TagsContainer>
-                {tags.map((tag, index) => (
-                  <Tag key={index}>
-                    <span>#{tag}</span>
-                    <RemoveTagButton onClick={() => removeTag(tag)}>
-                      <FaTimes />
-                    </RemoveTagButton>
-                  </Tag>
-                ))}
-                {tags.length < MAX_TAGS && (
-                  <TagInput
-                    type='text'
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleTagKeyDown}
-                    onBlur={addTag}
-                    placeholder='Add tags (press Enter)'
-                  />
-                )}
-              </TagsContainer>
-              <TagInfo>
-                Up to {MAX_TAGS} tags, press Enter or comma to add
-              </TagInfo>
-            </FormGroup>
-
-            <ButtonGroup>
-              <DeleteButton
-                type='button'
-                onClick={() => setShowDeleteModal(true)}
-                disabled={isSubmitting}
-              >
-                <FaTrash />
-                <span>Delete</span>
-              </DeleteButton>
-              <SaveButton
-                type='submit'
-                disabled={isSubmitting || !content.trim()}
-              >
-                <FaCheck />
-                <span>
-                  {updateThought.isPending ? 'Saving...' : 'Save Changes'}
-                </span>
-              </SaveButton>
-            </ButtonGroup>
-          </Form>
-
-          {showDeleteModal && (
-            <Backdrop>
-              <DeleteModal>
-                <DeleteModalContent>
-                  <h3>Delete Thought</h3>
-                  <p>
-                    Are you sure you want to delete this thought? This action
-                    cannot be undone.
-                  </p>
-                  <DeleteModalButtons>
-                    <CancelButton
-                      onClick={() => setShowDeleteModal(false)}
-                      disabled={isSubmitting}
-                    >
-                      Cancel
-                    </CancelButton>
-                    <ConfirmDeleteButton
-                      onClick={handleDelete}
-                      disabled={isSubmitting}
-                    >
-                      {deleteThought.isPending ? 'Deleting...' : 'Delete'}
-                    </ConfirmDeleteButton>
-                  </DeleteModalButtons>
-                </DeleteModalContent>
-              </DeleteModal>
-            </Backdrop>
-          )}
+          <LoadingState>
+            <LoadingBar />
+            <LoadingBar $w='60%' />
+            <LoadingBar $w='40%' />
+          </LoadingState>
         </Container>
       </PageWrapper>
-    </MainLayout>
+    );
+  }
+
+  // ── Error ─────────────────────────────────────────────────────────────────
+  if (error || !thought) {
+    return (
+      <PageWrapper>
+        <Container>
+          <ErrorBox>
+            <ErrorText>{error?.message || 'Thought not found'}</ErrorText>
+            <BackLink to='/thoughts'>
+              <FaArrowLeft /> Back to Thoughts
+            </BackLink>
+          </ErrorBox>
+        </Container>
+      </PageWrapper>
+    );
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  return (
+    <PageWrapper>
+      <Container>
+        {/* ── Header ──────────────────────────────────────────────────────── */}
+        <PageHeader>
+          <BackLink to='/thoughts'>
+            <FaArrowLeft />
+            <span>Thoughts</span>
+          </BackLink>
+          <PageTitle>Edit Thought</PageTitle>
+        </PageHeader>
+
+        {/* ── Form card ───────────────────────────────────────────────────── */}
+        <FormCard onSubmit={handleSubmit}>
+          {/* Content */}
+          <FieldGroup>
+            <TextAreaWrapper>
+              <ContentArea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="What's on your mind?"
+                maxLength={MAX_CONTENT_LENGTH}
+                required
+              />
+              <CharCount $warning={nearLimit}>{remaining}</CharCount>
+            </TextAreaWrapper>
+          </FieldGroup>
+
+          {/* Tags */}
+          <FieldGroup>
+            <FieldLabel>
+              Tags <FieldHint>(optional · up to {MAX_TAGS})</FieldHint>
+            </FieldLabel>
+            <TagsArea>
+              {tags.map((tag, i) => (
+                <TagChip key={i}>
+                  #{tag}
+                  <ChipRemove
+                    type='button'
+                    onClick={() => removeTag(tag)}
+                    aria-label={`Remove ${tag}`}
+                  >
+                    <FaTimes />
+                  </ChipRemove>
+                </TagChip>
+              ))}
+              {tags.length < MAX_TAGS && (
+                <TagInlineInput
+                  type='text'
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleTagKeyDown}
+                  onBlur={addTag}
+                  placeholder='add tag…'
+                />
+              )}
+            </TagsArea>
+          </FieldGroup>
+
+          {/* Actions */}
+          <ActionRow>
+            <DeleteBtn
+              type='button'
+              onClick={() => setShowDeleteModal(true)}
+              disabled={isSubmitting}
+            >
+              <FaTrash />
+              Delete
+            </DeleteBtn>
+            <SaveBtn type='submit' disabled={isSubmitting || !content.trim()}>
+              <FaCheck />
+              {updateThought.isPending ? 'Saving…' : 'Save Changes'}
+            </SaveBtn>
+          </ActionRow>
+        </FormCard>
+      </Container>
+
+      {/* ── Delete confirmation modal ──────────────────────────────────────── */}
+      {showDeleteModal && (
+        <ModalBackdrop onClick={() => setShowDeleteModal(false)}>
+          <ModalBox onClick={(e) => e.stopPropagation()}>
+            <ModalTitle>Delete Thought?</ModalTitle>
+            <ModalBody>
+              This thought will be permanently removed. This action cannot be
+              undone.
+            </ModalBody>
+            <ModalActions>
+              <ModalCancelBtn
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </ModalCancelBtn>
+              <ModalConfirmBtn onClick={handleDelete} disabled={isSubmitting}>
+                {deleteThought.isPending ? 'Deleting…' : 'Delete'}
+              </ModalConfirmBtn>
+            </ModalActions>
+          </ModalBox>
+        </ModalBackdrop>
+      )}
+    </PageWrapper>
   );
 };
 
-// ── Styled Components (unchanged) ─────────────────────────────────────────────
+export default EditThought;
+
+// ─── Animations ───────────────────────────────────────────────────────────────
+
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
+
+const shimmer = keyframes`
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+`;
+
+const skeletonBg = `
+  background: linear-gradient(90deg, ${NOIR.dust} 25%, ${NOIR.warmWhite} 50%, ${NOIR.dust} 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+`;
+
+// ─── Layout ───────────────────────────────────────────────────────────────────
 
 const PageWrapper = styled.div`
-  background-color: #1a1a2e;
   min-height: 100vh;
-  padding: 2rem 0;
+  background: ${NOIR.warmWhite};
+  padding: 0 0 80px;
+  animation: ${fadeUp} 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  /* Sidebar offsets — match AppNav */
+  @media (min-width: 960px) {
+    margin-left: 72px;
+    width: calc(100% - 72px);
+    box-sizing: border-box;
+  }
+  @media (min-width: 1200px) {
+    margin-left: 240px;
+    width: calc(100% - 240px);
+  }
 `;
 
 const Container = styled.div`
   width: 100%;
-  max-width: 680px;
+  max-width: 640px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 20px;
+  box-sizing: border-box;
 `;
 
-const Header = styled.div`
+// ─── Header ───────────────────────────────────────────────────────────────────
+
+const PageHeader = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  justify-content: space-between;
+  padding: 28px 0 24px;
+
+  /* Gradient accent line top — PostCard signature */
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -20px;
+    right: -20px;
+    height: 2px;
+    background: linear-gradient(90deg, ${NOIR.salmon} 0%, ${NOIR.sage} 100%);
+  }
 `;
 
 const BackLink = styled(Link)`
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #aaaaaa;
+  gap: 7px;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.65rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: ${NOIR.ash};
   text-decoration: none;
-  transition: color 0.3s;
+  transition: color 0.15s;
+
+  svg {
+    width: 10px;
+    height: 10px;
+  }
+
   &:hover {
-    color: #e98973;
+    color: ${NOIR.salmon};
   }
 `;
 
 const PageTitle = styled.h1`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
   font-size: 1.5rem;
-  color: #ffffff;
+  font-weight: 600;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  color: ${NOIR.ink};
   margin: 0;
 `;
 
-const Form = styled.form`
-  background-color: #16213e;
-  border-radius: 12px;
-  padding: 1.5rem;
+// ─── Form card ────────────────────────────────────────────────────────────────
+
+const FormCard = styled.form`
+  background: ${NOIR.warmWhite};
+  border: 1px solid ${NOIR.dust};
+  border-top: none; /* header's accent line serves as the top edge */
+  padding: 24px 0 0;
 `;
 
-const FormGroup = styled.div`
-  margin-bottom: 1.5rem;
+const FieldGroup = styled.div`
+  margin-bottom: 20px;
 `;
 
-const Label = styled.label`
+const FieldLabel = styled.label`
   display: block;
-  font-size: 0.875rem;
-  color: #aaaaaa;
-  margin-bottom: 0.5rem;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: ${NOIR.ash};
+  margin-bottom: 8px;
 `;
+
+const FieldHint = styled.span`
+  font-size: 0.58rem;
+  opacity: 0.7;
+  text-transform: none;
+  letter-spacing: 0;
+`;
+
+// ─── Textarea ─────────────────────────────────────────────────────────────────
 
 const TextAreaWrapper = styled.div`
   position: relative;
 `;
 
-const Textarea = styled.textarea`
+const ContentArea = styled.textarea`
   width: 100%;
-  min-height: 150px;
-  background-color: #0f3460;
-  border: 1px solid #333366;
-  border-radius: 8px;
-  padding: 1rem;
-  color: #ffffff;
-  font-size: 1rem;
-  resize: vertical;
+  min-height: 160px;
+  padding: 16px;
   box-sizing: border-box;
+  background: rgba(10, 10, 11, 0.02);
+  border: 1px solid ${NOIR.dust};
+  border-radius: 0;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.65;
+  color: ${NOIR.charcoal};
+  resize: vertical;
+  transition: border-color 0.15s;
+
+  &::placeholder {
+    color: ${NOIR.ash};
+  }
+
   &:focus {
     outline: none;
-    border-color: #e98973;
+    border-color: ${NOIR.salmon};
+    background: ${NOIR.warmWhite};
   }
 `;
 
 const CharCount = styled.div`
-  text-align: right;
-  font-size: 0.75rem;
-  color: ${({ warning }) => (warning ? '#e74c3c' : '#aaaaaa')};
-  margin-top: 0.25rem;
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  color: ${(p) => (p.$warning ? NOIR.salmon : NOIR.ash)};
+  pointer-events: none;
 `;
 
-const TagsContainer = styled.div`
+// ─── Tags ─────────────────────────────────────────────────────────────────────
+
+const TagsArea = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  background-color: #0f3460;
-  border: 1px solid #333366;
-  border-radius: 8px;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid ${NOIR.dust};
   min-height: 44px;
+  background: rgba(10, 10, 11, 0.02);
+  transition: border-color 0.15s;
+
+  &:focus-within {
+    border-color: ${NOIR.salmon};
+    background: ${NOIR.warmWhite};
+  }
 `;
 
-const Tag = styled.div`
-  display: flex;
+const TagChip = styled.span`
+  display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  background-color: #1a1a6e;
-  color: #aaaaff;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
-`;
+  gap: 5px;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border: 1px solid ${NOIR.dust};
+  color: ${NOIR.ash};
+  transition: border-color 0.15s, color 0.15s;
 
-const RemoveTagButton = styled.button`
-  background: none;
-  border: none;
-  color: #aaaaaa;
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
   &:hover {
-    color: #e74c3c;
+    border-color: ${NOIR.salmon};
+    color: ${NOIR.salmon};
   }
 `;
 
-const TagInput = styled.input`
+const ChipRemove = styled.button`
+  display: flex;
+  align-items: center;
   background: none;
   border: none;
-  color: #ffffff;
-  font-size: 0.875rem;
-  outline: none;
-  min-width: 120px;
-  flex: 1;
-`;
-
-const TagInfo = styled.p`
-  font-size: 0.75rem;
-  color: #777777;
-  margin-top: 0.25rem;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-`;
-
-const DeleteButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: rgba(231, 76, 60, 0.1);
-  color: #e74c3c;
-  border: 1px solid rgba(231, 76, 60, 0.3);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
+  padding: 0;
   cursor: pointer;
-  transition: all 0.3s;
-  &:hover:not(:disabled) {
-    background-color: rgba(231, 76, 60, 0.2);
-  }
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+  color: ${NOIR.ash};
+  font-size: 0.5rem;
+  transition: color 0.15s;
+  &:hover {
+    color: ${NOIR.salmon};
   }
 `;
 
-const SaveButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: #e98973;
-  color: white;
+const TagInlineInput = styled.input`
+  background: none;
   border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1.5rem;
+  outline: none;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.85rem;
+  color: ${NOIR.charcoal};
+  min-width: 100px;
+  flex: 1;
+
+  &::placeholder {
+    color: ${NOIR.ash};
+    font-size: 0.78rem;
+  }
+`;
+
+// ─── Action row ───────────────────────────────────────────────────────────────
+
+const ActionRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 0 0;
+  border-top: 1px solid ${NOIR.border};
+  margin-top: 4px;
+`;
+
+const DeleteBtn = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: 1px solid rgba(192, 57, 43, 0.25);
+  color: #c0392b;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 9px 16px;
   cursor: pointer;
-  font-weight: 600;
-  transition: background-color 0.3s;
+  transition: background 0.15s, border-color 0.15s;
+
+  svg {
+    width: 11px;
+    height: 11px;
+  }
+
   &:hover:not(:disabled) {
-    background-color: #d4745e;
+    background: rgba(192, 57, 43, 0.06);
+    border-color: #c0392b;
   }
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.45;
     cursor: not-allowed;
   }
 `;
 
-const Backdrop = styled.div`
+const SaveBtn = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: ${NOIR.salmon};
+  border: 1px solid ${NOIR.salmon};
+  color: ${NOIR.warmWhite};
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 9px 20px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  &:hover:not(:disabled) {
+    background: ${NOIR.charcoal};
+    border-color: ${NOIR.charcoal};
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+`;
+
+// ─── Delete modal ─────────────────────────────────────────────────────────────
+
+const ModalBackdrop = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  z-index: 1000;
+  inset: 0;
+  background: rgba(10, 10, 11, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 500;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 20px;
 `;
 
-const DeleteModal = styled.div`
-  z-index: 1001;
-`;
-
-const DeleteModalContent = styled.div`
-  background-color: #16213e;
-  border-radius: 12px;
-  padding: 2rem;
+const ModalBox = styled.div`
+  background: ${NOIR.warmWhite};
+  border: 1px solid ${NOIR.dust};
+  border-top: 2px solid ${NOIR.salmon};
   max-width: 400px;
-  width: 90%;
-  h3 {
-    color: #ffffff;
-    margin-bottom: 1rem;
-  }
-  p {
-    color: #aaaaaa;
-    margin-bottom: 1.5rem;
-  }
+  width: 100%;
+  padding: 28px 24px 24px;
+  box-shadow: 0 20px 60px rgba(10, 10, 11, 0.2);
 `;
 
-const DeleteModalButtons = styled.div`
+const ModalTitle = styled.h3`
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  font-style: italic;
+  color: ${NOIR.ink};
+  margin: 0 0 10px;
+`;
+
+const ModalBody = styled.p`
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: ${NOIR.ash};
+  margin: 0 0 24px;
+`;
+
+const ModalActions = styled.div`
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  @media (max-width: 480px) {
-    flex-direction: column;
-  }
+  gap: 10px;
 `;
 
-const CancelButton = styled.button`
-  background-color: #333333;
-  color: #dddddd;
-  border: none;
-  border-radius: 4px;
-  padding: 0.75rem 1rem;
+const ModalCancelBtn = styled.button`
+  background: none;
+  border: 1px solid ${NOIR.dust};
+  color: ${NOIR.ash};
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 16px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: border-color 0.15s, color 0.15s;
   &:hover {
-    background-color: #444444;
+    border-color: ${NOIR.ash};
+    color: ${NOIR.charcoal};
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 `;
 
-const ConfirmDeleteButton = styled.button`
-  background-color: #e74c3c;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.75rem 1rem;
+const ModalConfirmBtn = styled.button`
+  background: #c0392b;
+  border: 1px solid #c0392b;
+  color: ${NOIR.warmWhite};
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 16px;
   cursor: pointer;
-  transition: background-color 0.3s;
-  &:hover {
-    background-color: #c0392b;
+  transition: background 0.15s;
+  &:hover:not(:disabled) {
+    background: #96281b;
+    border-color: #96281b;
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 `;
 
-const LoadingMessage = styled.div`
+// ─── Loading skeleton ─────────────────────────────────────────────────────────
+
+const LoadingState = styled.div`
+  padding: 40px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const LoadingBar = styled.div`
+  height: ${(p) => p.$h || '18px'};
+  width: ${(p) => p.$w || '100%'};
+  ${skeletonBg}
+`;
+
+// ─── Error ────────────────────────────────────────────────────────────────────
+
+const ErrorBox = styled.div`
+  padding: 60px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+`;
+
+const ErrorText = styled.div`
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.9rem;
+  color: #c0392b;
+  background: rgba(192, 57, 43, 0.06);
+  border: 1px solid rgba(192, 57, 43, 0.2);
+  padding: 14px 20px;
   text-align: center;
-  padding: 4rem 0;
-  font-size: 1.125rem;
-  color: #aaaaaa;
+  max-width: 400px;
 `;
-
-const ErrorContainer = styled.div`
-  text-align: center;
-  padding: 4rem 0;
-`;
-
-const ErrorMessage = styled.div`
-  background-color: rgba(248, 215, 218, 0.2);
-  color: #ff6b6b;
-  padding: 1rem;
-  border-radius: 4px;
-  margin-bottom: 2rem;
-`;
-
-export default EditThought;

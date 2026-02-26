@@ -208,7 +208,7 @@ const ThoughtCard = ({
                   </MenuItem>
                   <MenuItem
                     as={Link}
-                    to={`/thoughts/edit/${thought._id}`}
+                    to={`/thoughts/${thought._id}/edit`}
                     onClick={() => setMenuOpen(false)}
                   >
                     <FaEdit /> Edit
