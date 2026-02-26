@@ -38,23 +38,23 @@ function makeMessage({ kind, title, content, name, hours }) {
   switch (kind) {
     case 'thought': {
       // Thoughts have no title — content IS the message
-      const snippet = excerpt(content || title, 110);
+      const snippet = excerpt(content || title, 90);
       body = snippet
-        ? `${fn}, Andrew just shared: "${snippet}"`
-        : `${fn}, Andrew just shared a new thought on ${BRAND}.`;
+        ? `${fn}, Andrew posted a new thought on SoloGram: "${snippet}" - www.thesologram.com`
+        : `${fn}, Andrew posted a new thought on SoloGram - www.thesologram.com`;
       break;
     }
     case 'post': {
-      body = `${fn}, Andrew just posted "${truncate(title, 80)}" on ${BRAND}.`;
+      body = `${fn}, Andrew posted a new photo/post on SoloGram: "${truncate(title, 60)}" - www.thesologram.com`;
       break;
     }
     case 'story': {
-      const hoursNote = hours ? ` Gone in ${hours}h.` : '';
-      body = `${fn}, Andrew added a story: "${truncate(title, 70)}".${hoursNote}`;
+      const hoursNote = hours ? ` Only up for ${hours}h!` : '';
+      body = `${fn}, Andrew shared a new story on SoloGram: "${truncate(title, 60)}".${hoursNote} - www.thesologram.com`;
       break;
     }
     default: {
-      body = `${fn}, something new from Andrew on ${BRAND}: "${truncate(title || content, 80)}"`;
+      body = `${fn}, something new from Andrew on SoloGram: "${truncate(title || content, 70)}" - www.thesologram.com`;
     }
   }
 
