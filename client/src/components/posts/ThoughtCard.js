@@ -96,6 +96,37 @@ const ThoughtCard = ({
     ? thought.mood.charAt(0).toUpperCase() + thought.mood.slice(1)
     : null;
 
+  // ── Content splitting: first line/sentence becomes display headline ──────
+  // Priority: newline break → sentence break (. ! ?) → whole text as headline
+  const splitContent = (text = '') => {
+    const newlineIdx = text.indexOf('\n');
+    if (newlineIdx > 0) {
+      return {
+        headline: text.slice(0, newlineIdx).trim(),
+        body: text.slice(newlineIdx + 1).trim() || null,
+      };
+    }
+    if (text.length <= 120) {
+      return { headline: text.trim(), body: null };
+    }
+    const sentenceMatch = text.match(/^(.+?[.!?])\s+(.+)$/s);
+    if (sentenceMatch) {
+      return {
+        headline: sentenceMatch[1].trim(),
+        body: sentenceMatch[2].trim(),
+      };
+    }
+    const chunk = text.slice(0, 120);
+    const lastSpace = chunk.lastIndexOf(' ');
+    const breakAt = lastSpace > 60 ? lastSpace : 120;
+    return {
+      headline: text.slice(0, breakAt).trim(),
+      body: text.slice(breakAt).trim() || null,
+    };
+  };
+
+  const { headline, body } = splitContent(thought.content);
+
   return (
     <Card $moodColor={moodColor} $pinned={thought.pinned}>
       {/* ── Pinned label ───────────────────────────────────────── */}
@@ -105,8 +136,9 @@ const ThoughtCard = ({
         </PinnedLabel>
       )}
 
-      {/* ── Content — the hero ─────────────────────────────────── */}
-      <Content>{thought.content}</Content>
+      {/* ── Content — headline + optional body ──────────────── */}
+      <Headline>{headline}</Headline>
+      {body && <Body>{body}</Body>}
 
       {/* ── Optional image ─────────────────────────────────────── */}
       {thought.media?.mediaUrl && (
@@ -287,18 +319,33 @@ const PinnedLabel = styled.div`
   }
 `;
 
-// ─── Content ──────────────────────────────────────────────────────────────────
+// ─── Content — headline + body ───────────────────────────────────────────────
 
-const Content = styled.p`
+/* First line/sentence: Cormorant Garamond display size — the entry point */
+const Headline = styled.p`
+  margin: 0 0 10px;
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-style: italic;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: ${NOIR.ink};
+  word-break: break-word;
+`;
+
+/* Remainder of the thought: Instrument Sans body */
+const Body = styled.p`
   margin: 0 0 14px;
   font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.9375rem;
+  font-size: 0.9rem;
   font-weight: 400;
   line-height: 1.65;
   letter-spacing: 0.01em;
   color: ${NOIR.charcoal};
   white-space: pre-wrap;
   word-break: break-word;
+  opacity: 0.85;
 `;
 
 // ─── Media ────────────────────────────────────────────────────────────────────
