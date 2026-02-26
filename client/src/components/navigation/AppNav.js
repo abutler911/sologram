@@ -204,6 +204,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
             onPointerDown={handleLogoPointerDown}
             onPointerUp={handleLogoPointerUp}
             onPointerLeave={handleLogoPointerUp}
+            onContextMenu={(e) => e.preventDefault()}
           >
             <LogoIcon>
               <FaCamera />
@@ -249,6 +250,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
             onPointerDown={handleLogoPointerDown}
             onPointerUp={handleLogoPointerUp}
             onPointerLeave={handleLogoPointerUp}
+            onContextMenu={(e) => e.preventDefault()}
           >
             <LogoIcon small>
               <FaCamera />
@@ -719,6 +721,8 @@ const Logo = styled(Link)`
   align-items: center;
   gap: 8px;
   text-decoration: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 `;
 
 const TopBarActions = styled.div`
@@ -818,6 +822,8 @@ const SideLogoLink = styled(Link)`
   @media (min-width: 1200px) {
     justify-content: flex-start;
   }
+  user-select: none;
+  -webkit-touch-callout: none;
 `;
 
 const SideLogoText = styled(LogoText)`
