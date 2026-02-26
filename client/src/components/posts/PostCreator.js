@@ -82,7 +82,7 @@ import {
 import { useUploadManager } from '../../hooks/useUploadManager';
 import MediaGridSortable from './MediaGridSortable';
 import { filterToClass, fileToMediaType, FILTERS } from '../../lib/media';
-import { api } from '../../services/api'; // ← PR1: import api service
+import { api } from '../../services/api';
 
 const PLACEHOLDER_IMG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='sans-serif' fill='%23999999'%3EImage Not Available%3C/text%3E%3C/svg%3E";
@@ -127,6 +127,8 @@ const getSafeImageSrc = (mediaItem) => {
   return PLACEHOLDER_IMG;
 };
 
+// ─── AI Content Modal ─────────────────────────────────────────────────────────
+
 const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
   const [formData, setFormData] = useState({
     description: '',
@@ -163,7 +165,6 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
     setError('');
   };
 
-  // PR1: axios.post → api.generateAIContent
   const handleGenerate = async () => {
     if (!formData.description.trim()) {
       setError('Please provide a description for your content');
@@ -341,6 +342,8 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
   );
 };
 
+// ─── Filter Modal ─────────────────────────────────────────────────────────────
+
 const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
   const [selectedFilter, setSelectedFilter] = useState(
     mediaItem?.filter || 'none'
@@ -428,6 +431,8 @@ const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
   );
 };
 
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 function PostCreator({ initialData = null, isEditing = false }) {
   const [media, setMedia] = useState([]);
   const [title, setTitle] = useState(initialData?.title || '');
@@ -453,6 +458,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
     mediaRef.current = media;
   }, [media]);
 
+  // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
       mountedRef.current = false;
@@ -470,6 +476,7 @@ function PostCreator({ initialData = null, isEditing = false }) {
     };
   }, []);
 
+  // Populate existing media when editing
   useEffect(() => {
     if (isEditing && initialData?.media?.length > 0) {
       const existingMedia = initialData.media.map((item) => {
@@ -495,6 +502,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
       setMedia(existingMedia);
     }
   }, [isEditing, initialData]);
+
+  // ── Dropzone ───────────────────────────────────────────────────────────────
 
   const onDrop = useCallback(
     async (acceptedFiles) => {
@@ -552,11 +561,12 @@ function PostCreator({ initialData = null, isEditing = false }) {
       'video/*': ['.mp4', '.mov', '.avi', '.webm'],
     },
     onDrop,
-    // PR1: raised from 25 MB to 300 MB so large videos aren't silently rejected
     maxSize: 300 * 1024 * 1024,
     noClick: true,
     noKeyboard: true,
   });
+
+  // ── Media handlers ─────────────────────────────────────────────────────────
 
   const removeMedia = (indexToRemove) => {
     const itemToRemove = media[indexToRemove];
@@ -600,6 +610,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
     });
   };
 
+  // ── AI content ─────────────────────────────────────────────────────────────
+
   const handleAIContentApply = (generatedContent) => {
     if (generatedContent.title) setTitle(generatedContent.title);
     if (generatedContent.caption) setCaption(generatedContent.caption);
@@ -612,6 +624,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
       toast.success('Content applied!');
     }
   };
+
+  // ── Tags ───────────────────────────────────────────────────────────────────
 
   const addTag = (tagText = null) => {
     const tagToAdd = tagText || currentTag.trim();
@@ -647,7 +661,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
     setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
-  // PR1: raw axios.post/put → api service
+  // ── Submit ─────────────────────────────────────────────────────────────────
+
   const handleSubmit = async () => {
     if (media.length === 0) {
       toast.error('Please add at least one photo or video');
@@ -685,32 +700,50 @@ function PostCreator({ initialData = null, isEditing = false }) {
     setIsSubmitting(true);
 
     try {
-      const payload = {
-        title: title ?? '',
-        caption: caption ?? '',
-        content: content ?? '',
-        tags: tags.join(','),
-        location: location ?? '',
-        date: eventDate,
-        media: media.map((item, index) => ({
-          mediaUrl: item.mediaUrl,
-          cloudinaryId: item.cloudinaryId,
-          mediaType: item.mediaType || item.type,
-          filter: item.filter || 'none',
-          order: index,
-          ...(item.isExisting && item._id && { _id: item._id }),
-        })),
-      };
-
       let response;
+
       if (isEditing) {
+        // ── keepMedia: tell the backend which existing media to retain ──────
+        // Without this, the backend treats all existing media as "removed" and
+        // deletes them from Cloudinary.
+        const keepMedia = media
+          .filter((item) => item.isExisting && item._id)
+          .map((item) => item._id);
+
+        // New uploads only — existing ones are preserved via keepMedia
+        const newMedia = media
+          .filter((item) => !item.isExisting)
+          .map((item, index) => ({
+            mediaUrl: item.mediaUrl,
+            cloudinaryId: item.cloudinaryId,
+            mediaType: item.mediaType || item.type,
+            filter: item.filter || 'none',
+            order: index,
+          }));
+
+        const payload = {
+          title: title ?? '',
+          caption: caption ?? '',
+          content: content ?? '',
+          tags: tags.join(','),
+          location: location ?? '',
+          date: eventDate,
+          keepMedia, // ← critical: IDs of existing media to keep
+          media: newMedia,
+        };
+
         response = await api.updatePost(initialData._id, payload);
         toast.success('Post updated successfully!');
       } else {
-        response = await api.createPost({
-          ...payload,
+        const payload = {
+          title: title ?? '',
+          caption: caption ?? '',
+          content: content ?? '',
+          tags: tags.join(','),
+          location: location ?? '',
+          date: eventDate,
           media: media
-            .filter((item) => !item.error && !item.isExisting)
+            .filter((item) => !item.error)
             .map((item, index) => ({
               mediaUrl: item.mediaUrl,
               cloudinaryId: item.cloudinaryId,
@@ -718,15 +751,23 @@ function PostCreator({ initialData = null, isEditing = false }) {
               filter: item.filter || 'none',
               order: index,
             })),
-        });
+        };
+
+        response = await api.createPost(payload);
         toast.success('Post created successfully!');
       }
 
-      // api service unwraps r.data — server returns { data: { _id } }
-      const postId = response?.data?._id ?? response?._id;
+      // api service may return the unwrapped data object or the full response —
+      // handle both shapes gracefully.
+      const postId =
+        response?.data?._id ?? // { data: { _id } }
+        response?._id ?? // { _id } directly
+        initialData?._id; // fallback for edit if response is unexpected
+
       navigate(`/post/${postId}`);
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Please try again';
+      const errorMessage =
+        error.response?.data?.message || error.message || 'Please try again';
       toast.error(
         `Failed to ${isEditing ? 'update' : 'create'} post: ${errorMessage}`
       );
@@ -740,6 +781,8 @@ function PostCreator({ initialData = null, isEditing = false }) {
     title.trim() &&
     caption.trim() &&
     !media.some((item) => item.uploading || item.error);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <Container>

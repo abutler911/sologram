@@ -7,13 +7,18 @@ import { COLORS } from '../theme';
 import { usePost } from '../hooks/queries/usePosts';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
-// Lazy load PostCreator
 const PostCreator = lazy(() => import('../components/posts/PostCreator'));
 
 const EditPost = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: post, isLoading, error } = usePost(id);
+  const { data: postResponse, isLoading, error } = usePost(id);
+
+  // usePost / react-query returns the raw API response shape:
+  //   { success: true, data: { _id, title, media, ... } }
+  // Unwrap .data if present, otherwise fall back to the response itself
+  // so this works regardless of how the hook is configured.
+  const post = postResponse?.data ?? postResponse;
 
   if (isLoading) {
     return (
@@ -53,7 +58,6 @@ const EditPost = () => {
           <HeaderTitle>Edit Post</HeaderTitle>
           <HeaderSubtitle>Update and refine your content</HeaderSubtitle>
         </PageHeader>
-
         <Suspense
           fallback={
             <LoadingContainer>
@@ -68,7 +72,8 @@ const EditPost = () => {
   );
 };
 
-// Styled Components (unchanged)
+// ── Styled Components ─────────────────────────────────────────────────────────
+
 const PageWrapper = styled.div`
   background-color: ${COLORS.background};
   min-height: 100vh;
