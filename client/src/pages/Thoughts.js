@@ -26,6 +26,7 @@ const defaultUser = { username: 'Andrew', handle: 'andrew', avatar: null };
 const NOIR = {
   ink: '#0a0a0b',
   warmWhite: '#faf9f7',
+  softWhite: 'rgba(250, 249, 247, 0.82)', // ← body text: warm but not harsh
   dust: '#e8e4dd',
   ash: '#a09a91',
   charcoal: '#3a3632',
@@ -372,9 +373,6 @@ const FeedWrapper = styled.div`
   background: ${COLORS.background};
   animation: ${fadeUp} 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 
-  /* Offset for fixed sidebar — use width calc so the wrapper never exceeds
-     the visible viewport and causes a horizontal scrollbar.
-     Matches AppNav: SIDEBAR_NARROW=72px (960-1199px), SIDEBAR_FULL=240px (1200px+) */
   @media (min-width: 960px) {
     margin-left: 72px;
     width: calc(100% - 72px);
@@ -398,7 +396,6 @@ const FeedHeader = styled.div`
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 
-  /* Gradient accent line — matches PostCard signature */
   &::before {
     content: '';
     position: absolute;
@@ -431,9 +428,14 @@ const FeedTitle = styled.h1`
   margin: 0;
   flex-shrink: 0;
   line-height: 1;
+
+  /* AppNav TopBar already identifies the app on mobile —
+     hide the redundant page title so two sticky bars don't stack */
+  @media (max-width: 959px) {
+    display: none;
+  }
 `;
 
-/* The italic "Solo" prefix — mirrors the PostCard author-name style */
 const TitleItalic = styled.span`
   font-style: italic;
   font-weight: 300;
@@ -484,7 +486,7 @@ const SearchInput = styled.input`
   background: none;
   border: none;
   outline: none;
-  color: ${NOIR.warmWhite};
+  color: ${NOIR.softWhite};
   font-family: 'DM Mono', 'Courier New', monospace;
   font-size: 0.78rem;
   letter-spacing: 0.04em;
@@ -505,7 +507,7 @@ const SearchClear = styled.button`
   padding: 0;
   flex-shrink: 0;
   &:hover {
-    color: ${NOIR.warmWhite};
+    color: ${NOIR.softWhite};
   }
 `;
 
@@ -556,7 +558,6 @@ const MoodTab = styled.button`
   transition: color 0.15s;
   white-space: nowrap;
 
-  /* Active underline — salmon, matches PostCard accent */
   &::after {
     content: '';
     position: absolute;
@@ -582,7 +583,6 @@ const ComposeRow = styled.div`
   gap: 14px;
   padding: 16px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  /* Left accent border — thinner, editorial */
   border-left: 2px solid ${NOIR.salmon}66;
   cursor: pointer;
   transition: background 0.15s, border-left-color 0.15s;
@@ -626,7 +626,7 @@ const ComposeBtn = styled.button`
   &:hover {
     background: ${NOIR.salmon}14;
     border-color: ${NOIR.salmon};
-    color: ${NOIR.warmWhite};
+    color: ${NOIR.softWhite};
   }
 `;
 
@@ -636,27 +636,26 @@ const CardFeed = styled.div`
   display: flex;
   flex-direction: column;
 
-  /* Mobile: no gap — 2px background bleed separates cards */
+  /* Mobile: gap lets dark background bleed through as a natural gutter */
   @media (max-width: 639px) {
-    gap: 2px;
+    gap: 10px;
+    padding: 10px 0 0;
   }
 
-  /* Tablet + desktop: cards centred with breathing room */
+  /* Tablet + desktop */
   @media (min-width: 640px) {
-    gap: 0;
+    gap: 12px;
     max-width: 680px;
     margin: 0 auto;
     padding: 24px 0 0;
   }
 `;
 
-/* Each ThoughtCard gets a staggered fade-up — same as PostCard reveal */
 const ThoughtCardWrap = styled.div`
   opacity: 0;
   animation: ${revealIn} 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   position: relative;
 
-  /* The 2px salmon→sage gradient top line — PostCard's signature */
   &::before {
     content: '';
     position: absolute;
