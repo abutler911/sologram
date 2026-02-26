@@ -2,7 +2,7 @@ const { sendSmsWithRetry } = require('../sms/textbeltClient');
 const recipients = require('../../config/smsRecipients');
 
 const BRAND = 'SoloGram';
-const OPTOUT = ' · Stop = End';
+const OPTOUT = ' - Stop=End';
 const QUOTA_THRESHOLD = 15;
 
 async function checkQuota(res) {
@@ -18,7 +18,7 @@ const firstName = (n = '') => String(n).split(' ')[0] || 'friend';
 
 const truncate = (s, n) => {
   const limit = Math.max(0, n);
-  return s && s.length > limit ? s.slice(0, limit - 1) + '…' : s;
+  return s && s.length > limit ? s.slice(0, limit - 1) + '...' : s;
 };
 
 // Pulls the first sentence or first maxLen chars — whichever is shorter
