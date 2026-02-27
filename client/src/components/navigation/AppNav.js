@@ -650,53 +650,84 @@ const CrazyPlane = ({ onDone }) => {
   const [anim, setAnim] = useState(null);
 
   useEffect(() => {
-    // generate smooth waypoints: entry → random loops → exit
-    const raw = [{ x: -8, y: 45 + Math.random() * 10 }];
+    // generate waypoints: entry → random loops → exit
+    const pts = [{ x: -8, y: 45 + Math.random() * 10 }];
     const legCount = 4 + Math.floor(Math.random() * 3);
     for (let i = 0; i < legCount; i++) {
-      raw.push({
+      pts.push({
         x: 8 + ((i + 1) / (legCount + 1)) * 80 + (Math.random() - 0.5) * 15,
         y: 15 + Math.random() * 60,
       });
     }
-    raw.push({ x: 108, y: 25 + Math.random() * 30 });
+    pts.push({ x: 108, y: 25 + Math.random() * 30 });
 
-    // subdivide with midpoints for smoother curves
-    const smooth = [raw[0]];
-    for (let i = 1; i < raw.length; i++) {
-      const prev = raw[i - 1];
-      const curr = raw[i];
-      smooth.push({
-        x: (prev.x + curr.x) / 2 + (Math.random() - 0.5) * 10,
-        y: (prev.y + curr.y) / 2 + (Math.random() - 0.5) * 12,
-      });
-      smooth.push(curr);
-    }
-
-    const total = smooth.length;
-    const duration = total * 320 + 600;
+    // each leg gets a turn phase + a move phase
+    // turn = 25% of leg time, move = 75%
+    const totalLegs = pts.length - 1;
+    const legTime = 100 / totalLegs; // % per leg
+    const turnRatio = 0.2;
     const steps = [];
 
-    smooth.forEach((p, i) => {
-      const pct = (i / (total - 1)) * 100;
-      // angle toward next point (or keep last angle)
-      const next = smooth[Math.min(i + 1, total - 1)];
-      const angle = Math.atan2(next.y - p.y, next.x - p.x) * (180 / Math.PI);
-      const scale = 0.95 + Math.sin((i / total) * Math.PI) * 0.3;
-      // only fade in at the very start and out in the last 8%
-      let opacity = 1;
-      if (pct < 5) opacity = pct / 5;
-      else if (pct > 92) opacity = Math.max(0, (100 - pct) / 8);
+    // starting angle
+    let prevAngle =
+      Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x) * (180 / Math.PI);
 
+    // frame 0: off-screen, already facing first waypoint
+    steps.push(
+      `0% { left:${pts[0].x.toFixed(1)}%; top:${pts[0].y.toFixed(
+        1
+      )}%; transform:rotate(${prevAngle.toFixed(0)}deg) scale(1); opacity:0; }`
+    );
+    steps.push(`2% { opacity:1; }`);
+
+    for (let i = 0; i < totalLegs; i++) {
+      const from = pts[i];
+      const to = pts[i + 1];
+      const angle = Math.atan2(to.y - from.y, to.x - from.x) * (180 / Math.PI);
+      const scale = 0.95 + Math.sin(((i + 1) / totalLegs) * Math.PI) * 0.25;
+
+      const legStart = i * legTime;
+      const turnEnd = legStart + legTime * turnRatio;
+      const moveEnd = legStart + legTime;
+
+      // fade out only in last 6% of total animation
+      const fadeAtMove = moveEnd > 94 ? Math.max(0, (100 - moveEnd) / 6) : 1;
+      const fadeAtTurn = turnEnd > 94 ? Math.max(0, (100 - turnEnd) / 6) : 1;
+
+      // TURN: stay at current position, rotate to face next point
+      if (Math.abs(angle - prevAngle) > 2) {
+        steps.push(
+          `${turnEnd.toFixed(1)}% { left:${from.x.toFixed(
+            1
+          )}%; top:${from.y.toFixed(1)}%; transform:rotate(${angle.toFixed(
+            0
+          )}deg) scale(${scale.toFixed(2)}); opacity:${fadeAtTurn.toFixed(
+            2
+          )}; }`
+        );
+      }
+
+      // MOVE: fly to next point, same rotation
       steps.push(
-        `${pct.toFixed(1)}% { left:${p.x.toFixed(1)}%; top:${p.y.toFixed(
+        `${moveEnd.toFixed(1)}% { left:${to.x.toFixed(1)}%; top:${to.y.toFixed(
           1
         )}%; transform:rotate(${angle.toFixed(0)}deg) scale(${scale.toFixed(
           2
-        )}); opacity:${opacity.toFixed(2)}; }`
+        )}); opacity:${fadeAtMove.toFixed(2)}; }`
       );
-    });
 
+      prevAngle = angle;
+    }
+
+    steps.push(
+      `100% { left:108%; top:${pts[totalLegs].y.toFixed(
+        1
+      )}%; transform:rotate(${prevAngle.toFixed(
+        0
+      )}deg) scale(0.85); opacity:0; }`
+    );
+
+    const duration = totalLegs * 650 + 400;
     const name = `flight_${Date.now()}`;
     setAnim({ name, steps: steps.join('\n'), duration });
 
