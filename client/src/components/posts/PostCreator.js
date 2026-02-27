@@ -86,6 +86,12 @@ import { api } from '../../services/api';
 const PLACEHOLDER_IMG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='sans-serif' fill='%23999999'%3EImage Not Available%3C/text%3E%3C/svg%3E";
 
+// ── Media limits (enforced client + server + model) ──────────────────────────
+const MAX_FILES = 30;
+const MAX_IMAGE_SIZE = 25 * 1024 * 1024; // 25 MB
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
+const MAX_VIDEO_DURATION = 60; // seconds
+
 // Local YYYY-MM-DD helper (prevents UTC day rollback)
 const toLocalDateInput = (dateLike) => {
   const d = dateLike ? new Date(dateLike) : new Date();
@@ -93,11 +99,6 @@ const toLocalDateInput = (dateLike) => {
   return d.toISOString().split('T')[0];
 };
 
-// ── FIX #2: Killed the mobile FileReader path. URL.createObjectURL is
-//    supported on every browser shipping since 2017. The old readAsDataURL
-//    code was creating a full base64 copy of every file in the JS heap —
-//    a 10 MB photo became ~13 MB of string *before* the upload even started.
-//    Now synchronous, zero-copy, and returns a revocable blob: URL.
 const createBlobUrl = (file) => {
   try {
     return URL.createObjectURL(file);
@@ -105,6 +106,28 @@ const createBlobUrl = (file) => {
     return null;
   }
 };
+
+// Returns a Promise<number> of the video's duration in seconds.
+// Resolves 0 if it can't be determined (non-blocking — upload proceeds).
+const getVideoDuration = (file) =>
+  new Promise((resolve) => {
+    try {
+      const url = URL.createObjectURL(file);
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.onloadedmetadata = () => {
+        URL.revokeObjectURL(url);
+        resolve(video.duration || 0);
+      };
+      video.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(0);
+      };
+      video.src = url;
+    } catch {
+      resolve(0);
+    }
+  });
 
 const getSafeImageSrc = (mediaItem) => {
   if (mediaItem.mediaUrl) return mediaItem.mediaUrl;
@@ -416,10 +439,7 @@ const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
   );
 };
 
-// ─── FIX #5: Memoized form section ────────────────────────────────────────
-// Extracted so that `uploadProgress` state changes (which fire dozens of
-// times per upload) never re-render the text inputs. This component only
-// re-renders when its own props change (title, caption, tags, etc.).
+// ─── Memoized form section ────────────────────────────────────────────────────
 
 const PostDetailsForm = memo(function PostDetailsForm({
   title,
@@ -596,10 +616,6 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
   const { startUpload, cancelUpload, uploadProgress, mountedRef } =
     useUploadManager(setMedia);
 
-  // ── FIX #4: mediaRef gives onDrop a stable, always-current view of
-  //    media without needing `media` in the dependency array. This
-  //    prevents the callback from being recreated on every media change
-  //    and eliminates the stale-closure race condition.
   const mediaRef = useRef(media);
   useEffect(() => {
     mediaRef.current = media;
@@ -651,19 +667,27 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
   }, [isEditing, initialData]);
 
   // ── Dropzone ───────────────────────────────────────────────────────────────
-  //
-  // FIX #2 + #4: onDrop is now synchronous (no async/await needed since
-  // createBlobUrl is sync). Reads current media from mediaRef instead of
-  // closing over `media` state, so the dependency array is stable: only
-  // [startUpload]. This means dropping files never fights with in-flight
-  // upload state updates.
 
   const onDrop = useCallback(
-    (acceptedFiles) => {
+    async (acceptedFiles) => {
       if (acceptedFiles.length === 0) return;
 
-      // Dupe-check against the ref — always current, no stale closure.
       const current = mediaRef.current;
+
+      // ── File count cap ─────────────────────────────────────────────────
+      const slotsLeft = MAX_FILES - current.length;
+      if (slotsLeft <= 0) {
+        toast.error(`Maximum ${MAX_FILES} files per post`);
+        return;
+      }
+      if (acceptedFiles.length > slotsLeft) {
+        toast.error(
+          `Only ${slotsLeft} more file(s) allowed — dropped the rest`
+        );
+        acceptedFiles = acceptedFiles.slice(0, slotsLeft);
+      }
+
+      // ── Dupe check ─────────────────────────────────────────────────────
       const uniqueFiles = acceptedFiles.filter((file) => {
         const isDupe = current.some(
           (m) =>
@@ -671,22 +695,49 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
             m.file?.size === file.size &&
             m.file?.lastModified === file.lastModified
         );
-        if (isDupe) {
-          toast.error(`File "${file.name}" is already added.`);
-        }
+        if (isDupe) toast.error(`File "${file.name}" is already added.`);
         return !isDupe;
       });
-
       if (uniqueFiles.length === 0) return;
 
-      const newItems = uniqueFiles.map((file) => {
+      // ── Size + duration validation ─────────────────────────────────────
+      const validated = [];
+      for (const file of uniqueFiles) {
+        const isVideo = file.type.startsWith('video/');
+        const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+        const label = isVideo ? 'Video' : 'Image';
+        const limitMB = Math.round(maxSize / 1024 / 1024);
+
+        if (file.size > maxSize) {
+          toast.error(`${label} "${file.name}" exceeds ${limitMB}MB limit`);
+          continue;
+        }
+
+        if (isVideo) {
+          const duration = await getVideoDuration(file);
+          if (duration > MAX_VIDEO_DURATION) {
+            toast.error(
+              `Video "${file.name}" is ${Math.round(
+                duration
+              )}s — max ${MAX_VIDEO_DURATION}s`
+            );
+            continue;
+          }
+        }
+
+        validated.push(file);
+      }
+      if (validated.length === 0) return;
+
+      // ── Build items and start uploads ──────────────────────────────────
+      const newItems = validated.map((file) => {
         const id = `media_${Date.now()}_${Math.random()
           .toString(36)
           .substring(2, 8)}`;
         return {
           id,
           file,
-          previewUrl: createBlobUrl(file), // sync, zero-copy blob: URL
+          previewUrl: createBlobUrl(file),
           mediaType: fileToMediaType(file) === 'video' ? 'video' : 'image',
           filter: 'none',
           filterClass: '',
@@ -704,7 +755,7 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
         });
       });
     },
-    [startUpload] // ← stable deps, no more [media, startUpload]
+    [startUpload]
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -713,28 +764,21 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
       'video/*': ['.mp4', '.mov', '.avi', '.webm'],
     },
     onDrop,
-    maxSize: 300 * 1024 * 1024,
+    maxSize: MAX_VIDEO_SIZE, // outer cap — per-type limits enforced in onDrop
     noClick: true,
     noKeyboard: true,
   });
 
   // ── Media handlers ─────────────────────────────────────────────────────────
-  //
-  // FIX #1: Every mutation is now by item.id, never by index.
-  // Indices shift when items are added/removed concurrently (e.g. an upload
-  // finishes while you tap "remove" on another item). IDs are stable for
-  // the lifetime of the item.
 
   const removeMedia = useCallback(
     (idToRemove) => {
-      // If this item is still uploading or queued, abort/dequeue it
       cancelUpload(idToRemove);
 
       setMedia((current) => {
         const item = current.find((m) => m.id === idToRemove);
         if (!item) return current;
 
-        // Revoke blob URL
         if (
           item.previewUrl &&
           !item.isExisting &&
@@ -745,10 +789,6 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
           } catch {}
         }
 
-        // Best-effort Cloudinary cleanup: if this item was uploaded this
-        // session (not an existing saved media item) and has a cloudinaryId,
-        // tell the backend to delete the orphaned asset. Fire-and-forget —
-        // don't block the UI on cleanup.
         if (!item.isExisting && item.cloudinaryId) {
           api.deleteOrphanedMedia(item.cloudinaryId).catch((err) => {
             console.warn('[Cloudinary cleanup]', err?.message || err);
@@ -781,8 +821,6 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
     [selectedMediaForFilter]
   );
 
-  // reorderMedia stays index-based — DnD is inherently positional and
-  // this runs as a single synchronous splice, so no race condition here.
   const reorderMedia = useCallback((fromIndex, toIndex) => {
     setMedia((current) => {
       const next = [...current];
@@ -794,7 +832,6 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
 
   // ── AI content ─────────────────────────────────────────────────────────────
 
-  // Stable ref — won't break PostDetailsForm's memo
   const openAIModal = useCallback(() => setShowAIModal(true), []);
 
   const handleAIContentApply = (generatedContent) => {

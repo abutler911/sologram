@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+const MAX_MEDIA_PER_POST = 30;
+
 const mediaSchema = new mongoose.Schema(
   {
     mediaType: {
@@ -20,29 +22,33 @@ const PostSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true },
     caption: { type: String, required: true, trim: true },
     content: { type: String, trim: true },
-    media: [mediaSchema],
+    media: {
+      type: [mediaSchema],
+      validate: {
+        validator: (arr) => arr.length <= MAX_MEDIA_PER_POST,
+        message: `A post can have at most ${MAX_MEDIA_PER_POST} media items`,
+      },
+    },
     location: { type: String, trim: true },
     tags: [{ type: String, trim: true }],
     collections: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Collection' }],
     eventDate: { type: Date, required: true },
     postedAt: { type: Date, required: true, default: Date.now },
-    // FIX: likes was missing — post.likes += 1 produced NaN and was silently dropped
     likes: { type: Number, default: 0, min: 0 },
     commentCount: { type: Number, default: 0, min: 0 },
   },
   {
-    timestamps: true, // adds createdAt + updatedAt automatically
+    timestamps: true,
   }
 );
 
-// Full-text search
 PostSchema.index({
   title: 'text',
   caption: 'text',
   content: 'text',
   tags: 'text',
 });
-// Feed pagination (most common query)
+
 PostSchema.index({ eventDate: -1 });
 
 module.exports = mongoose.model('Post', PostSchema);

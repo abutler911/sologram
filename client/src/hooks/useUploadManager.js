@@ -2,29 +2,20 @@
 //
 // Cloudinary direct-upload manager with concurrency-limited queue.
 //
-// CHANGES FROM PREVIOUS VERSION:
+// KEY FIXES:
+// 1. Axios instance + interceptor created ONCE via guarded lazy init.
+//    The old code had interceptors.request.use() in the component body,
+//    adding a new interceptor on every render. After dozens of progress
+//    ticks this stacked hundreds of interceptors — causing sluggishness
+//    and eventual request failures.
 //
-// 1. PUMP STALL FIX: `activeCount` is now a ref, not state. The old
-//    version had `active` (state) in pump's useCallback deps, so
-//    `.finally(() => setTimeout(pump, 0))` captured a stale `pump`
-//    whose closure saw an outdated `active` value. The queue would
-//    stall at `active >= concurrency` because the old closure never
-//    saw the decremented count. Refs don't cause this because reading
-//    `.current` always returns the latest value.
+// 2. pumpRef pattern: .finally() calls pumpRef.current (always latest)
+//    instead of closing over a potentially stale pump reference.
 //
-// 2. FIX #5 — SEPARATED PROGRESS STATE: Progress ticks no longer
-//    patch the media array. Instead, progress lives in `uploadProgress`
-//    (a separate state atom: Record<id, number>). The media array is
-//    only touched on completion (mediaUrl/cloudinaryId) and error.
-//    This means form fields that depend on `media` stop re-rendering
-//    on every progress tick.
+// 3. activeRef (ref, not state) — pump reads .current directly, no
+//    stale closure, no dependency-triggered recreation.
 //
-// INTERFACE:
-//   const { startUpload, cancelUpload, uploadProgress, mountedRef } =
-//     useUploadManager(setMedia);
-//
-//   uploadProgress: Record<string, number>  — id → 0-100, entries
-//     removed on completion/error. Pass to MediaItem as a prop.
+// 4. Separated progress state — progress ticks never touch media array.
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
@@ -39,14 +30,9 @@ export function useUploadManager(
   const mountedRef = useRef(true);
   const queueRef = useRef([]);
   const inFlightRef = useRef(new Map());
-
-  // ── FIX: Active count is a ref, not state ──────────────────────────────
-  // This is the core stall fix. pump() reads activeRef.current, which is
-  // always fresh — no stale closures, no dependency on a state value that
-  // triggers useCallback recreation.
   const activeRef = useRef(0);
+  const pumpRef = useRef(null);
 
-  // ── FIX #5: Progress in a separate atom ────────────────────────────────
   const [uploadProgress, setUploadProgress] = useState({});
 
   const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
@@ -59,31 +45,34 @@ export function useUploadManager(
     });
   }
 
-  const cloudinaryAxios = useRef(
-    axios.create({
+  // ── Axios instance + interceptor: created ONCE ─────────────────────────
+  // CRITICAL: everything inside this if-block runs exactly once. The old
+  // code had the interceptor.use() call in the component body (outside
+  // the guard), so it stacked a new interceptor on every render.
+  const cloudinaryAxios = useRef(null);
+  if (!cloudinaryAxios.current) {
+    const instance = axios.create({
       baseURL: cloudName
         ? `https://api.cloudinary.com/v1_1/${cloudName}`
         : undefined,
       headers: { 'Content-Type': 'multipart/form-data' },
-    })
-  ).current;
+    });
+    // Strip auth headers — added once, runs once per request
+    instance.interceptors.request.use((config) => {
+      if (config.headers?.Authorization) delete config.headers.Authorization;
+      if (config.headers?.common?.Authorization)
+        delete config.headers.common.Authorization;
+      return config;
+    });
+    try {
+      if (instance.defaults?.headers?.common?.Authorization) {
+        delete instance.defaults.headers.common.Authorization;
+      }
+    } catch {}
+    cloudinaryAxios.current = instance;
+  }
 
-  // Strip any auth headers that might leak from a global axios instance
-  try {
-    if (cloudinaryAxios.defaults?.headers?.common?.Authorization) {
-      delete cloudinaryAxios.defaults.headers.common.Authorization;
-    }
-  } catch {}
-
-  cloudinaryAxios.interceptors.request.use((config) => {
-    if (config.headers?.Authorization) delete config.headers.Authorization;
-    if (config.headers?.common?.Authorization)
-      delete config.headers.common.Authorization;
-    return config;
-  });
-
-  // ── Single atomic patch for media array ────────────────────────────────
-  // Only called on completion and error — never on progress ticks.
+  // ── Media array patch (completion + error only) ────────────────────────
   const updateItem = useCallback(
     (id, patch) => {
       setMedia((prev) =>
@@ -96,7 +85,7 @@ export function useUploadManager(
   // ── Progress helpers (separate state, cheap updates) ───────────────────
   const setProgress = useCallback((id, pct) => {
     setUploadProgress((prev) => {
-      if (prev[id] === pct) return prev; // bail — same value, skip render
+      if (prev[id] === pct) return prev;
       return { ...prev, [id]: pct };
     });
   }, []);
@@ -110,8 +99,6 @@ export function useUploadManager(
   }, []);
 
   // ── Queue pump ─────────────────────────────────────────────────────────
-  // No state deps — reads activeRef.current directly. This function
-  // reference is stable for the lifetime of the component.
   const pump = useCallback(() => {
     if (!mountedRef.current) return;
 
@@ -128,11 +115,10 @@ export function useUploadManager(
       form.append('upload_preset', preset);
       if (folder) form.append('folder', folder);
 
-      // Mark as uploading in media array (single touch)
       updateItem(id, { uploading: true, error: false });
       setProgress(id, 1);
 
-      cloudinaryAxios
+      cloudinaryAxios.current
         .post('/auto/upload', form, {
           signal: controller.signal,
           onUploadProgress: (e) => {
@@ -160,9 +146,6 @@ export function useUploadManager(
         })
         .catch((err) => {
           if (!mountedRef.current) return;
-          // If this was an intentional cancel via cancelUpload(), it
-          // already handled the UI state and the item is likely already
-          // removed from the media array. Don't re-mark as error.
           const wasCanceled =
             axios.isCancel?.(err) || err?.code === 'ERR_CANCELED';
           if (!wasCanceled) {
@@ -172,20 +155,19 @@ export function useUploadManager(
           reject(err);
         })
         .finally(() => {
-          // IDEMPOTENT CLEANUP: Map.delete() returns true only if the
-          // entry existed. cancelUpload() already deletes the entry and
-          // decrements activeRef, so if we get here after a cancel this
-          // is a no-op — no double decrement, no phantom pump.
           if (inFlightRef.current.delete(id)) {
             activeRef.current = Math.max(0, activeRef.current - 1);
           }
-          pump();
+          // Always call latest pump via ref — never a stale closure
+          pumpRef.current?.();
         });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [concurrency, preset, folder, updateItem, setProgress, clearProgress]);
 
-  // ── Public: enqueue an upload ──────────────────────────────────────────
+  // Keep pumpRef in sync on every render
+  pumpRef.current = pump;
+
   const startUpload = useCallback(
     (file, id, mediaType) =>
       new Promise((resolve, reject) => {
@@ -195,23 +177,17 @@ export function useUploadManager(
     [pump]
   );
 
-  // ── Public: cancel a pending or in-flight upload ───────────────────────
   const cancelUpload = useCallback(
     (id) => {
       const controller = inFlightRef.current.get(id);
       if (controller) {
-        // In-flight — abort the XHR. The abort triggers .catch() then
-        // .finally(). Because we delete from inFlightRef HERE, .finally()
-        // sees delete() return false and skips the decrement. No double
-        // decrement.
         controller.abort();
         inFlightRef.current.delete(id);
         activeRef.current = Math.max(0, activeRef.current - 1);
         updateItem(id, { uploading: false, error: true });
         clearProgress(id);
-        pump(); // drain next queued item into the freed slot
+        pump();
       } else {
-        // Still queued — splice out and reject so the promise doesn't dangle
         const idx = queueRef.current.findIndex((q) => q.id === id);
         if (idx >= 0) {
           const [removed] = queueRef.current.splice(idx, 1);
@@ -223,7 +199,6 @@ export function useUploadManager(
     [updateItem, clearProgress, pump]
   );
 
-  // ── Lifecycle ──────────────────────────────────────────────────────────
   useEffect(() => {
     mountedRef.current = true;
     return () => {

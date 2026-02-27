@@ -13,12 +13,11 @@ const {
   buildNewPostEmail,
 } = require('../utils/emailTemplates/newPostTemplate');
 
+// Must match client-side MAX_FILES and Post model validator
+const MAX_MEDIA_PER_POST = 30;
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-/**
- * Given an array of lean post objects, attach the real like count from
- * the Like collection via a single aggregation.
- */
 async function attachLikeCounts(posts) {
   if (!posts.length) return posts;
   const ids = posts.map((p) => p._id);
@@ -33,10 +32,6 @@ async function attachLikeCounts(posts) {
   }));
 }
 
-/**
- * Attach live comment counts (top-level + replies) from Comment collection.
- * One aggregation for all posts — never trusts stale Post.commentCount.
- */
 async function attachCommentCounts(posts) {
   if (!posts.length) return posts;
   const ids = posts.map((p) => p._id);
@@ -127,6 +122,13 @@ exports.createPost = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'title, caption, and media are required',
+      });
+    }
+
+    if (media.length > MAX_MEDIA_PER_POST) {
+      return res.status(400).json({
+        success: false,
+        message: `Maximum ${MAX_MEDIA_PER_POST} media items per post`,
       });
     }
 
@@ -258,6 +260,14 @@ exports.updatePost = async (req, res) => {
         };
       });
 
+    const finalMedia = [...keptMedia, ...newMedia];
+    if (finalMedia.length > MAX_MEDIA_PER_POST) {
+      return res.status(400).json({
+        success: false,
+        message: `Maximum ${MAX_MEDIA_PER_POST} media items per post`,
+      });
+    }
+
     if (title !== undefined) post.title = title;
     if (caption !== undefined) post.caption = caption;
     if (content !== undefined) post.content = content;
@@ -277,7 +287,7 @@ exports.updatePost = async (req, res) => {
       }
     }
 
-    post.media = [...keptMedia, ...newMedia];
+    post.media = finalMedia;
     await post.save();
 
     res.json({ success: true, data: post });
@@ -407,16 +417,6 @@ exports.checkUserLikesBatch = async (req, res) => {
   }
 };
 
-/**
- * DELETE /api/posts/media/:cloudinaryId
- *
- * Best-effort cleanup of an orphaned Cloudinary asset.
- * Called when a user removes a fully-uploaded image from the PostCreator
- * before ever saving the post. Without this, the asset sits in Cloudinary
- * forever, accumulating storage costs.
- *
- * Safety: only deletes assets under the configured base folder.
- */
 exports.deleteMedia = async (req, res) => {
   try {
     const publicId = decodeURIComponent(req.params.cloudinaryId);
