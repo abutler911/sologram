@@ -101,12 +101,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
     };
   }, []);
 
-  // auto-dismiss plane after animation
-  useEffect(() => {
-    if (!planeVisible) return;
-    const id = setTimeout(() => setPlaneVisible(false), 2400);
-    return () => clearTimeout(id);
-  }, [planeVisible]);
+  // plane dismisses itself via onDone callback
 
   // shared handler object to spread on logo elements
   const logoEasterEgg = {
@@ -584,12 +579,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       {easterEggOpen && (
         <EasterEggModal onClose={() => setEasterEggOpen(false)} />
       )}
-      {planeVisible && (
-        <PlaneTrack aria-hidden='true'>
-          <PlaneEmoji>✈️</PlaneEmoji>
-          <Contrail />
-        </PlaneTrack>
-      )}
+      {planeVisible && <CrazyPlane onDone={() => setPlaneVisible(false)} />}
     </>
   );
 };
@@ -655,44 +645,85 @@ const slideUp = keyframes`from { transform: translateY(100%) } to { transform: t
 const popIn = keyframes`from { transform: scale(.95); opacity: 0 } to { transform: scale(1); opacity: 1 }`;
 const dropDown = keyframes`from { transform: translateY(-8px); opacity: 0 } to { transform: translateY(0); opacity: 1 }`;
 
-// ── Easter egg: plane fly-across ─────────────────────────────────────────────
-const flyAcross = keyframes`
-  0%   { transform: translate(-60px, 0) rotate(-8deg); opacity: 0; }
-  8%   { opacity: 1; }
-  92%  { opacity: 1; }
-  100% { transform: translate(calc(100vw + 60px), -40px) rotate(-8deg); opacity: 0; }
-`;
-const trailFade = keyframes`
-  0%   { width: 0; opacity: 0; }
-  10%  { opacity: 0.5; }
-  100% { width: 120px; opacity: 0; }
-`;
+// ── Easter egg: CrazyPlane ────────────────────────────────────────────────────
+const CrazyPlane = ({ onDone }) => {
+  const [points, setPoints] = useState(null);
 
-const PlaneTrack = styled.div`
-  position: fixed;
-  top: 18%;
-  left: 0;
-  z-index: 9999;
-  pointer-events: none;
-  animation: ${flyAcross} 2.2s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
-  display: flex;
-  align-items: center;
-`;
-const PlaneEmoji = styled.span`
-  font-size: 2rem;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
-  line-height: 1;
-`;
-const Contrail = styled.div`
-  position: absolute;
-  right: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 2px;
-  background: linear-gradient(to left, rgba(255, 255, 255, 0.35), transparent);
-  border-radius: 1px;
-  animation: ${trailFade} 2.2s ease forwards;
-`;
+  useEffect(() => {
+    // generate 4-6 random waypoints across the viewport, then exit right
+    const count = 4 + Math.floor(Math.random() * 3);
+    const wp = [];
+    for (let i = 0; i < count; i++) {
+      wp.push({
+        x: 10 + Math.random() * 80, // % of viewport
+        y: 15 + Math.random() * 65,
+      });
+    }
+    // exit off-screen right
+    wp.push({ x: 115, y: 20 + Math.random() * 40 });
+    setPoints(wp);
+
+    const duration = (count + 1) * 500 + 400;
+    const id = setTimeout(onDone, duration);
+    return () => clearTimeout(id);
+  }, [onDone]);
+
+  if (!points) return null;
+
+  // build a dynamic keyframe string
+  const totalLegs = points.length;
+  const kfSteps = [
+    `0% { left: -5%; top: 50%; opacity: 0; transform: rotate(0deg) scale(1); }`,
+    `4% { opacity: 1; }`,
+  ];
+  points.forEach((p, i) => {
+    const pct = 8 + ((i + 1) / totalLegs) * 88;
+    const prevP = i === 0 ? { x: -5, y: 50 } : points[i - 1];
+    const dx = p.x - prevP.x;
+    const dy = p.y - prevP.y;
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    const wobble = (Math.random() - 0.5) * 20;
+    const scale = i === totalLegs - 1 ? 0.8 : 0.9 + Math.random() * 0.4;
+    kfSteps.push(
+      `${pct.toFixed(1)}% { left: ${p.x}%; top: ${p.y}%; transform: rotate(${
+        angle + wobble
+      }deg) scale(${scale}); ${i === totalLegs - 1 ? 'opacity: 0;' : ''} }`
+    );
+  });
+  kfSteps.push(
+    `100% { left: 115%; top: ${
+      points[totalLegs - 1].y
+    }%; opacity: 0; transform: rotate(-5deg) scale(0.7); }`
+  );
+
+  const duration = (totalLegs + 1) * 500 + 400;
+  const animName = `crazyFlight_${Date.now()}`;
+
+  return (
+    <>
+      <style>{`
+        @keyframes ${animName} {
+          ${kfSteps.join('\n')}
+        }
+      `}</style>
+      <div
+        aria-hidden='true'
+        style={{
+          position: 'fixed',
+          zIndex: 9999,
+          pointerEvents: 'none',
+          fontSize: '2rem',
+          filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.5))',
+          animation: `${animName} ${duration}ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards`,
+          left: '-5%',
+          top: '50%',
+        }}
+      >
+        ✈️
+      </div>
+    </>
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared atoms
