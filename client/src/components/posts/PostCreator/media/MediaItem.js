@@ -24,16 +24,17 @@ import { FILTERS } from '../../../../lib/media';
 
 const getSafeSrc = (item) => item?.mediaUrl || item?.previewUrl || '';
 
-// Memoized — only re-renders when its specific props change, not when
-// sibling items update. Combined with the separated progress state in
-// useUploadManager, this means a progress tick on item A won't
-// re-render items B, C, D.
+// Prevents dnd-kit's onPointerDown listener (on the SortableItem wrapper)
+// from capturing pointer events on buttons. Without this, clicking the X
+// or filter button starts a drag instead of firing the click handler.
+const stopDrag = (e) => e.stopPropagation();
+
 const MediaItem = memo(function MediaItem({
   mediaItem,
   index,
-  progress, // number (0-100) | null — from uploadProgress[item.id]
-  onRemove, // () => void — closure already binds the ID
-  onFilter, // () => void — closure already binds the item
+  progress,
+  onRemove,
+  onFilter,
   isDragging,
   ...dragProps
 }) {
@@ -77,6 +78,7 @@ const MediaItem = memo(function MediaItem({
         <MediaActions className='media-actions'>
           <ActionButton
             onClick={onRemove}
+            onPointerDown={stopDrag}
             className='remove'
             title='Remove media'
           >
@@ -128,7 +130,9 @@ const MediaItem = memo(function MediaItem({
         {mediaItem.error && (
           <ErrorOverlay>
             <ErrorText>Upload failed</ErrorText>
-            <RetryButton onClick={onRemove}>Remove</RetryButton>
+            <RetryButton onClick={onRemove} onPointerDown={stopDrag}>
+              Remove
+            </RetryButton>
           </ErrorOverlay>
         )}
       </MediaContent>
@@ -136,6 +140,7 @@ const MediaItem = memo(function MediaItem({
       <MediaActions className='media-actions'>
         <ActionButton
           onClick={onFilter}
+          onPointerDown={stopDrag}
           disabled={mediaItem.uploading || mediaItem.error || hasError}
           title='Apply filter'
         >
@@ -143,6 +148,7 @@ const MediaItem = memo(function MediaItem({
         </ActionButton>
         <ActionButton
           onClick={onRemove}
+          onPointerDown={stopDrag}
           className='remove'
           title='Remove media'
         >
