@@ -89,7 +89,6 @@ exports.getPost = async (req, res) => {
         .status(404)
         .json({ success: false, message: 'Post not found' });
 
-    // Always return accurate like count for single-post view
     const [result] = await attachLikeCounts([post]);
     res.json({ success: true, data: result });
   } catch (err) {
@@ -161,7 +160,6 @@ exports.createPost = async (req, res) => {
 
     const postUrl = `${process.env.APP_PUBLIC_URL || 'https://thesologram.com'}/l/${newPost._id}`;
 
-    // Fire-and-forget notifications — don't block the response
     notifyFamilySms('post', { title: newPost.title, url: postUrl }).catch((e) =>
       console.error('[SMS]', e?.message || e)
     );
@@ -238,7 +236,6 @@ exports.updatePost = async (req, res) => {
       (m) => !keepIds.includes(m._id.toString())
     );
 
-    // Delete removed assets from Cloudinary (fire-and-forget, don't block save)
     Promise.allSettled(
       removedMedia
         .filter((m) => m.cloudinaryId)
@@ -300,7 +297,6 @@ exports.deletePost = async (req, res) => {
         .status(404)
         .json({ success: false, message: 'Post not found' });
 
-    // Delete all media assets from Cloudinary
     await Promise.allSettled(
       (post.media || [])
         .filter((m) => m.cloudinaryId)
@@ -341,16 +337,11 @@ exports.searchPosts = async (req, res) => {
   }
 };
 
-/**
- * Like a post — one like per user, not toggleable (Instagram-style).
- * Uses atomic $inc + Like upsert — no session/transaction needed.
- */
 exports.likePost = async (req, res) => {
   try {
     const postId = req.params.id;
     const userId = req.user._id;
 
-    // Atomic upsert: if like already exists, this is a no-op
     const result = await Like.updateOne(
       { post: postId, user: userId },
       { $setOnInsert: { post: postId, user: userId } },
@@ -359,7 +350,6 @@ exports.likePost = async (req, res) => {
 
     const alreadyLiked = result.upsertedCount === 0;
 
-    // Only increment denormalized count on first like
     if (!alreadyLiked) {
       await Post.updateOne({ _id: postId }, { $inc: { likes: 1 } });
     }
@@ -415,36 +405,44 @@ exports.checkUserLikesBatch = async (req, res) => {
     console.error('[checkUserLikesBatch]', err);
     res.status(500).json({ success: false, message: 'Server Error' });
   }
+};
 
-  exports.deleteMedia = async (req, res) => {
-    try {
-      const publicId = decodeURIComponent(req.params.cloudinaryId);
+/**
+ * DELETE /api/posts/media/:cloudinaryId
+ *
+ * Best-effort cleanup of an orphaned Cloudinary asset.
+ * Called when a user removes a fully-uploaded image from the PostCreator
+ * before ever saving the post. Without this, the asset sits in Cloudinary
+ * forever, accumulating storage costs.
+ *
+ * Safety: only deletes assets under the configured base folder.
+ */
+exports.deleteMedia = async (req, res) => {
+  try {
+    const publicId = decodeURIComponent(req.params.cloudinaryId);
 
-      if (!publicId || typeof publicId !== 'string') {
-        return res
-          .status(400)
-          .json({ success: false, message: 'cloudinaryId is required' });
-      }
-
-      // Safety: only allow deletion within the app's upload folder
-      const allowedFolder = process.env.CLOUDINARY_BASE_FOLDER || 'sologram';
-      if (!publicId.startsWith(allowedFolder + '/')) {
-        return res.status(403).json({
-          success: false,
-          message: 'Cannot delete assets outside app folder',
-        });
-      }
-
-      const result = await cloudinary.uploader.destroy(publicId);
-
-      res.json({
-        success: true,
-        result: result.result, // 'ok' | 'not found'
-      });
-    } catch (err) {
-      console.error('[deleteMedia]', err);
-      // Best-effort — don't fail the client experience over cleanup
-      res.status(500).json({ success: false, message: 'Cleanup failed' });
+    if (!publicId || typeof publicId !== 'string') {
+      return res
+        .status(400)
+        .json({ success: false, message: 'cloudinaryId is required' });
     }
-  };
+
+    const allowedFolder = process.env.CLOUDINARY_BASE_FOLDER || 'sologram';
+    if (!publicId.startsWith(allowedFolder + '/')) {
+      return res.status(403).json({
+        success: false,
+        message: 'Cannot delete assets outside app folder',
+      });
+    }
+
+    const result = await cloudinary.uploader.destroy(publicId);
+
+    res.json({
+      success: true,
+      result: result.result,
+    });
+  } catch (err) {
+    console.error('[deleteMedia]', err);
+    res.status(500).json({ success: false, message: 'Cleanup failed' });
+  }
 };
