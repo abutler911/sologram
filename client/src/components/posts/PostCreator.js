@@ -94,30 +94,16 @@ const toLocalDateInput = (dateLike) => {
   return d.toISOString().split('T')[0];
 };
 
-const isMobileDevice = () =>
-  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  );
-
-const createSafeBlobUrl = (file) => {
+// ── FIX #2: Killed the mobile FileReader path. URL.createObjectURL is
+//    supported on every browser shipping since 2017. The old readAsDataURL
+//    code was creating a full base64 copy of every file in the JS heap —
+//    a 10 MB photo became ~13 MB of string *before* the upload even started.
+//    Now synchronous, zero-copy, and returns a revocable blob: URL.
+const createBlobUrl = (file) => {
   try {
-    if (file.type.startsWith('image/')) {
-      if (isMobileDevice()) {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target.result);
-          reader.onerror = () => resolve(null);
-          reader.readAsDataURL(file);
-        });
-      } else {
-        const url = URL.createObjectURL(file);
-        return Promise.resolve(url);
-      }
-    }
-    const url = URL.createObjectURL(file);
-    return Promise.resolve(url);
+    return URL.createObjectURL(file);
   } catch {
-    return Promise.resolve(null);
+    return null;
   }
 };
 
@@ -140,7 +126,6 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
 
-  // ── Andrew's actual content categories ──────────────────────────────────
   const contentTypes = [
     { value: 'photography', label: 'Photography' },
     { value: 'aviation', label: 'Aviation & Training' },
@@ -151,7 +136,6 @@ const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
     { value: 'reading', label: 'Reading' },
   ];
 
-  // ── Andrew's voice ───────────────────────────────────────────────────────
   const tones = [
     { value: 'thoughtful', label: 'Thoughtful' },
     { value: 'dry', label: 'Dry & Understated' },
@@ -455,6 +439,10 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
   const navigate = useNavigate();
   const { startUpload, mountedRef } = useUploadManager(setMedia);
 
+  // ── FIX #4: mediaRef gives onDrop a stable, always-current view of
+  //    media without needing `media` in the dependency array. This
+  //    prevents the callback from being recreated on every media change
+  //    and eliminates the stale-closure race condition.
   const mediaRef = useRef(media);
   useEffect(() => {
     mediaRef.current = media;
@@ -506,55 +494,60 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
   }, [isEditing, initialData]);
 
   // ── Dropzone ───────────────────────────────────────────────────────────────
+  //
+  // FIX #2 + #4: onDrop is now synchronous (no async/await needed since
+  // createBlobUrl is sync). Reads current media from mediaRef instead of
+  // closing over `media` state, so the dependency array is stable: only
+  // [startUpload]. This means dropping files never fights with in-flight
+  // upload state updates.
 
   const onDrop = useCallback(
-    async (acceptedFiles) => {
+    (acceptedFiles) => {
+      if (acceptedFiles.length === 0) return;
+
+      // Dupe-check against the ref — always current, no stale closure.
+      const current = mediaRef.current;
       const uniqueFiles = acceptedFiles.filter((file) => {
-        const isDuplicate = media.some(
+        const isDupe = current.some(
           (m) =>
             m.file?.name === file.name &&
             m.file?.size === file.size &&
             m.file?.lastModified === file.lastModified
         );
-        if (isDuplicate) {
+        if (isDupe) {
           toast.error(`File "${file.name}" is already added.`);
-          return false;
         }
-        return true;
+        return !isDupe;
       });
 
       if (uniqueFiles.length === 0) return;
 
-      const newItems = await Promise.all(
-        uniqueFiles.map(async (file) => {
-          const id = `media_${Date.now()}_${Math.random()
-            .toString(36)
-            .substring(2, 8)}`;
-          const isVideo = fileToMediaType(file) === 'video';
-          const previewUrl = await createSafeBlobUrl(file);
-          return {
-            id,
-            file,
-            previewUrl,
-            mediaType: isVideo ? 'video' : 'image',
-            filter: 'none',
-            filterClass: '',
-            uploading: true,
-            progress: 0,
-            error: false,
-            isMobile: isMobileDevice(),
-          };
-        })
-      );
+      const newItems = uniqueFiles.map((file) => {
+        const id = `media_${Date.now()}_${Math.random()
+          .toString(36)
+          .substring(2, 8)}`;
+        return {
+          id,
+          file,
+          previewUrl: createBlobUrl(file), // sync, zero-copy blob: URL
+          mediaType: fileToMediaType(file) === 'video' ? 'video' : 'image',
+          filter: 'none',
+          filterClass: '',
+          uploading: true,
+          progress: 0,
+          error: false,
+        };
+      });
 
       setMedia((prev) => [...prev, ...newItems]);
+
       newItems.forEach((item) => {
         startUpload(item.file, item.id, item.mediaType).catch((err) => {
           console.error(`Upload failed for ${item.id}:`, err);
         });
       });
     },
-    [media, startUpload]
+    [startUpload] // ← stable deps, no more [media, startUpload]
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -569,48 +562,58 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
   });
 
   // ── Media handlers ─────────────────────────────────────────────────────────
+  //
+  // FIX #1: Every mutation is now by item.id, never by index.
+  // Indices shift when items are added/removed concurrently (e.g. an upload
+  // finishes while you tap "remove" on another item). IDs are stable for
+  // the lifetime of the item.
 
-  const removeMedia = (indexToRemove) => {
-    const itemToRemove = media[indexToRemove];
-    if (
-      itemToRemove?.previewUrl &&
-      !itemToRemove.isExisting &&
-      itemToRemove.previewUrl.startsWith('blob:')
-    ) {
-      try {
-        URL.revokeObjectURL(itemToRemove.previewUrl);
-      } catch {}
-    }
-    setMedia((current) =>
-      current.filter((_, index) => index !== indexToRemove)
-    );
-  };
-
-  const openFilterModal = (mediaItem, index) => {
-    setSelectedMediaForFilter({ ...mediaItem, index });
-    setShowFilterModal(true);
-  };
-
-  const applyFilter = (filterId) => {
-    if (!selectedMediaForFilter) return;
-    const filterClass = filterToClass(filterId);
-    setMedia((currentMedia) =>
-      currentMedia.map((item, index) =>
-        index === selectedMediaForFilter.index
-          ? { ...item, filter: filterId, filterClass }
-          : item
-      )
-    );
-  };
-
-  const reorderMedia = (fromIndex, toIndex) => {
-    setMedia((currentMedia) => {
-      const newMedia = [...currentMedia];
-      const [movedItem] = newMedia.splice(fromIndex, 1);
-      newMedia.splice(toIndex, 0, movedItem);
-      return newMedia;
+  const removeMedia = useCallback((idToRemove) => {
+    setMedia((current) => {
+      const item = current.find((m) => m.id === idToRemove);
+      if (
+        item?.previewUrl &&
+        !item.isExisting &&
+        item.previewUrl.startsWith('blob:')
+      ) {
+        try {
+          URL.revokeObjectURL(item.previewUrl);
+        } catch {}
+      }
+      return current.filter((m) => m.id !== idToRemove);
     });
-  };
+  }, []);
+
+  const openFilterModal = useCallback((mediaItem) => {
+    setSelectedMediaForFilter(mediaItem);
+    setShowFilterModal(true);
+  }, []);
+
+  const applyFilter = useCallback(
+    (filterId) => {
+      if (!selectedMediaForFilter) return;
+      const filterClass = filterToClass(filterId);
+      setMedia((current) =>
+        current.map((item) =>
+          item.id === selectedMediaForFilter.id
+            ? { ...item, filter: filterId, filterClass }
+            : item
+        )
+      );
+    },
+    [selectedMediaForFilter]
+  );
+
+  // reorderMedia stays index-based — DnD is inherently positional and
+  // this runs as a single synchronous splice, so no race condition here.
+  const reorderMedia = useCallback((fromIndex, toIndex) => {
+    setMedia((current) => {
+      const next = [...current];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  }, []);
 
   // ── AI content ─────────────────────────────────────────────────────────────
 
@@ -705,14 +708,10 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
       let response;
 
       if (isEditing) {
-        // ── keepMedia: tell the backend which existing media to retain ──────
-        // Without this, the backend treats all existing media as "removed" and
-        // deletes them from Cloudinary.
         const keepMedia = media
           .filter((item) => item.isExisting && item._id)
           .map((item) => item._id);
 
-        // New uploads only — existing ones are preserved via keepMedia
         const newMedia = media
           .filter((item) => !item.isExisting)
           .map((item, index) => ({
@@ -730,20 +729,17 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
           tags: tags.join(','),
           location: location ?? '',
           date: eventDate,
-          keepMedia, // ← critical: IDs of existing media to keep
+          keepMedia,
           media: newMedia,
         };
 
         response = await api.updatePost(initialData._id, payload);
 
-        // Let the parent invalidate the RQ cache before navigating so the
-        // feed and detail page both reflect the update immediately.
         if (onSuccess) await onSuccess(initialData._id);
 
         toast.success('Post updated successfully!');
-        // For edits we already know the ID — no need to parse the response.
         navigate(`/post/${initialData._id}`);
-        return; // early return — skip the create navigation path below
+        return;
       } else {
         const payload = {
           title: title ?? '',
@@ -767,11 +763,9 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
         toast.success('Post created successfully!');
       }
 
-      // For new posts, parse the ID from the response.
       const postId = response?.data?._id ?? response?._id;
 
       if (!postId) {
-        // Response shape unexpected — go home rather than /post/undefined
         navigate('/');
         return;
       }
@@ -838,8 +832,11 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
                     key={item.id}
                     mediaItem={item}
                     index={index}
-                    onRemove={removeMedia}
-                    onFilter={openFilterModal}
+                    // FIX #1: Wrap callbacks so MediaItem doesn't need to
+                    // know about the ID-based API. These closures are cheap —
+                    // the grid is never more than ~20 items.
+                    onRemove={() => removeMedia(item.id)}
+                    onFilter={() => openFilterModal(item)}
                     onReorder={reorderMedia}
                     isDragging={false}
                   />
