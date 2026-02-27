@@ -114,6 +114,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
     onPointerUp: onLogoPressCancel,
     onPointerLeave: onLogoPressCancel,
     onClick: onLogoClick,
+    onContextMenu: (e) => e.preventDefault(),
   };
 
   // ── sync URL search param → local state ───────────────────────────────────
