@@ -732,8 +732,11 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
 
       setMedia((current) => {
         const item = current.find((m) => m.id === idToRemove);
+        if (!item) return current;
+
+        // Revoke blob URL
         if (
-          item?.previewUrl &&
+          item.previewUrl &&
           !item.isExisting &&
           item.previewUrl.startsWith('blob:')
         ) {
@@ -741,6 +744,17 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
             URL.revokeObjectURL(item.previewUrl);
           } catch {}
         }
+
+        // Best-effort Cloudinary cleanup: if this item was uploaded this
+        // session (not an existing saved media item) and has a cloudinaryId,
+        // tell the backend to delete the orphaned asset. Fire-and-forget —
+        // don't block the UI on cleanup.
+        if (!item.isExisting && item.cloudinaryId) {
+          api.deleteOrphanedMedia(item.cloudinaryId).catch((err) => {
+            console.warn('[Cloudinary cleanup]', err?.message || err);
+          });
+        }
+
         return current.filter((m) => m.id !== idToRemove);
       });
     },

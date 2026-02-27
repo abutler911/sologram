@@ -13,6 +13,7 @@ const {
   checkUserLike,
   searchPosts,
   checkUserLikesBatch,
+  deleteMedia,
 } = require('../controllers/posts');
 
 const { protect } = require('../middleware/auth');
@@ -207,8 +208,9 @@ router.post('/:postId/comments', protect, commentLimiter, async (req, res) => {
 // ─── STANDARD POST ROUTES ────────────────────────────────────────────────────
 
 router.get('/', getPosts);
-router.get('/:id', getPost);
+router.delete('/media/:cloudinaryId', protect, deleteMedia);
 
+router.get('/:id', getPost);
 router.post('/', protect, postCreationLimiter, createPost);
 router.put('/:id', protect, updatePost);
 router.delete('/:id', protect, deletePost);

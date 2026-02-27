@@ -21,6 +21,8 @@ export const api = {
   createPost: (payload) => post('/api/posts', payload),
   updatePost: (id, payload) => put(`/api/posts/${id}`, payload),
   deletePost: (id) => del(`/api/posts/${id}`),
+  deleteOrphanedMedia: (cloudinaryId) =>
+    del(`/api/posts/media/${encodeURIComponent(cloudinaryId)}`),
   likePost: (id) => post(`/api/posts/${id}/like`),
   checkLikeStatus: (id) => get(`/api/posts/${id}/likes/check`),
   batchCheckLikes: (postIds) =>

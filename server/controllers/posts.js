@@ -415,4 +415,36 @@ exports.checkUserLikesBatch = async (req, res) => {
     console.error('[checkUserLikesBatch]', err);
     res.status(500).json({ success: false, message: 'Server Error' });
   }
+
+  exports.deleteMedia = async (req, res) => {
+    try {
+      const publicId = decodeURIComponent(req.params.cloudinaryId);
+
+      if (!publicId || typeof publicId !== 'string') {
+        return res
+          .status(400)
+          .json({ success: false, message: 'cloudinaryId is required' });
+      }
+
+      // Safety: only allow deletion within the app's upload folder
+      const allowedFolder = process.env.CLOUDINARY_BASE_FOLDER || 'sologram';
+      if (!publicId.startsWith(allowedFolder + '/')) {
+        return res.status(403).json({
+          success: false,
+          message: 'Cannot delete assets outside app folder',
+        });
+      }
+
+      const result = await cloudinary.uploader.destroy(publicId);
+
+      res.json({
+        success: true,
+        result: result.result, // 'ok' | 'not found'
+      });
+    } catch (err) {
+      console.error('[deleteMedia]', err);
+      // Best-effort — don't fail the client experience over cleanup
+      res.status(500).json({ success: false, message: 'Cleanup failed' });
+    }
+  };
 };
