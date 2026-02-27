@@ -647,65 +647,68 @@ const dropDown = keyframes`from { transform: translateY(-8px); opacity: 0 } to {
 
 // ── Easter egg: CrazyPlane ────────────────────────────────────────────────────
 const CrazyPlane = ({ onDone }) => {
-  const [points, setPoints] = useState(null);
+  const [anim, setAnim] = useState(null);
 
   useEffect(() => {
-    // generate 4-6 random waypoints across the viewport, then exit right
-    const count = 4 + Math.floor(Math.random() * 3);
-    const wp = [];
-    for (let i = 0; i < count; i++) {
-      wp.push({
-        x: 10 + Math.random() * 80, // % of viewport
-        y: 15 + Math.random() * 65,
+    // generate smooth waypoints: entry → random loops → exit
+    const raw = [{ x: -8, y: 45 + Math.random() * 10 }];
+    const legCount = 4 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < legCount; i++) {
+      raw.push({
+        x: 8 + ((i + 1) / (legCount + 1)) * 80 + (Math.random() - 0.5) * 15,
+        y: 15 + Math.random() * 60,
       });
     }
-    // exit off-screen right
-    wp.push({ x: 115, y: 20 + Math.random() * 40 });
-    setPoints(wp);
+    raw.push({ x: 108, y: 25 + Math.random() * 30 });
 
-    const duration = (count + 1) * 500 + 400;
+    // subdivide with midpoints for smoother curves
+    const smooth = [raw[0]];
+    for (let i = 1; i < raw.length; i++) {
+      const prev = raw[i - 1];
+      const curr = raw[i];
+      smooth.push({
+        x: (prev.x + curr.x) / 2 + (Math.random() - 0.5) * 10,
+        y: (prev.y + curr.y) / 2 + (Math.random() - 0.5) * 12,
+      });
+      smooth.push(curr);
+    }
+
+    const total = smooth.length;
+    const duration = total * 320 + 600;
+    const steps = [];
+
+    smooth.forEach((p, i) => {
+      const pct = (i / (total - 1)) * 100;
+      // angle toward next point (or keep last angle)
+      const next = smooth[Math.min(i + 1, total - 1)];
+      const angle = Math.atan2(next.y - p.y, next.x - p.x) * (180 / Math.PI);
+      const scale = 0.95 + Math.sin((i / total) * Math.PI) * 0.3;
+      // only fade in at the very start and out in the last 8%
+      let opacity = 1;
+      if (pct < 5) opacity = pct / 5;
+      else if (pct > 92) opacity = Math.max(0, (100 - pct) / 8);
+
+      steps.push(
+        `${pct.toFixed(1)}% { left:${p.x.toFixed(1)}%; top:${p.y.toFixed(
+          1
+        )}%; transform:rotate(${angle.toFixed(0)}deg) scale(${scale.toFixed(
+          2
+        )}); opacity:${opacity.toFixed(2)}; }`
+      );
+    });
+
+    const name = `flight_${Date.now()}`;
+    setAnim({ name, steps: steps.join('\n'), duration });
+
     const id = setTimeout(onDone, duration);
     return () => clearTimeout(id);
   }, [onDone]);
 
-  if (!points) return null;
-
-  // build a dynamic keyframe string
-  const totalLegs = points.length;
-  const kfSteps = [
-    `0% { left: -5%; top: 50%; opacity: 0; transform: rotate(0deg) scale(1); }`,
-    `4% { opacity: 1; }`,
-  ];
-  points.forEach((p, i) => {
-    const pct = 8 + ((i + 1) / totalLegs) * 88;
-    const prevP = i === 0 ? { x: -5, y: 50 } : points[i - 1];
-    const dx = p.x - prevP.x;
-    const dy = p.y - prevP.y;
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    const wobble = (Math.random() - 0.5) * 20;
-    const scale = i === totalLegs - 1 ? 0.8 : 0.9 + Math.random() * 0.4;
-    kfSteps.push(
-      `${pct.toFixed(1)}% { left: ${p.x}%; top: ${p.y}%; transform: rotate(${
-        angle + wobble
-      }deg) scale(${scale}); ${i === totalLegs - 1 ? 'opacity: 0;' : ''} }`
-    );
-  });
-  kfSteps.push(
-    `100% { left: 115%; top: ${
-      points[totalLegs - 1].y
-    }%; opacity: 0; transform: rotate(-5deg) scale(0.7); }`
-  );
-
-  const duration = (totalLegs + 1) * 500 + 400;
-  const animName = `crazyFlight_${Date.now()}`;
+  if (!anim) return null;
 
   return (
     <>
-      <style>{`
-        @keyframes ${animName} {
-          ${kfSteps.join('\n')}
-        }
-      `}</style>
+      <style>{`@keyframes ${anim.name} { ${anim.steps} }`}</style>
       <div
         aria-hidden='true'
         style={{
@@ -713,10 +716,12 @@ const CrazyPlane = ({ onDone }) => {
           zIndex: 9999,
           pointerEvents: 'none',
           fontSize: '2rem',
-          filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.5))',
-          animation: `${animName} ${duration}ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards`,
-          left: '-5%',
+          filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.45))',
+          animation: `${anim.name} ${anim.duration}ms ease-in-out forwards`,
+          left: '-8%',
           top: '50%',
+          opacity: 0,
+          willChange: 'left, top, transform, opacity',
         }}
       >
         ✈️
