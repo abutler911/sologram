@@ -40,21 +40,21 @@ function makeMessage({ kind, title, content, name, hours }) {
       // Thoughts have no title — content IS the message
       const snippet = excerpt(content || title, 90);
       body = snippet
-        ? `${fn}, Andrew posted a new thought on SoloGram: "${snippet}" - www.thesologram.com`
-        : `${fn}, Andrew posted a new thought on SoloGram - www.thesologram.com`;
+        ? `${fn}, Andrew posted a new thought on SoloGram: "${snippet}"`
+        : `${fn}, Andrew posted a new thought on SoloGram`;
       break;
     }
     case 'post': {
-      body = `${fn}, Andrew posted a new photo/post on SoloGram: "${truncate(title, 60)}" - www.thesologram.com`;
+      body = `${fn}, Andrew posted a new photo/post on SoloGram: "${truncate(title, 60)}"`;
       break;
     }
     case 'story': {
       const hoursNote = hours ? ` Only up for ${hours}h!` : '';
-      body = `${fn}, Andrew shared a new story on SoloGram: "${truncate(title, 60)}".${hoursNote} - www.thesologram.com`;
+      body = `${fn}, Andrew shared a new story on SoloGram: "${truncate(title, 60)}".${hoursNote}`;
       break;
     }
     default: {
-      body = `${fn}, something new from Andrew on SoloGram: "${truncate(title || content, 70)}" - www.thesologram.com`;
+      body = `${fn}, something new from Andrew on SoloGram: "${truncate(title || content, 70)}".`;
     }
   }
 
