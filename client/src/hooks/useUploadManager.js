@@ -138,13 +138,11 @@ export function useUploadManager(
           onUploadProgress: (e) => {
             if (!mountedRef.current || !e.total) return;
             const pct = Math.round((e.loaded / e.total) * 100);
-            // FIX #5: Only progress state updated — media array untouched
             setProgress(id, pct);
           },
         })
         .then(({ data }) => {
           if (!mountedRef.current) return;
-          // Single atomic media update on success
           updateItem(id, {
             uploading: false,
             mediaUrl: data.secure_url,
@@ -162,14 +160,25 @@ export function useUploadManager(
         })
         .catch((err) => {
           if (!mountedRef.current) return;
-          updateItem(id, { uploading: false, error: true });
-          clearProgress(id);
+          // If this was an intentional cancel via cancelUpload(), it
+          // already handled the UI state and the item is likely already
+          // removed from the media array. Don't re-mark as error.
+          const wasCanceled =
+            axios.isCancel?.(err) || err?.code === 'ERR_CANCELED';
+          if (!wasCanceled) {
+            updateItem(id, { uploading: false, error: true });
+            clearProgress(id);
+          }
           reject(err);
         })
         .finally(() => {
-          inFlightRef.current.delete(id);
-          activeRef.current = Math.max(0, activeRef.current - 1);
-          // pump is stable — no stale closure risk here anymore
+          // IDEMPOTENT CLEANUP: Map.delete() returns true only if the
+          // entry existed. cancelUpload() already deletes the entry and
+          // decrements activeRef, so if we get here after a cancel this
+          // is a no-op — no double decrement, no phantom pump.
+          if (inFlightRef.current.delete(id)) {
+            activeRef.current = Math.max(0, activeRef.current - 1);
+          }
           pump();
         });
     }
@@ -191,7 +200,10 @@ export function useUploadManager(
     (id) => {
       const controller = inFlightRef.current.get(id);
       if (controller) {
-        // In-flight — abort the XHR
+        // In-flight — abort the XHR. The abort triggers .catch() then
+        // .finally(). Because we delete from inFlightRef HERE, .finally()
+        // sees delete() return false and skips the decrement. No double
+        // decrement.
         controller.abort();
         inFlightRef.current.delete(id);
         activeRef.current = Math.max(0, activeRef.current - 1);
@@ -199,9 +211,12 @@ export function useUploadManager(
         clearProgress(id);
         pump(); // drain next queued item into the freed slot
       } else {
-        // Still queued — just remove from queue
+        // Still queued — splice out and reject so the promise doesn't dangle
         const idx = queueRef.current.findIndex((q) => q.id === id);
-        if (idx >= 0) queueRef.current.splice(idx, 1);
+        if (idx >= 0) {
+          const [removed] = queueRef.current.splice(idx, 1);
+          removed.reject(new Error('Upload canceled'));
+        }
         clearProgress(id);
       }
     },
