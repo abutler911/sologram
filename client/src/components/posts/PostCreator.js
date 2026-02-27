@@ -459,7 +459,7 @@ const PostDetailsForm = memo(function PostDetailsForm({
   onOpenAIModal,
 }) {
   const addTag = (tagText = null) => {
-    const tagToAdd = tagText || currentTag.trim();
+    const tagToAdd = (tagText || currentTag.trim()).toLowerCase();
     if (!tagToAdd || tags.includes(tagToAdd)) return;
     if (tags.length >= 5) {
       toast.error('Maximum 5 tags allowed');
@@ -839,7 +839,9 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
     if (generatedContent.caption) setCaption(generatedContent.caption);
     if (generatedContent.tags?.length > 0) {
       const availableSlots = 5 - tags.length;
-      const newTags = generatedContent.tags.slice(0, availableSlots);
+      const newTags = generatedContent.tags
+        .slice(0, availableSlots)
+        .map((t) => t.toLowerCase());
       setTags((prev) => [...prev, ...newTags]);
       toast.success(`Content applied with ${newTags.length} tags!`);
     } else {
@@ -982,9 +984,13 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
 
       <ContentSection>
         <MediaSection>
+          {/* Hidden file input — MUST always be in the DOM. open() 
+              programmatically clicks this. Previously it was only rendered
+              inside DropArea (empty state), so "Add more" did nothing. */}
+          <input {...getInputProps()} />
+
           {media.length === 0 ? (
             <DropArea {...getRootProps()} isDragActive={isDragActive}>
-              <input {...getInputProps()} />
               <UploadIcon className='upload-icon'>
                 <FaImage />
                 <FaVideo />

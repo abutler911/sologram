@@ -124,6 +124,11 @@ export function useUploadManager(
           onUploadProgress: (e) => {
             if (!mountedRef.current || !e.total) return;
             const pct = Math.round((e.loaded / e.total) * 100);
+            // Throttle: only update on every 3% or at 100%.
+            // Without this, 3 concurrent uploads fire hundreds of
+            // state updates per second, each triggering a parent
+            // re-render that recomputes props for all MediaItems.
+            if (pct < 100 && pct % 3 !== 0) return;
             setProgress(id, pct);
           },
         })
