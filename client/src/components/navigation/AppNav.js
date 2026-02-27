@@ -30,43 +30,91 @@ import {
 } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
 import { COLORS } from '../../theme';
+// ─── Easter egg ──────────────────────────────────────────────────────────────
+import EasterEggModal from '../easter/EasterEggModal';
 
 /**
  * AppNav — Instagram-style navigation
- *
- * ─ Mobile  (<960px) ─────────────────────────────────────────────────────────
- *   Top bar : Logo + right-side icons (archive, avatar)
- *   Bottom  : 5-tab bar, icon-only — Home · Search · Create · Thoughts · Profile
- *   Create  : Tap + → slide-up bottom sheet (2×2 grid)
- *   Search  : Tap 🔍 → full-screen takeover
- *
- * ─ Desktop (≥960px) ─────────────────────────────────────────────────────────
- *   Left sidebar: 240px (full) / 72px (1200px+ goes back to full for ultra-wide)
- *   Sidebar items: logo · Home · Search · Thoughts · Collections · Create · Archive
- *   Admin section: Gallery · AI Content
- *   Bottom: username/avatar · Logout
- *
- * ─ Global ───────────────────────────────────────────────────────────────────
- *   ⌘K / Ctrl+K  → command palette
- *   Esc          → close any open overlay
  */
-
 const AppNav = ({ onSearch, onClearSearch }) => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
   const location = useLocation();
   const navigate = useNavigate();
-
   const isAdmin = user?.role === 'admin';
   const canCreate =
     isAuthenticated && (user?.role === 'admin' || user?.role === 'creator');
-
   // ── overlay state ──────────────────────────────────────────────────────────
   const [searchOpen, setSearchOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
   const searchInputRef = useRef(null);
+
+  // ── easter egg activation ──────────────────────────────────────────────────
+  const [easterEggOpen, setEasterEggOpen] = useState(false);
+  const [planeVisible, setPlaneVisible] = useState(false);
+  const tapCount = useRef(0);
+  const tapTimer = useRef(null);
+  const pressTimer = useRef(null);
+  const didLongPress = useRef(false);
+
+  const onLogoPointerDown = useCallback(() => {
+    didLongPress.current = false;
+    pressTimer.current = setTimeout(() => {
+      didLongPress.current = true;
+      setPlaneVisible(true);
+      tapCount.current = 0;
+      clearTimeout(tapTimer.current);
+    }, 600);
+  }, []);
+
+  const onLogoPressCancel = useCallback(() => {
+    clearTimeout(pressTimer.current);
+  }, []);
+
+  const onLogoClick = useCallback((e) => {
+    if (didLongPress.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    tapCount.current += 1;
+    if (tapCount.current >= 4) {
+      e.preventDefault();
+      e.stopPropagation();
+      tapCount.current = 0;
+      clearTimeout(tapTimer.current);
+      setEasterEggOpen(true);
+      return;
+    }
+    clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => {
+      tapCount.current = 0;
+    }, 400);
+  }, []);
+
+  // cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearTimeout(tapTimer.current);
+      clearTimeout(pressTimer.current);
+    };
+  }, []);
+
+  // auto-dismiss plane after animation
+  useEffect(() => {
+    if (!planeVisible) return;
+    const id = setTimeout(() => setPlaneVisible(false), 2400);
+    return () => clearTimeout(id);
+  }, [planeVisible]);
+
+  // shared handler object to spread on logo elements
+  const logoEasterEgg = {
+    onPointerDown: onLogoPointerDown,
+    onPointerUp: onLogoPressCancel,
+    onPointerLeave: onLogoPressCancel,
+    onClick: onLogoClick,
+  };
 
   // ── sync URL search param → local state ───────────────────────────────────
   useEffect(() => {
@@ -74,19 +122,16 @@ const AppNav = ({ onSearch, onClearSearch }) => {
     setSearchQuery(q);
     if (location.pathname === '/' && q && onSearch) onSearch(q);
   }, [location, onSearch]);
-
   // ── close overlays on navigation ──────────────────────────────────────────
   useEffect(() => {
     setCreateOpen(false);
     setSearchOpen(false);
   }, [location.pathname]);
-
   // ── auto-focus search input ────────────────────────────────────────────────
   useEffect(() => {
     if (searchOpen)
       requestAnimationFrame(() => searchInputRef.current?.focus());
   }, [searchOpen]);
-
   // ── keyboard shortcuts ─────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e) => {
@@ -104,7 +149,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
-
   // ── helpers ────────────────────────────────────────────────────────────────
   const isActive = useCallback(
     (path) =>
@@ -113,12 +157,10 @@ const AppNav = ({ onSearch, onClearSearch }) => {
         : location.pathname.startsWith(path),
     [location]
   );
-
   const doLogout = () => {
     logout();
     navigate('/login');
   };
-
   const triggerSearch = (e) => {
     e?.preventDefault();
     const q = searchQuery.trim();
@@ -131,23 +173,19 @@ const AppNav = ({ onSearch, onClearSearch }) => {
     }
     setSearchOpen(false);
   };
-
   const clearSearch = () => {
     setSearchQuery('');
     onClearSearch?.();
     searchInputRef.current?.focus();
   };
-
   const goCreate = (to) => {
     setCreateOpen(false);
     navigate(to);
   };
-
   // avatar initials
   const initials = user?.username
     ? user.username.slice(0, 2).toUpperCase()
     : '?';
-
   // command palette items
   const paletteItems = useMemo(() => {
     const base = [
@@ -175,7 +213,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       );
     return base;
   }, [canCreate, isAdmin]);
-
   // ── render ─────────────────────────────────────────────────────────────────
   return (
     <>
@@ -184,10 +221,9 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       {/* ════════════════════════════════════════════════════════════════════ */}
       <TopBar>
         <TopBarInner>
-          <Logo to='/'>
+          <Logo to='/' {...logoEasterEgg}>
             <LogoText>SoloGram</LogoText>
           </Logo>
-
           <TopBarActions>
             {canCreate && (
               <TopBarIconLink
@@ -213,20 +249,17 @@ const AppNav = ({ onSearch, onClearSearch }) => {
           </TopBarActions>
         </TopBarInner>
       </TopBar>
-
       {/* ════════════════════════════════════════════════════════════════════ */}
       {/*  DESKTOP LEFT SIDEBAR                                                */}
       {/* ════════════════════════════════════════════════════════════════════ */}
       <Sidebar>
         <SideInner>
           {/* Logo */}
-          <SideLogoLink to='/'>
+          <SideLogoLink to='/' {...logoEasterEgg}>
             <NarrowMark>S</NarrowMark>
             <SideLogoText>SoloGram</SideLogoText>
           </SideLogoLink>
-
           <SideDivider />
-
           {/* Primary nav */}
           <SideNav>
             <SideNavLink to='/' $active={isActive('/')}>
@@ -235,28 +268,24 @@ const AppNav = ({ onSearch, onClearSearch }) => {
               </SideIcon>
               <SideLabel>Home</SideLabel>
             </SideNavLink>
-
             <SideNavButton onClick={() => setSearchOpen(true)}>
               <SideIcon>
                 <FaSearch />
               </SideIcon>
               <SideLabel>Search</SideLabel>
             </SideNavButton>
-
             <SideNavLink to='/thoughts' $active={isActive('/thoughts')}>
               <SideIcon>
                 <FaLightbulb />
               </SideIcon>
               <SideLabel>Thoughts</SideLabel>
             </SideNavLink>
-
             <SideNavLink to='/collections' $active={isActive('/collections')}>
               <SideIcon>
                 {isActive('/collections') ? <FaFolderOpen /> : <FaFolder />}
               </SideIcon>
               <SideLabel>Collections</SideLabel>
             </SideNavLink>
-
             {canCreate && (
               <SideNavButton onClick={() => setCreateOpen(true)}>
                 <SideIcon>
@@ -265,7 +294,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 <SideLabel>Create</SideLabel>
               </SideNavButton>
             )}
-
             {canCreate && (
               <SideNavLink
                 to='/story-archive'
@@ -278,9 +306,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
               </SideNavLink>
             )}
           </SideNav>
-
           <SideSpacer />
-
           {/* Admin section */}
           {isAdmin && (
             <>
@@ -308,7 +334,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
               <SideDivider />
             </>
           )}
-
           {/* Profile + logout */}
           <SideNav>
             {isAuthenticated ? (
@@ -335,7 +360,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
               </SideNavLink>
             )}
           </SideNav>
-
           {/* ⌘K shortcut hint */}
           <PaletteButton onClick={() => setPaletteOpen(true)}>
             <FaMagic />
@@ -343,7 +367,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
           </PaletteButton>
         </SideInner>
       </Sidebar>
-
       {/* ════════════════════════════════════════════════════════════════════ */}
       {/*  MOBILE BOTTOM TAB BAR                                               */}
       {/* ════════════════════════════════════════════════════════════════════ */}
@@ -355,7 +378,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
               <FaHome />
             </BottomIcon>
           </BottomTab>
-
           {/* Search */}
           <BottomTabButton
             onClick={() => setSearchOpen(true)}
@@ -365,7 +387,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
               <FaSearch />
             </BottomIcon>
           </BottomTabButton>
-
           {/* Create — center square */}
           {canCreate ? (
             <BottomTabButton
@@ -383,14 +404,12 @@ const AppNav = ({ onSearch, onClearSearch }) => {
               </BottomIcon>
             </BottomTab>
           )}
-
           {/* Thoughts */}
           <BottomTab to='/thoughts' $active={isActive('/thoughts')}>
             <BottomIcon $active={isActive('/thoughts')}>
               <FaLightbulb />
             </BottomIcon>
           </BottomTab>
-
           {/* Profile / Admin */}
           {isAdmin ? (
             <BottomTab
@@ -418,7 +437,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
           )}
         </BottomBarInner>
       </BottomBar>
-
       {/* ════════════════════════════════════════════════════════════════════ */}
       {/*  SEARCH OVERLAY — full-screen mobile / centered card desktop         */}
       {/* ════════════════════════════════════════════════════════════════════ */}
@@ -455,7 +473,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 Cancel
               </SearchCancelBtn>
             </SearchRow>
-
             <SearchBody>
               {searchQuery ? (
                 <SearchActiveHint>
@@ -472,7 +489,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
           </SearchCard>
         </SearchOverlay>
       )}
-
       {/* ════════════════════════════════════════════════════════════════════ */}
       {/*  CREATE BOTTOM SHEET                                                 */}
       {/* ════════════════════════════════════════════════════════════════════ */}
@@ -492,7 +508,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 <CreateCardName>Post</CreateCardName>
                 <CreateCardSub>Photo or video</CreateCardSub>
               </CreateCard>
-
               <CreateCard
                 onClick={() => goCreate('/create-story')}
                 $color={COLORS.primaryMint}
@@ -503,7 +518,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 <CreateCardName>Story</CreateCardName>
                 <CreateCardSub>Gone in 24h</CreateCardSub>
               </CreateCard>
-
               <CreateCard
                 onClick={() => goCreate('/thoughts/create')}
                 $color={COLORS.primaryBlueGray}
@@ -514,7 +528,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 <CreateCardName>Thought</CreateCardName>
                 <CreateCardSub>What's on your mind</CreateCardSub>
               </CreateCard>
-
               <CreateCard
                 onClick={() => goCreate('/collections/create')}
                 $color={COLORS.accentSalmon}
@@ -526,7 +539,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 <CreateCardSub>Group your posts</CreateCardSub>
               </CreateCard>
             </CreateGrid>
-
             {/* Browse — destinations no longer in the bottom tab bar */}
             <SheetDivider />
             <SheetTitle>Browse</SheetTitle>
@@ -540,7 +552,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                   <BrowseItemSub>Browse your curated groups</BrowseItemSub>
                 </BrowseItemText>
               </BrowseItem>
-
               {canCreate && (
                 <BrowseItem onClick={() => goCreate('/story-archive')}>
                   <BrowseItemIcon $color={COLORS.primaryBlueGray}>
@@ -556,7 +567,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
           </CreateSheet>
         </SheetBackdrop>
       )}
-
       {/* ════════════════════════════════════════════════════════════════════ */}
       {/*  COMMAND PALETTE                                                     */}
       {/* ════════════════════════════════════════════════════════════════════ */}
@@ -567,15 +577,25 @@ const AppNav = ({ onSearch, onClearSearch }) => {
           navigate={navigate}
         />
       )}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {/*  EASTER EGG: secret menu + flying plane                              */}
+      {/* ════════════════════════════════════════════════════════════════════ */}
+      {easterEggOpen && (
+        <EasterEggModal onClose={() => setEasterEggOpen(false)} />
+      )}
+      {planeVisible && (
+        <PlaneTrack aria-hidden='true'>
+          <PlaneEmoji>✈️</PlaneEmoji>
+          <Contrail />
+        </PlaneTrack>
+      )}
     </>
   );
 };
-
 // ── Command Palette component ─────────────────────────────────────────────────
 const CommandPalette = ({ items, onClose, navigate }) => {
   const [q, setQ] = useState('');
   const ref = useRef(null);
-
   useEffect(() => {
     ref.current?.focus();
   }, []);
@@ -584,12 +604,10 @@ const CommandPalette = ({ items, onClose, navigate }) => {
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, [onClose]);
-
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     return s ? items.filter((i) => i.label.toLowerCase().includes(s)) : items;
   }, [q, items]);
-
   return (
     <PaletteBackdrop onClick={onClose}>
       <PalettePanel onClick={(e) => e.stopPropagation()}>
@@ -627,9 +645,7 @@ const CommandPalette = ({ items, onClose, navigate }) => {
     </PaletteBackdrop>
   );
 };
-
 export default AppNav;
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Keyframes
 // ─────────────────────────────────────────────────────────────────────────────
@@ -637,6 +653,45 @@ const fadeIn = keyframes`from { opacity: 0 }             to { opacity: 1 }`;
 const slideUp = keyframes`from { transform: translateY(100%) } to { transform: translateY(0) }`;
 const popIn = keyframes`from { transform: scale(.95); opacity: 0 } to { transform: scale(1); opacity: 1 }`;
 const dropDown = keyframes`from { transform: translateY(-8px); opacity: 0 } to { transform: translateY(0); opacity: 1 }`;
+
+// ── Easter egg: plane fly-across ─────────────────────────────────────────────
+const flyAcross = keyframes`
+  0%   { transform: translate(-60px, 0) rotate(-8deg); opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { transform: translate(calc(100vw + 60px), -40px) rotate(-8deg); opacity: 0; }
+`;
+const trailFade = keyframes`
+  0%   { width: 0; opacity: 0; }
+  10%  { opacity: 0.5; }
+  100% { width: 120px; opacity: 0; }
+`;
+
+const PlaneTrack = styled.div`
+  position: fixed;
+  top: 18%;
+  left: 0;
+  z-index: 9999;
+  pointer-events: none;
+  animation: ${flyAcross} 2.2s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  display: flex;
+  align-items: center;
+`;
+const PlaneEmoji = styled.span`
+  font-size: 2rem;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+  line-height: 1;
+`;
+const Contrail = styled.div`
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 2px;
+  background: linear-gradient(to left, rgba(255, 255, 255, 0.35), transparent);
+  border-radius: 1px;
+  animation: ${trailFade} 2.2s ease forwards;
+`;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared atoms
@@ -660,7 +715,6 @@ const NarrowMark = styled.span`
     display: none;
   }
 `;
-
 const LogoText = styled.span`
   font-family: 'Autography', cursive;
   font-size: 1.6rem;
@@ -675,7 +729,6 @@ const LogoText = styled.span`
   -webkit-text-fill-color: transparent;
   background-clip: text;
 `;
-
 // ─────────────────────────────────────────────────────────────────────────────
 // TOP BAR  (mobile only)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -692,7 +745,6 @@ const TopBar = styled.header`
     display: none;
   }
 `;
-
 const TopBarInner = styled.div`
   display: flex;
   align-items: center;
@@ -703,20 +755,17 @@ const TopBarInner = styled.div`
   margin: 0 auto;
   box-sizing: border-box;
 `;
-
 const Logo = styled(Link)`
   display: flex;
   align-items: center;
   gap: 8px;
   text-decoration: none;
 `;
-
 const TopBarActions = styled.div`
   display: flex;
   align-items: center;
   gap: 4px;
 `;
-
 const TopBarIconLink = styled(Link)`
   width: 36px;
   height: 36px;
@@ -731,7 +780,6 @@ const TopBarIconLink = styled(Link)`
     color: ${COLORS.primarySalmon};
   }
 `;
-
 const AvatarButton = styled.button`
   width: 30px;
   height: 30px;
@@ -753,15 +801,12 @@ const AvatarButton = styled.button`
     box-shadow: 0 0 0 3px ${COLORS.primarySalmon}28;
   }
 `;
-
 // ─────────────────────────────────────────────────────────────────────────────
 // DESKTOP LEFT SIDEBAR
 // ─────────────────────────────────────────────────────────────────────────────
-
 /* Sidebar widths exposed as CSS custom props so MainLayout can consume them */
 const SIDEBAR_FULL = '240px';
 const SIDEBAR_NARROW = '72px';
-
 const Sidebar = styled.aside`
   display: none;
   @media (min-width: 960px) {
@@ -779,7 +824,6 @@ const Sidebar = styled.aside`
     width: ${SIDEBAR_FULL}; /* full labels at 1200+ */
   }
 `;
-
 const SideInner = styled.div`
   display: flex;
   flex-direction: column;
@@ -792,7 +836,6 @@ const SideInner = styled.div`
     display: none;
   }
 `;
-
 const SideLogoLink = styled(Link)`
   display: flex;
   align-items: center;
@@ -812,28 +855,24 @@ const SideLogoLink = styled(Link)`
     justify-content: flex-start;
   }
 `;
-
 const SideLogoText = styled(LogoText)`
   display: none;
   @media (min-width: 1200px) {
     display: block;
   }
 `;
-
 const SideDivider = styled.hr`
   border: none;
   height: 1px;
   background: ${COLORS.border};
   margin: 6px 12px;
 `;
-
 const SideNav = styled.nav`
   display: flex;
   flex-direction: column;
   gap: 1px;
   padding: 0 8px;
 `;
-
 /* Shared shape for anchor + button sidebar rows */
 const sideItemBase = css`
   display: flex;
@@ -851,11 +890,9 @@ const sideItemBase = css`
   position: relative;
   transition: background 0.12s, color 0.12s;
   justify-content: center; /* narrow: icon centred */
-
   background: ${(p) =>
     p.$active ? `${COLORS.primarySalmon}12` : 'transparent'};
   color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textSecondary)};
-
   /* Active bar */
   ${(p) =>
     p.$active &&
@@ -872,13 +909,11 @@ const sideItemBase = css`
         border-radius: 0 3px 3px 0;
       }
     `}
-
   &:hover {
     background: ${(p) =>
       p.$active ? `${COLORS.primarySalmon}1a` : COLORS.elevatedBackground};
     color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textPrimary)};
   }
-
   ${(p) =>
     p.$danger &&
     css`
@@ -888,7 +923,6 @@ const sideItemBase = css`
         background: ${COLORS.error}12;
       }
     `}
-
   /* full: left-align */
   @media (min-width: 1200px) {
     justify-content: flex-start;
@@ -898,14 +932,12 @@ const sideItemBase = css`
     }
   }
 `;
-
 const SideNavLink = styled(Link)`
   ${sideItemBase}
 `;
 const SideNavButton = styled.button`
   ${sideItemBase}
 `;
-
 const SideIcon = styled.span`
   font-size: 1.1rem;
   display: grid;
@@ -913,7 +945,6 @@ const SideIcon = styled.span`
   width: 22px;
   flex-shrink: 0;
 `;
-
 const SideLabel = styled.span`
   white-space: nowrap;
   display: none;
@@ -921,7 +952,6 @@ const SideLabel = styled.span`
     display: block;
   }
 `;
-
 const SideAvatar = styled.div`
   width: 26px;
   height: 26px;
@@ -941,12 +971,10 @@ const SideAvatar = styled.div`
   flex-shrink: 0;
   transition: border-color 0.15s, color 0.15s;
 `;
-
 const SideSpacer = styled.div`
   flex: 1;
   min-height: 12px;
 `;
-
 const SideSectionLabel = styled.div`
   font-size: 0.62rem;
   font-weight: 700;
@@ -959,7 +987,6 @@ const SideSectionLabel = styled.div`
     display: block;
   }
 `;
-
 const PaletteButton = styled.button`
   display: flex;
   align-items: center;
@@ -980,14 +1007,12 @@ const PaletteButton = styled.button`
     background: ${COLORS.primaryMint}0a;
   }
 `;
-
 const PaletteButtonLabel = styled.span`
   display: none;
   @media (min-width: 1200px) {
     display: block;
   }
 `;
-
 // ─────────────────────────────────────────────────────────────────────────────
 // MOBILE BOTTOM TAB BAR
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1006,7 +1031,6 @@ const BottomBar = styled.nav`
     display: none;
   }
 `;
-
 const BottomBarInner = styled.div`
   display: flex;
   align-items: center;
@@ -1016,7 +1040,6 @@ const BottomBarInner = styled.div`
   margin: 0 auto;
   padding: 0 4px;
 `;
-
 const tabBase = css`
   display: flex;
   align-items: center;
@@ -1037,7 +1060,6 @@ const BottomTab = styled(Link)`
 const BottomTabButton = styled.button`
   ${tabBase}
 `;
-
 const BottomIcon = styled.span`
   font-size: 1.45rem;
   display: grid;
@@ -1050,7 +1072,6 @@ const BottomIcon = styled.span`
       transform: scale(1.12);
     `}
 `;
-
 const BottomAvatarIcon = styled.div`
   width: 26px;
   height: 26px;
@@ -1071,7 +1092,6 @@ const BottomAvatarIcon = styled.div`
   letter-spacing: 0.5px;
   transition: border-color 0.14s, color 0.14s;
 `;
-
 /* Center "+" create button — a flat rounded square (Instagram-style) */
 const CreateSquare = styled.div`
   width: 36px;
@@ -1088,13 +1108,11 @@ const CreateSquare = styled.div`
   font-size: 1rem;
   box-shadow: 0 3px 12px ${COLORS.primarySalmon}45;
   transition: transform 0.12s, box-shadow 0.12s;
-
   ${BottomTabButton}:active & {
     transform: scale(0.91);
     box-shadow: 0 1px 6px ${COLORS.primarySalmon}30;
   }
 `;
-
 // ─────────────────────────────────────────────────────────────────────────────
 // SEARCH OVERLAY
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1106,7 +1124,6 @@ const SearchOverlay = styled.div`
   display: flex;
   flex-direction: column;
   animation: ${fadeIn} 0.12s ease;
-
   @media (min-width: 960px) {
     /* Desktop: dim backdrop + centred card */
     background: rgba(0, 0, 0, 0.52);
@@ -1116,13 +1133,11 @@ const SearchOverlay = styled.div`
     padding-top: 10vh;
   }
 `;
-
 const SearchCard = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
-
   @media (min-width: 960px) {
     height: auto;
     max-width: 580px;
@@ -1133,7 +1148,6 @@ const SearchCard = styled.div`
     animation: ${popIn} 0.16s ease;
   }
 `;
-
 const SearchRow = styled.div`
   display: flex;
   align-items: center;
@@ -1145,7 +1159,6 @@ const SearchRow = styled.div`
     background: transparent;
   }
 `;
-
 const SearchBox = styled.div`
   flex: 1;
   display: flex;
@@ -1155,12 +1168,10 @@ const SearchBox = styled.div`
   border: 1px solid ${COLORS.border};
   border-radius: 12px;
   padding: 9px 12px;
-
   svg {
     color: ${COLORS.textTertiary};
     flex-shrink: 0;
   }
-
   input {
     flex: 1;
     background: none;
@@ -1174,7 +1185,6 @@ const SearchBox = styled.div`
     }
   }
 `;
-
 const SearchClearBtn = styled.button`
   background: none;
   border: none;
@@ -1188,7 +1198,6 @@ const SearchClearBtn = styled.button`
     color: ${COLORS.textPrimary};
   }
 `;
-
 const SearchCancelBtn = styled.button`
   background: none;
   border: none;
@@ -1202,7 +1211,6 @@ const SearchCancelBtn = styled.button`
     opacity: 0.78;
   }
 `;
-
 const SearchBody = styled.div`
   flex: 1;
   display: flex;
@@ -1210,7 +1218,6 @@ const SearchBody = styled.div`
   justify-content: center;
   padding: 32px 20px;
 `;
-
 const SearchEmptyState = styled.div`
   text-align: center;
   color: ${COLORS.textTertiary};
@@ -1226,12 +1233,10 @@ const SearchEmptyState = styled.div`
     color: ${COLORS.textSecondary};
   }
 `;
-
 const SearchTip = styled.div`
   font-size: 0.72rem;
   color: ${COLORS.textTertiary};
 `;
-
 const SearchActiveHint = styled.div`
   color: ${COLORS.textSecondary};
   font-size: 0.9rem;
@@ -1245,7 +1250,6 @@ const SearchActiveHint = styled.div`
     margin-right: 4px;
   }
 `;
-
 // ─────────────────────────────────────────────────────────────────────────────
 // CREATE BOTTOM SHEET
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1263,7 +1267,6 @@ const SheetBackdrop = styled.div`
     justify-content: center;
   }
 `;
-
 const CreateSheet = styled.div`
   width: 100%;
   background: ${COLORS.cardBackground};
@@ -1273,7 +1276,6 @@ const CreateSheet = styled.div`
   border-bottom: none;
   padding: 8px 16px calc(36px + env(safe-area-inset-bottom));
   animation: ${slideUp} 0.22s cubic-bezier(0.34, 1.15, 0.64, 1);
-
   @media (min-width: 960px) {
     width: auto;
     min-width: 380px;
@@ -1284,7 +1286,6 @@ const CreateSheet = styled.div`
     animation: ${popIn} 0.18s ease;
   }
 `;
-
 const SheetHandle = styled.div`
   width: 34px;
   height: 4px;
@@ -1295,7 +1296,6 @@ const SheetHandle = styled.div`
     display: none;
   }
 `;
-
 const SheetTitle = styled.p`
   font-size: 0.72rem;
   font-weight: 700;
@@ -1304,13 +1304,11 @@ const SheetTitle = styled.p`
   color: ${COLORS.textTertiary};
   margin: 0 0 12px;
 `;
-
 const CreateGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 `;
-
 const CreateCard = styled.button`
   display: flex;
   flex-direction: column;
@@ -1323,7 +1321,6 @@ const CreateCard = styled.button`
   cursor: pointer;
   text-align: left;
   transition: all 0.13s ease;
-
   &:hover {
     background: ${COLORS.buttonHover};
     border-color: ${(p) => p.$color}45;
@@ -1333,7 +1330,6 @@ const CreateCard = styled.button`
     transform: scale(0.97);
   }
 `;
-
 const CreateCardIcon = styled.div`
   width: 40px;
   height: 40px;
@@ -1345,19 +1341,16 @@ const CreateCardIcon = styled.div`
   font-size: 1.05rem;
   margin-bottom: 6px;
 `;
-
 const CreateCardName = styled.span`
   font-size: 0.88rem;
   font-weight: 700;
   color: ${COLORS.textPrimary};
 `;
-
 const CreateCardSub = styled.span`
   font-size: 0.7rem;
   color: ${COLORS.textTertiary};
   line-height: 1.3;
 `;
-
 // ─────────────────────────────────────────────────────────────────────────────
 // COMMAND PALETTE
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1373,7 +1366,6 @@ const PaletteBackdrop = styled.div`
   padding: 12vh 16px 0;
   animation: ${fadeIn} 0.1s ease;
 `;
-
 const PalettePanel = styled.div`
   width: 100%;
   max-width: 580px;
@@ -1384,19 +1376,16 @@ const PalettePanel = styled.div`
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.45);
   animation: ${dropDown} 0.15s ease;
 `;
-
 const PaletteInputRow = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 14px 16px;
   border-bottom: 1px solid ${COLORS.border};
-
   svg {
     color: ${COLORS.primarySalmon};
     flex-shrink: 0;
   }
-
   input {
     flex: 1;
     background: none;
@@ -1409,7 +1398,6 @@ const PaletteInputRow = styled.div`
     }
   }
 `;
-
 const PaletteKbd = styled.kbd`
   font-size: 0.72rem;
   color: ${COLORS.textTertiary};
@@ -1418,13 +1406,11 @@ const PaletteKbd = styled.kbd`
   border-radius: 5px;
   padding: 2px 7px;
 `;
-
 const PaletteResults = styled.div`
   max-height: 380px;
   overflow-y: auto;
   padding: 6px;
 `;
-
 const PaletteRow = styled.button`
   width: 100%;
   display: flex;
@@ -1440,13 +1426,11 @@ const PaletteRow = styled.button`
   font-weight: 600;
   text-align: left;
   transition: background 0.1s;
-
   &:hover {
     background: ${COLORS.elevatedBackground};
     ${/* inner elements */ ''}
   }
 `;
-
 const PaletteRowIcon = styled.span`
   width: 20px;
   display: grid;
@@ -1454,12 +1438,10 @@ const PaletteRowIcon = styled.span`
   color: ${COLORS.textSecondary};
   font-size: 0.95rem;
   flex-shrink: 0;
-
   ${PaletteRow}:hover & {
     color: ${COLORS.primarySalmon};
   }
 `;
-
 const PaletteChevron = styled.span`
   margin-left: auto;
   color: ${COLORS.textTertiary};
@@ -1470,27 +1452,23 @@ const PaletteChevron = styled.span`
     opacity: 1;
   }
 `;
-
 const PaletteEmpty = styled.div`
   padding: 24px;
   text-align: center;
   color: ${COLORS.textTertiary};
   font-size: 0.88rem;
 `;
-
 const SheetDivider = styled.hr`
   border: none;
   height: 1px;
   background: ${COLORS.border};
   margin: 14px 0 10px;
 `;
-
 const BrowseList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 2px;
 `;
-
 const BrowseItem = styled.button`
   display: flex;
   align-items: center;
@@ -1510,7 +1488,6 @@ const BrowseItem = styled.button`
     background: ${COLORS.buttonHover};
   }
 `;
-
 const BrowseItemIcon = styled.div`
   width: 36px;
   height: 36px;
@@ -1522,19 +1499,16 @@ const BrowseItemIcon = styled.div`
   font-size: 0.95rem;
   flex-shrink: 0;
 `;
-
 const BrowseItemText = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1px;
 `;
-
 const BrowseItemName = styled.span`
   font-size: 0.9rem;
   font-weight: 600;
   color: ${COLORS.textPrimary};
 `;
-
 const BrowseItemSub = styled.span`
   font-size: 0.72rem;
   color: ${COLORS.textTertiary};
