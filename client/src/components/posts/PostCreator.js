@@ -1,8 +1,7 @@
 // client/src/components/posts/PostCreator.jsx
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
-import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import MediaItem from './PostCreator/media/MediaItem';
 
@@ -417,6 +416,163 @@ const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
   );
 };
 
+// ─── FIX #5: Memoized form section ────────────────────────────────────────
+// Extracted so that `uploadProgress` state changes (which fire dozens of
+// times per upload) never re-render the text inputs. This component only
+// re-renders when its own props change (title, caption, tags, etc.).
+
+const PostDetailsForm = memo(function PostDetailsForm({
+  title,
+  setTitle,
+  caption,
+  setCaption,
+  content,
+  setContent,
+  tags,
+  setTags,
+  currentTag,
+  setCurrentTag,
+  location,
+  setLocation,
+  eventDate,
+  setEventDate,
+  onOpenAIModal,
+}) {
+  const addTag = (tagText = null) => {
+    const tagToAdd = tagText || currentTag.trim();
+    if (!tagToAdd || tags.includes(tagToAdd)) return;
+    if (tags.length >= 5) {
+      toast.error('Maximum 5 tags allowed');
+      return;
+    }
+    setTags((prev) => [...prev, tagToAdd]);
+    setCurrentTag('');
+  };
+
+  const handleTagInputKeyDown = (e) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      if (currentTag.trim()) addTag();
+    } else if (e.key === 'Backspace' && !currentTag && tags.length > 0) {
+      setTags((prev) => prev.slice(0, -1));
+    }
+  };
+
+  const handleTagInputChange = (e) => {
+    const value = e.target.value;
+    if (value.includes(' ')) {
+      const tagText = value.split(' ')[0].trim();
+      if (tagText) addTag(tagText);
+    } else {
+      setCurrentTag(value);
+    }
+  };
+
+  const removeTag = (tagToRemove) => {
+    setTags((prev) => prev.filter((t) => t !== tagToRemove));
+  };
+
+  return (
+    <PostDetailsSection>
+      <SectionHeader>
+        <h3>Post Details</h3>
+        <AIButton onClick={onOpenAIModal}>
+          <FaRobot />
+          <span>AI Assist</span>
+        </AIButton>
+      </SectionHeader>
+
+      <FormGroup>
+        <Label>Title *</Label>
+        <FormInput
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder='Add a catchy title...'
+          maxLength={100}
+        />
+        <CharCount>{title.length}/100</CharCount>
+      </FormGroup>
+
+      <FormGroup>
+        <Label>Caption *</Label>
+        <FormTextarea
+          value={caption}
+          onChange={(e) => setCaption(e.target.value)}
+          placeholder='Write a caption that tells your story...'
+          rows={4}
+          maxLength={2200}
+        />
+        <CharCount>{caption.length}/2200</CharCount>
+      </FormGroup>
+
+      <TwoColumnGroup>
+        <FormGroup>
+          <Label>Event Date</Label>
+          <IconInput>
+            <FaCalendarDay />
+            <FormInput
+              type='date'
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
+            />
+          </IconInput>
+        </FormGroup>
+
+        <FormGroup>
+          <Label>Location</Label>
+          <IconInput>
+            <FaLocationArrow />
+            <FormInput
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder='Add location'
+            />
+          </IconInput>
+        </FormGroup>
+      </TwoColumnGroup>
+
+      <FormGroup>
+        <Label>Tags</Label>
+        <TagInput>
+          <FaTag />
+          <TagInputField
+            value={currentTag}
+            onChange={handleTagInputChange}
+            onKeyDown={handleTagInputKeyDown}
+            placeholder='Type tags and press space to add...'
+            maxLength={30}
+          />
+        </TagInput>
+
+        {tags.length > 0 && (
+          <TagsContainer>
+            {tags.map((tag, index) => (
+              <Tag key={index}>
+                #{tag}
+                <TagRemoveButton onClick={() => removeTag(tag)}>
+                  <FaTimes />
+                </TagRemoveButton>
+              </Tag>
+            ))}
+          </TagsContainer>
+        )}
+      </FormGroup>
+
+      <FormGroup>
+        <Label>Additional Content</Label>
+        <IconInput>
+          <FaPencilAlt />
+          <FormInput
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder='Add any additional details (optional)'
+          />
+        </IconInput>
+      </FormGroup>
+    </PostDetailsSection>
+  );
+});
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
@@ -437,7 +593,8 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
   const [selectedMediaForFilter, setSelectedMediaForFilter] = useState(null);
 
   const navigate = useNavigate();
-  const { startUpload, mountedRef } = useUploadManager(setMedia);
+  const { startUpload, cancelUpload, uploadProgress, mountedRef } =
+    useUploadManager(setMedia);
 
   // ── FIX #4: mediaRef gives onDrop a stable, always-current view of
   //    media without needing `media` in the dependency array. This
@@ -568,21 +725,27 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
   // finishes while you tap "remove" on another item). IDs are stable for
   // the lifetime of the item.
 
-  const removeMedia = useCallback((idToRemove) => {
-    setMedia((current) => {
-      const item = current.find((m) => m.id === idToRemove);
-      if (
-        item?.previewUrl &&
-        !item.isExisting &&
-        item.previewUrl.startsWith('blob:')
-      ) {
-        try {
-          URL.revokeObjectURL(item.previewUrl);
-        } catch {}
-      }
-      return current.filter((m) => m.id !== idToRemove);
-    });
-  }, []);
+  const removeMedia = useCallback(
+    (idToRemove) => {
+      // If this item is still uploading or queued, abort/dequeue it
+      cancelUpload(idToRemove);
+
+      setMedia((current) => {
+        const item = current.find((m) => m.id === idToRemove);
+        if (
+          item?.previewUrl &&
+          !item.isExisting &&
+          item.previewUrl.startsWith('blob:')
+        ) {
+          try {
+            URL.revokeObjectURL(item.previewUrl);
+          } catch {}
+        }
+        return current.filter((m) => m.id !== idToRemove);
+      });
+    },
+    [cancelUpload]
+  );
 
   const openFilterModal = useCallback((mediaItem) => {
     setSelectedMediaForFilter(mediaItem);
@@ -617,6 +780,9 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
 
   // ── AI content ─────────────────────────────────────────────────────────────
 
+  // Stable ref — won't break PostDetailsForm's memo
+  const openAIModal = useCallback(() => setShowAIModal(true), []);
+
   const handleAIContentApply = (generatedContent) => {
     if (generatedContent.title) setTitle(generatedContent.title);
     if (generatedContent.caption) setCaption(generatedContent.caption);
@@ -628,42 +794,6 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
     } else {
       toast.success('Content applied!');
     }
-  };
-
-  // ── Tags ───────────────────────────────────────────────────────────────────
-
-  const addTag = (tagText = null) => {
-    const tagToAdd = tagText || currentTag.trim();
-    if (!tagToAdd || tags.includes(tagToAdd)) return;
-    if (tags.length >= 5) {
-      toast.error('Maximum 5 tags allowed');
-      return;
-    }
-    setTags([...tags, tagToAdd]);
-    setCurrentTag('');
-  };
-
-  const handleTagInputKeyDown = (e) => {
-    if (e.key === ' ' || e.key === 'Enter') {
-      e.preventDefault();
-      if (currentTag.trim()) addTag();
-    } else if (e.key === 'Backspace' && !currentTag && tags.length > 0) {
-      setTags(tags.slice(0, -1));
-    }
-  };
-
-  const handleTagInputChange = (e) => {
-    const value = e.target.value;
-    if (value.includes(' ')) {
-      const tagText = value.split(' ')[0].trim();
-      if (tagText) addTag(tagText);
-    } else {
-      setCurrentTag(value);
-    }
-  };
-
-  const removeTag = (tagToRemove) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
   // ── Submit ─────────────────────────────────────────────────────────────────
@@ -832,9 +962,7 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
                     key={item.id}
                     mediaItem={item}
                     index={index}
-                    // FIX #1: Wrap callbacks so MediaItem doesn't need to
-                    // know about the ID-based API. These closures are cheap —
-                    // the grid is never more than ~20 items.
+                    progress={uploadProgress[item.id] ?? null}
                     onRemove={() => removeMedia(item.id)}
                     onFilter={() => openFilterModal(item)}
                     onReorder={reorderMedia}
@@ -852,103 +980,23 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
           )}
         </MediaSection>
 
-        <PostDetailsSection>
-          <SectionHeader>
-            <h3>Post Details</h3>
-            <AIButton onClick={() => setShowAIModal(true)}>
-              <FaRobot />
-              <span>AI Assist</span>
-            </AIButton>
-          </SectionHeader>
-
-          <FormGroup>
-            <Label>Title *</Label>
-            <FormInput
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder='Add a catchy title...'
-              maxLength={100}
-            />
-            <CharCount>{title.length}/100</CharCount>
-          </FormGroup>
-
-          <FormGroup>
-            <Label>Caption *</Label>
-            <FormTextarea
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              placeholder='Write a caption that tells your story...'
-              rows={4}
-              maxLength={2200}
-            />
-            <CharCount>{caption.length}/2200</CharCount>
-          </FormGroup>
-
-          <TwoColumnGroup>
-            <FormGroup>
-              <Label>Event Date</Label>
-              <IconInput>
-                <FaCalendarDay />
-                <FormInput
-                  type='date'
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                />
-              </IconInput>
-            </FormGroup>
-
-            <FormGroup>
-              <Label>Location</Label>
-              <IconInput>
-                <FaLocationArrow />
-                <FormInput
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder='Add location'
-                />
-              </IconInput>
-            </FormGroup>
-          </TwoColumnGroup>
-
-          <FormGroup>
-            <Label>Tags</Label>
-            <TagInput>
-              <FaTag />
-              <TagInputField
-                value={currentTag}
-                onChange={handleTagInputChange}
-                onKeyDown={handleTagInputKeyDown}
-                placeholder='Type tags and press space to add...'
-                maxLength={30}
-              />
-            </TagInput>
-
-            {tags.length > 0 && (
-              <TagsContainer>
-                {tags.map((tag, index) => (
-                  <Tag key={index}>
-                    #{tag}
-                    <TagRemoveButton onClick={() => removeTag(tag)}>
-                      <FaTimes />
-                    </TagRemoveButton>
-                  </Tag>
-                ))}
-              </TagsContainer>
-            )}
-          </FormGroup>
-
-          <FormGroup>
-            <Label>Additional Content</Label>
-            <IconInput>
-              <FaPencilAlt />
-              <FormInput
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder='Add any additional details (optional)'
-              />
-            </IconInput>
-          </FormGroup>
-        </PostDetailsSection>
+        <PostDetailsForm
+          title={title}
+          setTitle={setTitle}
+          caption={caption}
+          setCaption={setCaption}
+          content={content}
+          setContent={setContent}
+          tags={tags}
+          setTags={setTags}
+          currentTag={currentTag}
+          setCurrentTag={setCurrentTag}
+          location={location}
+          setLocation={setLocation}
+          eventDate={eventDate}
+          setEventDate={setEventDate}
+          onOpenAIModal={openAIModal}
+        />
       </ContentSection>
 
       <ActionBar>
