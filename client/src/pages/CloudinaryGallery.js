@@ -1206,7 +1206,7 @@ const VideoPlay = styled.div`
   }
 `;
 
-const ItemOverlay = styled.div.attrs({ className: 'overlay' })`
+const ItemOverlay = styled.div.attrs(() => ({ className: 'overlay' }))`
   position: absolute;
   inset: auto 0 0 0;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.78) 0%, transparent 100%);
