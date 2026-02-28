@@ -285,6 +285,8 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
                     width: 1080,
                     height: 1350,
                     crop: 'fill',
+                    quality: 'auto',
+                    format: 'auto',
                   })}
                   loading={i === 0 ? 'eager' : 'lazy'}
                   alt={post.title || 'Sologram post'}

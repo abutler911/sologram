@@ -311,6 +311,8 @@ const PostDetail = () => {
                         width: 1200,
                         height: 1500,
                         crop: 'fill',
+                        quality: 'auto',
+                        format: 'auto',
                       })}
                       loading={i === 0 ? 'eager' : 'lazy'}
                       alt={post.title || 'Sologram'}

@@ -641,6 +641,7 @@ const CloudinaryGallery = () => {
                       height: 800,
                       crop: 'limit',
                       quality: 'auto',
+                      format: 'auto',
                     })}
                     alt={selectedAsset.public_id}
                   />
