@@ -53,6 +53,7 @@ const EnhancedStories = ({ isPWA = false }) => {
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
+  const [captionExpanded, setCaptionExpanded] = useState(false);
   // ── Story progression (RAF-based) ─────────────────────────────────────────
   // NOTE: progress is 0→1 driven by RAF. PillFill has NO css transition —
   // that was causing the timer to look frozen (transition fought RAF updates).
@@ -128,7 +129,9 @@ const EnhancedStories = ({ isPWA = false }) => {
     setActiveStory(story);
     setActiveStoryIndex(0);
     setProgress(0);
+    setCaptionExpanded(false);
   };
+
   const closeStory = () => {
     setActiveStory(null);
     setActiveStoryIndex(0);
@@ -352,7 +355,15 @@ const EnhancedStories = ({ isPWA = false }) => {
             )}
 
             {activeStory.caption && (
-              <ViewerCaption>{activeStory.caption}</ViewerCaption>
+              <ViewerCaption
+                $expanded={captionExpanded}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCaptionExpanded((prev) => !prev);
+                }}
+              >
+                {activeStory.caption}
+              </ViewerCaption>
             )}
 
             {/* Slide counter if multi-media */}
@@ -856,28 +867,33 @@ const ViewerTitle = styled.h2`
   font-family: 'Cormorant Garamond', 'Georgia', serif;
   font-weight: 600;
   font-style: italic;
-  font-size: 2rem;
+  font-size: 1.35rem;
   color: #fff;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
   margin: 0;
-  text-shadow: 0 2px 16px rgba(10, 10, 11, 0.5);
+  text-shadow: 0 2px 12px rgba(10, 10, 11, 0.5);
+
+  @media (max-width: 480px) {
+    font-size: 1.15rem;
+  }
 `;
 
 const ViewerCaption = styled.p`
   font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 400;
-  line-height: 1.6;
+  line-height: 1.55;
   color: rgba(255, 255, 255, 0.75);
   margin: 0;
   letter-spacing: 0.01em;
-  /* Clamp to 3 lines so long captions don't crowd the frame */
+  text-shadow: 0 1px 8px rgba(10, 10, 11, 0.6);
+  cursor: pointer;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: ${(p) => (p.$expanded ? 'unset' : '2')};
   -webkit-box-orient: vertical;
   overflow: hidden;
-  text-shadow: 0 1px 8px rgba(10, 10, 11, 0.6);
+  pointer-events: auto;
 `;
 
 const SlideCounter = styled.span`
