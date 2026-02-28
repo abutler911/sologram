@@ -44,6 +44,7 @@ const cloudinaryRoutes = require('./routes/cloudinaryRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const aiContentRoutes = require('./routes/admin/aiContent');
 const commentRoutes = require('./routes/comments');
+const quickThoughtRoutes = require('./routes/webhooks/quickThought');
 
 // ----------- App Initialization -----------
 const app = express();
@@ -121,6 +122,7 @@ app.use('/api/admin/cloudinary', cloudinaryRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin/ai-content', aiContentRoutes);
 app.use('/api', commentRoutes);
+app.use('/api/thoughts/quick', quickThoughtRoutes);
 
 // ----------- Lightweight Health Check -----------
 app.get('/health', (req, res) => {

@@ -1,163 +1,100 @@
-const Thought = require("../models/Thought");
-const { cloudinary } = require("../config/cloudinary");
-const {
-  buildThoughtEmail,
-} = require("../utils/emailTemplates/thoughtPostedTemplate");
-const { sendEmail } = require("../utils/sendEmail");
-const User = require("../models/User");
-const { notifyFamilySms } = require("../services/notify/notifyFamilySms");
+// controllers/thoughts.js
+const Thought = require('../models/Thought');
+const { cloudinary } = require('../config/cloudinary');
+const { createAndNotify } = require('../services/thoughts/createAndNotify');
 
-const randomEmoji = () => {
-  const emojis = ["💭", "🧠", "🔥", "🤔", "✨"];
-  return emojis[Math.floor(Math.random() * emojis.length)];
-};
-
+// ── List (paginated, pinned first) ────────────────────────────────────────────
 exports.getThoughts = async (req, res) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
     const startIndex = (page - 1) * limit;
 
-    const pinnedThoughts = await Thought.find({ pinned: true })
-      .sort({ createdAt: -1 })
-      .limit(5);
-
-    const regularThoughts = await Thought.find({ pinned: false })
-      .sort({ createdAt: -1 })
-      .skip(startIndex)
-      .limit(limit);
-
-    const thoughts = [...pinnedThoughts, ...regularThoughts];
-
-    const total = await Thought.countDocuments({ pinned: false });
+    const [pinnedThoughts, regularThoughts, total] = await Promise.all([
+      Thought.find({ pinned: true }).sort({ createdAt: -1 }).limit(5),
+      Thought.find({ pinned: false })
+        .sort({ createdAt: -1 })
+        .skip(startIndex)
+        .limit(limit),
+      Thought.countDocuments({ pinned: false }),
+    ]);
 
     res.status(200).json({
       success: true,
-      count: thoughts.length,
+      count: pinnedThoughts.length + regularThoughts.length,
       total,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
-      data: thoughts,
+      data: [...pinnedThoughts, ...regularThoughts],
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
+// ── Single ────────────────────────────────────────────────────────────────────
 exports.getThought = async (req, res) => {
   try {
     const thought = await Thought.findById(req.params.id);
-
     if (!thought) {
-      return res.status(404).json({
-        success: false,
-        message: "Thought not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: 'Thought not found' });
     }
-
-    res.status(200).json({
-      success: true,
-      data: thought,
-    });
+    res.status(200).json({ success: true, data: thought });
   } catch (err) {
     console.error(err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
+// ── Create (web UI) ───────────────────────────────────────────────────────────
 exports.createThought = async (req, res) => {
   try {
     const { content, mood, tags } = req.body;
 
-    const thoughtData = {
+    const data = {
       content,
-      mood: mood || "creative",
+      mood: mood || 'creative',
       tags: tags ? JSON.parse(tags) : [],
+      source: 'web',
     };
 
     if (req.file) {
-      thoughtData.media = {
-        mediaType: "image",
+      data.media = {
+        mediaType: 'image',
         mediaUrl: req.file.path,
         cloudinaryId: req.file.filename,
       };
     }
 
-    const thought = await Thought.create(thoughtData);
-    const base = process.env.APP_PUBLIC_URL || "https://thesologram.com";
-    const thoughtUrl = `${base}/thought/${thought._id}`;
+    const thought = await createAndNotify(data);
 
-    notifyFamilySms("thought", { content: thought.content, url: thoughtUrl })
-      .then((out) =>
-        console.table(
-          out.map(
-            ({ name, phone, success, textId, error, firstAttemptHadLink }) => ({
-              name,
-              phone,
-              success,
-              textId,
-              error,
-              firstAttemptHadLink,
-            })
-          )
-        )
-      )
-      .catch((e) => console.error("[SMS notify error]", e?.message || e));
-
-    const users = await User.find({});
-
-    for (const user of users) {
-      await sendEmail({
-        to: user.email,
-        subject: `[SoloGram] Andy shared a new thought ${randomEmoji()}`,
-        html: buildThoughtEmail({
-          content: thought.content,
-          thoughtId: thought._id.toString(),
-        }),
-      });
-    }
-    res.status(201).json({
-      success: true,
-      data: thought,
-    });
+    res.status(201).json({ success: true, data: thought });
   } catch (err) {
     console.error(err);
-
-    if (err.name === "ValidationError") {
+    if (err.name === 'ValidationError') {
       const messages = Object.values(err.errors).map((val) => val.message);
-      return res.status(400).json({
-        success: false,
-        message: messages.join(", "),
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: messages.join(', ') });
     }
-
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
+// ── Update ────────────────────────────────────────────────────────────────────
 exports.updateThought = async (req, res) => {
   try {
-    let thought = await Thought.findById(req.params.id);
-
+    const thought = await Thought.findById(req.params.id);
     if (!thought) {
-      return res.status(404).json({
-        success: false,
-        message: "Thought not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: 'Thought not found' });
     }
 
     const { content, mood, tags } = req.body;
-
     if (content) thought.content = content;
     if (mood) thought.mood = mood;
     if (tags) thought.tags = JSON.parse(tags);
@@ -166,134 +103,94 @@ exports.updateThought = async (req, res) => {
       if (thought.media?.cloudinaryId) {
         await cloudinary.uploader.destroy(thought.media.cloudinaryId);
       }
-
       thought.media = {
-        mediaType: "image",
+        mediaType: 'image',
         mediaUrl: req.file.path,
         cloudinaryId: req.file.filename,
       };
     }
 
     await thought.save();
-
-    res.status(200).json({
-      success: true,
-      data: thought,
-    });
+    res.status(200).json({ success: true, data: thought });
   } catch (err) {
     console.error(err);
-
-    if (err.name === "ValidationError") {
+    if (err.name === 'ValidationError') {
       const messages = Object.values(err.errors).map((val) => val.message);
-      return res.status(400).json({
-        success: false,
-        message: messages.join(", "),
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: messages.join(', ') });
     }
-
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
+// ── Delete ────────────────────────────────────────────────────────────────────
 exports.deleteThought = async (req, res) => {
   try {
     const thought = await Thought.findById(req.params.id);
-
     if (!thought) {
-      return res.status(404).json({
-        success: false,
-        message: "Thought not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: 'Thought not found' });
     }
-
     if (thought.media?.cloudinaryId) {
       await cloudinary.uploader.destroy(thought.media.cloudinaryId);
     }
-
     await thought.deleteOne();
-
-    res.status(200).json({
-      success: true,
-      data: {},
-    });
+    res.status(200).json({ success: true, data: {} });
   } catch (err) {
     console.error(err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
+// ── Like ──────────────────────────────────────────────────────────────────────
 exports.likeThought = async (req, res) => {
   try {
     const thought = await Thought.findById(req.params.id);
-
     if (!thought) {
-      return res.status(404).json({
-        success: false,
-        message: "Thought not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: 'Thought not found' });
     }
-
     thought.likes += 1;
     await thought.save();
-
-    res.status(200).json({
-      success: true,
-      data: thought,
-    });
+    res.status(200).json({ success: true, data: thought });
   } catch (err) {
     console.error(err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
+// ── Pin/unpin ─────────────────────────────────────────────────────────────────
 exports.pinThought = async (req, res) => {
   try {
     const thought = await Thought.findById(req.params.id);
-
     if (!thought) {
-      return res.status(404).json({
-        success: false,
-        message: "Thought not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: 'Thought not found' });
     }
 
     thought.pinned = !thought.pinned;
 
     if (thought.pinned) {
       const pinnedCount = await Thought.countDocuments({ pinned: true });
-
       if (pinnedCount >= 5) {
-        const oldestPinned = await Thought.findOne({ pinned: true }).sort({
+        const oldest = await Thought.findOne({ pinned: true }).sort({
           createdAt: 1,
         });
-
-        if (oldestPinned) {
-          oldestPinned.pinned = false;
-          await oldestPinned.save();
+        if (oldest) {
+          oldest.pinned = false;
+          await oldest.save();
         }
       }
     }
 
     await thought.save();
-
-    res.status(200).json({
-      success: true,
-      data: thought,
-    });
+    res.status(200).json({ success: true, data: thought });
   } catch (err) {
     console.error(err);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
