@@ -16,6 +16,7 @@ import {
   FaVideo,
   FaArrowLeft,
   FaPlusCircle,
+  FaEye,
 } from 'react-icons/fa';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
@@ -114,6 +115,8 @@ const CreateStory = () => {
       });
     };
   }, []); // intentionally empty — runs only on unmount
+
+  const [visionLoading, setVisionLoading] = useState(false);
 
   // ── Add files ──────────────────────────────────────────────────────────────
   const addFiles = useCallback(
@@ -322,6 +325,25 @@ const CreateStory = () => {
     }
   }, [media, title, caption, anyUploading, anyError, navigate]);
 
+  const handleVisionCaption = useCallback(async () => {
+    const firstImage = media.find((m) => m.type === 'image' && m.mediaUrl);
+    if (!firstImage) {
+      toast.error('Upload an image first');
+      return;
+    }
+
+    setVisionLoading(true);
+    try {
+      const { data } = await api.generateAICaption(firstImage.mediaUrl);
+      if (data.title) setTitle(data.title);
+      if (data.caption) setCaption(data.caption);
+      toast.success('Caption generated from your photo!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to generate caption');
+    } finally {
+      setVisionLoading(false);
+    }
+  }, [media]);
   // ── Render ─────────────────────────────────────────────────────────────────
   if (authLoading) return null;
 
@@ -548,6 +570,21 @@ const CreateStory = () => {
         )}
 
         {/* ── Title ────────────────────────────────────────────────────── */}
+        {/* ── AI Vision ────────────────────────────────────────────────── */}
+        {media.length > 0 &&
+          media.some((m) => m.type === 'image' && m.mediaUrl) && (
+            <VisionButton
+              onClick={handleVisionCaption}
+              disabled={visionLoading}
+            >
+              <FaEye />
+              <span>
+                {visionLoading
+                  ? 'Analyzing photo...'
+                  : 'AI Vision — auto-fill from photo'}
+              </span>
+            </VisionButton>
+          )}
         <FieldBlock>
           <FieldInput
             value={title}
@@ -861,6 +898,33 @@ const DotRow = styled.div`
   z-index: 2;
 `;
 
+const VisionButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  margin-bottom: 8px;
+  border: 1px dashed ${COLORS.primaryMint}55;
+  border-radius: 10px;
+  background: rgba(136, 178, 204, 0.06);
+  color: ${COLORS.primaryMint};
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+
+  &:hover:not(:disabled) {
+    background: rgba(136, 178, 204, 0.12);
+    border-color: ${COLORS.primaryMint}88;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
 const Dot = styled.div`
   height: 4px;
   width: ${(p) => (p.$active ? '20px' : '4px')};

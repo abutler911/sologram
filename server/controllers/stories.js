@@ -128,6 +128,7 @@ exports.createStory = async (req, res) => {
 
     const story = await Story.create({
       title: title.trim(),
+      caption: caption?.trim() || '',
       media: media.map((m) => ({
         mediaType: m.mediaType,
         mediaUrl: m.mediaUrl,

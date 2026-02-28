@@ -9,6 +9,12 @@ const StorySchema = new mongoose.Schema(
       trim: true,
       maxlength: [100, 'Title cannot exceed 100 characters'],
     },
+    caption: {
+      type: String,
+      trim: true,
+      maxlength: [500, 'Caption cannot exceed 500 characters'],
+      default: '',
+    },
     media: [
       {
         mediaType: {
