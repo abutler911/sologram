@@ -15,6 +15,7 @@ const About = React.lazy(() => import('./pages/About'));
 const Privacy = React.lazy(() => import('./pages/Privacy'));
 const Terms = React.lazy(() => import('./pages/Terms'));
 const Thoughts = React.lazy(() => import('./pages/Thoughts'));
+const Memoirs = React.lazy(() => import('./pages/Memoirs'));
 
 // Collections
 const CollectionsList = React.lazy(() => import('./pages/CollectionsList'));
@@ -116,6 +117,14 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
           }
         />
 
+        <Route
+          path='/memoirs'
+          element={
+            <StandardLayout>
+              <Memoirs />
+            </StandardLayout>
+          }
+        />
         {/* Private */}
         <Route
           path='/profile'

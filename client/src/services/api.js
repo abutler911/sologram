@@ -53,6 +53,13 @@ export const api = {
   likeThought: (id) => put(`/api/thoughts/${id}/like`),
   pinThought: (id) => put(`/api/thoughts/${id}/pin`),
 
+  // ── MEMOIRS ────────────────────────────────────────────────────────────────
+  getMemoirs: () => get('/api/memoirs'),
+  getMemoir: (id) => get(`/api/memoirs/${id}`),
+  generateMemoir: (month, year) =>
+    post('/api/memoirs/generate', { month, year }),
+  deleteMemoir: (id) => del(`/api/memoirs/${id}`),
+
   // ── COLLECTIONS ────────────────────────────────────────────────────────────
   getCollections: () => get('/api/collections'),
   getCollection: (id) => get(`/api/collections/${id}`),
