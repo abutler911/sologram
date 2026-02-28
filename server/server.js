@@ -25,6 +25,7 @@ const cookieParser = require('cookie-parser');
 const errorHandler = require('./middleware/errorHandler');
 const AppError = require('./utils/AppError');
 const linksRouter = require('./routes/links');
+const aiVisionRoutes = require('./routes/admin/aiVision');
 
 // ----------- Background Jobs -----------
 const {
@@ -103,7 +104,7 @@ app.use(cookieParser()); // parse cookies
 app.use(express.json({ limit: '300mb' }));
 app.use(express.urlencoded({ extended: true, limit: '300mb' }));
 app.use(linksRouter);
-
+app.use('/api/admin/ai-vision', aiVisionRoutes);
 // ----------- Rate Limiting for Auth -----------
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
