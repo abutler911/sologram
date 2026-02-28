@@ -88,9 +88,29 @@ const CopilotChat = () => {
           onClick={() => setIsOpen(true)}
           aria-label='Open Blackbox'
         >
-          <ButtonIcon>
-            <RecorderSVG />
-          </ButtonIcon>
+          <ButtonIconWrap>
+            <CircleText viewBox='0 0 54 54'>
+              <defs>
+                <path
+                  id='curve'
+                  d='M 27,27 m -19,0 a 19,19 0 1,1 38,0 a 19,19 0 1,1 -38,0'
+                />
+              </defs>
+              <text>
+                <textPath
+                  href='#curve'
+                  startOffset='0%'
+                  fill={COLORS.textTertiary}
+                  fontSize='6.5'
+                  fontWeight='600'
+                  letterSpacing='3.2'
+                >
+                  FLIGHT RECORDER
+                </textPath>
+              </text>
+            </CircleText>
+            <PlaneIcon>✈</PlaneIcon>
+          </ButtonIconWrap>
         </FloatingButton>
       )}
 
@@ -98,9 +118,7 @@ const CopilotChat = () => {
         <ChatPanel>
           <ChatHeader>
             <HeaderInfo>
-              <HeaderIconWrap>
-                <RecorderSVG small />
-              </HeaderIconWrap>
+              <HeaderIconWrap>✈</HeaderIconWrap>
               <div>
                 <HeaderTitle>{COPILOT_NAME}</HeaderTitle>
                 <HeaderSubtitle>Andrew's flight recorder</HeaderSubtitle>
@@ -157,39 +175,6 @@ const CopilotChat = () => {
 };
 
 export default CopilotChat;
-
-// ── Blackbox icon (mini flight recorder) ────────────────────────────────────
-
-const RecorderSVG = ({ small }) => (
-  <svg
-    width={small ? 18 : 24}
-    height={small ? 18 : 24}
-    viewBox='0 0 24 24'
-    fill='none'
-    xmlns='http://www.w3.org/2000/svg'
-  >
-    <rect
-      x='3'
-      y='5'
-      width='18'
-      height='14'
-      rx='2.5'
-      fill={COLORS.primarySalmon}
-      opacity='0.85'
-    />
-    <rect
-      x='5'
-      y='8'
-      width='14'
-      height='3'
-      rx='1'
-      fill='#1a1a1a'
-      opacity='0.5'
-    />
-    <circle cx='12' cy='15.5' r='1.5' fill='#1a1a1a' opacity='0.4' />
-    <rect x='9' y='3' width='6' height='2' rx='1' fill={COLORS.textTertiary} />
-  </svg>
-);
 
 // ── Animations ──────────────────────────────────────────────────────────────
 
@@ -251,10 +236,33 @@ const FloatingButton = styled.button`
   }
 `;
 
-const ButtonIcon = styled.span`
+const ButtonIconWrap = styled.div`
+  position: relative;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+`;
+
+const CircleText = styled.svg`
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  animation: spin 30s linear infinite;
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
+const PlaneIcon = styled.span`
+  font-size: 1.3rem;
+  line-height: 1;
+  z-index: 1;
 `;
 
 // ── Chat Panel ──────────────────────────────────────────────────────────────
