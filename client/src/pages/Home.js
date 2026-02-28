@@ -26,6 +26,7 @@ import {
   patchInfinitePost,
   postKeys,
 } from '../hooks/queries/usePosts';
+import WhatsNew from '../components/WhatsNew';
 
 const PostCard = lazy(() => import('../components/posts/PostCard'));
 const EnhancedStories = lazy(() =>
@@ -295,7 +296,7 @@ const Home = forwardRef((props, ref) => {
     <PageWrapper>
       <HomeContainer isPWA={isPWA}>
         {showAboutBanner && <AboutBanner onClose={closeBanner} />}
-
+        <WhatsNew />
         {isSearching && searchQuery && (
           <SearchResultsIndicator
             searchQuery={searchQuery}
