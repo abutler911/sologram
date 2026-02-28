@@ -1,18 +1,19 @@
 // components/CopilotChat.js
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 import { FaTimes, FaPaperPlane } from 'react-icons/fa';
 import { COLORS } from '../theme';
 import axios from 'axios';
 
-const COPILOT_NAME = 'Co-Pilot'; // ← Change this when you pick a name
+const COPILOT_NAME = 'Blackbox';
 
 const CopilotChat = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: `Hey! I'm Andrew's ${COPILOT_NAME}. Ask me anything about his photography, aviation journey, thoughts, or what he's been up to on SoloGram.`,
+      content:
+        "Welcome to Blackbox — Andrew's flight recorder. Ask me anything about his photography, aviation journey, thoughts, or what he's been posting on SoloGram.",
     },
   ]);
   const [input, setInput] = useState('');
@@ -45,7 +46,6 @@ const CopilotChat = () => {
     setLoading(true);
 
     try {
-      // Send conversation history (skip the welcome message)
       const history = updated
         .slice(1)
         .slice(-8)
@@ -63,8 +63,8 @@ const CopilotChat = () => {
     } catch (err) {
       const errorMsg =
         err.response?.status === 429
-          ? "I've hit my message limit — try again in a few minutes!"
-          : "Sorry, I'm having trouble right now. Try again in a moment.";
+          ? 'Message limit reached — try again in a few minutes.'
+          : 'Blackbox is temporarily offline. Try again shortly.';
       setMessages((prev) => [
         ...prev,
         { role: 'assistant', content: errorMsg },
@@ -83,22 +83,27 @@ const CopilotChat = () => {
 
   return (
     <>
-      {/* Floating trigger button */}
       {!isOpen && (
-        <FloatingButton onClick={() => setIsOpen(true)} aria-label='Open chat'>
-          <ButtonIcon>✈</ButtonIcon>
+        <FloatingButton
+          onClick={() => setIsOpen(true)}
+          aria-label='Open Blackbox'
+        >
+          <ButtonIcon>
+            <RecorderSVG />
+          </ButtonIcon>
         </FloatingButton>
       )}
 
-      {/* Chat panel */}
       {isOpen && (
         <ChatPanel>
           <ChatHeader>
             <HeaderInfo>
-              <HeaderIcon>✈</HeaderIcon>
+              <HeaderIconWrap>
+                <RecorderSVG small />
+              </HeaderIconWrap>
               <div>
                 <HeaderTitle>{COPILOT_NAME}</HeaderTitle>
-                <HeaderSubtitle>Ask me about Andrew</HeaderSubtitle>
+                <HeaderSubtitle>Andrew's flight recorder</HeaderSubtitle>
               </div>
             </HeaderInfo>
             <CloseButton
@@ -133,7 +138,7 @@ const CopilotChat = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder='Ask about Andrew...'
+              placeholder='Ask Blackbox...'
               maxLength={500}
               disabled={loading}
             />
@@ -153,21 +158,62 @@ const CopilotChat = () => {
 
 export default CopilotChat;
 
+// ── Blackbox icon (mini flight recorder) ────────────────────────────────────
+
+const RecorderSVG = ({ small }) => (
+  <svg
+    width={small ? 18 : 24}
+    height={small ? 18 : 24}
+    viewBox='0 0 24 24'
+    fill='none'
+    xmlns='http://www.w3.org/2000/svg'
+  >
+    <rect
+      x='3'
+      y='5'
+      width='18'
+      height='14'
+      rx='2.5'
+      fill={COLORS.primarySalmon}
+      opacity='0.85'
+    />
+    <rect
+      x='5'
+      y='8'
+      width='14'
+      height='3'
+      rx='1'
+      fill='#1a1a1a'
+      opacity='0.5'
+    />
+    <circle cx='12' cy='15.5' r='1.5' fill='#1a1a1a' opacity='0.4' />
+    <rect x='9' y='3' width='6' height='2' rx='1' fill={COLORS.textTertiary} />
+  </svg>
+);
+
 // ── Animations ──────────────────────────────────────────────────────────────
 
 const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 `;
 
 const pulse = keyframes`
-  0%, 80%, 100% { transform: scale(0.4); opacity: 0.4; }
+  0%, 80%, 100% { transform: scale(0.35); opacity: 0.3; }
   40% { transform: scale(1); opacity: 1; }
 `;
 
-const float = keyframes`
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+const subtleGlow = keyframes`
+  0%, 100% { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 0 rgba(233, 137, 115, 0); }
+  50% { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 12px 2px rgba(233, 137, 115, 0.15); }
+`;
+
+// ── Noir glass effect ───────────────────────────────────────────────────────
+
+const noirGlass = css`
+  background: rgba(18, 18, 18, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 `;
 
 // ── Floating Button ─────────────────────────────────────────────────────────
@@ -176,42 +222,39 @@ const FloatingButton = styled.button`
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: none;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryBlueGray},
-    ${COLORS.primaryMint}
-  );
-  color: white;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  border: 1px solid ${COLORS.border};
+  ${noirGlass}
+  color: ${COLORS.primarySalmon};
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s, box-shadow 0.2s;
-  animation: ${float} 3s ease-in-out infinite;
+  transition: transform 0.2s, border-color 0.2s;
+  animation: ${subtleGlow} 4s ease-in-out infinite;
 
   &:hover {
-    transform: scale(1.08);
-    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.5);
+    transform: translateY(-2px) scale(1.04);
+    border-color: ${COLORS.primarySalmon}88;
     animation: none;
   }
 
   @media (max-width: 480px) {
     bottom: 72px;
-    right: 16px;
-    width: 50px;
-    height: 50px;
+    right: 14px;
+    width: 48px;
+    height: 48px;
   }
 `;
 
 const ButtonIcon = styled.span`
-  font-size: 1.5rem;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 // ── Chat Panel ──────────────────────────────────────────────────────────────
@@ -220,23 +263,24 @@ const ChatPanel = styled.div`
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 380px;
-  max-height: 520px;
-  background: ${COLORS.cardBackground};
+  width: 370px;
+  max-height: 510px;
+  ${noirGlass}
   border: 1px solid ${COLORS.border};
   border-radius: 16px;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6),
+    0 0 1px rgba(255, 255, 255, 0.05) inset;
   z-index: 1001;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: ${fadeIn} 0.25s ease-out;
+  animation: ${fadeIn} 0.2s ease-out;
 
   @media (max-width: 480px) {
     bottom: 0;
     right: 0;
     width: 100%;
-    max-height: 100vh;
+    max-height: 85vh;
     border-radius: 16px 16px 0 0;
   }
 `;
@@ -247,13 +291,9 @@ const ChatHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primaryBlueGray},
-    ${COLORS.primaryMint}22
-  );
+  padding: 12px 14px;
   border-bottom: 1px solid ${COLORS.border};
+  background: rgba(30, 30, 30, 0.6);
 `;
 
 const HeaderInfo = styled.div`
@@ -262,26 +302,28 @@ const HeaderInfo = styled.div`
   gap: 10px;
 `;
 
-const HeaderIcon = styled.span`
-  font-size: 1.3rem;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: ${COLORS.primaryBlueGray};
+const HeaderIconWrap = styled.div`
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(233, 137, 115, 0.1);
+  border: 1px solid rgba(233, 137, 115, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
 `;
 
 const HeaderTitle = styled.div`
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: ${COLORS.textPrimary};
+  letter-spacing: 0.5px;
 `;
 
 const HeaderSubtitle = styled.div`
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: ${COLORS.textTertiary};
+  letter-spacing: 0.3px;
 `;
 
 const CloseButton = styled.button`
@@ -293,12 +335,12 @@ const CloseButton = styled.button`
   border-radius: 8px;
   display: flex;
   align-items: center;
-  font-size: 1rem;
+  font-size: 0.9rem;
   transition: color 0.15s, background 0.15s;
 
   &:hover {
-    color: ${COLORS.textPrimary};
-    background: ${COLORS.elevatedBackground};
+    color: ${COLORS.primarySalmon};
+    background: rgba(255, 255, 255, 0.04);
   }
 `;
 
@@ -307,15 +349,15 @@ const CloseButton = styled.button`
 const MessagesContainer = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   scrollbar-width: thin;
   scrollbar-color: ${COLORS.border} transparent;
 
   &::-webkit-scrollbar {
-    width: 4px;
+    width: 3px;
   }
   &::-webkit-scrollbar-thumb {
     background: ${COLORS.border};
@@ -324,18 +366,25 @@ const MessagesContainer = styled.div`
 `;
 
 const MessageBubble = styled.div`
-  max-width: 82%;
-  padding: 10px 14px;
+  max-width: 80%;
+  padding: 10px 13px;
   border-radius: ${(p) =>
-    p.$isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};
+    p.$isUser ? '12px 12px 3px 12px' : '12px 12px 12px 3px'};
   background: ${(p) =>
-    p.$isUser ? COLORS.primaryBlueGray : COLORS.elevatedBackground};
+    p.$isUser
+      ? `linear-gradient(135deg, ${COLORS.primaryBlueGray}, ${COLORS.primaryBlueGray}dd)`
+      : 'rgba(42, 42, 42, 0.8)'};
+  ${(p) =>
+    !p.$isUser &&
+    css`
+      border: 1px solid rgba(68, 68, 68, 0.5);
+    `}
   color: ${COLORS.textPrimary};
-  font-size: 0.88rem;
-  line-height: 1.45;
+  font-size: 0.85rem;
+  line-height: 1.5;
   align-self: ${(p) => (p.$isUser ? 'flex-end' : 'flex-start')};
   word-wrap: break-word;
-  animation: ${fadeIn} 0.2s ease-out;
+  animation: ${fadeIn} 0.15s ease-out;
 `;
 
 // ── Typing Dots ─────────────────────────────────────────────────────────────
@@ -347,10 +396,10 @@ const TypingDots = styled.div`
 `;
 
 const Dot = styled.div`
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: ${COLORS.textTertiary};
+  background: ${COLORS.primarySalmon};
   animation: ${pulse} 1.2s ease-in-out infinite;
   animation-delay: ${(p) => p.$delay};
 `;
@@ -361,19 +410,19 @@ const InputArea = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-top: 1px solid ${COLORS.border};
-  background: ${COLORS.cardBackground};
+  background: rgba(30, 30, 30, 0.6);
 `;
 
 const ChatInput = styled.input`
   flex: 1;
-  background: ${COLORS.elevatedBackground};
+  background: rgba(42, 42, 42, 0.6);
   border: 1px solid ${COLORS.border};
   border-radius: 20px;
-  padding: 10px 16px;
+  padding: 9px 16px;
   color: ${COLORS.textPrimary};
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   outline: none;
   transition: border-color 0.15s;
 
@@ -386,32 +435,32 @@ const ChatInput = styled.input`
   }
 
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
   }
 `;
 
 const SendButton = styled.button`
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: none;
-  background: ${COLORS.primaryBlueGray};
-  color: white;
+  background: ${COLORS.primarySalmon};
+  color: #1a1a1a;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
-  transition: background 0.15s, transform 0.15s;
+  font-size: 0.8rem;
+  transition: opacity 0.15s, transform 0.15s;
   flex-shrink: 0;
 
   &:hover:not(:disabled) {
-    background: ${COLORS.primaryMint};
+    opacity: 0.85;
     transform: scale(1.05);
   }
 
   &:disabled {
-    opacity: 0.4;
+    opacity: 0.3;
     cursor: not-allowed;
   }
 `;
