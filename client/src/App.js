@@ -12,6 +12,7 @@ import ScrollToTop from './components/ScrollToTop';
 import InstallPrompt from './components/pwa/InstallPrompt';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
 import AppRoutes from './AppRoutes';
+import CopilotChat from './components/CopilotChat';
 
 // Separate components for better organization
 const PageTracker = () => {
@@ -96,7 +97,7 @@ function App() {
                   handleClearSearch={handleClearSearch}
                 />
                 <InstallPrompt />
-
+                <CopilotChat />
                 <DeleteConfirmationModal />
               </DeleteModalProvider>
             </CommentsProvider>{' '}
