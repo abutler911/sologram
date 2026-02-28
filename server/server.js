@@ -117,12 +117,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/collections', collectionRoutes);
 app.use('/api/archived-stories', archivedStoryRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/thoughts/quick', quickThoughtRoutes);
 app.use('/api/thoughts', thoughtsRoutes);
 app.use('/api/admin/cloudinary', cloudinaryRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin/ai-content', aiContentRoutes);
 app.use('/api', commentRoutes);
-app.use('/api/thoughts/quick', quickThoughtRoutes);
 
 // ----------- Lightweight Health Check -----------
 app.get('/health', (req, res) => {
