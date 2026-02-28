@@ -334,9 +334,10 @@ const CreateStory = () => {
 
     setVisionLoading(true);
     try {
-      const { data } = await api.generateAICaption(firstImage.mediaUrl);
-      if (data.title) setTitle(data.title);
-      if (data.caption) setCaption(data.caption);
+      const res = await api.generateAICaption(firstImage.mediaUrl);
+      const result = res.data || res;
+      if (result.title) setTitle(result.title);
+      if (result.caption) setCaption(result.caption);
       toast.success('Caption generated from your photo!');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to generate caption');
@@ -344,6 +345,7 @@ const CreateStory = () => {
       setVisionLoading(false);
     }
   }, [media]);
+
   // ── Render ─────────────────────────────────────────────────────────────────
   if (authLoading) return null;
 

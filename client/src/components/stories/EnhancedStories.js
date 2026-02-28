@@ -831,6 +831,7 @@ const ViewerInfoBar = styled.div`
   flex-direction: column;
   gap: 6px;
   pointer-events: none;
+  will-change: contents;
 
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
     padding-bottom: calc(24px + env(safe-area-inset-bottom, 0));
@@ -889,11 +890,10 @@ const ViewerCaption = styled.p`
   letter-spacing: 0.01em;
   text-shadow: 0 1px 8px rgba(10, 10, 11, 0.6);
   cursor: pointer;
-  display: -webkit-box;
-  -webkit-line-clamp: ${(p) => (p.$expanded ? 'unset' : '2')};
-  -webkit-box-orient: vertical;
-  overflow: hidden;
   pointer-events: auto;
+  overflow: hidden;
+  max-height: ${(p) => (p.$expanded ? '200px' : '2.5em')};
+  transition: max-height 0.25s ease;
 `;
 
 const SlideCounter = styled.span`
