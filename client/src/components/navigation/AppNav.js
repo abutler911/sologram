@@ -9,6 +9,7 @@ import React, {
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styled, { keyframes, css } from 'styled-components';
 import {
+  FaBook,
   FaHome,
   FaSearch,
   FaPlus,
@@ -282,6 +283,12 @@ const AppNav = ({ onSearch, onClearSearch }) => {
               </SideIcon>
               <SideLabel>Collections</SideLabel>
             </SideNavLink>
+            <SideNavLink to='/memoirs' $active={isActive('/memoirs')}>
+              <SideIcon>
+                <FaBook />
+              </SideIcon>
+              <SideLabel>Memoirs</SideLabel>
+            </SideNavLink>
             {canCreate && (
               <SideNavButton onClick={() => setCreateOpen(true)}>
                 <SideIcon>
@@ -546,6 +553,15 @@ const AppNav = ({ onSearch, onClearSearch }) => {
                 <BrowseItemText>
                   <BrowseItemName>Collections</BrowseItemName>
                   <BrowseItemSub>Browse your curated groups</BrowseItemSub>
+                </BrowseItemText>
+              </BrowseItem>
+              <BrowseItem onClick={() => goCreate('/memoirs')}>
+                <BrowseItemIcon $color={COLORS.primaryMint}>
+                  <FaBook />
+                </BrowseItemIcon>
+                <BrowseItemText>
+                  <BrowseItemName>Memoirs</BrowseItemName>
+                  <BrowseItemSub>Monthly life snapshots</BrowseItemSub>
                 </BrowseItemText>
               </BrowseItem>
               {canCreate && (
