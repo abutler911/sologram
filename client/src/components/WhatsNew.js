@@ -213,8 +213,8 @@ const Banner = styled.div`
   border: 1px solid rgba(233, 137, 115, 0.2);
   border-radius: 12px;
   cursor: pointer;
-  animation: ${slideDown} 0.3s ease-out;
-  transition: background 0.15s, border-color 0.15s;
+  animation: ${slideDown} 0.2s ease-out;
+  will-change: transform, opacity;
 
   &:hover {
     background: rgba(233, 137, 115, 0.12);
@@ -271,13 +271,11 @@ const BannerClose = styled.button`
 const DrawerOverlay = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(10, 10, 11, 0.5);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(10, 10, 11, 0.6);
   z-index: 1500;
   display: flex;
   justify-content: flex-end;
-  animation: ${fadeIn} 0.15s ease;
+  animation: ${fadeIn} 0.12s ease;
 `;
 
 const Drawer = styled.div`
@@ -289,7 +287,8 @@ const Drawer = styled.div`
   display: flex;
   flex-direction: column;
   box-shadow: -8px 0 40px rgba(0, 0, 0, 0.4);
-  animation: ${slideIn} 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: ${slideIn} 0.2s ease-out;
+  will-change: transform;
 `;
 
 const DrawerHeader = styled.div`
@@ -362,9 +361,15 @@ const DrawerItem = styled.div`
   padding: 10px;
   border-radius: 10px;
   cursor: pointer;
-  transition: background 0.12s;
 
-  &:hover {
+  @media (hover: hover) {
+    transition: background 0.12s;
+    &:hover {
+      background: ${COLORS.elevatedBackground};
+    }
+  }
+
+  &:active {
     background: ${COLORS.elevatedBackground};
   }
 

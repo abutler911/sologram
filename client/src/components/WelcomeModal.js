@@ -146,8 +146,10 @@ const Modal = styled.div`
   animation: ${slideUp} 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 
   @media (max-width: 480px) {
-    padding: 28px 20px 22px;
+    padding: 22px 18px 18px;
     max-width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
   }
 `;
 
@@ -202,6 +204,10 @@ const Logo = styled.h1`
   color: ${COLORS.textPrimary};
   margin: 0 0 4px;
   letter-spacing: -0.5px;
+
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+  }
 `;
 
 const Tagline = styled.p`
@@ -216,6 +222,11 @@ const Description = styled.p`
   line-height: 1.6;
   color: ${COLORS.textSecondary};
   margin: 0 0 24px;
+
+  @media (max-width: 480px) {
+    font-size: 0.82rem;
+    margin: 0 0 16px;
+  }
 `;
 
 // ── Features ────────────────────────────────────────────────────────────────
@@ -225,6 +236,11 @@ const FeaturesGrid = styled.div`
   flex-direction: column;
   gap: 14px;
   margin-bottom: 20px;
+
+  @media (max-width: 480px) {
+    gap: 10px;
+    margin-bottom: 14px;
+  }
 `;
 
 const Feature = styled.div`
