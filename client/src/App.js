@@ -13,6 +13,7 @@ import InstallPrompt from './components/pwa/InstallPrompt';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
 import AppRoutes from './AppRoutes';
 import CopilotChat from './components/CopilotChat';
+import WelcomeModal from './components/WelcomeModal';
 
 // Separate components for better organization
 const PageTracker = () => {
@@ -98,6 +99,7 @@ function App() {
                 />
                 <InstallPrompt />
                 <CopilotChat />
+                <WelcomeModal />
                 <DeleteConfirmationModal />
               </DeleteModalProvider>
             </CommentsProvider>{' '}
