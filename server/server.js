@@ -46,6 +46,7 @@ const aiContentRoutes = require('./routes/admin/aiContent');
 const commentRoutes = require('./routes/comments');
 const quickThoughtRoutes = require('./routes/webhooks/quickThought');
 const copilotRoutes = require('./routes/copilot');
+const memoirRoutes = require('./routes/memoirs');
 
 // ----------- App Initialization -----------
 const app = express();
@@ -125,6 +126,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/admin/ai-content', aiContentRoutes);
 app.use('/api', commentRoutes);
 app.use('/api/copilot', copilotRoutes);
+app.use('/api/memoirs', memoirRoutes);
 
 // ----------- Lightweight Health Check -----------
 app.get('/health', (req, res) => {
