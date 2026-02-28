@@ -93,8 +93,8 @@ export const api = {
   generateAIContent: (payload) =>
     post('/api/admin/ai-content/generate', payload),
 
-  generateAICaption: (imageUrl) =>
-    post('/api/admin/ai-vision/caption', { imageUrl }),
+  generateAICaption: (imageUrl, coords) =>
+    post('/api/admin/ai-vision/caption', { imageUrl, coords }),
   // ── CLOUDINARY (admin) ─────────────────────────────────────────────────────
   getCloudinaryAssets: (params) => get('/api/admin/cloudinary', params),
   deleteCloudinaryAsset: (publicId) =>

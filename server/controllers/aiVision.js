@@ -36,7 +36,7 @@ Tags should be specific and real — not just #photography. Think: #streetphotog
 
 exports.generateCaption = async (req, res) => {
   try {
-    const { imageUrl } = req.body;
+    const { imageUrl, coords } = req.body;
 
     if (!imageUrl) {
       return res
@@ -60,7 +60,12 @@ exports.generateCaption = async (req, res) => {
         {
           role: 'user',
           content: [
-            { type: 'text', text: VISION_PROMPT },
+            {
+              type: 'text',
+              text: coords
+                ? `${VISION_PROMPT}\n\nLOCATION CONTEXT: The user is currently at coordinates ${coords.lat}, ${coords.lng}. Use this as context for where this photo might have been taken — but trust visual cues in the image over this location if they conflict. Do NOT assume the user is always in Utah.`
+                : VISION_PROMPT,
+            },
             { type: 'image_url', image_url: { url: imageUrl, detail: 'low' } },
           ],
         },
@@ -74,7 +79,11 @@ exports.generateCaption = async (req, res) => {
 
     let parsed;
     try {
-      parsed = JSON.parse(raw);
+      const cleaned = raw
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
+      parsed = JSON.parse(cleaned);
     } catch {
       logger.warn('[aiVision] JSON parse failed, using raw', {
         context: { raw: raw.slice(0, 200) },

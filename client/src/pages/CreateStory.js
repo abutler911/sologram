@@ -333,8 +333,23 @@ const CreateStory = () => {
     }
 
     setVisionLoading(true);
+
+    // Try to grab current location (non-blocking — falls back gracefully)
+    let coords = null;
     try {
-      const res = await api.generateAICaption(firstImage.mediaUrl);
+      const pos = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          timeout: 5000,
+          maximumAge: 300000, // cache for 5 min
+        });
+      });
+      coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    } catch {
+      // Location denied or unavailable — no problem, proceed without
+    }
+
+    try {
+      const res = await api.generateAICaption(firstImage.mediaUrl, coords);
       const result = res.data || res;
       if (result.title) setTitle(result.title);
       if (result.caption) setCaption(result.caption);
