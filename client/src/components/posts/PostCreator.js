@@ -111,21 +111,36 @@ const createBlobUrl = (file) => {
 // Resolves 0 if it can't be determined (non-blocking — upload proceeds).
 const getVideoDuration = (file) =>
   new Promise((resolve) => {
+    let settled = false;
+    const done = (val) => {
+      if (settled) return;
+      settled = true;
+      resolve(val);
+    };
+
+    // Mobile fallback: if metadata doesn't load in 3s, let it through
+    const timer = setTimeout(() => done(0), 3000);
+
     try {
       const url = URL.createObjectURL(file);
       const video = document.createElement('video');
       video.preload = 'metadata';
+
       video.onloadedmetadata = () => {
+        clearTimeout(timer);
         URL.revokeObjectURL(url);
-        resolve(video.duration || 0);
+        done(video.duration || 0);
       };
       video.onerror = () => {
+        clearTimeout(timer);
         URL.revokeObjectURL(url);
-        resolve(0);
+        done(0);
       };
+
       video.src = url;
     } catch {
-      resolve(0);
+      clearTimeout(timer);
+      done(0);
     }
   });
 
