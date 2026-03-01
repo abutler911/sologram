@@ -53,12 +53,27 @@ router.post('/', apiKeyAuth, async (req, res) => {
       },
     });
   } catch (err) {
-    logger.error('[quickThought] Pipeline failed', {
-      context: { error: err.message },
+    // Surface the ACTUAL error so it shows in Render logs
+    const errName = err.name || 'Error';
+    const errMsg = err.message || 'Unknown';
+
+    logger.error(`[quickThought] Pipeline failed: ${errName} — ${errMsg}`, {
+      context: {
+        error: errMsg,
+        name: errName,
+        // If it's a Mongoose ValidationError, log which fields failed
+        ...(err.errors && {
+          validationErrors: Object.keys(err.errors).reduce((acc, key) => {
+            acc[key] = err.errors[key].message;
+            return acc;
+          }, {}),
+        }),
+      },
     });
+
     res
       .status(500)
-      .json({ success: false, message: 'Failed to create thought' });
+      .json({ success: false, message: `Failed to create thought: ${errMsg}` });
   }
 });
 

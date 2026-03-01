@@ -1,41 +1,67 @@
+// services/ai/thoughtRefiner.js
+// Accepts raw text, sends to GPT for polish, returns { content, mood, tags }.
+// Validates output against Thought schema constraints before returning.
+
 const OpenAI = require('openai');
 const { logger } = require('../../utils/logger');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const REFINE_PROMPT = `
-You are the internal monologue filter for Andrew Butler.
+// ── Must match Thought model enum exactly ─────────────────────────────────────
+const VALID_MOODS = [
+  'inspired',
+  'reflective',
+  'excited',
+  'creative',
+  'calm',
+  'curious',
+  'nostalgic',
+  'amused',
+];
+const DEFAULT_MOOD = 'reflective';
+const MAX_CONTENT_LENGTH = 800; // matches Thought schema maxlength
 
-### ANDREW'S WORLD
-A 49-year-old Delta A220 pilot, street photographer, and beginner pianist. He lives in Utah. He values independent thinking and precision. He is currently training in ATL.
+const REFINE_PROMPT = `
+You are the internal monologue filter for Andrew Butler. 
+
+Andrew's World: Delta A220 pilot-in-training (currently in ATL), street photographer (EOS R50), and beginner pianist. He's 49, lives in Utah, and values independent thinking over "the grind."
 
 ### THE MISSION
-Strip away the "AI fluff." Convert the user's raw input into a grounded, unvarnished observation. 
+Transform raw, messy input into a grounded, unvarnished observation. 
 
-### THE VOICE
-- **Technical Atmosphere:** Use technical terms (AOA sensors, Cm7, hand independence) naturally, as a professional or practitioner would. Never explain them to the reader. 
-- **The Cut-Off:** End on the observation itself. Never conclude with a "moral," a lesson learned, or a summary of why the moment mattered.
-- **Visual Accuracy:** Since he is a photographer, focus on the geometry, light, and specific mechanics of a scene.
+### THE VOICE (The "Andrew" Lens)
+- OBSERVATIONAL: Capture the frame, don't explain the feeling.
+- TECHNICAL GRIT: Use technical anchors (AOA sensors, NACA scoops, diverter strips, Cm7 chords, hand independence) as atmospheric detail, not jargon to be explained.
+- NO WRAP-UPS: Never conclude with a "moral" or "summary" sentence. End on the observation.
+- CASING: Standard sentence case. No "performance" minimalism.
 
-### THE FORBIDDEN LIST
-No "tapestry," "symphony," "whispers," "journey," "testament," "unfold," or "dance." If it sounds like a greeting card, delete it.
+### THE BLACK LIST (Forbidden AI-isms)
+"tapestry", "whispers", "vibrant", "dance", "embrace", "journey", "delicate", "unfold", "testament", "orchestrating", "symphony", "pinnacle", "soul".
 
-### CONTEXTUAL DATA (Use only if relevant to input)
-- **Aviation:** A220, ATL training, systems validation, flight deck discipline.
-- **Piano:** Czerny exercises, Greensleeves, the frustration of the left hand.
-- **Photo:** Canon R50, street scenes, light over subject.
+### CURRENT CONTEXT ANCHORS
+- Aviation: A220 systems, "Unreliable Airspeed" drills, ATL training.
+- Piano: Working on "Greensleeves," left-hand coordination, Bach/Czerny.
+- Photo: Street photography, finding the quiet moments in busy places.
 
-### OUTPUT RULES
+### RULES
 1. OUTPUT ONLY VALID JSON.
-2. Keep it lean. If the input is one sentence, the output should likely be one sentence.
-3. Casing: Standard sentence case. No lowercase-only "aesthetic" typing.
+2. If input is short, keep output short. Do not fluff.
+3. Keep content under 750 characters.
+4. Mood MUST be exactly one of: inspired, reflective, excited, creative, calm, curious, nostalgic, amused.
+5. Tags: max 3, lowercase, specific (e.g., "a220", "greensleeves", "atl").
 
-{
-  "content": "The filtered thought.",
-  "mood": "Single word (e.g., 'amused', 'technical', 'curious')",
-  "tags": ["max 3 specific tags"]
-}
+### RESPONSE FORMAT
+{"content":"the polished thought","mood":"mood_word","tags":["tag1","tag2"]}
 `.trim();
+
+/**
+ * Validate and sanitise the mood value against the schema enum.
+ */
+function validMood(raw) {
+  if (!raw) return DEFAULT_MOOD;
+  const normalised = raw.toLowerCase().trim();
+  return VALID_MOODS.includes(normalised) ? normalised : DEFAULT_MOOD;
+}
 
 async function refineThought(rawText) {
   const start = Date.now();
@@ -43,32 +69,56 @@ async function refineThought(rawText) {
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
-      // This forces the model to output a valid JSON object
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: REFINE_PROMPT },
         { role: 'user', content: rawText },
       ],
-      temperature: 0.5, // Lowered slightly for more consistent "Andrew" voice
+      temperature: 0.5,
       max_tokens: 400,
     });
 
     const parsed = JSON.parse(completion.choices[0].message.content);
 
+    // ── Validate against Thought schema constraints ───────────────────────
+    let content = parsed.content || rawText;
+    if (content.length > MAX_CONTENT_LENGTH) {
+      // Truncate at last sentence boundary before the limit
+      const truncated = content.slice(0, MAX_CONTENT_LENGTH);
+      const lastPeriod = truncated.lastIndexOf('.');
+      content =
+        lastPeriod > MAX_CONTENT_LENGTH * 0.5
+          ? truncated.slice(0, lastPeriod + 1)
+          : truncated;
+    }
+
+    const mood = validMood(parsed.mood);
+    const tags = Array.isArray(parsed.tags)
+      ? parsed.tags.map((t) => String(t).toLowerCase().trim()).slice(0, 3)
+      : [];
+
     logger.info('[thoughtRefiner] Refined successfully', {
-      elapsed: Date.now() - start,
-      tokens: completion.usage?.total_tokens,
+      context: {
+        elapsed: Date.now() - start,
+        tokens: completion.usage?.total_tokens,
+        contentLength: content.length,
+        moodRaw: parsed.mood,
+        moodResolved: mood,
+      },
     });
 
-    return {
-      content: parsed.content || rawText,
-      mood: parsed.mood || 'reflective',
-      tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 3) : [],
-    };
+    return { content, mood, tags };
   } catch (error) {
-    logger.error('[thoughtRefiner] Critical Failure', { error: error.message });
-    return { content: rawText, mood: 'reflective', tags: [] };
+    logger.error('[thoughtRefiner] Critical Failure', {
+      context: { error: error.message, stack: error.stack },
+    });
+    // Fallback: pass through raw text with safe defaults
+    return {
+      content: rawText.slice(0, MAX_CONTENT_LENGTH),
+      mood: DEFAULT_MOOD,
+      tags: [],
+    };
   }
 }
 
-module.exports = { refineThought };
+module.exports = { refineThought, VALID_MOODS };
