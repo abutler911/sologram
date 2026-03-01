@@ -47,7 +47,7 @@ const VaultDocSchema = new mongoose.Schema(
       type: String,
       trim: true,
       maxlength: 100,
-      default: 'Andrew Butler',
+      default: 'Arthur Penhaligon',
     },
     authorNote: {
       type: String,

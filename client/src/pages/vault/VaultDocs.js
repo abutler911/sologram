@@ -97,16 +97,16 @@ const ContentRenderer = ({ content }) => {
     if (block.type === 'quote')
       return <PullQuote key={i}>{block.text}</PullQuote>;
 
-    // Paragraph with optional drop cap
+    // First paragraph gets a drop cap
     if (isFirstParagraph) {
       isFirstParagraph = false;
       const firstChar = block.text.charAt(0);
       const rest = block.text.slice(1);
       return (
-        <DropCapParagraph key={i}>
+        <Paragraph key={i}>
           <DropCap>{firstChar}</DropCap>
           {rest}
-        </DropCapParagraph>
+        </Paragraph>
       );
     }
     return <Paragraph key={i}>{block.text}</Paragraph>;
@@ -134,7 +134,6 @@ const VaultDocs = () => {
     category: 'op-ed',
     tags: '',
     status: 'draft',
-    authorName: 'Andrew Butler',
     authorNote: '',
   });
 
@@ -186,7 +185,6 @@ const VaultDocs = () => {
       category: 'op-ed',
       tags: '',
       status: 'draft',
-      authorName: 'Andrew Butler',
       authorNote: '',
     });
     setView('edit');
@@ -202,7 +200,6 @@ const VaultDocs = () => {
       category: activeDoc.category || 'op-ed',
       tags: (activeDoc.tags || []).join(', '),
       status: activeDoc.status || 'draft',
-      authorName: activeDoc.authorName || 'Andrew Butler',
       authorNote: activeDoc.authorNote || '',
     });
     setView('edit');
@@ -225,7 +222,7 @@ const VaultDocs = () => {
           .map((t) => t.trim().toLowerCase())
           .filter(Boolean),
         status: form.status,
-        authorName: form.authorName.trim() || 'Andrew Butler',
+        authorName: 'Arthur Penhaligon',
         authorNote: form.authorNote.trim() || undefined,
       };
 
@@ -391,9 +388,6 @@ const VaultDocs = () => {
                   {doc.excerpt && <DocExcerpt>{doc.excerpt}</DocExcerpt>}
                   <DocMeta>
                     {fmtDateShort(doc.createdAt)} · {doc.wordCount} words
-                    {doc.authorName &&
-                      doc.authorName !== 'Andrew Butler' &&
-                      ` · ${doc.authorName}`}
                   </DocMeta>
                   {doc.tags?.length > 0 && (
                     <DocTags>
@@ -455,7 +449,7 @@ const VaultDocs = () => {
           <Byline>
             <BylineRule />
             <BylineText>
-              BY {(activeDoc.authorName || 'Andrew Butler').toUpperCase()}
+              BY ARTHUR PENHALIGON
               <BylineSep>|</BylineSep>
               {fmtDate(activeDoc.createdAt)}
             </BylineText>
@@ -565,24 +559,12 @@ const VaultDocs = () => {
             </EditorCol>
           </EditorRow>
 
-          <EditorRow>
-            <EditorCol>
-              <EditorLabel>Pen Name</EditorLabel>
-              <TagInput
-                value={form.authorName}
-                onChange={setField('authorName')}
-                placeholder='Andrew Butler'
-              />
-            </EditorCol>
-            <EditorCol>
-              <EditorLabel>Tags (comma-separated)</EditorLabel>
-              <TagInput
-                value={form.tags}
-                onChange={setField('tags')}
-                placeholder='politics, aviation…'
-              />
-            </EditorCol>
-          </EditorRow>
+          <EditorLabel>Tags (comma-separated)</EditorLabel>
+          <TagInput
+            value={form.tags}
+            onChange={setField('tags')}
+            placeholder='politics, aviation, culture…'
+          />
 
           <EditorLabel>
             Content *{' '}
@@ -1024,28 +1006,6 @@ const Paragraph = styled.p`
   hyphens: auto;
 `;
 
-const DropCapParagraph = styled(Paragraph)`
-  &::first-letter {
-    /* fallback for browsers that don't support initial-letter */
-    float: left;
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-weight: 700;
-    font-size: 4.2rem;
-    line-height: 0.8;
-    padding: 4px 8px 0 0;
-    color: ${EDITORIAL.text};
-  }
-
-  @supports (initial-letter: 3) {
-    &::first-letter {
-      initial-letter: 3;
-      float: none;
-      padding: 0 8px 0 0;
-    }
-  }
-`;
-
-// We actually render drop cap as a separate span for max browser compat
 const DropCap = styled.span`
   float: left;
   font-family: 'Cormorant Garamond', Georgia, serif;
@@ -1080,11 +1040,12 @@ const EditorialRule = styled.hr`
 
 const AuthorNoteBox = styled.div`
   margin: 40px 0 32px;
-  padding: 16px 20px;
+  padding: 20px 24px;
   background: ${EDITORIAL.noteBg};
-  border-left: 3px solid ${EDITORIAL.rule};
+  border: 1px solid ${EDITORIAL.rule};
+  border-left: 3px solid ${EDITORIAL.accent};
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   line-height: 1.7;
   color: ${EDITORIAL.subtle};
   font-style: italic;
@@ -1092,7 +1053,11 @@ const AuthorNoteBox = styled.div`
 const AuthorNoteLabel = styled.span`
   font-style: normal;
   font-weight: 700;
+  font-size: 0.7rem;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.08em;
   color: ${EDITORIAL.text};
+  text-transform: uppercase;
 `;
 
 // ── Footer meta ───────────────────────────────────────────────────────────────
@@ -1114,12 +1079,14 @@ const ReadTag = styled.span`
 
 const ReadMeta = styled.div`
   font-family: 'DM Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.5rem;
   letter-spacing: 0.06em;
   color: ${EDITORIAL.rule};
   text-transform: uppercase;
-  padding-top: 12px;
+  padding-top: 16px;
+  margin-top: 8px;
   border-top: 1px solid ${EDITORIAL.rule};
+  opacity: 0.6;
 `;
 
 // ═══════════════════════════════════════════════════════════════════════════════
