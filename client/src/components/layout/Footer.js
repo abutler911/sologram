@@ -1,207 +1,168 @@
-import React from 'react';
-import styled from 'styled-components';
-import { FaHeart, FaCamera, FaEnvelope, FaGithub } from 'react-icons/fa';
-import { COLORS } from '../../theme';
+// client/src/components/layout/Footer.js
+//
+// NOIR-aligned footer — matches PostCard / ThoughtCard editorial aesthetic.
+// Zero bloat: no icon library imports for decorative elements, memoized to
+// prevent re-renders from parent layout changes, uses the same design tokens
+// and typography stack as the rest of the feed.
 
-const Footer = () => {
-  const currentYear = new Date().getFullYear();
+import React, { memo } from 'react';
+import styled from 'styled-components';
+
+// ─── Design Tokens (mirrors PostCard / ThoughtCard) ───────────────────────────
+const NOIR = {
+  ink: '#0a0a0b',
+  warmWhite: '#faf9f7',
+  dust: '#e8e4dd',
+  ash: '#a09a91',
+  charcoal: '#3a3632',
+  border: 'rgba(10,10,11,0.08)',
+  salmon: '#e87c5a',
+  sage: '#7aab8c',
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+const Footer = memo(() => {
+  const year = new Date().getFullYear();
 
   return (
-    <FooterContainer>
-      <FooterContent>
-        <FooterBrand>
-          <BrandIcon>
-            <FaCamera />
-          </BrandIcon>
-          <BrandText>SoloGram</BrandText>
-        </FooterBrand>
+    <Root>
+      <Inner>
+        {/* Thin gradient rule — same salmon→sage used in card headers */}
+        <Rule />
 
-        <FooterLinks>
-          <FooterLink href='/about'>About</FooterLink>
-          <FooterLink href='/privacy'>Privacy</FooterLink>
-          <FooterLink href='/terms'>Terms</FooterLink>
-          <FooterLink href='mailto:abutler911@gmail.com'>
-            <FaEnvelope />
-            Contact
-          </FooterLink>
-          <FooterLink
+        <Nav aria-label='Footer'>
+          <NavLink href='/about'>About</NavLink>
+          <Sep aria-hidden='true'>·</Sep>
+          <NavLink href='/privacy'>Privacy</NavLink>
+          <Sep aria-hidden='true'>·</Sep>
+          <NavLink href='/terms'>Terms</NavLink>
+          <Sep aria-hidden='true'>·</Sep>
+          <NavLink href='mailto:abutler911@gmail.com'>Contact</NavLink>
+          <Sep aria-hidden='true'>·</Sep>
+          <NavLink
             href='https://github.com/abutler911'
             target='_blank'
             rel='noopener noreferrer'
           >
-            <FaGithub />
             GitHub
-          </FooterLink>
-        </FooterLinks>
+          </NavLink>
+        </Nav>
 
-        <FooterDivider />
+        <Meta>
+          <span>Independently developed by Andrew</span>
+          <span>&copy; {year} SoloGram</span>
+        </Meta>
 
-        <FooterBottom>
-          <Copyright>
-            Independently developed with{' '}
-            <Heart>
-              <FaHeart />
-            </Heart>{' '}
-            by Andrew
-          </Copyright>
-          <CopyrightLine>&copy; {currentYear} SoloGram</CopyrightLine>
-          <TagLine>One Voice. Infinite Moments.</TagLine>
-        </FooterBottom>
-      </FooterContent>
+        <Tagline>One Voice. Infinite Moments.</Tagline>
+      </Inner>
 
-      {/* Spacer so content clears the mobile bottom tab bar */}
-      <BottomSpacer />
-    </FooterContainer>
+      {/* Clears the mobile bottom tab bar */}
+      <TabBarSpacer />
+    </Root>
   );
-};
+});
 
-// ── Styled components ─────────────────────────────────────────────────────────
+Footer.displayName = 'Footer';
+export default Footer;
 
-const FooterContainer = styled.footer`
-  background: ${COLORS.cardBackground};
-  border-top: 1px solid ${COLORS.border};
-  padding: 32px 0 0;
-  color: ${COLORS.textSecondary};
+// ─── Styled Components ────────────────────────────────────────────────────────
 
-  @media (max-width: 768px) {
-    padding: 24px 0 0;
+const Root = styled.footer`
+  background: ${NOIR.warmWhite};
+  border-top: 1px solid ${NOIR.border};
+  padding: 28px 0 0;
+
+  /* Match sidebar offsets used by ContentArea / Shell */
+  @media (min-width: 960px) {
+    margin-left: 72px;
+    width: calc(100% - 72px);
+  }
+  @media (min-width: 1200px) {
+    margin-left: 240px;
+    width: calc(100% - 240px);
   }
 `;
 
-const FooterContent = styled.div`
+const Inner = styled.div`
   max-width: 470px;
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 20px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 14px;
 `;
 
-const FooterBrand = styled.div`
+const Rule = styled.div`
+  width: 40px;
+  height: 1.5px;
+  background: linear-gradient(90deg, ${NOIR.salmon}, ${NOIR.sage});
+  opacity: 0.6;
+`;
+
+const Nav = styled.nav`
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-`;
-
-const BrandIcon = styled.div`
-  width: 30px;
-  height: 30px;
-  background: linear-gradient(
-    45deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.accentSalmon}
-  );
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-size: 14px;
-`;
-
-const BrandText = styled.span`
-  font-size: 17px;
-  font-weight: 700;
-  background: linear-gradient(
-    45deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.primaryMint}
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-`;
-
-const FooterLinks = styled.div`
-  display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 4px;
-  margin-bottom: 20px;
+  gap: 0;
 `;
 
-const FooterLink = styled.a`
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: ${COLORS.textSecondary};
-  font-size: 13px;
-  font-weight: 500;
+const NavLink = styled.a`
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.65rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: ${NOIR.ash};
   text-decoration: none;
-  padding: 6px 10px;
-  border-radius: 8px;
-  transition: color 0.12s, background 0.12s;
+  padding: 4px 8px;
+  transition: color 0.15s;
 
   &:hover {
-    color: ${COLORS.textPrimary};
-    background: ${COLORS.elevatedBackground};
-  }
-
-  svg {
-    font-size: 11px;
+    color: ${NOIR.salmon};
   }
 `;
 
-const FooterDivider = styled.div`
-  width: 48px;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    ${COLORS.primaryBlueGray},
-    ${COLORS.primaryMint}
-  );
-  border-radius: 1px;
-  margin-bottom: 16px;
-  opacity: 0.5;
+const Sep = styled.span`
+  color: ${NOIR.dust};
+  font-size: 0.6rem;
+  user-select: none;
 `;
 
-const FooterBottom = styled.div`
+const Meta = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  margin-bottom: 16px;
+  gap: 2px;
+
+  span {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 0.58rem;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    color: ${NOIR.ash};
+    opacity: 0.6;
+  }
 `;
 
-const Copyright = styled.p`
-  display: flex;
-  align-items: center;
-  gap: 5px;
+const Tagline = styled.p`
   margin: 0;
-  color: ${COLORS.textSecondary};
-  font-size: 12px;
-`;
-
-const Heart = styled.span`
-  color: ${COLORS.heartRed};
-  display: flex;
-  align-items: center;
-  font-size: 11px;
-`;
-
-const CopyrightLine = styled.p`
-  margin: 0;
-  color: ${COLORS.textTertiary};
-  font-size: 11px;
-  opacity: 0.7;
-`;
-
-const TagLine = styled.p`
-  margin: 0;
-  color: ${COLORS.textTertiary};
-  font-size: 11px;
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
   font-style: italic;
-  opacity: 0.7;
+  font-weight: 400;
+  font-size: 0.85rem;
+  color: ${NOIR.charcoal};
+  opacity: 0.4;
+  letter-spacing: -0.01em;
 `;
 
-// Pushes page content clear of the mobile bottom tab bar
-const BottomSpacer = styled.div`
+/* Pushes content above the mobile bottom tab bar */
+const TabBarSpacer = styled.div`
   height: calc(60px + env(safe-area-inset-bottom, 20px));
 
-  /* Desktop — no tab bar, no spacer needed */
-  @media (min-width: 768px) {
+  @media (min-width: 960px) {
     height: 0;
   }
 `;
-
-export default Footer;
