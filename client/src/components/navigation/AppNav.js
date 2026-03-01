@@ -218,9 +218,12 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       {/* ════════════════════════════════════════════════════════════════════ */}
       <TopBar>
         <TopBarInner>
-          <Logo to='/' {...logoEasterEgg}>
-            <LogoText>SoloGram</LogoText>
-          </Logo>
+          <LogoBrand>
+            <Logo to='/' {...logoEasterEgg}>
+              <LogoText>SoloGram</LogoText>
+            </Logo>
+            <TopBarTagline>One Voice. Infinite Moments.</TopBarTagline>
+          </LogoBrand>
           <TopBarActions>
             {canCreate && (
               <TopBarIconLink
@@ -254,7 +257,10 @@ const AppNav = ({ onSearch, onClearSearch }) => {
           {/* Logo */}
           <SideLogoLink to='/' {...logoEasterEgg}>
             <NarrowMark>S</NarrowMark>
-            <SideLogoText>SoloGram</SideLogoText>
+            <SideLogoWrap>
+              <SideLogoText>SoloGram</SideLogoText>
+              <SideTagline>One Voice. Infinite Moments.</SideTagline>
+            </SideLogoWrap>
           </SideLogoLink>
           <SideDivider />
           {/* Primary nav */}
@@ -867,6 +873,28 @@ const Logo = styled(Link)`
   gap: 8px;
   text-decoration: none;
 `;
+
+/* Wraps Logo link + tagline into a vertical stack inside TopBarInner */
+const LogoBrand = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+`;
+
+const TopBarTagline = styled.span`
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.55rem;
+  letter-spacing: 0.02em;
+  color: ${COLORS.textTertiary};
+  opacity: 0.5;
+  line-height: 1;
+  margin-top: -2px;
+  padding-left: 2px;
+`;
+
 const TopBarActions = styled.div`
   display: flex;
   align-items: center;
@@ -967,6 +995,30 @@ const SideLogoText = styled(LogoText)`
     display: block;
   }
 `;
+
+/* Column wrapper so tagline sits below logo text — expanded sidebar only */
+const SideLogoWrap = styled.div`
+  display: none;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  @media (min-width: 1200px) {
+    display: flex;
+  }
+`;
+
+const SideTagline = styled.span`
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.55rem;
+  letter-spacing: 0.02em;
+  color: ${COLORS.textTertiary};
+  opacity: 0.45;
+  line-height: 1;
+  white-space: nowrap;
+`;
+
 const SideDivider = styled.hr`
   border: none;
   height: 1px;
