@@ -889,7 +889,7 @@ const TopBarTagline = styled.span`
   font-size: 0.55rem;
   letter-spacing: 0.02em;
   color: ${COLORS.textTertiary};
-  opacity: 0.5;
+  opacity: 0.9;
   line-height: 1;
   margin-top: -2px;
   padding-left: 2px;
