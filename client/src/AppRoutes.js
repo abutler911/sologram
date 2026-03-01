@@ -51,6 +51,7 @@ const SoloGramWrapped = React.lazy(() =>
   import('./pages/vault/SoloGramWrapped')
 );
 const HackerTerminal = React.lazy(() => import('./pages/vault/HackerTerminal'));
+const VaultDocs = React.lazy(() => import('./pages/vault/VaultDocs'));
 
 const LoadingFallback = () => <LoadingSpinner />;
 
@@ -244,6 +245,7 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
         {/* ── Vault — Easter egg destinations (no auth, no nav wrapper) ── */}
         <Route path='/vault/wrapped' element={<SoloGramWrapped />} />
         <Route path='/vault/terminal' element={<HackerTerminal />} />
+        <Route path='/vault/docs' element={<VaultDocs />} />
 
         {/* 404 — must be last */}
         <Route path='*' element={<NotFound />} />

@@ -130,6 +130,7 @@ app.use('/api', commentRoutes);
 app.use('/api/copilot', copilotRoutes);
 app.use('/api/memoirs', memoirRoutes);
 app.use('/api/activity', activityRoutes);
+app.use('/api/vault/docs', require('./routes/vaultDocs'));
 
 // ----------- Lightweight Health Check -----------
 app.get('/health', (req, res) => {

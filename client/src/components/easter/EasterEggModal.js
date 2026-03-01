@@ -8,6 +8,7 @@ import {
   FaUnlock,
   FaChartBar,
   FaTerminal,
+  FaFileAlt,
 } from 'react-icons/fa';
 
 const SECRET_CODE = '7700';
@@ -110,6 +111,14 @@ const EasterEggModal = ({ onClose }) => {
                 <DestName>Root Access</DestName>
                 <DestDesc>You really shouldn't be here</DestDesc>
                 <DestArrow $color='#00ff41'>→</DestArrow>
+              </DestCard>
+              <DestCard onClick={() => go('/vault/docs')} $color='#c9a84c' $span>
+                <DestIcon $color='#c9a84c'>
+                  <FaFileAlt />
+                </DestIcon>
+                <DestName>Dead Drop</DestName>
+                <DestDesc>The document repository</DestDesc>
+                <DestArrow $color='#c9a84c'>→</DestArrow>
               </DestCard>
             </DestGrid>
           </UnlockedView>
@@ -390,51 +399,35 @@ const DestCard = styled.button`
   border: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
   text-align: left;
-  transition: background 0.15s, border-color 0.15s, transform 0.15s;
-  position: relative;
+  transition: background 0.15s, border-color 0.15s;
+  ${(p) => p.$span && 'grid-column: 1 / -1;'}
 
   &:hover {
     background: rgba(255, 255, 255, 0.06);
-    border-color: ${(p) => p.$color}44;
-    transform: translateY(-2px);
-  }
-  &:active {
-    transform: translateY(0);
+    border-color: ${(p) => `${p.$color}44`};
   }
 `;
 
 const DestIcon = styled.div`
   font-size: 1.1rem;
   color: ${(p) => p.$color};
-  margin-bottom: 4px;
-  opacity: 0.9;
 `;
 
 const DestName = styled.div`
   font-family: 'DM Mono', 'Courier New', monospace;
-  font-size: 0.6rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
   color: rgba(255, 255, 255, 0.85);
 `;
 
 const DestDesc = styled.div`
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.6rem;
   color: rgba(255, 255, 255, 0.3);
-  line-height: 1.4;
 `;
 
 const DestArrow = styled.div`
-  position: absolute;
-  bottom: 12px;
-  right: 14px;
   font-size: 0.8rem;
   color: ${(p) => p.$color};
-  opacity: 0.5;
-  transition: opacity 0.15s, transform 0.15s;
-  ${DestCard}:hover & {
-    opacity: 1;
-    transform: translateX(3px);
-  }
+  margin-top: auto;
+  align-self: flex-end;
 `;
