@@ -1,7 +1,4 @@
 // routes/vaultDocs.js
-// All vault doc operations are admin-only.
-// Mounted at /api/vault/docs in server.js
-
 const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');

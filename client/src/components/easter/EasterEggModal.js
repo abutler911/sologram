@@ -15,7 +15,7 @@ const SECRET_CODE = '7700';
 
 const EasterEggModal = ({ onClose }) => {
   const [input, setInput] = useState('');
-  const [phase, setPhase] = useState('code'); // 'code' | 'unlocked'
+  const [phase, setPhase] = useState('code');
   const [shaking, setShaking] = useState(false);
   const [error, setError] = useState('');
   const [unlocking, setUnlocking] = useState(false);
@@ -86,7 +86,6 @@ const EasterEggModal = ({ onClose }) => {
                 UNLOCK
               </SubmitBtn>
             </CodeForm>
-
             <ScanLine />
           </>
         )}
@@ -112,7 +111,11 @@ const EasterEggModal = ({ onClose }) => {
                 <DestDesc>You really shouldn't be here</DestDesc>
                 <DestArrow $color='#00ff41'>→</DestArrow>
               </DestCard>
-              <DestCard onClick={() => go('/vault/docs')} $color='#c9a84c' $span>
+              <DestCard
+                onClick={() => go('/vault/docs')}
+                $color='#c9a84c'
+                $span
+              >
                 <DestIcon $color='#c9a84c'>
                   <FaFileAlt />
                 </DestIcon>
@@ -132,46 +135,15 @@ export default EasterEggModal;
 
 // ─── Animations ───────────────────────────────────────────────────────────────
 
-const fadeIn = keyframes`
-  from { opacity: 0; }
-  to   { opacity: 1; }
-`;
+const fadeIn = keyframes`from{opacity:0}to{opacity:1}`;
+const popUp = keyframes`from{opacity:0;transform:scale(0.94) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}`;
+const shake = keyframes`0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}`;
+const scanAnim = keyframes`0%{top:0%}100%{top:100%}`;
+const unlockSpin = keyframes`0%{transform:rotate(0) scale(1)}50%{transform:rotate(20deg) scale(1.2)}100%{transform:rotate(0) scale(1)}`;
+const slideUp = keyframes`from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}`;
+const pulse = keyframes`0%,100%{box-shadow:0 0 0 0 rgba(0,255,65,0.4)}50%{box-shadow:0 0 0 8px rgba(0,255,65,0)}`;
 
-const popUp = keyframes`
-  from { opacity: 0; transform: scale(0.94) translateY(10px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0); }
-`;
-
-const shake = keyframes`
-  0%, 100% { transform: translateX(0); }
-  20%       { transform: translateX(-8px); }
-  40%       { transform: translateX(8px); }
-  60%       { transform: translateX(-5px); }
-  80%       { transform: translateX(5px); }
-`;
-
-const scanAnim = keyframes`
-  0%   { top: 0%; }
-  100% { top: 100%; }
-`;
-
-const unlockSpin = keyframes`
-  0%   { transform: rotate(0deg) scale(1); }
-  50%  { transform: rotate(20deg) scale(1.2); }
-  100% { transform: rotate(0deg) scale(1); }
-`;
-
-const slideUp = keyframes`
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-`;
-
-const pulse = keyframes`
-  0%, 100% { box-shadow: 0 0 0 0 rgba(0,255,65,0.4); }
-  50%       { box-shadow: 0 0 0 8px rgba(0,255,65,0); }
-`;
-
-// ─── Backdrop ─────────────────────────────────────────────────────────────────
+// ─── Backdrop + Panel ─────────────────────────────────────────────────────────
 
 const Backdrop = styled.div`
   position: fixed;
@@ -186,8 +158,6 @@ const Backdrop = styled.div`
   animation: ${fadeIn} 0.15s ease;
 `;
 
-// ─── Panel ────────────────────────────────────────────────────────────────────
-
 const Panel = styled.div`
   position: relative;
   width: 100%;
@@ -199,8 +169,6 @@ const Panel = styled.div`
   padding: 36px 32px 32px;
   animation: ${popUp} 0.22s cubic-bezier(0.22, 1, 0.36, 1);
   overflow: hidden;
-
-  /* Corner brackets */
   &::before,
   &::after {
     content: '';
@@ -245,7 +213,6 @@ const PanelTop = styled.div`
   text-align: center;
   margin-bottom: 28px;
 `;
-
 const LockIcon = styled.div`
   font-size: 1.6rem;
   color: rgba(0, 255, 65, 0.7);
@@ -258,17 +225,15 @@ const LockIcon = styled.div`
       color: #00ff41;
     `}
 `;
-
 const PanelTitle = styled.div`
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.65rem;
   letter-spacing: 0.2em;
   color: rgba(0, 255, 65, 0.9);
   margin-bottom: 8px;
 `;
-
 const PanelSub = styled.div`
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.55rem;
   letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.25);
@@ -292,14 +257,13 @@ const CodeInput = styled.input`
   background: rgba(0, 255, 65, 0.04);
   border: 1px solid ${(p) => (p.$hasError ? '#ff4444' : 'rgba(0,255,65,0.3)')};
   color: #00ff41;
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 1.8rem;
   letter-spacing: 0.3em;
   padding: 12px 16px;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
   caret-color: #00ff41;
-
   &::placeholder {
     color: rgba(0, 255, 65, 0.15);
     letter-spacing: 0.4em;
@@ -311,14 +275,14 @@ const CodeInput = styled.input`
 `;
 
 const ErrorLine = styled.div`
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.55rem;
   letter-spacing: 0.15em;
   color: #ff4444;
 `;
 
 const SubmitBtn = styled.button`
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.6rem;
   letter-spacing: 0.15em;
   color: #0a0a0b;
@@ -340,7 +304,6 @@ const SubmitBtn = styled.button`
   }
 `;
 
-/* Animated scan line overlay */
 const ScanLine = styled.div`
   position: absolute;
   left: 0;
@@ -362,9 +325,8 @@ const UnlockedView = styled.div`
   text-align: center;
   animation: ${slideUp} 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 `;
-
 const UnlockBadge = styled.div`
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.55rem;
   letter-spacing: 0.2em;
   color: #00ff41;
@@ -372,9 +334,8 @@ const UnlockBadge = styled.div`
   animation: ${pulse} 2s ease infinite;
   display: inline-block;
 `;
-
 const UnlockTitle = styled.div`
-  font-family: 'Cormorant Garamond', 'Georgia', serif;
+  font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 1.4rem;
   font-weight: 400;
   font-style: italic;
@@ -382,13 +343,11 @@ const UnlockTitle = styled.div`
   margin-bottom: 24px;
   letter-spacing: -0.01em;
 `;
-
 const DestGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 `;
-
 const DestCard = styled.button`
   display: flex;
   flex-direction: column;
@@ -401,30 +360,25 @@ const DestCard = styled.button`
   text-align: left;
   transition: background 0.15s, border-color 0.15s;
   ${(p) => p.$span && 'grid-column: 1 / -1;'}
-
   &:hover {
     background: rgba(255, 255, 255, 0.06);
     border-color: ${(p) => `${p.$color}44`};
   }
 `;
-
 const DestIcon = styled.div`
   font-size: 1.1rem;
   color: ${(p) => p.$color};
 `;
-
 const DestName = styled.div`
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.65rem;
   letter-spacing: 0.06em;
   color: rgba(255, 255, 255, 0.85);
 `;
-
 const DestDesc = styled.div`
   font-size: 0.6rem;
   color: rgba(255, 255, 255, 0.3);
 `;
-
 const DestArrow = styled.div`
   font-size: 0.8rem;
   color: ${(p) => p.$color};

@@ -9,6 +9,11 @@ const VaultDocSchema = new mongoose.Schema(
       trim: true,
       maxlength: [200, 'Title cannot exceed 200 characters'],
     },
+    subtitle: {
+      type: String,
+      trim: true,
+      maxlength: 300,
+    },
     content: {
       type: String,
       required: [true, 'Content is required'],
@@ -38,17 +43,25 @@ const VaultDocSchema = new mongoose.Schema(
       enum: ['draft', 'final'],
       default: 'draft',
     },
+    authorName: {
+      type: String,
+      trim: true,
+      maxlength: 100,
+      default: 'Andrew Butler',
+    },
+    authorNote: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+    },
     wordCount: {
       type: Number,
       default: 0,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// Auto-generate excerpt + word count before save
 VaultDocSchema.pre('save', function (next) {
   if (this.isModified('content')) {
     const text = this.content.replace(/<[^>]*>/g, '').trim();
@@ -60,13 +73,8 @@ VaultDocSchema.pre('save', function (next) {
   next();
 });
 
-// Listing: newest first
 VaultDocSchema.index({ createdAt: -1 });
-
-// Filter by category
 VaultDocSchema.index({ category: 1, createdAt: -1 });
-
-// Full-text search
 VaultDocSchema.index({ title: 'text', content: 'text', tags: 'text' });
 
 module.exports = mongoose.model('VaultDoc', VaultDocSchema);

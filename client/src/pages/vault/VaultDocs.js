@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes, css } from 'styled-components';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import {
   FaArrowLeft,
   FaPlus,
@@ -13,7 +14,7 @@ import {
   FaChevronLeft,
 } from 'react-icons/fa';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Palette ──────────────────────────────────────────────────────────────────
 
 const NOIR = {
   ink: '#0a0a0b',
@@ -25,6 +26,16 @@ const NOIR = {
   sage: '#7aab8c',
   gold: '#c9a84c',
   green: '#00ff41',
+};
+
+const EDITORIAL = {
+  paper: '#fdfcf9',
+  text: '#1a1a1a',
+  subtle: '#6b6b6b',
+  rule: '#d4cfc6',
+  accent: '#c9a84c',
+  quoteBar: '#c9a84c',
+  noteBg: '#f5f3ee',
 };
 
 const CATEGORIES = [
@@ -47,24 +58,67 @@ const CATEGORY_COLORS = {
   uncategorized: NOIR.charcoal,
 };
 
-// ─── API helpers ──────────────────────────────────────────────────────────────
+// ─── Content renderer ─────────────────────────────────────────────────────────
+// Parses plain text into structured blocks for editorial display.
+//   \n\n    → paragraph break
+//   > text  → pull quote
+//   ---     → horizontal rule
+//   First paragraph gets a drop cap.
 
-const api = axios.create({ baseURL: '/api/vault/docs' });
+const parseContent = (raw) => {
+  if (!raw) return [];
+  const blocks = [];
+  const chunks = raw.split(/\n{2,}/);
 
-// Attach token to every vault request
-api.interceptors.request.use((cfg) => {
-  const token = localStorage.getItem('token');
-  if (token) cfg.headers.Authorization = `Bearer ${token}`;
-  return cfg;
-});
+  chunks.forEach((chunk) => {
+    const trimmed = chunk.trim();
+    if (!trimmed) return;
+    if (trimmed === '---' || trimmed === '***') {
+      blocks.push({ type: 'rule' });
+    } else if (trimmed.startsWith('> ')) {
+      blocks.push({
+        type: 'quote',
+        text: trimmed.replace(/^>\s?/gm, '').trim(),
+      });
+    } else {
+      blocks.push({ type: 'paragraph', text: trimmed });
+    }
+  });
+
+  return blocks;
+};
+
+const ContentRenderer = ({ content }) => {
+  const blocks = parseContent(content);
+  let isFirstParagraph = true;
+
+  return blocks.map((block, i) => {
+    if (block.type === 'rule') return <EditorialRule key={i} />;
+    if (block.type === 'quote')
+      return <PullQuote key={i}>{block.text}</PullQuote>;
+
+    // Paragraph with optional drop cap
+    if (isFirstParagraph) {
+      isFirstParagraph = false;
+      const firstChar = block.text.charAt(0);
+      const rest = block.text.slice(1);
+      return (
+        <DropCapParagraph key={i}>
+          <DropCap>{firstChar}</DropCap>
+          {rest}
+        </DropCapParagraph>
+      );
+    }
+    return <Paragraph key={i}>{block.text}</Paragraph>;
+  });
+};
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const VaultDocs = () => {
   const navigate = useNavigate();
 
-  // Views: 'list' | 'read' | 'edit'
-  const [view, setView] = useState('list');
+  const [view, setView] = useState('list'); // 'list' | 'read' | 'edit'
   const [docs, setDocs] = useState([]);
   const [activeDoc, setActiveDoc] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -73,19 +127,20 @@ const VaultDocs = () => {
   const [filterCategory, setFilterCategory] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null);
 
-  // Editor state
   const [form, setForm] = useState({
     title: '',
+    subtitle: '',
     content: '',
     category: 'op-ed',
     tags: '',
     status: 'draft',
-    excerpt: '',
+    authorName: 'Andrew Butler',
+    authorNote: '',
   });
 
   const contentRef = useRef(null);
 
-  // ── Fetch docs ──────────────────────────────────────────────────────────
+  // ── API (uses global axios which already has the auth header) ───────────
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
@@ -93,10 +148,13 @@ const VaultDocs = () => {
       const params = {};
       if (searchQuery.trim()) params.q = searchQuery.trim();
       if (filterCategory) params.category = filterCategory;
-      const { data } = await api.get('/', { params });
+      const { data } = await axios.get('/api/vault/docs', { params });
       setDocs(data.data || []);
     } catch (err) {
-      console.error('Failed to fetch vault docs', err);
+      console.error('[VaultDocs] fetch failed', err);
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        toast.error('Session expired — log in again');
+      }
     } finally {
       setLoading(false);
     }
@@ -110,11 +168,12 @@ const VaultDocs = () => {
 
   const openDoc = async (id) => {
     try {
-      const { data } = await api.get(`/${id}`);
+      const { data } = await axios.get(`/api/vault/docs/${id}`);
       setActiveDoc(data.data);
       setView('read');
+      window.scrollTo(0, 0);
     } catch (err) {
-      console.error('Failed to load doc', err);
+      toast.error('Failed to load document');
     }
   };
 
@@ -122,36 +181,43 @@ const VaultDocs = () => {
     setActiveDoc(null);
     setForm({
       title: '',
+      subtitle: '',
       content: '',
       category: 'op-ed',
       tags: '',
       status: 'draft',
-      excerpt: '',
+      authorName: 'Andrew Butler',
+      authorNote: '',
     });
     setView('edit');
-    // Focus content area after render
     setTimeout(() => contentRef.current?.focus(), 100);
   };
 
   const startEdit = () => {
     if (!activeDoc) return;
     setForm({
-      title: activeDoc.title,
-      content: activeDoc.content,
+      title: activeDoc.title || '',
+      subtitle: activeDoc.subtitle || '',
+      content: activeDoc.content || '',
       category: activeDoc.category || 'op-ed',
       tags: (activeDoc.tags || []).join(', '),
       status: activeDoc.status || 'draft',
-      excerpt: activeDoc.excerpt || '',
+      authorName: activeDoc.authorName || 'Andrew Butler',
+      authorNote: activeDoc.authorNote || '',
     });
     setView('edit');
   };
 
   const handleSave = async () => {
-    if (!form.title.trim() || !form.content.trim()) return;
+    if (!form.title.trim() || !form.content.trim()) {
+      toast.error('Title and content are required');
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
         title: form.title.trim(),
+        subtitle: form.subtitle.trim() || undefined,
         content: form.content.trim(),
         category: form.category,
         tags: form.tags
@@ -159,20 +225,26 @@ const VaultDocs = () => {
           .map((t) => t.trim().toLowerCase())
           .filter(Boolean),
         status: form.status,
-        excerpt: form.excerpt.trim() || undefined,
+        authorName: form.authorName.trim() || 'Andrew Butler',
+        authorNote: form.authorNote.trim() || undefined,
       };
 
+      let result;
       if (activeDoc) {
-        const { data } = await api.put(`/${activeDoc._id}`, payload);
-        setActiveDoc(data.data);
+        result = await axios.put(`/api/vault/docs/${activeDoc._id}`, payload);
+        toast.success('Document updated');
       } else {
-        const { data } = await api.post('/', payload);
-        setActiveDoc(data.data);
+        result = await axios.post('/api/vault/docs', payload);
+        toast.success('Document created');
       }
+      setActiveDoc(result.data.data);
       setView('read');
-      fetchDocs(); // refresh list in background
+      window.scrollTo(0, 0);
+      fetchDocs();
     } catch (err) {
-      console.error('Failed to save doc', err);
+      const msg = err.response?.data?.message || 'Failed to save';
+      toast.error(msg);
+      console.error('[VaultDocs] save failed', err);
     } finally {
       setSaving(false);
     }
@@ -180,13 +252,14 @@ const VaultDocs = () => {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/${id}`);
+      await axios.delete(`/api/vault/docs/${id}`);
+      toast.success('Document deleted');
       setConfirmDelete(null);
       setActiveDoc(null);
       setView('list');
       fetchDocs();
     } catch (err) {
-      console.error('Failed to delete doc', err);
+      toast.error('Failed to delete');
     }
   };
 
@@ -197,28 +270,43 @@ const VaultDocs = () => {
       setActiveDoc(null);
       setView('list');
     }
+    window.scrollTo(0, 0);
   };
 
-  // ── Render helpers ──────────────────────────────────────────────────────
+  // ── Helpers ─────────────────────────────────────────────────────────────
 
-  const formatDate = (d) =>
+  const fmtDate = (d) =>
+    new Date(d)
+      .toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+      .toUpperCase();
+
+  const fmtDateShort = (d) =>
     new Date(d).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
 
-  const wordCount = (text) =>
+  const countWords = (text) =>
     text
       .replace(/<[^>]*>/g, '')
       .split(/\s+/)
       .filter(Boolean).length;
 
-  // ── LIST VIEW ───────────────────────────────────────────────────────────
+  const setField = (key) => (e) =>
+    setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  LIST VIEW
+  // ══════════════════════════════════════════════════════════════════════════
 
   if (view === 'list') {
     return (
-      <Shell>
+      <DarkShell>
         <Inner>
           <TopBar>
             <ExitBtn onClick={() => navigate('/')}>
@@ -234,7 +322,6 @@ const VaultDocs = () => {
             </HeaderSub>
           </Header>
 
-          {/* Search + filter bar */}
           <ToolBar>
             <SearchWrap>
               <FaSearch />
@@ -271,12 +358,10 @@ const VaultDocs = () => {
             </FilterRow>
           </ToolBar>
 
-          {/* New doc button */}
           <NewBtn onClick={startNew}>
             <FaPlus /> New Document
           </NewBtn>
 
-          {/* Document list */}
           {loading ? (
             <LoadingMsg>
               Decrypting archive<Blink>_</Blink>
@@ -296,137 +381,174 @@ const VaultDocs = () => {
                   $delay={i * 40}
                 >
                   <DocCardTop>
-                    <CategoryBadge $color={CATEGORY_COLORS[doc.category]}>
+                    <CatBadge $color={CATEGORY_COLORS[doc.category]}>
                       {doc.category}
-                    </CategoryBadge>
+                    </CatBadge>
                     <StatusDot $final={doc.status === 'final'} />
                   </DocCardTop>
                   <DocTitle>{doc.title}</DocTitle>
+                  {doc.subtitle && <DocSubtitle>{doc.subtitle}</DocSubtitle>}
                   {doc.excerpt && <DocExcerpt>{doc.excerpt}</DocExcerpt>}
                   <DocMeta>
-                    {formatDate(doc.createdAt)} · {doc.wordCount} words
-                    {doc.tags?.length > 0 && (
-                      <DocTags>
-                        {doc.tags.slice(0, 3).map((t) => (
-                          <Tag key={t}>{t}</Tag>
-                        ))}
-                      </DocTags>
-                    )}
+                    {fmtDateShort(doc.createdAt)} · {doc.wordCount} words
+                    {doc.authorName &&
+                      doc.authorName !== 'Andrew Butler' &&
+                      ` · ${doc.authorName}`}
                   </DocMeta>
+                  {doc.tags?.length > 0 && (
+                    <DocTags>
+                      {doc.tags.slice(0, 4).map((t) => (
+                        <Tag key={t}>{t}</Tag>
+                      ))}
+                    </DocTags>
+                  )}
                 </DocCard>
               ))}
             </DocList>
           )}
         </Inner>
-      </Shell>
+      </DarkShell>
     );
   }
 
-  // ── READ VIEW ───────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  //  READ VIEW — editorial newspaper layout
+  // ══════════════════════════════════════════════════════════════════════════
 
   if (view === 'read' && activeDoc) {
     return (
-      <Shell>
-        <Inner>
-          <TopBar>
-            <BackBtn onClick={goBack}>
-              <FaChevronLeft /> Back
-            </BackBtn>
-            <ActionGroup>
-              <IconBtn onClick={startEdit} title='Edit'>
-                <FaEdit />
-              </IconBtn>
-              <IconBtn
-                onClick={() => setConfirmDelete(activeDoc._id)}
-                $danger
-                title='Delete'
-              >
-                <FaTrash />
-              </IconBtn>
-            </ActionGroup>
-          </TopBar>
+      <ReadShell>
+        {/* Floating dark toolbar */}
+        <ReadToolbar>
+          <BackBtnDark onClick={goBack}>
+            <FaChevronLeft /> Back
+          </BackBtnDark>
+          <ReadActions>
+            <ToolbarBtn onClick={startEdit} title='Edit'>
+              <FaEdit />
+            </ToolbarBtn>
+            <ToolbarBtn
+              onClick={() => setConfirmDelete(activeDoc._id)}
+              $danger
+              title='Delete'
+            >
+              <FaTrash />
+            </ToolbarBtn>
+          </ReadActions>
+        </ReadToolbar>
 
-          <ReadHeader>
-            <CategoryBadge $color={CATEGORY_COLORS[activeDoc.category]}>
-              {activeDoc.category}
-            </CategoryBadge>
-            <ReadTitle>{activeDoc.title}</ReadTitle>
-            <ReadMeta>
-              {formatDate(activeDoc.createdAt)}
-              {activeDoc.updatedAt !== activeDoc.createdAt &&
-                ` · updated ${formatDate(activeDoc.updatedAt)}`}
-              {' · '}
-              {activeDoc.wordCount} words
-              {' · '}
-              <StatusLabel $final={activeDoc.status === 'final'}>
-                {activeDoc.status}
-              </StatusLabel>
-            </ReadMeta>
-            {activeDoc.tags?.length > 0 && (
-              <ReadTags>
-                {activeDoc.tags.map((t) => (
-                  <Tag key={t}>{t}</Tag>
-                ))}
-              </ReadTags>
-            )}
-          </ReadHeader>
+        <ReadInner>
+          {/* Category badge */}
+          <ReadCategory $color={CATEGORY_COLORS[activeDoc.category]}>
+            {activeDoc.category}
+          </ReadCategory>
 
-          <ReadBody>{activeDoc.content}</ReadBody>
+          {/* Title */}
+          <ReadTitle>{activeDoc.title}</ReadTitle>
 
-          {/* Delete confirmation */}
-          {confirmDelete && (
-            <ConfirmOverlay onClick={() => setConfirmDelete(null)}>
-              <ConfirmBox onClick={(e) => e.stopPropagation()}>
-                <ConfirmTitle>Delete this document?</ConfirmTitle>
-                <ConfirmSub>This action cannot be undone.</ConfirmSub>
-                <ConfirmActions>
-                  <ConfirmCancelBtn onClick={() => setConfirmDelete(null)}>
-                    Cancel
-                  </ConfirmCancelBtn>
-                  <ConfirmDeleteBtn onClick={() => handleDelete(confirmDelete)}>
-                    Delete
-                  </ConfirmDeleteBtn>
-                </ConfirmActions>
-              </ConfirmBox>
-            </ConfirmOverlay>
+          {/* Subtitle / deck */}
+          {activeDoc.subtitle && (
+            <ReadSubtitle>{activeDoc.subtitle}</ReadSubtitle>
           )}
-        </Inner>
-      </Shell>
+
+          {/* Byline */}
+          <Byline>
+            <BylineRule />
+            <BylineText>
+              BY {(activeDoc.authorName || 'Andrew Butler').toUpperCase()}
+              <BylineSep>|</BylineSep>
+              {fmtDate(activeDoc.createdAt)}
+            </BylineText>
+            <BylineRule />
+          </Byline>
+
+          {/* Body */}
+          <ReadBody>
+            <ContentRenderer content={activeDoc.content} />
+          </ReadBody>
+
+          {/* Author note */}
+          {activeDoc.authorNote && (
+            <AuthorNoteBox>
+              <AuthorNoteLabel>Author's Note:</AuthorNoteLabel>{' '}
+              {activeDoc.authorNote}
+            </AuthorNoteBox>
+          )}
+
+          {/* Tags footer */}
+          {activeDoc.tags?.length > 0 && (
+            <ReadFooterTags>
+              {activeDoc.tags.map((t) => (
+                <ReadTag key={t}>{t}</ReadTag>
+              ))}
+            </ReadFooterTags>
+          )}
+
+          <ReadMeta>
+            {activeDoc.wordCount} words · {activeDoc.status}
+            {activeDoc.updatedAt !== activeDoc.createdAt &&
+              ` · updated ${fmtDateShort(activeDoc.updatedAt)}`}
+          </ReadMeta>
+        </ReadInner>
+
+        {/* Delete confirm */}
+        {confirmDelete && (
+          <ConfirmOverlay onClick={() => setConfirmDelete(null)}>
+            <ConfirmBox onClick={(e) => e.stopPropagation()}>
+              <ConfirmTitle>Delete this document?</ConfirmTitle>
+              <ConfirmSub>This action cannot be undone.</ConfirmSub>
+              <ConfirmActions>
+                <ConfirmCancelBtn onClick={() => setConfirmDelete(null)}>
+                  Cancel
+                </ConfirmCancelBtn>
+                <ConfirmDeleteBtn onClick={() => handleDelete(confirmDelete)}>
+                  Delete
+                </ConfirmDeleteBtn>
+              </ConfirmActions>
+            </ConfirmBox>
+          </ConfirmOverlay>
+        )}
+      </ReadShell>
     );
   }
 
-  // ── EDIT VIEW ───────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  //  EDIT VIEW
+  // ══════════════════════════════════════════════════════════════════════════
 
   return (
-    <Shell>
+    <DarkShell>
       <Inner>
         <TopBar>
-          <BackBtn onClick={goBack}>
+          <ExitBtn onClick={goBack}>
             <FaChevronLeft /> Cancel
-          </BackBtn>
+          </ExitBtn>
           <SaveBtn onClick={handleSave} disabled={saving || !form.title.trim()}>
             {saving ? 'Saving…' : activeDoc ? 'Update' : 'Create'}
           </SaveBtn>
         </TopBar>
 
         <EditorSection>
-          <EditorLabel>Title</EditorLabel>
+          <EditorLabel>Title *</EditorLabel>
           <TitleInput
             value={form.title}
-            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            onChange={setField('title')}
             placeholder='Document title…'
             maxLength={200}
+          />
+
+          <EditorLabel>Subtitle / Deck</EditorLabel>
+          <SubtitleInput
+            value={form.subtitle}
+            onChange={setField('subtitle')}
+            placeholder='A strategic analysis of…'
+            maxLength={300}
           />
 
           <EditorRow>
             <EditorCol>
               <EditorLabel>Category</EditorLabel>
-              <Select
-                value={form.category}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, category: e.target.value }))
-                }
-              >
+              <Select value={form.category} onChange={setField('category')}>
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -436,68 +558,77 @@ const VaultDocs = () => {
             </EditorCol>
             <EditorCol>
               <EditorLabel>Status</EditorLabel>
-              <Select
-                value={form.status}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, status: e.target.value }))
-                }
-              >
+              <Select value={form.status} onChange={setField('status')}>
                 <option value='draft'>Draft</option>
                 <option value='final'>Final</option>
               </Select>
             </EditorCol>
           </EditorRow>
 
-          <EditorLabel>Tags (comma-separated)</EditorLabel>
-          <TagInput
-            value={form.tags}
-            onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
-            placeholder='politics, aviation, culture…'
-          />
+          <EditorRow>
+            <EditorCol>
+              <EditorLabel>Pen Name</EditorLabel>
+              <TagInput
+                value={form.authorName}
+                onChange={setField('authorName')}
+                placeholder='Andrew Butler'
+              />
+            </EditorCol>
+            <EditorCol>
+              <EditorLabel>Tags (comma-separated)</EditorLabel>
+              <TagInput
+                value={form.tags}
+                onChange={setField('tags')}
+                placeholder='politics, aviation…'
+              />
+            </EditorCol>
+          </EditorRow>
 
           <EditorLabel>
-            Content{' '}
-            <WordCounter>{wordCount(form.content)} words</WordCounter>
+            Content *{' '}
+            <WordCounter>{countWords(form.content)} words</WordCounter>
           </EditorLabel>
+          <HintText>
+            Tip: Use {'>'} at the start of a paragraph for pull quotes. Use ---
+            for horizontal rules.
+          </HintText>
           <ContentArea
             ref={contentRef}
             value={form.content}
-            onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
+            onChange={setField('content')}
             placeholder='Start writing…'
+          />
+
+          <EditorLabel>Author's Note (optional)</EditorLabel>
+          <NoteArea
+            value={form.authorNote}
+            onChange={setField('authorNote')}
+            placeholder='Closing note, disclaimer, context…'
           />
         </EditorSection>
       </Inner>
-    </Shell>
+    </DarkShell>
   );
 };
 
 export default VaultDocs;
 
-// ─── Animations ───────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// ANIMATIONS
+// ═══════════════════════════════════════════════════════════════════════════════
 
-const fadeUp = keyframes`
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-`;
+const fadeUp = keyframes`from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}`;
+const fadeIn = keyframes`from{opacity:0}to{opacity:1}`;
+const blink = keyframes`0%,100%{opacity:1}50%{opacity:0}`;
 
-const fadeIn = keyframes`
-  from { opacity: 0; }
-  to   { opacity: 1; }
-`;
+// ═══════════════════════════════════════════════════════════════════════════════
+// DARK SHELL (list + edit)
+// ═══════════════════════════════════════════════════════════════════════════════
 
-const blink = keyframes`
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0; }
-`;
-
-// ─── Shell / Layout ───────────────────────────────────────────────────────────
-
-const Shell = styled.div`
+const DarkShell = styled.div`
   min-height: 100vh;
   background: ${NOIR.ink};
   color: ${NOIR.warmWhite};
-  overflow-x: hidden;
-
   @media (min-width: 960px) {
     margin-left: 72px;
     width: calc(100% - 72px);
@@ -514,7 +645,9 @@ const Inner = styled.div`
   padding: 0 20px 80px;
 `;
 
-// ─── Top bar ──────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// TOP BAR (shared)
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const TopBar = styled.div`
   display: flex;
@@ -523,7 +656,7 @@ const TopBar = styled.div`
   padding: 20px 0 0;
 `;
 
-const baseBtn = css`
+const monoBtn = css`
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -537,16 +670,7 @@ const baseBtn = css`
 `;
 
 const ExitBtn = styled.button`
-  ${baseBtn}
-  color: ${NOIR.ash};
-  &:hover {
-    color: ${NOIR.warmWhite};
-  }
-`;
-
-const BackBtn = styled.button`
-  ${baseBtn}
-  color: ${NOIR.ash};
+  ${monoBtn} color: ${NOIR.ash};
   &:hover {
     color: ${NOIR.warmWhite};
   }
@@ -559,13 +683,14 @@ const VaultBadge = styled.span`
   color: ${NOIR.green};
 `;
 
-// ─── Header ───────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// LIST VIEW
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const Header = styled.div`
   margin: 32px 0 24px;
   animation: ${fadeUp} 0.35s ease;
 `;
-
 const HeaderTitle = styled.h1`
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-weight: 400;
@@ -574,15 +699,12 @@ const HeaderTitle = styled.h1`
   color: ${NOIR.warmWhite};
   margin: 0 0 6px;
 `;
-
 const HeaderSub = styled.div`
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.6rem;
   letter-spacing: 0.1em;
   color: ${NOIR.ash};
 `;
-
-// ─── Toolbar ──────────────────────────────────────────────────────────────────
 
 const ToolBar = styled.div`
   margin-bottom: 20px;
@@ -601,21 +723,18 @@ const SearchWrap = styled.div`
   color: ${NOIR.ash};
   font-size: 0.75rem;
 `;
-
 const SearchInput = styled.input`
   flex: 1;
   background: none;
   border: none;
   outline: none;
   color: ${NOIR.warmWhite};
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.7rem;
-
   &::placeholder {
     color: ${NOIR.charcoal};
   }
 `;
-
 const ClearBtn = styled.button`
   background: none;
   border: none;
@@ -623,7 +742,6 @@ const ClearBtn = styled.button`
   cursor: pointer;
   padding: 2px;
   font-size: 0.65rem;
-
   &:hover {
     color: ${NOIR.warmWhite};
   }
@@ -634,29 +752,23 @@ const FilterRow = styled.div`
   flex-wrap: wrap;
   gap: 6px;
 `;
-
 const FilterChip = styled.button`
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.55rem;
   letter-spacing: 0.05em;
   text-transform: capitalize;
   padding: 4px 10px;
-  border: 1px solid
-    ${(p) =>
-      p.$active ? p.$color || NOIR.warmWhite : 'rgba(255,255,255,0.1)'};
-  background: ${(p) =>
-    p.$active ? 'rgba(255,255,255,0.06)' : 'transparent'};
-  color: ${(p) => (p.$active ? p.$color || NOIR.warmWhite : NOIR.ash)};
   cursor: pointer;
   transition: all 0.15s;
-
+  border: 1px solid
+    ${(p) => (p.$active ? p.$color || NOIR.warmWhite : 'rgba(255,255,255,0.1)')};
+  background: ${(p) => (p.$active ? 'rgba(255,255,255,0.06)' : 'transparent')};
+  color: ${(p) => (p.$active ? p.$color || NOIR.warmWhite : NOIR.ash)};
   &:hover {
     border-color: ${(p) => p.$color || 'rgba(255,255,255,0.3)'};
     color: ${(p) => p.$color || NOIR.warmWhite};
   }
 `;
-
-// ─── New button ───────────────────────────────────────────────────────────────
 
 const NewBtn = styled.button`
   display: flex;
@@ -666,22 +778,19 @@ const NewBtn = styled.button`
   justify-content: center;
   padding: 12px;
   margin-bottom: 24px;
+  cursor: pointer;
+  transition: all 0.15s;
   border: 1px dashed rgba(0, 255, 65, 0.3);
   background: rgba(0, 255, 65, 0.03);
   color: ${NOIR.green};
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.65rem;
   letter-spacing: 0.1em;
-  cursor: pointer;
-  transition: all 0.15s;
-
   &:hover {
     background: rgba(0, 255, 65, 0.06);
     border-color: rgba(0, 255, 65, 0.5);
   }
 `;
-
-// ─── Doc list ─────────────────────────────────────────────────────────────────
 
 const DocList = styled.div`
   display: flex;
@@ -701,36 +810,32 @@ const DocCard = styled.button`
   transition: background 0.15s, border-color 0.15s;
   animation: ${fadeUp} 0.3s ease both;
   animation-delay: ${(p) => p.$delay}ms;
-
   &:hover {
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba(255, 255, 255, 0.12);
   }
 `;
-
 const DocCardTop = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
 `;
-
-const CategoryBadge = styled.span`
-  font-family: 'DM Mono', 'Courier New', monospace;
+const CatBadge = styled.span`
+  font-family: 'DM Mono', monospace;
   font-size: 0.5rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: ${(p) => p.$color || NOIR.ash};
-  border: 1px solid ${(p) => (p.$color ? `${p.$color}44` : 'rgba(255,255,255,0.1)')};
   padding: 2px 8px;
+  color: ${(p) => p.$color || NOIR.ash};
+  border: 1px solid
+    ${(p) => (p.$color ? `${p.$color}44` : 'rgba(255,255,255,0.1)')};
 `;
-
 const StatusDot = styled.span`
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: ${(p) => (p.$final ? NOIR.sage : NOIR.gold)};
 `;
-
 const DocTitle = styled.div`
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 1.15rem;
@@ -738,7 +843,13 @@ const DocTitle = styled.div`
   color: ${NOIR.warmWhite};
   line-height: 1.3;
 `;
-
+const DocSubtitle = styled.div`
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: ${NOIR.ash};
+  line-height: 1.4;
+`;
 const DocExcerpt = styled.div`
   font-size: 0.75rem;
   color: ${NOIR.ash};
@@ -748,116 +859,272 @@ const DocExcerpt = styled.div`
   -webkit-box-orient: vertical;
   overflow: hidden;
 `;
-
 const DocMeta = styled.div`
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.55rem;
   color: ${NOIR.charcoal};
 `;
-
-const DocTags = styled.span`
-  display: inline-flex;
+const DocTags = styled.div`
+  display: flex;
+  flex-wrap: wrap;
   gap: 4px;
-  margin-left: 4px;
 `;
-
 const Tag = styled.span`
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.5rem;
   color: ${NOIR.ash};
   background: rgba(255, 255, 255, 0.04);
   padding: 1px 6px;
 `;
 
-// ─── Empty / Loading ──────────────────────────────────────────────────────────
-
 const LoadingMsg = styled.div`
   text-align: center;
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.7rem;
   color: ${NOIR.ash};
   padding: 60px 0;
 `;
-
 const Blink = styled.span`
   animation: ${blink} 1s step-end infinite;
 `;
-
 const EmptyState = styled.div`
   text-align: center;
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.65rem;
   color: ${NOIR.charcoal};
   padding: 60px 0;
 `;
 
-// ─── Read view ────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// READ VIEW — EDITORIAL / NEWSPAPER LAYOUT
+// ═══════════════════════════════════════════════════════════════════════════════
 
-const ActionGroup = styled.div`
-  display: flex;
-  gap: 8px;
-`;
-
-const IconBtn = styled.button`
-  ${baseBtn}
-  color: ${(p) => (p.$danger ? '#ff4444' : NOIR.ash)};
-  padding: 6px;
-  font-size: 0.8rem;
-
-  &:hover {
-    color: ${(p) => (p.$danger ? '#ff6666' : NOIR.warmWhite)};
+const ReadShell = styled.div`
+  min-height: 100vh;
+  background: ${EDITORIAL.paper};
+  @media (min-width: 960px) {
+    margin-left: 72px;
+    width: calc(100% - 72px);
+  }
+  @media (min-width: 1200px) {
+    margin-left: 240px;
+    width: calc(100% - 240px);
   }
 `;
 
-const ReadHeader = styled.div`
-  margin: 24px 0 32px;
-  animation: ${fadeUp} 0.3s ease;
+const ReadToolbar = styled.div`
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(10, 10, 11, 0.92);
+  backdrop-filter: blur(12px);
+`;
+
+const BackBtnDark = styled.button`
+  ${monoBtn} color: rgba(255,255,255,0.5);
+  &:hover {
+    color: #fff;
+  }
+`;
+const ReadActions = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+const ToolbarBtn = styled.button`
+  ${monoBtn} font-size: 0.8rem;
+  padding: 6px;
+  color: ${(p) => (p.$danger ? '#ff4444' : 'rgba(255,255,255,0.4)')};
+  &:hover {
+    color: ${(p) => (p.$danger ? '#ff6666' : '#fff')};
+  }
+`;
+
+const ReadInner = styled.div`
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+  animation: ${fadeIn} 0.4s ease;
+`;
+
+const ReadCategory = styled.div`
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: ${(p) => p.$color || EDITORIAL.subtle};
+  margin-bottom: 16px;
 `;
 
 const ReadTitle = styled.h1`
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-weight: 400;
+  font-weight: 700;
+  font-size: 2.4rem;
+  line-height: 1.15;
+  color: ${EDITORIAL.text};
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+
+  @media (min-width: 600px) {
+    font-size: 2.8rem;
+  }
+`;
+
+const ReadSubtitle = styled.div`
+  font-family: 'Cormorant Garamond', Georgia, serif;
   font-style: italic;
-  font-size: 2rem;
-  color: ${NOIR.warmWhite};
-  margin: 12px 0 8px;
-  line-height: 1.2;
+  font-weight: 400;
+  font-size: 1.15rem;
+  line-height: 1.5;
+  color: ${EDITORIAL.subtle};
+  margin-bottom: 24px;
+`;
+
+// ── Byline ────────────────────────────────────────────────────────────────────
+
+const Byline = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 36px;
+`;
+const BylineRule = styled.div`
+  flex: 1;
+  height: 1px;
+  background: ${EDITORIAL.rule};
+`;
+const BylineText = styled.div`
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  color: ${EDITORIAL.subtle};
+  white-space: nowrap;
+`;
+const BylineSep = styled.span`
+  margin: 0 10px;
+  color: ${EDITORIAL.rule};
+`;
+
+// ── Body typography ───────────────────────────────────────────────────────────
+
+const ReadBody = styled.div`
+  margin-bottom: 40px;
+`;
+
+const Paragraph = styled.p`
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.15rem;
+  line-height: 1.85;
+  color: ${EDITORIAL.text};
+  margin: 0 0 24px;
+  text-align: justify;
+  hyphens: auto;
+`;
+
+const DropCapParagraph = styled(Paragraph)`
+  &::first-letter {
+    /* fallback for browsers that don't support initial-letter */
+    float: left;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 700;
+    font-size: 4.2rem;
+    line-height: 0.8;
+    padding: 4px 8px 0 0;
+    color: ${EDITORIAL.text};
+  }
+
+  @supports (initial-letter: 3) {
+    &::first-letter {
+      initial-letter: 3;
+      float: none;
+      padding: 0 8px 0 0;
+    }
+  }
+`;
+
+// We actually render drop cap as a separate span for max browser compat
+const DropCap = styled.span`
+  float: left;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 700;
+  font-size: 4.2rem;
+  line-height: 0.78;
+  padding: 6px 8px 0 0;
+  color: ${EDITORIAL.text};
+`;
+
+const PullQuote = styled.blockquote`
+  margin: 36px 0 36px 0;
+  padding: 16px 0 16px 24px;
+  border-left: 3px solid ${EDITORIAL.quoteBar};
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.2rem;
+  line-height: 1.7;
+  color: ${EDITORIAL.text};
+`;
+
+const EditorialRule = styled.hr`
+  border: none;
+  height: 1px;
+  background: ${EDITORIAL.rule};
+  margin: 36px auto;
+  width: 80px;
+`;
+
+// ── Author note ───────────────────────────────────────────────────────────────
+
+const AuthorNoteBox = styled.div`
+  margin: 40px 0 32px;
+  padding: 16px 20px;
+  background: ${EDITORIAL.noteBg};
+  border-left: 3px solid ${EDITORIAL.rule};
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: ${EDITORIAL.subtle};
+  font-style: italic;
+`;
+const AuthorNoteLabel = styled.span`
+  font-style: normal;
+  font-weight: 700;
+  color: ${EDITORIAL.text};
+`;
+
+// ── Footer meta ───────────────────────────────────────────────────────────────
+
+const ReadFooterTags = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+`;
+const ReadTag = styled.span`
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  color: ${EDITORIAL.subtle};
+  border: 1px solid ${EDITORIAL.rule};
 `;
 
 const ReadMeta = styled.div`
-  font-family: 'DM Mono', 'Courier New', monospace;
-  font-size: 0.6rem;
-  color: ${NOIR.ash};
-`;
-
-const StatusLabel = styled.span`
-  color: ${(p) => (p.$final ? NOIR.sage : NOIR.gold)};
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.06em;
+  color: ${EDITORIAL.rule};
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  padding-top: 12px;
+  border-top: 1px solid ${EDITORIAL.rule};
 `;
 
-const ReadTags = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
-`;
-
-const ReadBody = styled.div`
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 1.1rem;
-  line-height: 1.8;
-  color: ${NOIR.dust};
-  white-space: pre-wrap;
-  word-break: break-word;
-  animation: ${fadeIn} 0.4s ease;
-`;
-
-// ─── Delete confirmation ──────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// DELETE CONFIRM
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const ConfirmOverlay = styled.div`
   position: fixed;
@@ -870,7 +1137,6 @@ const ConfirmOverlay = styled.div`
   padding: 20px;
   animation: ${fadeIn} 0.15s ease;
 `;
-
 const ConfirmBox = styled.div`
   background: ${NOIR.ink};
   border: 1px solid rgba(255, 68, 68, 0.3);
@@ -878,58 +1144,49 @@ const ConfirmBox = styled.div`
   max-width: 340px;
   text-align: center;
 `;
-
 const ConfirmTitle = styled.div`
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.75rem;
   color: ${NOIR.warmWhite};
   margin-bottom: 8px;
 `;
-
 const ConfirmSub = styled.div`
   font-size: 0.65rem;
   color: ${NOIR.ash};
   margin-bottom: 20px;
 `;
-
 const ConfirmActions = styled.div`
   display: flex;
   gap: 12px;
   justify-content: center;
 `;
-
 const ConfirmCancelBtn = styled.button`
-  ${baseBtn}
-  color: ${NOIR.ash};
+  ${monoBtn} color: ${NOIR.ash};
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 8px 20px;
-
   &:hover {
     color: ${NOIR.warmWhite};
   }
 `;
-
 const ConfirmDeleteBtn = styled.button`
-  ${baseBtn}
-  color: ${NOIR.ink};
+  ${monoBtn} color: ${NOIR.ink};
   background: #ff4444;
   border: none;
   padding: 8px 20px;
-
   &:hover {
     background: #ff6666;
   }
 `;
 
-// ─── Edit view ────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// EDIT VIEW
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const SaveBtn = styled.button`
-  ${baseBtn}
-  color: ${NOIR.ink};
+  ${monoBtn} color: ${NOIR.ink};
   background: ${NOIR.green};
   padding: 8px 20px;
   letter-spacing: 0.1em;
-
   &:hover:not(:disabled) {
     opacity: 0.85;
   }
@@ -946,22 +1203,27 @@ const EditorSection = styled.div`
   gap: 12px;
   animation: ${fadeUp} 0.3s ease;
 `;
-
 const EditorLabel = styled.label`
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 0.55rem;
   letter-spacing: 0.1em;
   color: ${NOIR.ash};
   text-transform: uppercase;
 `;
-
 const WordCounter = styled.span`
   color: ${NOIR.charcoal};
   text-transform: none;
   letter-spacing: 0;
+`;
+
+const HintText = styled.div`
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  color: ${NOIR.charcoal};
+  margin-top: -6px;
 `;
 
 const inputBase = css`
@@ -969,12 +1231,10 @@ const inputBase = css`
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: ${NOIR.warmWhite};
-  font-family: 'Cormorant Garamond', Georgia, serif;
   padding: 10px 14px;
   outline: none;
   transition: border-color 0.15s;
   box-sizing: border-box;
-
   &:focus {
     border-color: rgba(0, 255, 65, 0.3);
   }
@@ -984,14 +1244,17 @@ const inputBase = css`
 `;
 
 const TitleInput = styled.input`
-  ${inputBase}
+  ${inputBase} font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 1.3rem;
   font-style: italic;
 `;
-
+const SubtitleInput = styled.input`
+  ${inputBase} font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 0.95rem;
+  font-style: italic;
+`;
 const TagInput = styled.input`
-  ${inputBase}
-  font-family: 'DM Mono', 'Courier New', monospace;
+  ${inputBase} font-family: 'DM Mono', monospace;
   font-size: 0.7rem;
 `;
 
@@ -1000,7 +1263,6 @@ const EditorRow = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 `;
-
 const EditorCol = styled.div`
   display: flex;
   flex-direction: column;
@@ -1008,17 +1270,24 @@ const EditorCol = styled.div`
 `;
 
 const Select = styled.select`
-  ${inputBase}
-  font-family: 'DM Mono', 'Courier New', monospace;
+  ${inputBase} font-family: 'DM Mono', monospace;
   font-size: 0.7rem;
   text-transform: capitalize;
   cursor: pointer;
 `;
 
 const ContentArea = styled.textarea`
-  ${inputBase}
+  ${inputBase} font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 1.05rem;
   line-height: 1.8;
   min-height: 400px;
+  resize: vertical;
+`;
+
+const NoteArea = styled.textarea`
+  ${inputBase} font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  min-height: 100px;
   resize: vertical;
 `;
