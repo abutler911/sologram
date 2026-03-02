@@ -50,6 +50,7 @@ const quickThoughtRoutes = require('./routes/webhooks/quickThought');
 const copilotRoutes = require('./routes/copilot');
 const memoirRoutes = require('./routes/memoirs');
 const activityRoutes = require('./routes/activity');
+const likesRoutes = require('./routes/likes');
 
 // ----------- App Initialization -----------
 const app = express();
@@ -102,8 +103,9 @@ app.use(
 // ----------- Utility Middleware -----------
 app.use(requestIdMiddleware); // attach unique request ID
 app.use(cookieParser()); // parse cookies
-app.use(express.json({ limit: '300mb' }));
-app.use(express.urlencoded({ extended: true, limit: '300mb' }));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
 app.use(linksRouter);
 app.use('/api/admin/ai-vision', aiVisionRoutes);
 // ----------- Rate Limiting for Auth -----------
@@ -116,6 +118,7 @@ const authLimiter = rateLimit({
 app.use('/api/auth', authLimiter);
 
 // ----------- Mount API Routes -----------
+
 app.use('/api/posts', postRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/auth', authRoutes);
@@ -127,6 +130,7 @@ app.use('/api/thoughts', thoughtsRoutes);
 app.use('/api/admin/cloudinary', cloudinaryRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin/ai-content', aiContentRoutes);
+app.use('/api/likes', likesRoutes);
 app.use('/api', commentRoutes);
 app.use('/api/copilot', copilotRoutes);
 app.use('/api/memoirs', memoirRoutes);

@@ -1,30 +1,30 @@
-const User = require("../models/User");
-const jwt = require("jsonwebtoken");
-const { cloudinary } = require("../config/cloudinary");
-const AppError = require("../utils/AppError");
-const { logger } = require("../utils/logger");
+const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+const { cloudinary } = require('../config/cloudinary');
+const AppError = require('../utils/AppError');
+const { logger } = require('../utils/logger');
 
 const {
   generateAccessToken,
   generateRefreshToken,
   getRefreshTokenExpiryDate,
   parseJwt,
-} = require("../utils/tokenUtils");
+} = require('../utils/tokenUtils');
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "30d",
+    expiresIn: '30d',
   });
 };
-const { sendEmail } = require("../utils/sendEmail");
+const { sendEmail } = require('../utils/sendEmail');
 const {
   buildWelcomeEmail,
-} = require("../utils/emailTemplates/welcomeTemplate");
+} = require('../utils/emailTemplates/welcomeTemplate');
 const {
   buildPromotionEmail,
-} = require("../utils/emailTemplates/promotionTemplate");
+} = require('../utils/emailTemplates/promotionTemplate');
 const {
   buildProfileUpdateEmail,
-} = require("../utils/emailTemplates/profileUpdateTemplate");
+} = require('../utils/emailTemplates/profileUpdateTemplate');
 
 exports.register = async (req, res, next) => {
   try {
@@ -37,7 +37,7 @@ exports.register = async (req, res, next) => {
       username,
       email,
       password,
-      bio: bio || "",
+      bio: bio || '',
     };
 
     if (req.file) {
@@ -46,13 +46,13 @@ exports.register = async (req, res, next) => {
     }
 
     const user = await User.create(userData);
-    logger.info("New user registered", {
+    logger.info('New user registered', {
       context: {
-        event: "user_register",
+        event: 'user_register',
         userId: user._id.toString(),
         email: user.email,
         ip: req.ip,
-        userAgent: req.get("User-Agent"),
+        userAgent: req.get('User-Agent'),
       },
     });
 
@@ -74,10 +74,10 @@ exports.register = async (req, res, next) => {
     });
 
     // Set cookie for refresh token
-    res.cookie("refreshToken", refreshToken, {
+    res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
       expires: refreshTokenExpiresAt,
     });
 
@@ -108,31 +108,25 @@ exports.login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Please provide email and password",
+        message: 'Please provide email and password',
       });
     }
 
-    // Log environment variables status (for debugging)
-    console.log(`JWT_SECRET defined: ${!!process.env.JWT_SECRET}`);
-    console.log(
-      `JWT_REFRESH_SECRET defined: ${!!process.env.JWT_REFRESH_SECRET}`
-    );
-
     // Find user
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ email }).select('+password');
 
     // Check if user exists and password is correct
     if (!user || !(await user.matchPassword(password))) {
-      logger.warn("Login attempt failed", {
+      logger.warn('Login attempt failed', {
         context: {
-          event: "login_failed",
+          event: 'login_failed',
           email: email,
           ip: req.ip,
         },
       });
       return res.status(401).json({
         success: false,
-        message: "Invalid credentials",
+        message: 'Invalid credentials',
       });
     }
 
@@ -141,29 +135,29 @@ exports.login = async (req, res) => {
     try {
       accessToken = jwt.sign(
         { id: user._id },
-        process.env.JWT_SECRET || "temp_dev_secret",
-        { expiresIn: "15m" }
+        process.env.JWT_SECRET || 'temp_dev_secret',
+        { expiresIn: '15m' }
       );
 
       refreshToken = jwt.sign(
         { id: user._id },
-        process.env.JWT_REFRESH_SECRET || "temp_refresh_secret",
-        { expiresIn: "7d" }
+        process.env.JWT_REFRESH_SECRET || 'temp_refresh_secret',
+        { expiresIn: '7d' }
       );
-      logger.info("User login successful", {
+      logger.info('User login successful', {
         context: {
-          event: "user_login",
+          event: 'user_login',
           userId: user._id.toString(),
           email: user.email,
           ip: req.ip,
-          userAgent: req.get("User-Agent"),
+          userAgent: req.get('User-Agent'),
         },
       });
     } catch (err) {
-      console.error("Token generation error:", err);
+      console.error('Token generation error:', err);
       return res.status(500).json({
         success: false,
-        message: "Error generating authentication tokens",
+        message: 'Error generating authentication tokens',
       });
     }
 
@@ -186,10 +180,10 @@ exports.login = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Login error:", err);
+    console.error('Login error:', err);
     res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: 'Server Error',
     });
   }
 };
@@ -204,11 +198,11 @@ exports.logout = async (req, res, next) => {
     }
 
     // Clear refresh token cookie
-    res.clearCookie("refreshToken");
+    res.clearCookie('refreshToken');
 
     res.status(200).json({
       success: true,
-      message: "Logged out successfully",
+      message: 'Logged out successfully',
     });
   } catch (err) {
     next(err);
@@ -221,7 +215,7 @@ exports.refreshToken = async (req, res, next) => {
     const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
     if (!refreshToken) {
-      return next(new AppError("No refresh token provided", 401));
+      return next(new AppError('No refresh token provided', 401));
     }
 
     // Verify refresh token
@@ -229,21 +223,21 @@ exports.refreshToken = async (req, res, next) => {
     try {
       decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     } catch (err) {
-      return next(new AppError("Invalid or expired refresh token", 401));
+      return next(new AppError('Invalid or expired refresh token', 401));
     }
 
     // Find user by id and check if refresh token matches
     const user = await User.findById(decoded.id).select(
-      "+refreshToken +refreshTokenExpiresAt"
+      '+refreshToken +refreshTokenExpiresAt'
     );
 
     if (!user || user.refreshToken !== refreshToken) {
-      return next(new AppError("Invalid refresh token", 401));
+      return next(new AppError('Invalid refresh token', 401));
     }
 
     // Check if refresh token is expired in DB (extra safety)
     if (user.refreshTokenExpiresAt < Date.now()) {
-      return next(new AppError("Refresh token expired", 401));
+      return next(new AppError('Refresh token expired', 401));
     }
 
     // Generate new tokens
@@ -257,10 +251,10 @@ exports.refreshToken = async (req, res, next) => {
     await user.save({ validateBeforeSave: false });
 
     // Set new refresh token cookie
-    res.cookie("refreshToken", newRefreshToken, {
+    res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
       expires: refreshTokenExpiresAt,
     });
 
@@ -280,7 +274,7 @@ exports.getMe = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: 'User not found',
       });
     }
 
@@ -301,7 +295,7 @@ exports.getMe = async (req, res) => {
     console.error(err);
     res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: 'Server Error',
     });
   }
 };
@@ -315,7 +309,7 @@ exports.updateProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: 'User not found',
       });
     }
 
@@ -325,7 +319,7 @@ exports.updateProfile = async (req, res) => {
       if (usernameExists) {
         return res.status(400).json({
           success: false,
-          message: "Username is already taken",
+          message: 'Username is already taken',
         });
       }
     }
@@ -336,7 +330,7 @@ exports.updateProfile = async (req, res) => {
       if (emailExists) {
         return res.status(400).json({
           success: false,
-          message: "Email is already taken",
+          message: 'Email is already taken',
         });
       }
     }
@@ -349,16 +343,16 @@ exports.updateProfile = async (req, res) => {
       user.profileImage = req.file.path;
       user.cloudinaryId = req.file.filename;
     }
-    user.firstName = firstName || user.firstName || "Anonymous"; // fallback default if needed
+    user.firstName = firstName || user.firstName || 'Anonymous'; // fallback default if needed
     user.lastName = lastName || user.lastName;
     user.username = username || user.username;
     user.email = email || user.email;
     user.bio = bio === undefined ? user.bio : bio;
 
     await user.save();
-    logger.info("User profile updated", {
+    logger.info('User profile updated', {
       context: {
-        event: "profile_update",
+        event: 'profile_update',
         userId: user._id.toString(),
         email: user.email,
         ip: req.ip,
@@ -370,7 +364,7 @@ exports.updateProfile = async (req, res) => {
       subject: `✅ Your profile has been updated`,
       html: buildProfileUpdateEmail({
         name: user.firstName || user.username,
-        action: "profile",
+        action: 'profile',
       }),
     });
 
@@ -388,18 +382,18 @@ exports.updateProfile = async (req, res) => {
   } catch (err) {
     console.error(err);
 
-    if (err.name === "ValidationError") {
+    if (err.name === 'ValidationError') {
       return res.status(400).json({
         success: false,
         message: Object.values(err.errors)
           .map((val) => val.message)
-          .join(", "),
+          .join(', '),
       });
     }
 
     res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: 'Server Error',
     });
   }
 };
@@ -413,7 +407,7 @@ exports.updateBio = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: 'User not found',
       });
     }
 
@@ -433,20 +427,20 @@ exports.updateBio = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Bio update error:", err);
+    console.error('Bio update error:', err);
 
-    if (err.name === "ValidationError") {
+    if (err.name === 'ValidationError') {
       return res.status(400).json({
         success: false,
         message: Object.values(err.errors)
           .map((val) => val.message)
-          .join(", "),
+          .join(', '),
       });
     }
 
     res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: 'Server Error',
     });
   }
 };
@@ -459,17 +453,17 @@ exports.promoteToCreator = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: 'User not found',
       });
     }
 
-    user.role = "creator";
+    user.role = 'creator';
     await user.save();
-    logger.info("User promoted to creator", {
+    logger.info('User promoted to creator', {
       context: {
-        event: "role_change",
+        event: 'role_change',
         userId: user._id.toString(),
-        newRole: "creator",
+        newRole: 'creator',
         email: user.email,
         ip: req.ip,
       },
@@ -485,7 +479,7 @@ exports.promoteToCreator = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "User promoted to creator successfully",
+      message: 'User promoted to creator successfully',
       data: {
         _id: user._id,
         username: user.username,
@@ -494,10 +488,10 @@ exports.promoteToCreator = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Error promoting user:", err);
+    console.error('Error promoting user:', err);
     res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: 'Server Error',
     });
   }
 };

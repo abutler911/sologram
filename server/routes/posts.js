@@ -65,145 +65,145 @@ const commentLimiter = rateLimit({
 // ─── SPECIFIC ROUTES — must come before /:id param catch-all ────────────────
 
 router.get('/search', searchPosts);
-router.post('/likes/check-batch', protect, checkUserLikesBatch);
+// router.post('/likes/check-batch', protect, checkUserLikesBatch);
 
 // GET /api/posts/:postId/comments/count
-router.get('/:postId/comments/count', async (req, res) => {
-  try {
-    const { postId } = req.params;
-    if (!isValidId(postId))
-      return res
-        .status(400)
-        .json({ success: false, message: 'Invalid post ID' });
-    const count = await Comment.countDocuments({ postId, isDeleted: false });
-    res.json({ success: true, count });
-  } catch (e) {
-    console.error('[comment count]', e);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+// router.get('/:postId/comments/count', async (req, res) => {
+//   try {
+//     const { postId } = req.params;
+//     if (!isValidId(postId))
+//       return res
+//         .status(400)
+//         .json({ success: false, message: 'Invalid post ID' });
+//     const count = await Comment.countDocuments({ postId, isDeleted: false });
+//     res.json({ success: true, count });
+//   } catch (e) {
+//     console.error('[comment count]', e);
+//     res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// });
 
 // GET /api/posts/:postId/comments
-router.get('/:postId/comments', optionalAuth, async (req, res) => {
-  try {
-    const { postId } = req.params;
-    if (!isValidId(postId))
-      return res
-        .status(400)
-        .json({ success: false, message: 'Invalid post ID' });
+// router.get('/:postId/comments', optionalAuth, async (req, res) => {
+//   try {
+//     const { postId } = req.params;
+//     if (!isValidId(postId))
+//       return res
+//         .status(400)
+//         .json({ success: false, message: 'Invalid post ID' });
 
-    const postExists = await Post.exists({ _id: postId });
-    if (!postExists)
-      return res
-        .status(404)
-        .json({ success: false, message: 'Post not found' });
+//     const postExists = await Post.exists({ _id: postId });
+//     if (!postExists)
+//       return res
+//         .status(404)
+//         .json({ success: false, message: 'Post not found' });
 
-    const page = Math.max(1, parseInt(req.query.page || 1, 10));
-    const limit = Math.min(
-      100,
-      Math.max(1, parseInt(req.query.limit || 50, 10))
-    );
+//     const page = Math.max(1, parseInt(req.query.page || 1, 10));
+//     const limit = Math.min(
+//       100,
+//       Math.max(1, parseInt(req.query.limit || 50, 10))
+//     );
 
-    const [total, items] = await Promise.all([
-      Comment.countDocuments({ postId, isDeleted: false }), // ALL comments incl. replies for accurate badge count
-      Comment.find({ postId, parentId: null, isDeleted: false })
-        .populate('author', 'firstName lastName username profileImage')
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean(),
-    ]);
+//     const [total, items] = await Promise.all([
+//       Comment.countDocuments({ postId, isDeleted: false }), // ALL comments incl. replies for accurate badge count
+//       Comment.find({ postId, parentId: null, isDeleted: false })
+//         .populate('author', 'firstName lastName username profileImage')
+//         .sort({ createdAt: -1 })
+//         .skip((page - 1) * limit)
+//         .limit(limit)
+//         .lean(),
+//     ]);
 
-    const uid = req.user?.id?.toString();
-    res.json({
-      success: true,
-      comments: items.map((c) => fmt(c, uid)),
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    });
-  } catch (e) {
-    console.error('[getComments]', e);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+//     const uid = req.user?.id?.toString();
+//     res.json({
+//       success: true,
+//       comments: items.map((c) => fmt(c, uid)),
+//       total,
+//       page,
+//       totalPages: Math.ceil(total / limit),
+//     });
+//   } catch (e) {
+//     console.error('[getComments]', e);
+//     res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// });
 
 // POST /api/posts/:postId/comments
-router.post('/:postId/comments', protect, commentLimiter, async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const { text, parentId } = req.body;
-    const userId = req.user.id;
+// router.post('/:postId/comments', protect, commentLimiter, async (req, res) => {
+//   try {
+//     const { postId } = req.params;
+//     const { text, parentId } = req.body;
+//     const userId = req.user.id;
 
-    if (!isValidId(postId))
-      return res
-        .status(400)
-        .json({ success: false, message: 'Invalid post ID' });
+//     if (!isValidId(postId))
+//       return res
+//         .status(400)
+//         .json({ success: false, message: 'Invalid post ID' });
 
-    const safeText = clean(text);
-    if (!safeText)
-      return res
-        .status(400)
-        .json({ success: false, message: 'Comment text required' });
-    if (safeText.length > 500)
-      return res
-        .status(400)
-        .json({ success: false, message: 'Comment too long (max 500)' });
+//     const safeText = clean(text);
+//     if (!safeText)
+//       return res
+//         .status(400)
+//         .json({ success: false, message: 'Comment text required' });
+//     if (safeText.length > 500)
+//       return res
+//         .status(400)
+//         .json({ success: false, message: 'Comment too long (max 500)' });
 
-    const post = await Post.findById(postId).select('_id');
-    if (!post)
-      return res
-        .status(404)
-        .json({ success: false, message: 'Post not found' });
+//     const post = await Post.findById(postId).select('_id');
+//     if (!post)
+//       return res
+//         .status(404)
+//         .json({ success: false, message: 'Post not found' });
 
-    let parent = null;
-    if (parentId) {
-      if (!isValidId(parentId))
-        return res
-          .status(400)
-          .json({ success: false, message: 'Invalid parent ID' });
-      parent = await Comment.findById(parentId)
-        .select('_id postId parentId')
-        .lean();
-      if (!parent || parent.postId.toString() !== postId)
-        return res
-          .status(400)
-          .json({ success: false, message: 'Invalid parent comment' });
-      if (parent.parentId)
-        return res
-          .status(400)
-          .json({ success: false, message: 'Only one-level replies allowed' });
-    }
+//     let parent = null;
+//     if (parentId) {
+//       if (!isValidId(parentId))
+//         return res
+//           .status(400)
+//           .json({ success: false, message: 'Invalid parent ID' });
+//       parent = await Comment.findById(parentId)
+//         .select('_id postId parentId')
+//         .lean();
+//       if (!parent || parent.postId.toString() !== postId)
+//         return res
+//           .status(400)
+//           .json({ success: false, message: 'Invalid parent comment' });
+//       if (parent.parentId)
+//         return res
+//           .status(400)
+//           .json({ success: false, message: 'Only one-level replies allowed' });
+//     }
 
-    const comment = await Comment.create({
-      text: safeText,
-      author: userId,
-      postId,
-      parentId: parent ? parent._id : null,
-    });
+//     const comment = await Comment.create({
+//       text: safeText,
+//       author: userId,
+//       postId,
+//       parentId: parent ? parent._id : null,
+//     });
 
-    await Post.updateOne({ _id: postId }, { $inc: { commentCount: 1 } });
-    if (parent) {
-      await Comment.updateOne(
-        { _id: parent._id },
-        { $push: { replies: comment._id } }
-      );
-    }
+//     await Post.updateOne({ _id: postId }, { $inc: { commentCount: 1 } });
+//     if (parent) {
+//       await Comment.updateOne(
+//         { _id: parent._id },
+//         { $push: { replies: comment._id } }
+//       );
+//     }
 
-    await comment.populate(
-      'author',
-      'firstName lastName username profileImage'
-    );
+//     await comment.populate(
+//       'author',
+//       'firstName lastName username profileImage'
+//     );
 
-    res.status(201).json({
-      success: true,
-      comment: fmt(comment.toObject(), userId),
-    });
-  } catch (e) {
-    console.error('[createComment]', e);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+//     res.status(201).json({
+//       success: true,
+//       comment: fmt(comment.toObject(), userId),
+//     });
+//   } catch (e) {
+//     console.error('[createComment]', e);
+//     res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// });
 
 // ─── STANDARD POST ROUTES ────────────────────────────────────────────────────
 
@@ -215,7 +215,7 @@ router.post('/', protect, postCreationLimiter, createPost);
 router.put('/:id', protect, updatePost);
 router.delete('/:id', protect, deletePost);
 
-router.post('/:id/like', protect, likePost);
-router.get('/:id/likes/check', protect, checkUserLike);
+// router.post('/:id/like', protect, likePost);
+// router.get('/:id/likes/check', protect, checkUserLike);
 
 module.exports = router;

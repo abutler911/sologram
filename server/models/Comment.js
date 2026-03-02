@@ -1,5 +1,12 @@
 // models/Comment.js
+// ─────────────────────────────────────────────────────────────────────────────
+// Polymorphic comment model — works across posts, thoughts, and stories.
+//
+// Migration note: renamed `postId` → `parentId` + added `parentType`.
+// ─────────────────────────────────────────────────────────────────────────────
 const mongoose = require('mongoose');
+
+const COMMENTABLE_TYPES = ['post', 'thought', 'story'];
 
 const commentSchema = new mongoose.Schema(
   {
@@ -9,19 +16,26 @@ const commentSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
-    postId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Post',
+    // ── Polymorphic parent ─────────────────────────────────────────────────
+    parentType: {
+      type: String,
+      enum: COMMENTABLE_TYPES,
       required: true,
     },
     parentId: {
       type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+    // ── Reply threading (one level deep) ──────────────────────────────────
+    replyTo: {
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'Comment',
       default: null,
     },
-    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     replies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }],
+    // ── Soft delete ───────────────────────────────────────────────────────
     isDeleted: { type: Boolean, default: false },
+    // ── Moderation ────────────────────────────────────────────────────────
     moderationFlags: [
       {
         userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -43,49 +57,54 @@ const commentSchema = new mongoose.Schema(
   }
 );
 
-// List comments for a post, newest first
-commentSchema.index({ postId: 1, createdAt: -1 });
+// ── Indexes ─────────────────────────────────────────────────────────────────
 
-// Comment count endpoint: countDocuments({ postId, isDeleted: false })
-// Covered index — Mongo resolves the count entirely from the index,
-// zero document reads required.
-commentSchema.index({ postId: 1, isDeleted: 1 });
+// List comments for any content type, newest first
+commentSchema.index({ parentType: 1, parentId: 1, createdAt: -1 });
 
-// Replies: find({ parentId, isDeleted: false }).sort({ createdAt: 1 })
-commentSchema.index({ parentId: 1, createdAt: 1 });
+// Count endpoint: countDocuments({ parentType, parentId, isDeleted: false })
+commentSchema.index({ parentType: 1, parentId: 1, isDeleted: 1 });
+
+// Replies: find({ replyTo }).sort({ createdAt: 1 })
+commentSchema.index({ replyTo: 1, createdAt: 1 });
 
 // Author lookup
 commentSchema.index({ author: 1 });
 
-// General recency sort
-commentSchema.index({ createdAt: -1 });
-
-commentSchema.virtual('likeCount').get(function () {
-  return Array.isArray(this.likes) ? this.likes.length : 0;
-});
+// ── Virtuals ────────────────────────────────────────────────────────────────
 
 commentSchema.virtual('replyCount').get(function () {
   return Array.isArray(this.replies) ? this.replies.length : 0;
 });
 
-// Validate one-level replies and same-post constraint
+// ── Validation ──────────────────────────────────────────────────────────────
+
+// Replies must be same parent and only one level deep
 commentSchema.pre('validate', async function (next) {
-  if (!this.parentId) return next();
+  if (!this.replyTo) return next();
   try {
     const parent = await this.constructor
-      .findById(this.parentId)
-      .select('postId parentId');
+      .findById(this.replyTo)
+      .select('parentType parentId replyTo');
     if (!parent) return next(new Error('Parent comment not found'));
-    if (parent.postId.toString() !== this.postId.toString())
-      return next(new Error('Parent comment belongs to a different post'));
-    if (parent.parentId)
+    if (
+      parent.parentType !== this.parentType ||
+      parent.parentId.toString() !== this.parentId.toString()
+    ) {
+      return next(new Error('Reply must belong to the same content'));
+    }
+    if (parent.replyTo) {
       return next(
         new Error('Nested replies deeper than one level are not allowed')
       );
+    }
     next();
   } catch (e) {
     next(e);
   }
 });
+
+// Expose constant for route validation
+commentSchema.statics.COMMENTABLE_TYPES = COMMENTABLE_TYPES;
 
 module.exports = mongoose.model('Comment', commentSchema);

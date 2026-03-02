@@ -145,22 +145,22 @@ exports.deleteThought = async (req, res) => {
 };
 
 // ── Like ──────────────────────────────────────────────────────────────────────
-exports.likeThought = async (req, res) => {
-  try {
-    const thought = await Thought.findById(req.params.id);
-    if (!thought) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Thought not found' });
-    }
-    thought.likes += 1;
-    await thought.save();
-    res.status(200).json({ success: true, data: thought });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Server Error' });
-  }
-};
+// exports.likeThought = async (req, res) => {
+//   try {
+//     const thought = await Thought.findById(req.params.id);
+//     if (!thought) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: 'Thought not found' });
+//     }
+//     thought.likes += 1;
+//     await thought.save();
+//     res.status(200).json({ success: true, data: thought });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ success: false, message: 'Server Error' });
+//   }
+// };
 
 // ── Pin/unpin ─────────────────────────────────────────────────────────────────
 exports.pinThought = async (req, res) => {
