@@ -412,6 +412,10 @@ const CreateStory = () => {
             after the Dropzone unmounts. Same fix as PostCreator.js. */}
         <input {...getInputProps()} style={{ display: 'none' }} />
 
+        {/* Hidden file input — always in DOM so open() works after
+            Dropzone unmounts. Same fix as PostCreator.js. */}
+        <input {...getInputProps()} style={{ display: 'none' }} />
+
         {/* ── Main preview / dropzone ──────────────────────────────────── */}
         {media.length > 0 ? (
           <PreviewFrame>
@@ -484,7 +488,6 @@ const CreateStory = () => {
           </PreviewFrame>
         ) : (
           <Dropzone {...getRootProps()} $active={isDragActive}>
-            <input {...getInputProps()} />
             {isDragActive ? (
               <DropContent>
                 <DropIcon $active>
