@@ -408,6 +408,10 @@ const CreateStory = () => {
 
         {error && <InlineError>{error}</InlineError>}
 
+        {/* Hidden file input — MUST always be in the DOM so open() works
+            after the Dropzone unmounts. Same fix as PostCreator.js. */}
+        <input {...getInputProps()} style={{ display: 'none' }} />
+
         {/* ── Main preview / dropzone ──────────────────────────────────── */}
         {media.length > 0 ? (
           <PreviewFrame>
