@@ -33,6 +33,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { COLORS } from '../../theme';
 // ─── Easter egg ──────────────────────────────────────────────────────────────
 import EasterEggModal from '../easter/EasterEggModal';
+import Fireworks from '../easter/Fireworks';
 
 /**
  * AppNav — Instagram-style navigation
@@ -54,6 +55,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
   // ── easter egg activation ──────────────────────────────────────────────────
   const [easterEggOpen, setEasterEggOpen] = useState(false);
   const [planeVisible, setPlaneVisible] = useState(false);
+  const [fireworksVisible, setFireworksVisible] = useState(false);
   const tapCount = useRef(0);
   const tapTimer = useRef(null);
   const pressTimer = useRef(null);
@@ -80,14 +82,45 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       return;
     }
     tapCount.current += 1;
-    if (tapCount.current >= 4) {
+
+    // 4 taps → existing secret modal
+    if (tapCount.current === 4) {
+      e.preventDefault();
+      e.stopPropagation();
+      // Don't reset yet — let it keep counting toward 7
+      clearTimeout(tapTimer.current);
+      tapTimer.current = setTimeout(() => {
+        // If they stopped at 4, open the modal
+        if (tapCount.current === 4) {
+          setEasterEggOpen(true);
+        }
+        tapCount.current = 0;
+      }, 400);
+      return;
+    }
+
+    // 7 taps → fireworks
+    if (tapCount.current >= 7) {
       e.preventDefault();
       e.stopPropagation();
       tapCount.current = 0;
       clearTimeout(tapTimer.current);
-      setEasterEggOpen(true);
+      setFireworksVisible(true);
       return;
     }
+
+    // For taps 5-6, prevent navigation but keep counting
+    if (tapCount.current > 4) {
+      e.preventDefault();
+      e.stopPropagation();
+      clearTimeout(tapTimer.current);
+      tapTimer.current = setTimeout(() => {
+        tapCount.current = 0;
+      }, 400);
+      return;
+    }
+
+    // Taps 1-3: normal — reset after 400ms of inactivity
     clearTimeout(tapTimer.current);
     tapTimer.current = setTimeout(() => {
       tapCount.current = 0;
@@ -602,6 +635,9 @@ const AppNav = ({ onSearch, onClearSearch }) => {
         <EasterEggModal onClose={() => setEasterEggOpen(false)} />
       )}
       {planeVisible && <CrazyPlane onDone={() => setPlaneVisible(false)} />}
+      {fireworksVisible && (
+        <Fireworks onDone={() => setFireworksVisible(false)} />
+      )}
     </>
   );
 };
