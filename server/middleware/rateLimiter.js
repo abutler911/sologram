@@ -1,10 +1,10 @@
 // middleware/rateLimiter.js - Enhance with additional limiters
-const rateLimit = require("express-rate-limit");
+const rateLimit = require('express-rate-limit');
 
 const getClientIP = (req) => {
   return (
     req.ip ||
-    (req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
+    (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
     req.connection.remoteAddress ||
     req.socket.remoteAddress
   );
@@ -16,7 +16,7 @@ exports.apiLimiter = rateLimit({
   max: 100, // 100 requests per IP
   standardHeaders: true,
   legacyHeaders: false,
-  message: "Too many requests from this IP, please try again later",
+  message: 'Too many requests from this IP, please try again later',
   keyGenerator: getClientIP,
 });
 
@@ -26,7 +26,7 @@ exports.authLimiter = rateLimit({
   max: 10, // 10 attempts per IP
   standardHeaders: true,
   legacyHeaders: false,
-  message: "Too many authentication attempts, please try again later",
+  message: 'Too many authentication attempts, please try again later',
   keyGenerator: getClientIP,
 });
 
@@ -34,7 +34,7 @@ exports.authLimiter = rateLimit({
 exports.likeLimiter = rateLimit({
   windowMs: 24 * 60 * 60 * 1000,
   max: 3,
-  message: "Too many likes from this IP, please try again later",
+  message: 'Too many likes from this IP, please try again later',
   keyGenerator: (req) => {
     const ip = getClientIP(req);
     return `${ip}-${req.params.id}`;
@@ -49,7 +49,7 @@ exports.storyCreationLimiter = rateLimit({
   max: 20, // 20 stories per IP per hour
   standardHeaders: true,
   legacyHeaders: false,
-  message: "Too many stories created, please try again later",
+  message: 'Too many stories created, please try again later',
 });
 
 // Post creation rate limiter
@@ -58,5 +58,15 @@ exports.postCreationLimiter = rateLimit({
   max: 10, // 10 posts per IP per hour
   standardHeaders: true,
   legacyHeaders: false,
-  message: "Too many posts created, please try again later",
+  message: 'Too many posts created, please try again later',
+});
+
+// Quick thought webhook — tight limit
+exports.quickThoughtLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 thoughts per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Quick thought rate limit exceeded. Slow down.',
+  keyGenerator: () => 'quickThought-global',
 });

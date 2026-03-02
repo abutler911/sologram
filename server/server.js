@@ -26,6 +26,7 @@ const errorHandler = require('./middleware/errorHandler');
 const AppError = require('./utils/AppError');
 const linksRouter = require('./routes/links');
 const aiVisionRoutes = require('./routes/admin/aiVision');
+const { quickThoughtLimiter } = require('./middleware/rateLimiter');
 
 // ----------- Background Jobs -----------
 const {
@@ -121,7 +122,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/collections', collectionRoutes);
 app.use('/api/archived-stories', archivedStoryRoutes);
 app.use('/api/analytics', analyticsRoutes);
-app.use('/api/thoughts/quick', quickThoughtRoutes);
+app.use('/api/thoughts/quick', quickThoughtLimiter, quickThoughtRoutes);
 app.use('/api/thoughts', thoughtsRoutes);
 app.use('/api/admin/cloudinary', cloudinaryRoutes);
 app.use('/api/upload', uploadRoutes);
