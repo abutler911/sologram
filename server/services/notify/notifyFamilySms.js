@@ -1,9 +1,23 @@
+// services/notify/notifyFamilySms.js
 const { sendSmsWithRetry } = require('../sms/textbeltClient');
-const recipients = require('../../config/smsRecipients');
+const allRecipients = require('../../config/smsRecipients');
 
 const BRAND = 'SoloGram';
 const OPTOUT = ' - Stop=End';
 const QUOTA_THRESHOLD = 15;
+
+// ── Recipient filtering ───────────────────────────────────────────────────────
+// SMS_NOTIFY_GROUPS controls who gets texts.
+//   "dev"         → only recipients tagged group:'dev'
+//   "dev,family"  → both groups
+//   unset/empty   → all recipients (no filtering)
+function getActiveRecipients() {
+  const raw = (process.env.SMS_NOTIFY_GROUPS || '').trim();
+  if (!raw) return allRecipients; // no filter = everyone
+
+  const groups = new Set(raw.split(',').map((g) => g.trim().toLowerCase()));
+  return allRecipients.filter((r) => groups.has((r.group || '').toLowerCase()));
+}
 
 async function checkQuota(res) {
   if (
@@ -21,7 +35,6 @@ const truncate = (s, n) => {
   return s && s.length > limit ? s.slice(0, limit - 1) + '...' : s;
 };
 
-// Pulls the first sentence or first maxLen chars — whichever is shorter
 const excerpt = (text = '', maxLen = 100) => {
   if (!text) return null;
   const clean = text.replace(/\n+/g, ' ').trim();
@@ -37,7 +50,6 @@ function makeMessage({ kind, title, content, name, hours }) {
 
   switch (kind) {
     case 'thought': {
-      // Thoughts have no title — content IS the message
       const snippet = excerpt(content || title, 90);
       body = snippet
         ? `${fn}, Andrew posted a new thought on SoloGram: "${snippet}"`
@@ -60,7 +72,6 @@ function makeMessage({ kind, title, content, name, hours }) {
 
   let fullMessage = `${body}${OPTOUT}`;
 
-  // Hard cap at 160 chars
   if (fullMessage.length > 160) {
     fullMessage = `${truncate(body, 160 - OPTOUT.length)}${OPTOUT}`;
   }
@@ -69,8 +80,14 @@ function makeMessage({ kind, title, content, name, hours }) {
 }
 
 async function notifyFamilySms(kind, payload) {
+  const recipients = getActiveRecipients();
   const out = [];
-  console.log(`🚀 Starting SMS notifications for kind: ${kind}`);
+
+  console.log(
+    `🚀 SMS notify [${kind}] → ${recipients.length} recipient(s): ${recipients.map((r) => r.name).join(', ') || '(none)'}`
+  );
+
+  if (recipients.length === 0) return out;
 
   for (const r of recipients) {
     const message = makeMessage({
