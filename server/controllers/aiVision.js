@@ -1,31 +1,52 @@
 // controllers/aiVision.js
+// Accepts an image URL, sends to GPT-4o vision, returns { title, caption, tags }.
+// Detects model refusals and returns a proper error instead of passing them through.
+
 const OpenAI = require('openai');
 const { logger } = require('../utils/logger');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const VISION_PROMPT = `
-You are writing a SoloGram post for Andrew Butler based on an uploaded photograph.
+// ── Refusal detection ─────────────────────────────────────────────────────────
+const REFUSAL_PATTERNS = [
+  /i can'?t help/i,
+  /i'?m not able to/i,
+  /i cannot assist/i,
+  /i'?m unable to/i,
+  /against my guidelines/i,
+  /i can'?t process/i,
+  /i can'?t describe/i,
+  /i can'?t identify/i,
+  /sorry,? (but )?i/i,
+  /as an ai/i,
+];
 
-ANDREW'S PERSPECTIVE:
-Andrew is a street and portrait photographer with a background in emergency services and aviation. He values precision, prefers "show" over "tell," and has zero patience for sentimentality. He’s an observer, not a narrator.
-
-YOUR JOB:
-1. Analyze the image for specific details (light, texture, human interaction).
-2. Write a 1-3 sentence caption from Andrew's perspective.
-
-VOICE RULES:
-- **The "No-cliché" Zone:** Avoid words like "captured," "stunning," "journey," "moment," or "beauty." 
-- **Matter-of-Fact:** Talk about the photo like you're talking to a friend who is also a photographer. Mention the quality of the light or the oddness of the subject without over-explaining it.
-- **Background Context:** Only mention aviation, piano, or Utah if they are EXPLICITLY the subject of the photo. Do not use them as metaphors for "life."
-- **Formatting:** NO emojis. NO hashtags in the caption. Tight, dry, and grounded.
-
-Respond with ONLY valid JSON:
-{
-  "title": "A literal, non-clickbait title",
-  "caption": "The caption. Minimalist and specific.",
-  "tags": ["specific_location", "subject_matter", "technical_detail"]
+function isRefusal(text) {
+  return REFUSAL_PATTERNS.some((re) => re.test(text));
 }
+
+// ── System prompt (instructions only — no image context here) ─────────────────
+const SYSTEM_PROMPT = `
+You are a caption writer for a personal photo-sharing platform. You write short, first-person captions for photographs.
+
+VOICE:
+- First person. Casual, grounded, dry humor welcome.
+- Be specific about what you see — the light, the framing, the place, the moment.
+- 1-3 sentences max. Tight, not a journal entry.
+- No emojis. No hashtag culture. No "captured this gem" energy.
+- No inspirational quotes or life lessons.
+
+OUTPUT:
+Valid JSON only, no markdown fences, no preamble.
+{
+  "title": "Short specific title, max 60 chars",
+  "caption": "The caption, max 300 chars. Grounded, specific, no emojis.",
+  "tags": ["tag1", "tag2", "tag3"]
+}
+
+Tags: 3-5, lowercase, specific to what's in the image. Not generic like "photography" or "life".
+
+If you can see the image, describe what's in it and write the caption. Always attempt to provide a caption.
 `.trim();
 
 exports.generateCaption = async (req, res) => {
@@ -48,21 +69,32 @@ exports.generateCaption = async (req, res) => {
       context: { event: 'ai_vision_caption', imageUrl: imageUrl.slice(0, 80) },
     });
 
+    // Build the user message — image + optional location context
+    const userContent = [
+      {
+        type: 'image_url',
+        image_url: { url: imageUrl, detail: 'auto' },
+      },
+    ];
+
+    // Add location hint if available
+    if (coords) {
+      userContent.push({
+        type: 'text',
+        text: `Location context: coordinates ${coords.lat}, ${coords.lng}. Use as a hint for where this was taken — but trust the image over this if they conflict.`,
+      });
+    } else {
+      userContent.push({
+        type: 'text',
+        text: 'Write a caption for this photo.',
+      });
+    }
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: coords
-                ? `${VISION_PROMPT}\n\nLOCATION CONTEXT: The user is currently at coordinates ${coords.lat}, ${coords.lng}. Use this as context for where this photo might have been taken — but trust visual cues in the image over this location if they conflict. Do NOT assume the user is always in Utah.`
-                : VISION_PROMPT,
-            },
-            { type: 'image_url', image_url: { url: imageUrl, detail: 'low' } },
-          ],
-        },
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userContent },
       ],
       max_tokens: 400,
       temperature: 0.7,
@@ -71,6 +103,19 @@ exports.generateCaption = async (req, res) => {
     const raw = completion.choices[0].message.content.trim();
     const tokens = completion.usage?.total_tokens || 0;
 
+    // ── Check for model refusal before parsing ────────────────────────────
+    if (isRefusal(raw)) {
+      logger.warn('[aiVision] Model refused to caption image', {
+        context: { raw: raw.slice(0, 200), imageUrl: imageUrl.slice(0, 80) },
+      });
+      return res.status(422).json({
+        success: false,
+        message:
+          'The AI model was unable to generate a caption for this image. Try a different photo or write a caption manually.',
+      });
+    }
+
+    // ── Parse JSON response ───────────────────────────────────────────────
     let parsed;
     try {
       const cleaned = raw
@@ -79,14 +124,30 @@ exports.generateCaption = async (req, res) => {
         .trim();
       parsed = JSON.parse(cleaned);
     } catch {
-      logger.warn('[aiVision] JSON parse failed, using raw', {
-        context: { raw: raw.slice(0, 200) },
+      logger.warn('[aiVision] JSON parse failed, extracting from raw', {
+        context: { raw: raw.slice(0, 300) },
       });
-      parsed = { title: '', caption: raw, tags: [] };
+
+      // Try to salvage — GPT sometimes wraps valid JSON in extra text
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          parsed = JSON.parse(jsonMatch[0]);
+        } catch {
+          // Truly unparseable — use raw as caption
+          parsed = { title: '', caption: raw.slice(0, 300), tags: [] };
+        }
+      } else {
+        parsed = { title: '', caption: raw.slice(0, 300), tags: [] };
+      }
     }
 
     logger.info('[aiVision] Caption generated', {
-      context: { tokens, title: parsed.title },
+      context: {
+        tokens,
+        title: parsed.title,
+        captionLength: (parsed.caption || '').length,
+      },
     });
 
     res.status(200).json({
@@ -100,7 +161,7 @@ exports.generateCaption = async (req, res) => {
     });
   } catch (err) {
     logger.error('[aiVision] Caption generation failed', {
-      context: { error: err.message },
+      context: { error: err.message, stack: err.stack },
     });
     res.status(500).json({
       success: false,
