@@ -408,14 +408,6 @@ const CreateStory = () => {
 
         {error && <InlineError>{error}</InlineError>}
 
-        {/* Hidden file input — MUST always be in the DOM so open() works
-            after the Dropzone unmounts. Same fix as PostCreator.js. */}
-        <input {...getInputProps()} style={{ display: 'none' }} />
-
-        {/* Hidden file input — always in DOM so open() works after
-            Dropzone unmounts. Same fix as PostCreator.js. */}
-        <input {...getInputProps()} style={{ display: 'none' }} />
-
         {/* ── Main preview / dropzone ──────────────────────────────────── */}
         {media.length > 0 ? (
           <PreviewFrame>
@@ -488,6 +480,7 @@ const CreateStory = () => {
           </PreviewFrame>
         ) : (
           <Dropzone {...getRootProps()} $active={isDragActive}>
+            <input {...getInputProps()} />
             {isDragActive ? (
               <DropContent>
                 <DropIcon $active>
@@ -583,7 +576,19 @@ const CreateStory = () => {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  open();
+                  const el = document.createElement('input');
+                  el.type = 'file';
+                  el.accept =
+                    'image/jpeg,image/png,image/gif,video/mp4,video/quicktime';
+                  el.multiple = true;
+                  el.style.display = 'none';
+                  el.onchange = (ev) => {
+                    if (ev.target.files?.length)
+                      addFiles(Array.from(ev.target.files));
+                    document.body.removeChild(el);
+                  };
+                  document.body.appendChild(el);
+                  el.click();
                 }}
                 aria-label='Add more'
               >
