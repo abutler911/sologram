@@ -1,21 +1,22 @@
-import React, { createContext, useState, useEffect } from "react";
-import axios from "axios";
-import { toast } from "react-hot-toast";
+import React, { createContext, useState, useEffect } from 'react';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import { clearEngagementCache } from '../hooks/useEngagement';
 
 // Create context
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [token, setToken] = useState(localStorage.getItem('token'));
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Set axios default headers
   if (token) {
-    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   } else {
-    delete axios.defaults.headers.common["Authorization"];
+    delete axios.defaults.headers.common['Authorization'];
   }
 
   // Load user if token exists
@@ -23,11 +24,11 @@ export const AuthProvider = ({ children }) => {
     const loadUser = async () => {
       if (token) {
         try {
-          const res = await axios.get("/api/auth/me");
+          const res = await axios.get('/api/auth/me');
           setUser(res.data.data);
           setIsAuthenticated(true);
         } catch (err) {
-          localStorage.removeItem("token");
+          localStorage.removeItem('token');
           setToken(null);
           setUser(null);
           setIsAuthenticated(false);
@@ -41,20 +42,20 @@ export const AuthProvider = ({ children }) => {
   // Register user
   const register = async (formData) => {
     try {
-      const res = await axios.post("/api/auth/register", formData);
+      const res = await axios.post('/api/auth/register', formData);
 
-      localStorage.setItem("token", res.data.token);
+      localStorage.setItem('token', res.data.token);
       setToken(res.data.token);
       setUser(res.data.user);
       setIsAuthenticated(true);
 
-      toast.success("Registration successful!");
+      toast.success('Registration successful!');
       return true;
     } catch (err) {
       const errorMessage =
         err.response && err.response.data.message
           ? err.response.data.message
-          : "Registration failed";
+          : 'Registration failed';
 
       toast.error(errorMessage);
       return false;
@@ -64,20 +65,20 @@ export const AuthProvider = ({ children }) => {
   // Login user
   const login = async (email, password) => {
     try {
-      const res = await axios.post("/api/auth/login", { email, password });
+      const res = await axios.post('/api/auth/login', { email, password });
 
-      localStorage.setItem("token", res.data.token);
+      localStorage.setItem('token', res.data.token);
       setToken(res.data.token);
       setUser(res.data.user);
       setIsAuthenticated(true);
 
-      toast.success("Login successful!");
+      toast.success('Login successful!');
       return true;
     } catch (err) {
       const errorMessage =
         err.response && err.response.data.message
           ? err.response.data.message
-          : "Login failed";
+          : 'Login failed';
 
       toast.error(errorMessage);
       return false;
@@ -88,7 +89,7 @@ export const AuthProvider = ({ children }) => {
   const updateNotificationPreferences = async (preferences) => {
     try {
       const res = await axios.post(
-        "/api/notifications/preferences",
+        '/api/notifications/preferences',
         preferences
       );
 
@@ -97,13 +98,13 @@ export const AuthProvider = ({ children }) => {
         setUser(res.data.data.user);
       }
 
-      toast.success("Notification preferences updated");
+      toast.success('Notification preferences updated');
       return true;
     } catch (err) {
       const errorMessage =
         err.response && err.response.data.message
           ? err.response.data.message
-          : "Failed to update notification preferences";
+          : 'Failed to update notification preferences';
 
       toast.error(errorMessage);
       return false;
@@ -112,26 +113,27 @@ export const AuthProvider = ({ children }) => {
 
   // Logout user
   const logout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem('token');
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);
-    toast.success("Logged out successfully");
+    clearEngagementCache();
+    toast.success('Logged out successfully');
   };
 
   // Update profile
   const updateProfile = async (formData) => {
     try {
-      const res = await axios.put("/api/auth/update-profile", formData);
+      const res = await axios.put('/api/auth/update-profile', formData);
 
       setUser(res.data.data);
-      toast.success("Profile updated successfully");
+      toast.success('Profile updated successfully');
       return true;
     } catch (err) {
       const errorMessage =
         err.response && err.response.data.message
           ? err.response.data.message
-          : "Profile update failed";
+          : 'Profile update failed';
 
       toast.error(errorMessage);
       return false;
@@ -143,34 +145,34 @@ export const AuthProvider = ({ children }) => {
     try {
       const config = {
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       };
 
-      const res = await axios.put("/api/auth/update-bio", { bio }, config);
+      const res = await axios.put('/api/auth/update-bio', { bio }, config);
 
       setUser(res.data.data);
       return true;
     } catch (err) {
-      console.error("Bio update error:", err);
+      console.error('Bio update error:', err);
 
       // If endpoint doesn't exist yet (404), fall back to the profile endpoint
       if (err.response && err.response.status === 404) {
         try {
           const formData = new FormData();
-          formData.append("bio", bio);
+          formData.append('bio', bio);
 
-          const res = await axios.put("/api/auth/update-profile", formData);
+          const res = await axios.put('/api/auth/update-profile', formData);
 
           setUser(res.data.data);
           return true;
         } catch (fallbackErr) {
-          console.error("Fallback update error:", fallbackErr);
+          console.error('Fallback update error:', fallbackErr);
 
           const errorMessage =
             fallbackErr.response && fallbackErr.response.data.message
               ? fallbackErr.response.data.message
-              : "Bio update failed";
+              : 'Bio update failed';
 
           toast.error(errorMessage);
           return false;
@@ -179,7 +181,7 @@ export const AuthProvider = ({ children }) => {
         const errorMessage =
           err.response && err.response.data.message
             ? err.response.data.message
-            : "Bio update failed";
+            : 'Bio update failed';
 
         toast.error(errorMessage);
         return false;
@@ -199,7 +201,6 @@ export const AuthProvider = ({ children }) => {
         logout,
         updateProfile,
         updateBio,
-
         updateNotificationPreferences,
       }}
     >

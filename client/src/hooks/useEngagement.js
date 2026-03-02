@@ -1,0 +1,160 @@
+// hooks/useEngagement.js
+// ─────────────────────────────────────────────────────────────────────────────
+// Unified engagement hook — handles likes for any content type.
+// Replaces the old LikesContext which only worked for posts.
+//
+// Usage:
+//   const { liked, count, toggle, loading } = useEngagement('post', postId);
+//   const { liked, count, toggle }          = useEngagement('thought', thoughtId);
+//
+// Features:
+//   - Optimistic UI updates (instant feedback, rollback on error)
+//   - Per-item processing locks (no double-taps)
+//   - Caches state across renders
+//   - Works with any targetType the server supports
+// ─────────────────────────────────────────────────────────────────────────────
+import { useState, useCallback, useContext, useRef, useEffect } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { api } from '../services/api';
+import { toast } from 'react-hot-toast';
+
+// Module-level cache — shared across all hook instances, persists for session.
+// Key format: "post:abc123" → { liked: true, count: 5 }
+const cache = new Map();
+const processing = new Set();
+
+const key = (type, id) => `${type}:${id}`;
+
+export function useEngagement(targetType, targetId) {
+  const { isAuthenticated } = useContext(AuthContext);
+  const k = key(targetType, targetId);
+
+  // Local state seeded from cache
+  const [liked, setLiked] = useState(() => cache.get(k)?.liked ?? false);
+  const [count, setCount] = useState(() => cache.get(k)?.count ?? 0);
+  const [loading, setLoading] = useState(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // Sync from cache when targetId changes
+  useEffect(() => {
+    const cached = cache.get(k);
+    if (cached) {
+      setLiked(cached.liked);
+      setCount(cached.count);
+    }
+  }, [k]);
+
+  // Update both local state and cache
+  const update = useCallback(
+    (l, c) => {
+      cache.set(k, { liked: l, count: c });
+      if (mountedRef.current) {
+        setLiked(l);
+        setCount(c);
+      }
+    },
+    [k]
+  );
+
+  // ── Toggle like ───────────────────────────────────────────────────────────
+
+  const toggle = useCallback(async () => {
+    if (!isAuthenticated) {
+      toast.error('Please log in to like this');
+      return false;
+    }
+
+    if (processing.has(k)) return false;
+    processing.add(k);
+    setLoading(true);
+
+    // Optimistic update
+    const prevLiked = liked;
+    const prevCount = count;
+    update(!liked, liked ? Math.max(0, count - 1) : count + 1);
+
+    try {
+      const data = await api.toggleLike(targetType, targetId);
+      // Server is source of truth
+      update(data.liked, data.count);
+      return data.liked;
+    } catch (err) {
+      // Rollback
+      update(prevLiked, prevCount);
+      toast.error('Could not update like');
+      return false;
+    } finally {
+      processing.delete(k);
+      if (mountedRef.current) setLoading(false);
+    }
+  }, [isAuthenticated, k, liked, count, update, targetType, targetId]);
+
+  // ── Seed from server ──────────────────────────────────────────────────────
+  // Call this once per item to get initial state
+
+  const seed = useCallback(
+    (likedVal, countVal) => {
+      update(likedVal, countVal);
+    },
+    [update]
+  );
+
+  return { liked, count, toggle, loading, seed };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Batch check — call once when a list of items loads.
+//
+// Usage in a feed component:
+//   import { batchSeedLikes } from '../hooks/useEngagement';
+//
+//   useEffect(() => {
+//     if (isAuthenticated && posts.length) {
+//       batchSeedLikes('post', posts.map(p => p._id));
+//     }
+//   }, [posts, isAuthenticated]);
+//
+// Each useEngagement hook instance will pick up the cached values.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function batchSeedLikes(targetType, ids) {
+  if (!ids.length) return;
+
+  // Only check IDs we haven't cached yet
+  const uncached = ids.filter((id) => !cache.has(key(targetType, id)));
+  if (!uncached.length) return;
+
+  try {
+    const targets = uncached.map((id) => ({ type: targetType, id }));
+    const data = await api.batchCheckLikes(targets);
+
+    if (data.results) {
+      data.results.forEach((r) => {
+        const k = key(r.type, r.id);
+        const existing = cache.get(k);
+        cache.set(k, {
+          liked: r.liked,
+          count: existing?.count ?? 0, // count will be set by individual items
+        });
+      });
+    }
+  } catch (err) {
+    // Non-critical — items just won't show pre-filled like state
+    console.error('[batchSeedLikes]', err);
+  }
+}
+
+// Clear cache on logout
+export function clearEngagementCache() {
+  cache.clear();
+  processing.clear();
+}
+
+export default useEngagement;

@@ -23,10 +23,6 @@ export const api = {
   deletePost: (id) => del(`/api/posts/${id}`),
   deleteOrphanedMedia: (cloudinaryId) =>
     del(`/api/posts/media/${encodeURIComponent(cloudinaryId)}`),
-  likePost: (id) => post(`/api/posts/${id}/like`),
-  checkLikeStatus: (id) => get(`/api/posts/${id}/likes/check`),
-  batchCheckLikes: (postIds) =>
-    post('/api/posts/likes/check-batch', { postIds }),
 
   // ── STORIES ────────────────────────────────────────────────────────────────
   getStories: () => get('/api/stories'),
@@ -50,7 +46,6 @@ export const api = {
   createThought: (payload) => post('/api/thoughts', payload),
   updateThought: (id, payload) => put(`/api/thoughts/${id}`, payload),
   deleteThought: (id) => del(`/api/thoughts/${id}`),
-  likeThought: (id) => put(`/api/thoughts/${id}/like`),
   pinThought: (id) => put(`/api/thoughts/${id}/pin`),
 
   // ── MEMOIRS ────────────────────────────────────────────────────────────────
@@ -71,16 +66,47 @@ export const api = {
   removePostFromCollection: (colId, postId) =>
     del(`/api/collections/${colId}/posts/${postId}`),
 
-  // ── COMMENTS ───────────────────────────────────────────────────────────────
-  getCommentCount: (postId) => get(`/api/posts/${postId}/comments/count`),
-  getComments: (postId, page = 1) =>
-    get(`/api/posts/${postId}/comments`, { page }),
-  addComment: (postId, payload) =>
-    post(`/api/posts/${postId}/comments`, payload),
-  likeComment: (commentId) => post(`/api/comments/${commentId}/like`),
+  // ── UNIFIED LIKES ──────────────────────────────────────────────────────────
+  // Toggle a like on any content type (post, thought, story, comment)
+  toggleLike: (targetType, targetId) =>
+    post('/api/likes/toggle', { targetType, targetId }),
+
+  // Get like count (public, no auth needed)
+  getLikeCount: (targetType, targetId) =>
+    get('/api/likes/count', { targetType, targetId }),
+
+  // Batch check which items the current user has liked
+  // targets: [{ type: 'post', id: '...' }, { type: 'thought', id: '...' }]
+  batchCheckLikes: (targets) => post('/api/likes/check', { targets }),
+
+  // ── UNIFIED COMMENTS ───────────────────────────────────────────────────────
+  // Get comments for any content type
+  getComments: (parentType, parentId, page = 1) =>
+    get('/api/comments', { parentType, parentId, page }),
+
+  // Get comment count for any content type
+  getCommentCount: (parentType, parentId) =>
+    get('/api/comments/count', { parentType, parentId }),
+
+  // Add a comment to any content type
+  addComment: (parentType, parentId, text, replyTo = null) =>
+    post('/api/comments', { parentType, parentId, text, replyTo }),
+
+  // Delete a comment
   deleteComment: (commentId) => del(`/api/comments/${commentId}`),
+
+  // Get replies to a comment
   getReplies: (commentId, page = 1) =>
     get(`/api/comments/${commentId}/replies`, { page }),
+
+  // ── BACKWARD COMPAT (remove once all components are migrated) ──────────────
+  // Old post-like endpoints routing through the unified system
+  likePost: (id) =>
+    post('/api/likes/toggle', { targetType: 'post', targetId: id }),
+  likeThought: (id) =>
+    post('/api/likes/toggle', { targetType: 'thought', targetId: id }),
+  checkLikeStatus: (id) =>
+    get('/api/likes/count', { targetType: 'post', targetId: id }),
 
   // ── AUTH ───────────────────────────────────────────────────────────────────
   getMe: () => get('/api/auth/me'),
@@ -92,9 +118,9 @@ export const api = {
   // ── AI (admin) ────────────────────────────────────────────────────────────
   generateAIContent: (payload) =>
     post('/api/admin/ai-content/generate', payload),
-
   generateAICaption: (imageUrl, coords) =>
     post('/api/admin/ai-vision/caption', { imageUrl, coords }),
+
   // ── CLOUDINARY (admin) ─────────────────────────────────────────────────────
   getCloudinaryAssets: (params) => get('/api/admin/cloudinary', params),
   deleteCloudinaryAsset: (publicId) =>

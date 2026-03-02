@@ -1,5 +1,11 @@
 // components/posts/ThoughtCard.js
-import React, { useState, useRef, useEffect } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useContext,
+  useCallback,
+} from 'react';
 import { Link } from 'react-router-dom';
 import styled, { keyframes, css } from 'styled-components';
 import {
@@ -16,6 +22,8 @@ import { COLORS } from '../../theme';
 import { toast } from 'react-hot-toast';
 import { useLikeBurst } from '../animations/LikeBurst';
 import { formatDistanceToNow } from 'date-fns';
+import { AuthContext } from '../../context/AuthContext';
+import useEngagement from '../../hooks/useEngagement';
 
 // ─── Design tokens — mirrors PostCard's NOIR palette ─────────────────────────
 const NOIR = {
@@ -33,7 +41,6 @@ const ThoughtCard = ({
   thought,
   defaultUser,
   formatDate,
-  handleLike,
   handlePin,
   canCreateThought,
   onDelete,
@@ -42,6 +49,17 @@ const ThoughtCard = ({
   const { triggerBurst, BurstPortal } = useLikeBurst();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+
+  const { isAuthenticated } = useContext(AuthContext);
+  const { liked, count, toggle, loading, seed } = useEngagement(
+    'thought',
+    thought._id
+  );
+
+  // Seed like count from server data on mount
+  useEffect(() => {
+    seed(false, thought.likes || 0);
+  }, [thought._id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -53,12 +71,20 @@ const ThoughtCard = ({
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  const onLike = (e) => {
-    setLikeAnimating(true);
-    setTimeout(() => setLikeAnimating(false), 500);
-    handleLike(thought._id);
-    if (!thought.userHasLiked) triggerBurst(e);
-  };
+  const onLike = useCallback(
+    (e) => {
+      if (!isAuthenticated) {
+        toast.error('Please log in to like this');
+        return;
+      }
+      if (loading) return;
+      setLikeAnimating(true);
+      setTimeout(() => setLikeAnimating(false), 500);
+      toggle();
+      if (!liked) triggerBurst(e);
+    },
+    [isAuthenticated, loading, toggle, liked, triggerBurst]
+  );
 
   const onShare = () => {
     const url = `${window.location.origin}/thoughts/${thought._id}`;
@@ -154,12 +180,13 @@ const ThoughtCard = ({
         <FooterRight>
           <ActionBtn
             onClick={(e) => onLike(e)}
-            $active={thought.userHasLiked}
+            $active={liked}
             $animating={likeAnimating}
+            disabled={loading}
             aria-label='Like'
           >
-            {thought.userHasLiked ? <FaHeart /> : <FaRegHeart />}
-            {thought.likes > 0 && <ActionCount>{thought.likes}</ActionCount>}
+            {liked ? <FaHeart /> : <FaRegHeart />}
+            {count > 0 && <ActionCount>{count}</ActionCount>}
           </ActionBtn>
 
           <ActionBtn onClick={onShare} aria-label='Share'>
@@ -457,11 +484,16 @@ const ActionBtn = styled.button`
       }
     `}
 
-  &:hover {
+  &:hover:not(:disabled) {
     color: ${(p) => (p.$active ? NOIR.salmon : NOIR.ink)};
     svg {
       transform: scale(1.15);
     }
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
   }
 `;
 

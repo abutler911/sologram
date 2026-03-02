@@ -25,13 +25,13 @@ import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { useSwipeable } from 'react-swipeable';
 
-import { LikesContext } from '../../context/LikesContext';
 import { useDeleteModal } from '../../context/DeleteModalContext';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { getTransformedImageUrl } from '../../utils/cloudinary';
 import { COLORS } from '../../theme';
 import { useLikeBurst } from '../animations/LikeBurst';
+import useEngagement from '../../hooks/useEngagement';
 import authorImg from '../../assets/andy.jpg';
 
 const CommentModal = lazy(() =>
@@ -68,11 +68,6 @@ const dropIn = keyframes`
   to   { opacity: 1; transform: translateY(0)    scale(1);    }
 `;
 
-const revealUp = keyframes`
-  from { opacity: 0; transform: translateY(28px); }
-  to   { opacity: 1; transform: translateY(0); }
-`;
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
@@ -92,12 +87,21 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const cardRef = useRef(null);
   const actionsRef = useRef(null);
 
-  const { isAuthenticated, user } = useContext(AuthContext);
+  const { isAuthenticated } = useContext(AuthContext);
   const { triggerBurst, BurstPortal } = useLikeBurst();
   const { showDeleteModal } = useDeleteModal();
-  const { likePost, likedPosts, isProcessing } = useContext(LikesContext);
 
-  const hasLiked = likedPosts[post?._id] || false;
+  // ── Unified engagement hook ───────────────────────────────────────────────
+  const { liked, count, toggle, loading, seed } = useEngagement(
+    'post',
+    post._id
+  );
+
+  // Seed like count from server data on mount / post change
+  useEffect(() => {
+    seed(false, post.likes || 0);
+  }, [post._id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const formattedDate = format(
     new Date(post.eventDate || post.createdAt),
     'MMM d, yyyy'
@@ -130,13 +134,13 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     return () => document.removeEventListener('mousedown', h);
   }, [showActions]);
 
-  // ── Comments ──────────────────────────────────────────────────────────────
+  // ── Comments (unified polymorphic) ────────────────────────────────────────
 
   const fetchComments = useCallback(async () => {
     if (!post._id) return;
     setLoadingC(true);
     try {
-      const data = await api.getComments(post._id);
+      const data = await api.getComments('post', post._id);
       const list = Array.isArray(data.comments) ? data.comments : [];
       setComments(list);
       if (typeof data.total === 'number') setCommentCount(data.total);
@@ -160,7 +164,10 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
         return;
       }
       try {
-        const data = await api.addComment(post._id, commentData);
+        // commentData can be { text, replyTo } or { text }
+        const text = commentData.text || commentData;
+        const replyTo = commentData.replyTo || commentData.parentId || null;
+        const data = await api.addComment('post', post._id, text, replyTo);
         const newComment = data.comment;
         if (!newComment) throw new Error('Bad response from server');
         setComments((prev) => [newComment, ...prev]);
@@ -193,10 +200,14 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
         return;
       }
       try {
-        const data = await api.likeComment(commentId);
-        if (!data.comment) throw new Error('Bad response');
+        const data = await api.toggleLike('comment', commentId);
+        // Update the comment's like state in local list
         setComments((prev) =>
-          prev.map((c) => (c._id === commentId ? data.comment : c))
+          prev.map((c) =>
+            c._id === commentId
+              ? { ...c, likes: data.count, hasLiked: data.liked }
+              : c
+          )
         );
       } catch {
         toast.error('Could not update like');
@@ -205,25 +216,20 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     [isAuthenticated]
   );
 
-  // ── Post like ─────────────────────────────────────────────────────────────
+  // ── Post like (unified) ───────────────────────────────────────────────────
 
-  const handleLike = useCallback(() => {
-    if (!isAuthenticated || isProcessing || hasLiked) return;
-    likePost(post._id, (updatedPost) => {
-      setPost((prev) => ({
-        ...prev,
-        likes: updatedPost?.likes ?? (prev.likes || 0) + 1,
-      }));
-      if (onLike) onLike(post._id);
-    });
-  }, [post._id, isProcessing, hasLiked, isAuthenticated, likePost, onLike]);
+  const handleLike = useCallback(async () => {
+    if (!isAuthenticated || loading) return;
+    const result = await toggle();
+    if (result !== false && onLike) onLike(post._id);
+  }, [isAuthenticated, loading, toggle, onLike, post._id]);
 
   const handleDoubleTapLike = useCallback(() => {
     if (!isAuthenticated) return;
-    if (!hasLiked) handleLike();
+    if (!liked) handleLike();
     setDTLike(true);
     setTimeout(() => setDTLike(false), 900);
-  }, [isAuthenticated, hasLiked, handleLike]);
+  }, [isAuthenticated, liked, handleLike]);
 
   // ── Location ──────────────────────────────────────────────────────────────
 
@@ -409,16 +415,15 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
         <ActionBar>
           <ActionBtn
             onClick={(e) => {
-              handleLike(e);
-              if (!hasLiked && isAuthenticated && !isProcessing)
-                triggerBurst(e);
+              handleLike();
+              if (!liked && isAuthenticated && !loading) triggerBurst(e);
             }}
-            $active={hasLiked}
-            disabled={!isAuthenticated || isProcessing}
+            $active={liked}
+            disabled={!isAuthenticated || loading}
             aria-label='Like post'
           >
-            {hasLiked ? <FaHeart /> : <FaRegHeart />}
-            <span>{post.likes || 0}</span>
+            {liked ? <FaHeart /> : <FaRegHeart />}
+            <span>{count}</span>
           </ActionBtn>
 
           <ActionBtn onClick={handleOpenComments} aria-label='Open comments'>
