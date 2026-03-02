@@ -19,48 +19,59 @@ const VALID_MOODS = [
   'amused',
 ];
 const DEFAULT_MOOD = 'reflective';
-const MAX_CONTENT_LENGTH = 800; // matches Thought schema maxlength
+const MAX_CONTENT_LENGTH = 800;
+
+// Quieter moods → all lowercase. Forward-momentum moods → standard case.
+const LOWERCASE_MOODS = new Set(['calm', 'reflective', 'nostalgic', 'amused']);
 
 const REFINE_PROMPT = `
-You are the internal monologue filter for Andrew Butler. 
+You are a text filter. Your job is to clean up raw, messy input into a tighter version of EXACTLY what the person said. You are not a writer. You are a copy editor with a light touch.
 
-ANDREW'S WORLD: 
-49-year-old Delta A220 First Officer, street photographer, and beginner pianist living in Utah. He values independent thinking, dry humor, and the "beginner's mind."
+### WHAT YOU DO
+- Fix typos, remove filler words, tighten phrasing.
+- Preserve the original meaning, tone, and specificity. Do not add ideas.
+- If the input is already tight, return it nearly unchanged.
+- If it's short, keep it short. One sentence is fine. A fragment is fine.
 
-### THE MISSION
-Strip away the "AI fluff." Transform raw, messy input into a grounded, unvarnished observation. 
+### WHAT YOU NEVER DO
+- Add metaphors, analogies, or poetic language the input didn't have.
+- Reference hobbies, jobs, or interests not explicitly in the input.
+- Add a conclusion, lesson, moral, or wrap-up sentence.
+- Start with "There's something about..." or any throat-clearing opener.
+- Use any of these words: tapestry, whispers, vibrant, dance, embrace, journey, delicate, unfold, testament, symphony, pinnacle, soul, canvas, rhythm, heartbeat, ballet, orchestrate.
 
-### THE VOICE (The "Andrew" Lens)
-- **Anti-Analogy:** NEVER use aviation, piano, or photography as metaphors for "life" or "emotions." Only mention these topics if the raw input is explicitly about them.
-- **Observational:** Describe the frame, the light, or the literal object. Do not explain the feeling or the "why."
-- **The Cut-Off:** Never conclude with a "moral," a "lesson," or a summary sentence. End abruptly on the final observation.
-- **No Self-Attribution:** Avoid "I feel like..." or "I think that..." Just state the observation as a fact.
+### CASING
+Choose a casing style based on the mood you assign:
+- If mood is calm, reflective, nostalgic, or amused → output content in ALL LOWERCASE. No capital letters at all. Not even "I". This should feel like a text you send yourself.
+- If mood is inspired, excited, curious, or creative → use standard sentence case.
 
-### THE BLACK LIST (Forbidden AI-isms)
-"tapestry", "whispers", "vibrant", "dance", "embrace", "journey", "delicate", "unfold", "testament", "orchestrating", "symphony", "pinnacle", "soul", "heartbeat", "canvas", "ballet", "rhythm of life".
+### MOOD
+Pick exactly one: inspired, reflective, excited, creative, calm, curious, nostalgic, amused.
+Choose based on the emotional register of the input, not what sounds nice.
 
-### CONTEXT ANCHORS (Use ONLY for literal topics)
-- **Aviation:** A220, ATL training, flight deck discipline.
-- **Piano:** Czerny exercises, left-hand coordination, Greensleeves.
-- **Photo:** Canon R50, street geometry, light.
+### TAGS
+Max 3. Lowercase. Pulled from what the input is actually about. No generic tags like "life" or "thoughts".
 
-### RULES
-1. OUTPUT ONLY VALID JSON.
-2. If input is short, keep output short. Do not fluff.
-3. Keep content under 750 characters.
-4. Mood MUST be exactly one: inspired, reflective, excited, creative, calm, curious, nostalgic, amused.
-5. Tags: max 3, lowercase, specific.
-
-{"content":"the polished thought","mood":"mood_word","tags":["tag1","tag2"]}
+### OUTPUT
+Valid JSON only. Nothing else.
+{"content":"the cleaned-up thought","mood":"mood_word","tags":["tag1","tag2"]}
 `.trim();
 
 /**
- * Validate and sanitise the mood value against the schema enum.
+ * Validate mood against schema enum.
  */
 function validMood(raw) {
   if (!raw) return DEFAULT_MOOD;
   const normalised = raw.toLowerCase().trim();
   return VALID_MOODS.includes(normalised) ? normalised : DEFAULT_MOOD;
+}
+
+/**
+ * Apply casing rules based on mood.
+ * Lowercase moods get fully lowercased content.
+ */
+function applyCasing(content, mood) {
+  return LOWERCASE_MOODS.has(mood) ? content.toLowerCase() : content;
 }
 
 async function refineThought(rawText) {
@@ -74,7 +85,7 @@ async function refineThought(rawText) {
         { role: 'system', content: REFINE_PROMPT },
         { role: 'user', content: rawText },
       ],
-      temperature: 0.5,
+      temperature: 0.4,
       max_tokens: 400,
     });
 
@@ -83,7 +94,6 @@ async function refineThought(rawText) {
     // ── Validate against Thought schema constraints ───────────────────────
     let content = parsed.content || rawText;
     if (content.length > MAX_CONTENT_LENGTH) {
-      // Truncate at last sentence boundary before the limit
       const truncated = content.slice(0, MAX_CONTENT_LENGTH);
       const lastPeriod = truncated.lastIndexOf('.');
       content =
@@ -93,6 +103,8 @@ async function refineThought(rawText) {
     }
 
     const mood = validMood(parsed.mood);
+    content = applyCasing(content, mood);
+
     const tags = Array.isArray(parsed.tags)
       ? parsed.tags.map((t) => String(t).toLowerCase().trim()).slice(0, 3)
       : [];
@@ -104,6 +116,7 @@ async function refineThought(rawText) {
         contentLength: content.length,
         moodRaw: parsed.mood,
         moodResolved: mood,
+        casing: LOWERCASE_MOODS.has(mood) ? 'lowercase' : 'standard',
       },
     });
 
@@ -112,7 +125,6 @@ async function refineThought(rawText) {
     logger.error('[thoughtRefiner] Critical Failure', {
       context: { error: error.message, stack: error.stack },
     });
-    // Fallback: pass through raw text with safe defaults
     return {
       content: rawText.slice(0, MAX_CONTENT_LENGTH),
       mood: DEFAULT_MOOD,
