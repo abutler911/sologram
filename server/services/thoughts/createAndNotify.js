@@ -55,20 +55,23 @@ async function createAndNotify(data) {
     )
     .catch((e) => console.error('[SMS notify error]', e?.message || e));
 
-  // ── Email fan-out (fire-and-forget) ─────────────────────────────────────
+  // ── Email fan-out (fire-and-forget, parallel) ───────────────────────────
   User.find({})
-    .then(async (users) => {
-      for (const user of users) {
-        await sendEmail({
-          to: user.email,
-          subject: `[SoloGram] Andy shared a new thought ${randomEmoji()}`,
-          html: buildThoughtEmail({
-            content: thought.content,
-            thoughtId: thought._id.toString(),
-          }),
-        });
-      }
-    })
+    .lean()
+    .then((users) =>
+      Promise.allSettled(
+        users.map((user) =>
+          sendEmail({
+            to: user.email,
+            subject: `[SoloGram] Andy shared a new thought ${randomEmoji()}`,
+            html: buildThoughtEmail({
+              content: thought.content,
+              thoughtId: thought._id.toString(),
+            }),
+          })
+        )
+      )
+    )
     .catch((e) => console.error('[Email notify error]', e?.message || e));
 
   return thought;
