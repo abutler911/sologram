@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { clearEngagementCache } from '../hooks/useEngagement';
+import { clearEngagementCache } from '../../hooks/useEngagement';
 
 export const AuthContext = createContext();
 
