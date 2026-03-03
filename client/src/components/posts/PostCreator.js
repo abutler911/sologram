@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
 import MediaItem from './PostCreator/media/MediaItem';
+import useUploadCleanup from '../../hooks/useUploadCleanup';
 
 import {
   Container,
@@ -630,7 +631,7 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
   const navigate = useNavigate();
   const { startUpload, cancelUpload, uploadProgress, mountedRef } =
     useUploadManager(setMedia);
-
+  const { trackUpload, untrackUpload, markSaved } = useUploadCleanup();
   const mediaRef = useRef(media);
   useEffect(() => {
     mediaRef.current = media;
@@ -765,9 +766,13 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
       setMedia((prev) => [...prev, ...newItems]);
 
       newItems.forEach((item) => {
-        startUpload(item.file, item.id, item.mediaType).catch((err) => {
-          console.error(`Upload failed for ${item.id}:`, err);
-        });
+        startUpload(item.file, item.id, item.mediaType)
+          .then((result) => {
+            if (result?.cloudinaryId) trackUpload(result.cloudinaryId);
+          })
+          .catch((err) => {
+            console.error(`Upload failed for ${item.id}:`, err);
+          });
       });
     },
     [startUpload]
@@ -805,6 +810,7 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
         }
 
         if (!item.isExisting && item.cloudinaryId) {
+          untrackUpload(item.cloudinaryId);
           api.deleteOrphanedMedia(item.cloudinaryId).catch((err) => {
             console.warn('[Cloudinary cleanup]', err?.message || err);
           });
@@ -936,6 +942,7 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
         if (onSuccess) await onSuccess(initialData._id);
 
         toast.success('Post updated successfully!');
+        markSaved();
         navigate(`/post/${initialData._id}`);
         return;
       } else {
@@ -959,6 +966,7 @@ function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
 
         response = await api.createPost(payload);
         toast.success('Post created successfully!');
+        markSaved();
       }
 
       const postId = response?.data?._id ?? response?._id;

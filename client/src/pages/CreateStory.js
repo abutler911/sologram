@@ -24,6 +24,7 @@ import { api } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { COLORS } from '../theme';
 import { useUploadManager } from '../hooks/useUploadManager';
+import useUploadCleanup from '../hooks/useUploadCleanup';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -69,6 +70,7 @@ const CreateStory = () => {
   const { startUpload, cancelUpload } = useUploadManager(setMedia, {
     folder: 'sologram',
   });
+  const { trackUpload, untrackUpload, markSaved } = useUploadCleanup();
 
   // ── Auth guard ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -174,9 +176,17 @@ const CreateStory = () => {
         return [...prev, ...newItems];
       });
 
-      for (const item of newItems) startUpload(item.file, item.id, item.type);
+      for (const item of newItems) {
+        startUpload(item.file, item.id, item.type)
+          .then((result) => {
+            if (result?.cloudinaryId) trackUpload(result.cloudinaryId);
+          })
+          .catch((err) => {
+            console.error(`Upload failed for ${item.id}:`, err);
+          });
+      }
     },
-    [media.length, startUpload]
+    [media.length, startUpload, trackUpload]
   );
 
   // ── Dropzone ───────────────────────────────────────────────────────────────
@@ -223,13 +233,20 @@ const CreateStory = () => {
               URL.revokeObjectURL(item.previewUrl);
             } catch (_) {}
           }
+          // Clean up from Cloudinary if already uploaded
+          if (item.cloudinaryId) {
+            untrackUpload(item.cloudinaryId);
+            api.deleteOrphanedMedia(item.cloudinaryId).catch((err) => {
+              console.warn('[Cloudinary cleanup]', err?.message || err);
+            });
+          }
         }
         const next = prev.filter((_, i) => i !== index);
         setSelectedIndex((si) => Math.min(si, Math.max(next.length - 1, 0)));
         return next;
       });
     },
-    [cancelUpload]
+    [cancelUpload, untrackUpload]
   );
 
   const removeAll = useCallback(() => {
@@ -241,11 +258,18 @@ const CreateStory = () => {
             URL.revokeObjectURL(item.previewUrl);
           } catch (_) {}
         }
+        // Clean up from Cloudinary if already uploaded
+        if (item.cloudinaryId) {
+          untrackUpload(item.cloudinaryId);
+          api.deleteOrphanedMedia(item.cloudinaryId).catch((err) => {
+            console.warn('[Cloudinary cleanup]', err?.message || err);
+          });
+        }
       });
       return [];
     });
     setSelectedIndex(0);
-  }, [cancelUpload]);
+  }, [cancelUpload, untrackUpload]);
 
   // ── Camera capture ─────────────────────────────────────────────────────────
   const captureMedia = useCallback(
@@ -312,6 +336,7 @@ const CreateStory = () => {
       });
       toast.dismiss(toastId);
       toast.success('Story created!', { icon: '🎉' });
+      markSaved();
       navigate('/');
     } catch (err) {
       toast.dismiss(toastId);
@@ -323,7 +348,7 @@ const CreateStory = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [media, title, caption, anyUploading, anyError, navigate]);
+  }, [media, title, caption, anyUploading, anyError, navigate, markSaved]);
 
   const handleVisionCaption = useCallback(async () => {
     const firstImage = media.find((m) => m.type === 'image' && m.mediaUrl);
@@ -598,7 +623,6 @@ const CreateStory = () => {
           </ThumbStrip>
         )}
 
-        {/* ── Title ────────────────────────────────────────────────────── */}
         {/* ── AI Vision ────────────────────────────────────────────────── */}
         {media.length > 0 &&
           media.some((m) => m.type === 'image' && m.mediaUrl) && (
@@ -614,6 +638,8 @@ const CreateStory = () => {
               </span>
             </VisionButton>
           )}
+
+        {/* ── Title ────────────────────────────────────────────────────── */}
         <FieldBlock>
           <FieldInput
             value={title}

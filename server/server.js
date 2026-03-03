@@ -51,6 +51,7 @@ const copilotRoutes = require('./routes/copilot');
 const memoirRoutes = require('./routes/memoirs');
 const activityRoutes = require('./routes/activity');
 const likesRoutes = require('./routes/likes');
+const cleanupRoutes = require('./routes/cleanup');
 
 // ----------- App Initialization -----------
 const app = express();
@@ -136,7 +137,7 @@ app.use('/api/copilot', copilotRoutes);
 app.use('/api/memoirs', memoirRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/vault/docs', require('./routes/vaultDocs'));
-
+app.use('/api/cleanup', cleanupRoutes);
 // ----------- Lightweight Health Check -----------
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
