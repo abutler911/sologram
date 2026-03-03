@@ -1,3 +1,5 @@
+// navigation/AppNav.js
+// Thin orchestrator — owns state, delegates rendering to sub-components.
 import React, {
   useContext,
   useEffect,
@@ -6,53 +8,46 @@ import React, {
   useState,
   useCallback,
 } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import styled, { keyframes, css } from 'styled-components';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  FaBook,
   FaHome,
-  FaSearch,
-  FaPlus,
+  FaLightbulb,
   FaFolder,
-  FaFolderOpen,
   FaUser,
   FaCamera,
   FaImages,
-  FaLightbulb,
   FaRobot,
-  FaSignInAlt,
-  FaSignOutAlt,
-  FaTimes,
   FaArchive,
-  FaShieldAlt,
-  FaMagic,
-  FaChevronRight,
-  FaBars,
 } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
-import { COLORS } from '../../theme';
-// ─── Easter egg ──────────────────────────────────────────────────────────────
+
+import TopBar from './TopBar';
+import Sidebar from './Sidebar';
+import BottomBar from './BottomBar';
+import SearchOverlay from './SearchOverlay';
+import CreateSheet from './CreateSheet';
+import CommandPalette from './CommandPalette';
+import CrazyPlane from './CrazyPlane';
 import EasterEggModal from '../easter/EasterEggModal';
 import Fireworks from '../easter/Fireworks';
 
-/**
- * AppNav — Instagram-style navigation
- */
 const AppNav = ({ onSearch, onClearSearch }) => {
   const { isAuthenticated, user, logout } = useContext(AuthContext);
   const location = useLocation();
   const navigate = useNavigate();
+
   const isAdmin = user?.role === 'admin';
   const canCreate =
     isAuthenticated && (user?.role === 'admin' || user?.role === 'creator');
-  // ── overlay state ──────────────────────────────────────────────────────────
+
+  // ── Overlay state ──────────────────────────────────────────────────────────
   const [searchOpen, setSearchOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef(null);
 
-  // ── easter egg activation ──────────────────────────────────────────────────
+  // ── Easter egg state ───────────────────────────────────────────────────────
   const [easterEggOpen, setEasterEggOpen] = useState(false);
   const [planeVisible, setPlaneVisible] = useState(false);
   const [fireworksVisible, setFireworksVisible] = useState(false);
@@ -83,23 +78,17 @@ const AppNav = ({ onSearch, onClearSearch }) => {
     }
     tapCount.current += 1;
 
-    // 4 taps → existing secret modal
     if (tapCount.current === 4) {
       e.preventDefault();
       e.stopPropagation();
-      // Don't reset yet — let it keep counting toward 7
       clearTimeout(tapTimer.current);
       tapTimer.current = setTimeout(() => {
-        // If they stopped at 4, open the modal
-        if (tapCount.current === 4) {
-          setEasterEggOpen(true);
-        }
+        if (tapCount.current === 4) setEasterEggOpen(true);
         tapCount.current = 0;
       }, 400);
       return;
     }
 
-    // 7 taps → fireworks
     if (tapCount.current >= 7) {
       e.preventDefault();
       e.stopPropagation();
@@ -109,7 +98,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       return;
     }
 
-    // For taps 5-6, prevent navigation but keep counting
     if (tapCount.current > 4) {
       e.preventDefault();
       e.stopPropagation();
@@ -120,14 +108,12 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       return;
     }
 
-    // Taps 1-3: normal — reset after 400ms of inactivity
     clearTimeout(tapTimer.current);
     tapTimer.current = setTimeout(() => {
       tapCount.current = 0;
     }, 400);
   }, []);
 
-  // cleanup on unmount
   useEffect(() => {
     return () => {
       clearTimeout(tapTimer.current);
@@ -135,9 +121,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
     };
   }, []);
 
-  // plane dismisses itself via onDone callback
-
-  // shared handler object to spread on logo elements
   const logoEasterEgg = {
     onPointerDown: onLogoPointerDown,
     onPointerUp: onLogoPressCancel,
@@ -146,23 +129,26 @@ const AppNav = ({ onSearch, onClearSearch }) => {
     onContextMenu: (e) => e.preventDefault(),
   };
 
-  // ── sync URL search param → local state ───────────────────────────────────
+  // ── Sync URL search param ─────────────────────────────────────────────────
   useEffect(() => {
     const q = new URLSearchParams(location.search).get('search') || '';
     setSearchQuery(q);
     if (location.pathname === '/' && q && onSearch) onSearch(q);
   }, [location, onSearch]);
-  // ── close overlays on navigation ──────────────────────────────────────────
+
+  // ── Close overlays on navigation ──────────────────────────────────────────
   useEffect(() => {
     setCreateOpen(false);
     setSearchOpen(false);
   }, [location.pathname]);
-  // ── auto-focus search input ────────────────────────────────────────────────
+
+  // ── Auto-focus search input ───────────────────────────────────────────────
   useEffect(() => {
     if (searchOpen)
       requestAnimationFrame(() => searchInputRef.current?.focus());
   }, [searchOpen]);
-  // ── keyboard shortcuts ─────────────────────────────────────────────────────
+
+  // ── Keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e) => {
       const mod = navigator.platform.includes('Mac') ? e.metaKey : e.ctrlKey;
@@ -179,7 +165,8 @@ const AppNav = ({ onSearch, onClearSearch }) => {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
-  // ── helpers ────────────────────────────────────────────────────────────────
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
   const isActive = useCallback(
     (path) =>
       path === '/'
@@ -187,36 +174,41 @@ const AppNav = ({ onSearch, onClearSearch }) => {
         : location.pathname.startsWith(path),
     [location]
   );
+
   const doLogout = () => {
     logout();
     navigate('/login');
   };
+
   const triggerSearch = (e) => {
     e?.preventDefault();
     const q = searchQuery.trim();
     if (q) {
       onSearch?.(q);
       if (location.pathname !== '/')
-        navigate(`/?search=${encodeURIComponent(q)}`);
+        navigate('/?search=' + encodeURIComponent(q));
     } else {
       onClearSearch?.();
     }
     setSearchOpen(false);
   };
+
   const clearSearch = () => {
     setSearchQuery('');
     onClearSearch?.();
     searchInputRef.current?.focus();
   };
+
   const goCreate = (to) => {
     setCreateOpen(false);
     navigate(to);
   };
-  // avatar initials
+
   const initials = user?.username
     ? user.username.slice(0, 2).toUpperCase()
     : '?';
-  // command palette items
+
+  // ── Command palette items ─────────────────────────────────────────────────
   const paletteItems = useMemo(() => {
     const base = [
       { label: 'Home', icon: <FaHome />, to: '/' },
@@ -229,7 +221,11 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       base.push(
         { label: 'New Post', icon: <FaCamera />, to: '/create' },
         { label: 'New Story', icon: <FaImages />, to: '/create-story' },
-        { label: 'New Thought', icon: <FaLightbulb />, to: '/thoughts/create' },
+        {
+          label: 'New Thought',
+          icon: <FaLightbulb />,
+          to: '/thoughts/create',
+        },
         {
           label: 'New Collection',
           icon: <FaFolder />,
@@ -243,384 +239,63 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       );
     return base;
   }, [canCreate, isAdmin]);
-  // ── render ─────────────────────────────────────────────────────────────────
+
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {/*  MOBILE TOP BAR                                                      */}
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      <TopBar>
-        <TopBarInner>
-          <LogoBrand>
-            <Logo to='/' {...logoEasterEgg}>
-              <LogoText>SoloGram</LogoText>
-            </Logo>
-            <TopBarTagline>One Voice. Infinite Moments.</TopBarTagline>
-          </LogoBrand>
-          <TopBarActions>
-            {canCreate && (
-              <TopBarIconLink
-                to='/story-archive'
-                $active={isActive('/story-archive')}
-                title='Story Archive'
-              >
-                <FaArchive />
-              </TopBarIconLink>
-            )}
-            {isAuthenticated ? (
-              <AvatarButton
-                onClick={() => navigate('/profile')}
-                aria-label='Profile'
-              >
-                {initials}
-              </AvatarButton>
-            ) : (
-              <TopBarIconLink to='/login' title='Sign in'>
-                <FaSignInAlt />
-              </TopBarIconLink>
-            )}
-          </TopBarActions>
-        </TopBarInner>
-      </TopBar>
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {/*  DESKTOP LEFT SIDEBAR                                                */}
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      <Sidebar>
-        <SideInner>
-          {/* Logo */}
-          <SideLogoLink to='/' {...logoEasterEgg}>
-            <NarrowMark>S</NarrowMark>
-            <SideLogoWrap>
-              <SideLogoText>SoloGram</SideLogoText>
-              <SideTagline>One Voice. Infinite Moments.</SideTagline>
-            </SideLogoWrap>
-          </SideLogoLink>
-          <SideDivider />
-          {/* Primary nav */}
-          <SideNav>
-            <SideNavLink to='/' $active={isActive('/')}>
-              <SideIcon>
-                <FaHome />
-              </SideIcon>
-              <SideLabel>Home</SideLabel>
-            </SideNavLink>
-            <SideNavButton onClick={() => setSearchOpen(true)}>
-              <SideIcon>
-                <FaSearch />
-              </SideIcon>
-              <SideLabel>Search</SideLabel>
-            </SideNavButton>
-            <SideNavLink to='/thoughts' $active={isActive('/thoughts')}>
-              <SideIcon>
-                <FaLightbulb />
-              </SideIcon>
-              <SideLabel>Thoughts</SideLabel>
-            </SideNavLink>
-            <SideNavLink to='/collections' $active={isActive('/collections')}>
-              <SideIcon>
-                {isActive('/collections') ? <FaFolderOpen /> : <FaFolder />}
-              </SideIcon>
-              <SideLabel>Collections</SideLabel>
-            </SideNavLink>
-            <SideNavLink to='/memoirs' $active={isActive('/memoirs')}>
-              <SideIcon>
-                <FaBook />
-              </SideIcon>
-              <SideLabel>Memoirs</SideLabel>
-            </SideNavLink>
-            {canCreate && (
-              <SideNavButton onClick={() => setCreateOpen(true)}>
-                <SideIcon>
-                  <FaPlus />
-                </SideIcon>
-                <SideLabel>Create</SideLabel>
-              </SideNavButton>
-            )}
-            {canCreate && (
-              <SideNavLink
-                to='/story-archive'
-                $active={isActive('/story-archive')}
-              >
-                <SideIcon>
-                  <FaArchive />
-                </SideIcon>
-                <SideLabel>Story Archive</SideLabel>
-              </SideNavLink>
-            )}
-          </SideNav>
-          <SideSpacer />
-          {/* Admin section */}
-          {isAdmin && (
-            <>
-              <SideSectionLabel>Admin</SideSectionLabel>
-              <SideNav>
-                <SideNavLink
-                  to='/media-gallery'
-                  $active={isActive('/media-gallery')}
-                >
-                  <SideIcon>
-                    <FaImages />
-                  </SideIcon>
-                  <SideLabel>Media Gallery</SideLabel>
-                </SideNavLink>
-                <SideNavLink
-                  to='/admin/ai-content'
-                  $active={isActive('/admin/ai-content')}
-                >
-                  <SideIcon>
-                    <FaRobot />
-                  </SideIcon>
-                  <SideLabel>AI Content</SideLabel>
-                </SideNavLink>
-              </SideNav>
-              <SideDivider />
-            </>
-          )}
-          {/* Profile + logout */}
-          <SideNav>
-            {isAuthenticated ? (
-              <>
-                <SideNavLink to='/profile' $active={isActive('/profile')}>
-                  <SideAvatar $active={isActive('/profile')}>
-                    {initials}
-                  </SideAvatar>
-                  <SideLabel>{user?.username || 'Profile'}</SideLabel>
-                </SideNavLink>
-                <SideNavButton onClick={doLogout} $danger>
-                  <SideIcon>
-                    <FaSignOutAlt />
-                  </SideIcon>
-                  <SideLabel>Logout</SideLabel>
-                </SideNavButton>
-              </>
-            ) : (
-              <SideNavLink to='/login'>
-                <SideIcon>
-                  <FaSignInAlt />
-                </SideIcon>
-                <SideLabel>Sign In</SideLabel>
-              </SideNavLink>
-            )}
-          </SideNav>
-          {/* ⌘K shortcut hint */}
-          <PaletteButton onClick={() => setPaletteOpen(true)}>
-            <FaMagic />
-            <PaletteButtonLabel>⌘K</PaletteButtonLabel>
-          </PaletteButton>
-        </SideInner>
-      </Sidebar>
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {/*  MOBILE BOTTOM TAB BAR                                               */}
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      <BottomBar>
-        <BottomBarInner>
-          {/* Home */}
-          <BottomTab to='/' $active={isActive('/')}>
-            <BottomIcon $active={isActive('/')}>
-              <FaHome />
-            </BottomIcon>
-          </BottomTab>
-          {/* Search */}
-          <BottomTabButton
-            onClick={() => setSearchOpen(true)}
-            $active={searchOpen}
-          >
-            <BottomIcon $active={searchOpen}>
-              <FaSearch />
-            </BottomIcon>
-          </BottomTabButton>
-          {/* Create — center square */}
-          {canCreate ? (
-            <BottomTabButton
-              onClick={() => setCreateOpen(true)}
-              aria-label='Create'
-            >
-              <CreateSquare>
-                <FaPlus />
-              </CreateSquare>
-            </BottomTabButton>
-          ) : (
-            <BottomTab to='/login'>
-              <BottomIcon>
-                <FaSignInAlt />
-              </BottomIcon>
-            </BottomTab>
-          )}
-          {/* Thoughts */}
-          <BottomTab to='/thoughts' $active={isActive('/thoughts')}>
-            <BottomIcon $active={isActive('/thoughts')}>
-              <FaLightbulb />
-            </BottomIcon>
-          </BottomTab>
-          {/* Profile / Admin */}
-          {isAdmin ? (
-            <BottomTab
-              to='/media-gallery'
-              $active={isActive('/media-gallery') || isActive('/admin')}
-            >
-              <BottomIcon
-                $active={isActive('/media-gallery') || isActive('/admin')}
-              >
-                <FaShieldAlt />
-              </BottomIcon>
-            </BottomTab>
-          ) : isAuthenticated ? (
-            <BottomTab to='/profile' $active={isActive('/profile')}>
-              <BottomAvatarIcon $active={isActive('/profile')}>
-                {initials}
-              </BottomAvatarIcon>
-            </BottomTab>
-          ) : (
-            <BottomTab to='/login'>
-              <BottomIcon>
-                <FaUser />
-              </BottomIcon>
-            </BottomTab>
-          )}
-        </BottomBarInner>
-      </BottomBar>
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {/*  SEARCH OVERLAY — full-screen mobile / centered card desktop         */}
-      {/* ════════════════════════════════════════════════════════════════════ */}
+      <TopBar
+        logoEasterEgg={logoEasterEgg}
+        canCreate={canCreate}
+        isActive={isActive}
+        isAuthenticated={isAuthenticated}
+        initials={initials}
+        onNavigateProfile={() => navigate('/profile')}
+      />
+
+      <Sidebar
+        logoEasterEgg={logoEasterEgg}
+        isActive={isActive}
+        isAuthenticated={isAuthenticated}
+        isAdmin={isAdmin}
+        canCreate={canCreate}
+        user={user}
+        initials={initials}
+        onLogout={doLogout}
+        onSearchOpen={() => setSearchOpen(true)}
+        onCreateOpen={() => setCreateOpen(true)}
+        onPaletteOpen={() => setPaletteOpen(true)}
+      />
+
+      <BottomBar
+        isActive={isActive}
+        isAuthenticated={isAuthenticated}
+        isAdmin={isAdmin}
+        canCreate={canCreate}
+        initials={initials}
+        searchOpen={searchOpen}
+        onSearchOpen={() => setSearchOpen(true)}
+        onCreateOpen={() => setCreateOpen(true)}
+      />
+
       {searchOpen && (
-        <SearchOverlay>
-          <SearchCard>
-            <SearchRow>
-              <SearchBox>
-                <FaSearch />
-                <form
-                  onSubmit={triggerSearch}
-                  style={{ flex: 1, display: 'flex' }}
-                >
-                  <input
-                    ref={searchInputRef}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder='Search posts and thoughts…'
-                    autoComplete='off'
-                  />
-                </form>
-                {searchQuery && (
-                  <SearchClearBtn type='button' onClick={clearSearch}>
-                    <FaTimes />
-                  </SearchClearBtn>
-                )}
-              </SearchBox>
-              <SearchCancelBtn
-                onClick={() => {
-                  setSearchOpen(false);
-                  clearSearch();
-                }}
-              >
-                Cancel
-              </SearchCancelBtn>
-            </SearchRow>
-            <SearchBody>
-              {searchQuery ? (
-                <SearchActiveHint>
-                  Press <kbd>↵</kbd> to search for &ldquo;{searchQuery}&rdquo;
-                </SearchActiveHint>
-              ) : (
-                <SearchEmptyState>
-                  <FaSearch />
-                  <p>Search posts, thoughts, and more</p>
-                  <SearchTip>⌘K opens command palette</SearchTip>
-                </SearchEmptyState>
-              )}
-            </SearchBody>
-          </SearchCard>
-        </SearchOverlay>
+        <SearchOverlay
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          searchInputRef={searchInputRef}
+          onSubmit={triggerSearch}
+          onClear={clearSearch}
+          onClose={() => setSearchOpen(false)}
+        />
       )}
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {/*  CREATE BOTTOM SHEET                                                 */}
-      {/* ════════════════════════════════════════════════════════════════════ */}
+
       {createOpen && (
-        <SheetBackdrop onClick={() => setCreateOpen(false)}>
-          <CreateSheet onClick={(e) => e.stopPropagation()}>
-            <SheetHandle />
-            <SheetTitle>Create</SheetTitle>
-            <CreateGrid>
-              <CreateCard
-                onClick={() => goCreate('/create')}
-                $color={COLORS.primarySalmon}
-              >
-                <CreateCardIcon $color={COLORS.primarySalmon}>
-                  <FaCamera />
-                </CreateCardIcon>
-                <CreateCardName>Post</CreateCardName>
-                <CreateCardSub>Photo or video</CreateCardSub>
-              </CreateCard>
-              <CreateCard
-                onClick={() => goCreate('/create-story')}
-                $color={COLORS.primaryMint}
-              >
-                <CreateCardIcon $color={COLORS.primaryMint}>
-                  <FaImages />
-                </CreateCardIcon>
-                <CreateCardName>Story</CreateCardName>
-                <CreateCardSub>Gone in 24h</CreateCardSub>
-              </CreateCard>
-              <CreateCard
-                onClick={() => goCreate('/thoughts/create')}
-                $color={COLORS.primaryBlueGray}
-              >
-                <CreateCardIcon $color={COLORS.primaryBlueGray}>
-                  <FaLightbulb />
-                </CreateCardIcon>
-                <CreateCardName>Thought</CreateCardName>
-                <CreateCardSub>What's on your mind</CreateCardSub>
-              </CreateCard>
-              <CreateCard
-                onClick={() => goCreate('/collections/create')}
-                $color={COLORS.accentSalmon}
-              >
-                <CreateCardIcon $color={COLORS.accentSalmon}>
-                  <FaFolderOpen />
-                </CreateCardIcon>
-                <CreateCardName>Collection</CreateCardName>
-                <CreateCardSub>Group your posts</CreateCardSub>
-              </CreateCard>
-            </CreateGrid>
-            {/* Browse — destinations no longer in the bottom tab bar */}
-            <SheetDivider />
-            <SheetTitle>Browse</SheetTitle>
-            <BrowseList>
-              <BrowseItem onClick={() => goCreate('/collections')}>
-                <BrowseItemIcon $color={COLORS.accentSalmon}>
-                  <FaFolderOpen />
-                </BrowseItemIcon>
-                <BrowseItemText>
-                  <BrowseItemName>Collections</BrowseItemName>
-                  <BrowseItemSub>Browse your curated groups</BrowseItemSub>
-                </BrowseItemText>
-              </BrowseItem>
-              <BrowseItem onClick={() => goCreate('/memoirs')}>
-                <BrowseItemIcon $color={COLORS.primaryMint}>
-                  <FaBook />
-                </BrowseItemIcon>
-                <BrowseItemText>
-                  <BrowseItemName>Memoirs</BrowseItemName>
-                  <BrowseItemSub>Monthly life snapshots</BrowseItemSub>
-                </BrowseItemText>
-              </BrowseItem>
-              {canCreate && (
-                <BrowseItem onClick={() => goCreate('/story-archive')}>
-                  <BrowseItemIcon $color={COLORS.primaryBlueGray}>
-                    <FaArchive />
-                  </BrowseItemIcon>
-                  <BrowseItemText>
-                    <BrowseItemName>Story Archive</BrowseItemName>
-                    <BrowseItemSub>Your past stories</BrowseItemSub>
-                  </BrowseItemText>
-                </BrowseItem>
-              )}
-            </BrowseList>
-          </CreateSheet>
-        </SheetBackdrop>
+        <CreateSheet
+          canCreate={canCreate}
+          onNavigate={goCreate}
+          onClose={() => setCreateOpen(false)}
+        />
       )}
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {/*  COMMAND PALETTE                                                     */}
-      {/* ════════════════════════════════════════════════════════════════════ */}
+
       {paletteOpen && (
         <CommandPalette
           items={paletteItems}
@@ -628,9 +303,7 @@ const AppNav = ({ onSearch, onClearSearch }) => {
           navigate={navigate}
         />
       )}
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {/*  EASTER EGG: secret menu + flying plane                              */}
-      {/* ════════════════════════════════════════════════════════════════════ */}
+
       {easterEggOpen && (
         <EasterEggModal onClose={() => setEasterEggOpen(false)} />
       )}
@@ -641,1069 +314,5 @@ const AppNav = ({ onSearch, onClearSearch }) => {
     </>
   );
 };
-// ── Command Palette component ─────────────────────────────────────────────────
-const CommandPalette = ({ items, onClose, navigate }) => {
-  const [q, setQ] = useState('');
-  const ref = useRef(null);
-  useEffect(() => {
-    ref.current?.focus();
-  }, []);
-  useEffect(() => {
-    const h = (e) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [onClose]);
-  const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    return s ? items.filter((i) => i.label.toLowerCase().includes(s)) : items;
-  }, [q, items]);
-  return (
-    <PaletteBackdrop onClick={onClose}>
-      <PalettePanel onClick={(e) => e.stopPropagation()}>
-        <PaletteInputRow>
-          <FaMagic />
-          <input
-            ref={ref}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder='Type a page or command…'
-          />
-          <PaletteKbd>Esc</PaletteKbd>
-        </PaletteInputRow>
-        <PaletteResults>
-          {filtered.map((item, i) => (
-            <PaletteRow
-              key={i}
-              onClick={() => {
-                navigate(item.to);
-                onClose();
-              }}
-            >
-              <PaletteRowIcon>{item.icon}</PaletteRowIcon>
-              <span>{item.label}</span>
-              <PaletteChevron>
-                <FaChevronRight />
-              </PaletteChevron>
-            </PaletteRow>
-          ))}
-          {!filtered.length && (
-            <PaletteEmpty>No results for &ldquo;{q}&rdquo;</PaletteEmpty>
-          )}
-        </PaletteResults>
-      </PalettePanel>
-    </PaletteBackdrop>
-  );
-};
+
 export default AppNav;
-// ─────────────────────────────────────────────────────────────────────────────
-// Keyframes
-// ─────────────────────────────────────────────────────────────────────────────
-const fadeIn = keyframes`from { opacity: 0 }             to { opacity: 1 }`;
-const slideUp = keyframes`from { transform: translateY(100%) } to { transform: translateY(0) }`;
-const popIn = keyframes`from { transform: scale(.95); opacity: 0 } to { transform: scale(1); opacity: 1 }`;
-const dropDown = keyframes`from { transform: translateY(-8px); opacity: 0 } to { transform: translateY(0); opacity: 1 }`;
-
-// ── Easter egg: CrazyPlane ────────────────────────────────────────────────────
-// RAF + Catmull-Rom spline + SVG silhouette + translate (GPU composited).
-
-const catmullRom = (p0, p1, p2, p3, t) => {
-  const t2 = t * t,
-    t3 = t2 * t;
-  return {
-    x:
-      0.5 *
-      (2 * p1.x +
-        (-p0.x + p2.x) * t +
-        (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
-        (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
-    y:
-      0.5 *
-      (2 * p1.y +
-        (-p0.y + p2.y) * t +
-        (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
-        (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3),
-  };
-};
-
-const catmullTangent = (p0, p1, p2, p3, t) => {
-  const t2 = t * t;
-  return {
-    x:
-      0.5 *
-      (-p0.x +
-        p2.x +
-        (4 * p0.x - 10 * p1.x + 8 * p2.x - 2 * p3.x) * t +
-        (-3 * p0.x + 9 * p1.x - 9 * p2.x + 3 * p3.x) * t2),
-    y:
-      0.5 *
-      (-p0.y +
-        p2.y +
-        (4 * p0.y - 10 * p1.y + 8 * p2.y - 2 * p3.y) * t +
-        (-3 * p0.y + 9 * p1.y - 9 * p2.y + 3 * p3.y) * t2),
-  };
-};
-
-const CrazyPlane = ({ onDone }) => {
-  const ref = useRef(null);
-  const angleRef = useRef(null);
-
-  useEffect(() => {
-    // waypoints as 0-1 fractions of viewport
-    const pts = [{ x: -0.08, y: 0.4 + Math.random() * 0.15 }];
-    const legs = 4 + Math.floor(Math.random() * 3);
-    for (let i = 0; i < legs; i++) {
-      pts.push({
-        x: 0.06 + ((i + 1) / (legs + 1)) * 0.82 + (Math.random() - 0.5) * 0.12,
-        y: 0.12 + Math.random() * 0.65,
-      });
-    }
-    pts.push({ x: 1.12, y: 0.2 + Math.random() * 0.35 });
-
-    // pad ends for Catmull-Rom
-    const sp = [pts[0], ...pts, pts[pts.length - 1]];
-    const segs = sp.length - 3;
-    const duration = segs * 750 + 400;
-    const start = performance.now();
-    let raf;
-
-    const tick = (now) => {
-      const t = Math.min((now - start) / duration, 1);
-      const raw = t * segs;
-      const seg = Math.min(Math.floor(raw), segs - 1);
-      const local = raw - seg;
-
-      const pos = catmullRom(
-        sp[seg],
-        sp[seg + 1],
-        sp[seg + 2],
-        sp[seg + 3],
-        local
-      );
-      const tan = catmullTangent(
-        sp[seg],
-        sp[seg + 1],
-        sp[seg + 2],
-        sp[seg + 3],
-        local
-      );
-      const targetAngle = Math.atan2(tan.y, tan.x) * (180 / Math.PI);
-
-      // lerp rotation for silky smooth turning
-      if (angleRef.current === null) angleRef.current = targetAngle;
-      angleRef.current += (targetAngle - angleRef.current) * 0.15;
-
-      let opacity = 1;
-      if (t < 0.06) opacity = t / 0.06;
-      else if (t > 0.94) opacity = (1 - t) / 0.06;
-
-      const scale = 0.9 + Math.sin(t * Math.PI) * 0.2;
-      const px = pos.x * window.innerWidth;
-      const py = pos.y * window.innerHeight;
-
-      if (ref.current) {
-        ref.current.style.transform = `translate(${px}px, ${py}px) rotate(${angleRef.current}deg) scale(${scale})`;
-        ref.current.style.opacity = opacity;
-      }
-
-      if (t < 1) raf = requestAnimationFrame(tick);
-      else onDone();
-    };
-
-    raf = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(raf);
-      angleRef.current = null;
-    };
-  }, [onDone]);
-
-  // SVG paper plane — simple, clean, rotates naturally
-  return (
-    <div
-      ref={ref}
-      aria-hidden='true'
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        zIndex: 9999,
-        pointerEvents: 'none',
-        opacity: 0,
-        willChange: 'transform',
-      }}
-    >
-      <svg width='32' height='32' viewBox='0 0 24 24' fill='none'>
-        <path
-          d='M2.01 21L23 12 2.01 3 2 10l15 2-15 2z'
-          fill={COLORS.primarySalmon}
-        />
-      </svg>
-    </div>
-  );
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared atoms
-// ─────────────────────────────────────────────────────────────────────────────
-const NarrowMark = styled.span`
-  font-family: 'Autography', cursive;
-  font-size: 2rem;
-  line-height: 1.3;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.primaryMint}
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  flex-shrink: 0;
-  /* Visible only in narrow sidebar — hidden when full LogoText is shown */
-  display: block;
-  @media (min-width: 1200px) {
-    display: none;
-  }
-`;
-const LogoText = styled.span`
-  font-family: 'Autography', cursive;
-  font-size: 1.6rem;
-  line-height: 1.3;
-  letter-spacing: 0;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.primaryMint}
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-`;
-// ─────────────────────────────────────────────────────────────────────────────
-// TOP BAR  (mobile only)
-// ─────────────────────────────────────────────────────────────────────────────
-const TopBar = styled.header`
-  position: sticky;
-  top: 0;
-  z-index: 300;
-  width: 100%;
-  background: ${COLORS.background}ee;
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-bottom: 1px solid ${COLORS.border};
-  @media (min-width: 960px) {
-    display: none;
-  }
-`;
-const TopBarInner = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 52px;
-  padding: 0 16px;
-  max-width: 470px;
-  margin: 0 auto;
-  box-sizing: border-box;
-`;
-const Logo = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-`;
-
-/* Wraps Logo link + tagline into a vertical stack inside TopBarInner */
-const LogoBrand = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  min-width: 0;
-`;
-
-const TopBarTagline = styled.span`
-  font-family: 'Cormorant Garamond', 'Georgia', serif;
-  font-style: italic;
-  font-weight: 400;
-  font-size: 0.55rem;
-  letter-spacing: 0.02em;
-  color: ${COLORS.textTertiary};
-  opacity: 0.9;
-  line-height: 1;
-  margin-top: -2px;
-  padding-left: 2px;
-`;
-
-const TopBarActions = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-`;
-const TopBarIconLink = styled(Link)`
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 1rem;
-  color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textSecondary)};
-  text-decoration: none;
-  transition: color 0.15s;
-  &:hover {
-    color: ${COLORS.primarySalmon};
-  }
-`;
-const AvatarButton = styled.button`
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 1.5px solid ${COLORS.primarySalmon};
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primarySalmon}25,
-    ${COLORS.primaryMint}25
-  );
-  color: ${COLORS.textPrimary};
-  font-size: 0.6rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: box-shadow 0.2s, transform 0.2s;
-  &:hover {
-    transform: scale(1.08);
-    box-shadow: 0 0 0 3px ${COLORS.primarySalmon}28;
-  }
-`;
-// ─────────────────────────────────────────────────────────────────────────────
-// DESKTOP LEFT SIDEBAR
-// ─────────────────────────────────────────────────────────────────────────────
-/* Sidebar widths exposed as CSS custom props so MainLayout can consume them */
-const SIDEBAR_FULL = '240px';
-const SIDEBAR_NARROW = '72px';
-const Sidebar = styled.aside`
-  display: none;
-  @media (min-width: 960px) {
-    display: flex;
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: ${SIDEBAR_NARROW}; /* narrow by default at 960-1200 */
-    z-index: 300;
-    background: ${COLORS.background};
-    border-right: 1px solid ${COLORS.border};
-  }
-  @media (min-width: 1200px) {
-    width: ${SIDEBAR_FULL}; /* full labels at 1200+ */
-  }
-`;
-const SideInner = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: 10px 0 20px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
-`;
-const SideLogoLink = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  margin: 0 8px 4px;
-  padding: 10px;
-  border-radius: 12px;
-  height: 48px;
-  transition: background 0.15s;
-  &:hover {
-    background: ${COLORS.elevatedBackground};
-  }
-  /* narrow — centre the icon */
-  justify-content: center;
-  @media (min-width: 1200px) {
-    justify-content: flex-start;
-  }
-`;
-const SideLogoText = styled(LogoText)`
-  display: none;
-  @media (min-width: 1200px) {
-    display: block;
-  }
-`;
-
-/* Column wrapper so tagline sits below logo text — expanded sidebar only */
-const SideLogoWrap = styled.div`
-  display: none;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-  @media (min-width: 1200px) {
-    display: flex;
-  }
-`;
-
-const SideTagline = styled.span`
-  font-family: 'Cormorant Garamond', 'Georgia', serif;
-  font-style: italic;
-  font-weight: 400;
-  font-size: 0.55rem;
-  letter-spacing: 0.02em;
-  color: ${COLORS.textTertiary};
-  opacity: 0.45;
-  line-height: 1;
-  white-space: nowrap;
-`;
-
-const SideDivider = styled.hr`
-  border: none;
-  height: 1px;
-  background: ${COLORS.border};
-  margin: 6px 12px;
-`;
-const SideNav = styled.nav`
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 0 8px;
-`;
-/* Shared shape for anchor + button sidebar rows */
-const sideItemBase = css`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px;
-  border-radius: 12px;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 0.92rem;
-  cursor: pointer;
-  border: none;
-  width: 100%;
-  text-align: left;
-  position: relative;
-  transition: background 0.12s, color 0.12s;
-  justify-content: center; /* narrow: icon centred */
-  background: ${(p) =>
-    p.$active ? `${COLORS.primarySalmon}12` : 'transparent'};
-  color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textSecondary)};
-  /* Active bar */
-  ${(p) =>
-    p.$active &&
-    css`
-      &::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 3px;
-        height: 52%;
-        background: ${COLORS.primarySalmon};
-        border-radius: 0 3px 3px 0;
-      }
-    `}
-  &:hover {
-    background: ${(p) =>
-      p.$active ? `${COLORS.primarySalmon}1a` : COLORS.elevatedBackground};
-    color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textPrimary)};
-  }
-  ${(p) =>
-    p.$danger &&
-    css`
-      color: ${COLORS.textTertiary};
-      &:hover {
-        color: ${COLORS.error};
-        background: ${COLORS.error}12;
-      }
-    `}
-  /* full: left-align */
-  @media (min-width: 1200px) {
-    justify-content: flex-start;
-    padding: 11px 12px;
-    &::before {
-      display: block;
-    }
-  }
-`;
-const SideNavLink = styled(Link)`
-  ${sideItemBase}
-`;
-const SideNavButton = styled.button`
-  ${sideItemBase}
-`;
-const SideIcon = styled.span`
-  font-size: 1.1rem;
-  display: grid;
-  place-items: center;
-  width: 22px;
-  flex-shrink: 0;
-`;
-const SideLabel = styled.span`
-  white-space: nowrap;
-  display: none;
-  @media (min-width: 1200px) {
-    display: block;
-  }
-`;
-const SideAvatar = styled.div`
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1.5px solid
-    ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textTertiary)};
-  background: ${(p) =>
-    p.$active
-      ? `linear-gradient(135deg, ${COLORS.primarySalmon}28, ${COLORS.primaryMint}28)`
-      : 'transparent'};
-  display: grid;
-  place-items: center;
-  font-size: 0.58rem;
-  font-weight: 800;
-  color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textTertiary)};
-  letter-spacing: 0.5px;
-  flex-shrink: 0;
-  transition: border-color 0.15s, color 0.15s;
-`;
-const SideSpacer = styled.div`
-  flex: 1;
-  min-height: 12px;
-`;
-const SideSectionLabel = styled.div`
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  color: ${COLORS.textTertiary};
-  padding: 6px 20px 2px;
-  display: none;
-  @media (min-width: 1200px) {
-    display: block;
-  }
-`;
-const PaletteButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin: 10px 8px 0;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px dashed ${COLORS.border};
-  background: transparent;
-  color: ${COLORS.textTertiary};
-  font-size: 0.72rem;
-  cursor: pointer;
-  transition: all 0.15s;
-  &:hover {
-    border-color: ${COLORS.primaryMint};
-    color: ${COLORS.primaryMint};
-    background: ${COLORS.primaryMint}0a;
-  }
-`;
-const PaletteButtonLabel = styled.span`
-  display: none;
-  @media (min-width: 1200px) {
-    display: block;
-  }
-`;
-// ─────────────────────────────────────────────────────────────────────────────
-// MOBILE BOTTOM TAB BAR
-// ─────────────────────────────────────────────────────────────────────────────
-const BottomBar = styled.nav`
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 300;
-  background: ${COLORS.background}f5;
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-  border-top: 1px solid ${COLORS.border};
-  padding-bottom: env(safe-area-inset-bottom);
-  @media (min-width: 960px) {
-    display: none;
-  }
-`;
-const BottomBarInner = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  height: 52px;
-  max-width: 470px;
-  margin: 0 auto;
-  padding: 0 4px;
-`;
-const tabBase = css`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  height: 52px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-decoration: none;
-  padding: 0;
-  -webkit-tap-highlight-color: transparent;
-  outline: none;
-`;
-const BottomTab = styled(Link)`
-  ${tabBase}
-`;
-const BottomTabButton = styled.button`
-  ${tabBase}
-`;
-const BottomIcon = styled.span`
-  font-size: 1.45rem;
-  display: grid;
-  place-items: center;
-  color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textTertiary)};
-  transition: color 0.14s, transform 0.14s;
-  ${(p) =>
-    p.$active &&
-    css`
-      transform: scale(1.12);
-    `}
-`;
-const BottomAvatarIcon = styled.div`
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: ${(p) =>
-    p.$active
-      ? `2px solid ${COLORS.primarySalmon}`
-      : `1.5px solid ${COLORS.textTertiary}`};
-  background: ${(p) =>
-    p.$active
-      ? `linear-gradient(135deg, ${COLORS.primarySalmon}28, ${COLORS.primaryMint}28)`
-      : 'transparent'};
-  display: grid;
-  place-items: center;
-  font-size: 0.56rem;
-  font-weight: 800;
-  color: ${(p) => (p.$active ? COLORS.primarySalmon : COLORS.textTertiary)};
-  letter-spacing: 0.5px;
-  transition: border-color 0.14s, color 0.14s;
-`;
-/* Center "+" create button — a flat rounded square (Instagram-style) */
-const CreateSquare = styled.div`
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(
-    135deg,
-    ${COLORS.primarySalmon},
-    ${COLORS.accentSalmon}
-  );
-  color: #fff;
-  font-size: 1rem;
-  box-shadow: 0 3px 12px ${COLORS.primarySalmon}45;
-  transition: transform 0.12s, box-shadow 0.12s;
-  ${BottomTabButton}:active & {
-    transform: scale(0.91);
-    box-shadow: 0 1px 6px ${COLORS.primarySalmon}30;
-  }
-`;
-// ─────────────────────────────────────────────────────────────────────────────
-// SEARCH OVERLAY
-// ─────────────────────────────────────────────────────────────────────────────
-const SearchOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 500;
-  background: ${COLORS.background};
-  display: flex;
-  flex-direction: column;
-  animation: ${fadeIn} 0.12s ease;
-  @media (min-width: 960px) {
-    /* Desktop: dim backdrop + centred card */
-    background: rgba(0, 0, 0, 0.52);
-    backdrop-filter: blur(5px);
-    align-items: center;
-    justify-content: flex-start;
-    padding-top: 10vh;
-  }
-`;
-const SearchCard = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  @media (min-width: 960px) {
-    height: auto;
-    max-width: 580px;
-    background: ${COLORS.cardBackground};
-    border: 1px solid ${COLORS.border};
-    border-radius: 18px;
-    overflow: hidden;
-    animation: ${popIn} 0.16s ease;
-  }
-`;
-const SearchRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-bottom: 1px solid ${COLORS.border};
-  background: ${COLORS.background};
-  @media (min-width: 960px) {
-    background: transparent;
-  }
-`;
-const SearchBox = styled.div`
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 12px;
-  padding: 9px 12px;
-  svg {
-    color: ${COLORS.textTertiary};
-    flex-shrink: 0;
-  }
-  input {
-    flex: 1;
-    background: none;
-    border: none;
-    outline: none;
-    color: ${COLORS.textPrimary};
-    font-size: 0.97rem;
-    width: 100%;
-    &::placeholder {
-      color: ${COLORS.textTertiary};
-    }
-  }
-`;
-const SearchClearBtn = styled.button`
-  background: none;
-  border: none;
-  color: ${COLORS.textTertiary};
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  font-size: 0.82rem;
-  padding: 2px;
-  &:hover {
-    color: ${COLORS.textPrimary};
-  }
-`;
-const SearchCancelBtn = styled.button`
-  background: none;
-  border: none;
-  color: ${COLORS.primarySalmon};
-  font-size: 0.92rem;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  padding: 4px 0;
-  &:hover {
-    opacity: 0.78;
-  }
-`;
-const SearchBody = styled.div`
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 20px;
-`;
-const SearchEmptyState = styled.div`
-  text-align: center;
-  color: ${COLORS.textTertiary};
-  svg {
-    font-size: 2.2rem;
-    opacity: 0.22;
-    display: block;
-    margin: 0 auto 14px;
-  }
-  p {
-    margin: 0 0 6px;
-    font-size: 0.95rem;
-    color: ${COLORS.textSecondary};
-  }
-`;
-const SearchTip = styled.div`
-  font-size: 0.72rem;
-  color: ${COLORS.textTertiary};
-`;
-const SearchActiveHint = styled.div`
-  color: ${COLORS.textSecondary};
-  font-size: 0.9rem;
-  text-align: center;
-  kbd {
-    background: ${COLORS.elevatedBackground};
-    border: 1px solid ${COLORS.border};
-    border-radius: 4px;
-    padding: 1px 5px;
-    font-size: 0.8rem;
-    margin-right: 4px;
-  }
-`;
-// ─────────────────────────────────────────────────────────────────────────────
-// CREATE BOTTOM SHEET
-// ─────────────────────────────────────────────────────────────────────────────
-const SheetBackdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 400;
-  background: rgba(0, 0, 0, 0.58);
-  backdrop-filter: blur(2px);
-  animation: ${fadeIn} 0.1s ease;
-  display: flex;
-  align-items: flex-end;
-  @media (min-width: 960px) {
-    align-items: center;
-    justify-content: center;
-  }
-`;
-const CreateSheet = styled.div`
-  width: 100%;
-  background: ${COLORS.cardBackground};
-  border-top-left-radius: 22px;
-  border-top-right-radius: 22px;
-  border: 1px solid ${COLORS.border};
-  border-bottom: none;
-  padding: 8px 16px calc(36px + env(safe-area-inset-bottom));
-  animation: ${slideUp} 0.22s cubic-bezier(0.34, 1.15, 0.64, 1);
-  @media (min-width: 960px) {
-    width: auto;
-    min-width: 380px;
-    max-width: 440px;
-    border-radius: 20px;
-    border: 1px solid ${COLORS.border};
-    padding: 16px 18px 22px;
-    animation: ${popIn} 0.18s ease;
-  }
-`;
-const SheetHandle = styled.div`
-  width: 34px;
-  height: 4px;
-  border-radius: 99px;
-  background: ${COLORS.border};
-  margin: 6px auto 16px;
-  @media (min-width: 960px) {
-    display: none;
-  }
-`;
-const SheetTitle = styled.p`
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.1px;
-  color: ${COLORS.textTertiary};
-  margin: 0 0 12px;
-`;
-const CreateGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-`;
-const CreateCard = styled.button`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
-  padding: 15px 14px;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 14px;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.13s ease;
-  &:hover {
-    background: ${COLORS.buttonHover};
-    border-color: ${(p) => p.$color}45;
-    transform: translateY(-2px);
-  }
-  &:active {
-    transform: scale(0.97);
-  }
-`;
-const CreateCardIcon = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 11px;
-  display: grid;
-  place-items: center;
-  background: ${(p) => p.$color}1a;
-  color: ${(p) => p.$color};
-  font-size: 1.05rem;
-  margin-bottom: 6px;
-`;
-const CreateCardName = styled.span`
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: ${COLORS.textPrimary};
-`;
-const CreateCardSub = styled.span`
-  font-size: 0.7rem;
-  color: ${COLORS.textTertiary};
-  line-height: 1.3;
-`;
-// ─────────────────────────────────────────────────────────────────────────────
-// COMMAND PALETTE
-// ─────────────────────────────────────────────────────────────────────────────
-const PaletteBackdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 600;
-  background: rgba(0, 0, 0, 0.48);
-  backdrop-filter: blur(5px);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 12vh 16px 0;
-  animation: ${fadeIn} 0.1s ease;
-`;
-const PalettePanel = styled.div`
-  width: 100%;
-  max-width: 580px;
-  background: ${COLORS.cardBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.45);
-  animation: ${dropDown} 0.15s ease;
-`;
-const PaletteInputRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 16px;
-  border-bottom: 1px solid ${COLORS.border};
-  svg {
-    color: ${COLORS.primarySalmon};
-    flex-shrink: 0;
-  }
-  input {
-    flex: 1;
-    background: none;
-    border: none;
-    outline: none;
-    color: ${COLORS.textPrimary};
-    font-size: 1rem;
-    &::placeholder {
-      color: ${COLORS.textTertiary};
-    }
-  }
-`;
-const PaletteKbd = styled.kbd`
-  font-size: 0.72rem;
-  color: ${COLORS.textTertiary};
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 5px;
-  padding: 2px 7px;
-`;
-const PaletteResults = styled.div`
-  max-height: 380px;
-  overflow-y: auto;
-  padding: 6px;
-`;
-const PaletteRow = styled.button`
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 12px;
-  border: none;
-  background: none;
-  color: ${COLORS.textPrimary};
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-align: left;
-  transition: background 0.1s;
-  &:hover {
-    background: ${COLORS.elevatedBackground};
-    ${/* inner elements */ ''}
-  }
-`;
-const PaletteRowIcon = styled.span`
-  width: 20px;
-  display: grid;
-  place-items: center;
-  color: ${COLORS.textSecondary};
-  font-size: 0.95rem;
-  flex-shrink: 0;
-  ${PaletteRow}:hover & {
-    color: ${COLORS.primarySalmon};
-  }
-`;
-const PaletteChevron = styled.span`
-  margin-left: auto;
-  color: ${COLORS.textTertiary};
-  font-size: 0.65rem;
-  opacity: 0;
-  transition: opacity 0.1s;
-  ${PaletteRow}:hover & {
-    opacity: 1;
-  }
-`;
-const PaletteEmpty = styled.div`
-  padding: 24px;
-  text-align: center;
-  color: ${COLORS.textTertiary};
-  font-size: 0.88rem;
-`;
-const SheetDivider = styled.hr`
-  border: none;
-  height: 1px;
-  background: ${COLORS.border};
-  margin: 14px 0 10px;
-`;
-const BrowseList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-`;
-const BrowseItem = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 10px 12px;
-  background: none;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.12s;
-  &:hover {
-    background: ${COLORS.elevatedBackground};
-  }
-  &:active {
-    background: ${COLORS.buttonHover};
-  }
-`;
-const BrowseItemIcon = styled.div`
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  background: ${(p) => p.$color}18;
-  color: ${(p) => p.$color};
-  font-size: 0.95rem;
-  flex-shrink: 0;
-`;
-const BrowseItemText = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-`;
-const BrowseItemName = styled.span`
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: ${COLORS.textPrimary};
-`;
-const BrowseItemSub = styled.span`
-  font-size: 0.72rem;
-  color: ${COLORS.textTertiary};
-`;
