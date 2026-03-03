@@ -58,7 +58,7 @@ const ThoughtCard = ({
 
   // Seed like count from server data on mount
   useEffect(() => {
-    seed(false, thought.likes || 0);
+    seed(thought.hasLiked ?? false, thought.likes || 0);
   }, [thought._id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {

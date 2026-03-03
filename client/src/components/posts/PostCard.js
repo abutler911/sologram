@@ -74,7 +74,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   );
 
   useEffect(() => {
-    seed(false, post.likes || 0);
+    seed(post.hasLiked ?? false, post.likes || 0);
   }, [post._id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Comments ──────────────────────────────────────────────────────────────
