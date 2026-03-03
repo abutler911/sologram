@@ -32,6 +32,7 @@ import { useLikeBurst } from '../animations/LikeBurst';
 import useEngagement from '../../hooks/useEngagement';
 import usePostComments from '../../hooks/usePostComments';
 import MediaCarousel from './MediaCarousel';
+import openLocationMap from '../../utils/openLocationMap';
 
 const CommentModal = lazy(() =>
   import('./CommentModal').then((m) => ({ default: m.CommentModal }))
@@ -140,18 +141,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     fetchComments();
   }, [fetchComments]);
 
-  const handleLocationClick = useCallback((location) => {
-    const enc = encodeURIComponent(location);
-    const isIOS =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    window.open(
-      isIOS
-        ? 'https://maps.apple.com/?q=' + enc
-        : 'https://www.google.com/maps/search/?api=1&query=' + enc,
-      '_blank'
-    );
-  }, []);
-
   const handleDeletePost = useCallback(() => {
     showDeleteModal({
       title: 'Delete Post?',
@@ -190,9 +179,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
 
         <Dateline>
           {post.location && (
-            <DatelineLocation
-              onClick={() => handleLocationClick(post.location)}
-            >
+            <DatelineLocation onClick={() => openLocationMap(post.location)}>
               <FaMapMarkerAlt />
               {post.location}
             </DatelineLocation>

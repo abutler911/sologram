@@ -1,10 +1,6 @@
-import React, {
-  useState,
-  useEffect,
-  useContext,
-  useRef,
-  useCallback,
-} from 'react';
+// pages/PostDetail.js
+// Refactored: uses useEngagement, FullscreenViewer, openLocationMap.
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import styled, { keyframes, css } from 'styled-components';
 import { toast } from 'react-hot-toast';
@@ -18,7 +14,6 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaShare,
-  FaTimes,
   FaExpandAlt,
   FaMapMarkerAlt,
   FaEllipsisV,
@@ -29,9 +24,12 @@ import { useDeleteModal } from '../context/DeleteModalContext';
 import { api } from '../services/api';
 import { getTransformedImageUrl } from '../utils/cloudinary';
 import { COLORS } from '../theme';
+import useEngagement from '../hooks/useEngagement';
+import openLocationMap from '../utils/openLocationMap';
+import FullscreenViewer from '../components/posts/FullscreenViewer';
 import ReactGA from 'react-ga4';
 
-// ─── Animations ───────────────────────────────────────────────────────────────
+// ── Animations ────────────────────────────────────────────────────────────────
 
 const fadeUp = keyframes`
   from { opacity: 0; transform: translateY(20px); }
@@ -55,7 +53,7 @@ const shimmer = keyframes`
   100% { background-position:  600px 0; }
 `;
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 
 const PostDetail = () => {
   const { id } = useParams();
@@ -66,25 +64,29 @@ const PostDetail = () => {
   const [error, setError] = useState(null);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
-  const [isLikeAnimating, setIsLikeAnimating] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
-  const [showFsControls, setShowFsControls] = useState(true);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [readingTime, setReadingTime] = useState('< 1 min');
 
-  const fsTimeoutRef = useRef(null);
   const adminMenuRef = useRef(null);
 
   const { isAuthenticated } = useContext(AuthContext);
   const { showDeleteModal } = useDeleteModal();
 
+  // ── Unified engagement ────────────────────────────────────────────────────
+  const {
+    liked,
+    count,
+    toggle,
+    loading: likeLoading,
+    seed,
+  } = useEngagement('post', id);
+
   // ── Scroll progress ──────────────────────────────────────────────────────
   useEffect(() => {
     const onScroll = () => {
       const total = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = total > 0 ? (window.scrollY / total) * 100 : 0;
-      setScrollProgress(progress);
+      setScrollProgress(total > 0 ? (window.scrollY / total) * 100 : 0);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -107,19 +109,13 @@ const PostDetail = () => {
       try {
         setLoading(true);
         const raw = await api.getPost(id);
-
-        // api.getPost returns { success: true, data: { _id, title, media, ... } }
-        // Unwrap .data so the component always works with the plain post object.
-        // The fallback (raw itself) keeps things working if the service layer
-        // ever returns the post directly.
         const data = raw?.data ?? raw;
-
         setPost(data);
+        seed(false, data.likes || 0);
 
         if (data.content) {
           const words = data.content.trim().split(/\s+/).length;
-          const mins = Math.ceil(words / 200);
-          setReadingTime(`${mins} min read`);
+          setReadingTime(Math.ceil(words / 200) + ' min read');
         }
 
         ReactGA.event('view_post', {
@@ -137,56 +133,29 @@ const PostDetail = () => {
       }
     };
     fetchPost();
-  }, [id]);
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Keyboard nav ─────────────────────────────────────────────────────────
+  // ── Keyboard nav (only when not in fullscreen — FullscreenViewer handles its own) ──
   useEffect(() => {
-    if (!post?.media?.length) return;
+    if (!post?.media?.length || showFullscreen) return;
     const onKey = (e) => {
       if (e.key === 'ArrowLeft') setActiveMediaIndex((p) => Math.max(p - 1, 0));
       if (e.key === 'ArrowRight')
         setActiveMediaIndex((p) => Math.min(p + 1, post.media.length - 1));
-      if (e.key === 'Escape' && showFullscreen) setShowFullscreen(false);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [post, showFullscreen]);
 
-  // ── Fullscreen auto-hide controls ────────────────────────────────────────
-  const resetFsTimeout = useCallback(() => {
-    clearTimeout(fsTimeoutRef.current);
-    setShowFsControls(true);
-    fsTimeoutRef.current = setTimeout(() => setShowFsControls(false), 3000);
-  }, []);
-
-  useEffect(() => {
-    if (!showFullscreen) return;
-    resetFsTimeout();
-    document.addEventListener('mousemove', resetFsTimeout);
-    document.addEventListener('touchstart', resetFsTimeout);
-    return () => {
-      clearTimeout(fsTimeoutRef.current);
-      document.removeEventListener('mousemove', resetFsTimeout);
-      document.removeEventListener('touchstart', resetFsTimeout);
-    };
-  }, [showFullscreen, resetFsTimeout]);
-
   // ── Handlers ─────────────────────────────────────────────────────────────
 
   const handleLike = async () => {
-    if (!isAuthenticated || !post) {
-      if (!isAuthenticated) toast.error('Log in to like posts');
+    if (!isAuthenticated) {
+      toast.error('Log in to like posts');
       return;
     }
-    try {
-      const data = await api.toggleLike('post', id);
-      setIsLiked(data.liked);
-      setPost((p) => ({ ...p, likes: data.count }));
-      setIsLikeAnimating(true);
-      setTimeout(() => setIsLikeAnimating(false), 500);
-    } catch {
-      toast.error('Failed to like post');
-    }
+    if (likeLoading) return;
+    await toggle();
   };
 
   const handleShare = () => {
@@ -218,18 +187,6 @@ const PostDetail = () => {
       },
     });
     setShowAdminMenu(false);
-  };
-
-  const handleLocationClick = (location) => {
-    const enc = encodeURIComponent(location);
-    const isIOS =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    window.open(
-      isIOS
-        ? `https://maps.apple.com/?q=${enc}`
-        : `https://www.google.com/maps/search/?api=1&query=${enc}`,
-      '_blank'
-    );
   };
 
   const swipeHandlers = useSwipeable({
@@ -282,12 +239,10 @@ const PostDetail = () => {
 
   return (
     <PageWrapper>
-      {/* Reading progress */}
       <ProgressBarContainer>
-        <ProgressBar $width={`${scrollProgress}%`} />
+        <ProgressBar $width={scrollProgress + '%'} />
       </ProgressBarContainer>
 
-      {/* Back nav */}
       <TopNav>
         <BackBtn to='/'>
           <FaArrowLeft /> Feed
@@ -295,11 +250,12 @@ const PostDetail = () => {
       </TopNav>
 
       <ArticleWrap>
-        {/* ── HERO MEDIA ──────────────────────────────────────────────────── */}
         {mediaCount > 0 && (
           <HeroFrame {...swipeHandlers}>
             <MediaTrack
-              style={{ transform: `translateX(-${activeMediaIndex * 100}%)` }}
+              style={{
+                transform: 'translateX(-' + activeMediaIndex * 100 + '%)',
+              }}
             >
               {post.media.map((m, i) => (
                 <MediaSlide key={m._id || i}>
@@ -322,12 +278,12 @@ const PostDetail = () => {
               ))}
             </MediaTrack>
 
-            <ExpandBtn
+            <ExpandButton
               onClick={() => setShowFullscreen(true)}
               aria-label='Fullscreen'
             >
               <FaExpandAlt />
-            </ExpandBtn>
+            </ExpandButton>
 
             {mediaCount > 1 && (
               <>
@@ -361,15 +317,12 @@ const PostDetail = () => {
           </HeroFrame>
         )}
 
-        {/* ── CONTENT ─────────────────────────────────────────────────────── */}
         <ContentBody>
           <ContentInner>
             <PostMeta>
               <ReadingTime>{readingTime}</ReadingTime>
               {post.location && (
-                <MetaLocation
-                  onClick={() => handleLocationClick(post.location)}
-                >
+                <MetaLocation onClick={() => openLocationMap(post.location)}>
                   <FaMapMarkerAlt size={10} /> {post.location}
                 </MetaLocation>
               )}
@@ -378,7 +331,6 @@ const PostDetail = () => {
             <PostTitle>{post.title}</PostTitle>
 
             {post.caption && <PostCaption>{post.caption}</PostCaption>}
-
             {post.content && <PostContent>{post.content}</PostContent>}
 
             {post.tags?.length > 0 && (
@@ -390,11 +342,11 @@ const PostDetail = () => {
             )}
 
             <EngagementStrip>
-              <EngageBtn onClick={handleLike} $active={isLiked}>
-                <EngageIcon $active={isLiked} $animating={isLikeAnimating}>
-                  {isLiked ? <FaHeart /> : <FaRegHeart />}
+              <EngageBtn onClick={handleLike} $active={liked}>
+                <EngageIcon $active={liked}>
+                  {liked ? <FaHeart /> : <FaRegHeart />}
                 </EngageIcon>
-                <span>{post.likes || 0} likes</span>
+                <span>{count} likes</span>
               </EngageBtn>
 
               <EngageBtn onClick={handleShare}>
@@ -410,7 +362,7 @@ const PostDetail = () => {
                   {showAdminMenu && (
                     <AdminDropdown>
                       <Link
-                        to={`/edit/${post._id}`}
+                        to={'/edit/' + post._id}
                         onClick={() => setShowAdminMenu(false)}
                       >
                         <FaEdit /> Edit Post
@@ -427,54 +379,14 @@ const PostDetail = () => {
         </ContentBody>
       </ArticleWrap>
 
-      {/* ── FULLSCREEN MODAL ────────────────────────────────────────────────── */}
       {showFullscreen && (
-        <FullscreenOverlay onClick={() => setShowFullscreen(false)}>
-          <FullscreenInner onClick={(e) => e.stopPropagation()}>
-            {post.media[activeMediaIndex].mediaType === 'video' ? (
-              <FullscreenVid
-                src={post.media[activeMediaIndex].mediaUrl}
-                controls
-                autoPlay
-              />
-            ) : (
-              <FullscreenImg
-                src={post.media[activeMediaIndex].mediaUrl}
-                alt={post.title}
-              />
-            )}
-
-            <FsClose
-              onClick={() => setShowFullscreen(false)}
-              $visible={showFsControls}
-            >
-              <FaTimes />
-            </FsClose>
-
-            {mediaCount > 1 && (
-              <>
-                {activeMediaIndex > 0 && (
-                  <FsNav
-                    $side='left'
-                    $visible={showFsControls}
-                    onClick={() => setActiveMediaIndex((p) => p - 1)}
-                  >
-                    <FaChevronLeft />
-                  </FsNav>
-                )}
-                {activeMediaIndex < mediaCount - 1 && (
-                  <FsNav
-                    $side='right'
-                    $visible={showFsControls}
-                    onClick={() => setActiveMediaIndex((p) => p + 1)}
-                  >
-                    <FaChevronRight />
-                  </FsNav>
-                )}
-              </>
-            )}
-          </FullscreenInner>
-        </FullscreenOverlay>
+        <FullscreenViewer
+          media={post.media}
+          activeIndex={activeMediaIndex}
+          onIndexChange={setActiveMediaIndex}
+          onClose={() => setShowFullscreen(false)}
+          title={post.title}
+        />
       )}
     </PageWrapper>
   );
@@ -482,14 +394,12 @@ const PostDetail = () => {
 
 export default PostDetail;
 
-// ─── Styled Components ────────────────────────────────────────────────────────
+// ── Styled Components ─────────────────────────────────────────────────────────
 
 const PageWrapper = styled.div`
   background: ${COLORS.background};
   min-height: 100vh;
 `;
-
-// ── Progress bar ──────────────────────────────────────────────────────────────
 
 const ProgressBarContainer = styled.div`
   position: fixed;
@@ -511,8 +421,6 @@ const ProgressBar = styled.div`
   );
   transition: width 0.1s linear;
 `;
-
-// ── Top nav ───────────────────────────────────────────────────────────────────
 
 const TopNav = styled.div`
   padding: 16px 20px 0;
@@ -536,15 +444,11 @@ const BackBtn = styled(Link)`
   }
 `;
 
-// ── Article wrapper ───────────────────────────────────────────────────────────
-
 const ArticleWrap = styled.article`
   max-width: 680px;
   margin: 16px auto 80px;
   animation: ${fadeUp} 0.45s ease both;
 `;
-
-// ── Hero media ────────────────────────────────────────────────────────────────
 
 const HeroFrame = styled.div`
   position: relative;
@@ -554,7 +458,6 @@ const HeroFrame = styled.div`
   overflow: hidden;
   border-radius: 0;
   -webkit-tap-highlight-color: transparent;
-
   @media (min-width: 480px) {
     border-radius: 8px;
   }
@@ -586,7 +489,7 @@ const HeroVid = styled.video`
   display: block;
 `;
 
-const ExpandBtn = styled.button`
+const ExpandButton = styled.button`
   position: absolute;
   top: 12px;
   right: 12px;
@@ -611,51 +514,6 @@ const ExpandBtn = styled.button`
     color: #fff;
   }
 `;
-
-// ── Admin dropdown ────────────────────────────────────────────────────────────
-
-const AdminWrapper = styled.div`
-  position: relative;
-`;
-
-const AdminDropdown = styled.div`
-  position: absolute;
-  bottom: calc(100% + 8px);
-  right: 0;
-  background: ${COLORS.elevatedBackground};
-  border: 1px solid ${COLORS.border};
-  border-radius: 12px;
-  min-width: 150px;
-  overflow: hidden;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.65);
-  animation: ${dropIn} 0.18s ease;
-  z-index: 10;
-
-  a,
-  button {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 12px 16px;
-    border: none;
-    background: none;
-    color: ${COLORS.textPrimary};
-    font-size: 0.875rem;
-    text-decoration: none;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.15s;
-    &:hover {
-      background: rgba(255, 255, 255, 0.06);
-    }
-  }
-  .danger {
-    color: ${COLORS.error};
-  }
-`;
-
-// ── Carousel nav ──────────────────────────────────────────────────────────────
 
 const NavBtn = styled.button`
   position: absolute;
@@ -701,12 +559,9 @@ const Dot = styled.div`
   transition: width 0.28s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s;
 `;
 
-// ── Content section ───────────────────────────────────────────────────────────
-
 const ContentBody = styled.div`
   background: ${COLORS.cardBackground};
   border-top: 1px solid rgba(255, 255, 255, 0.04);
-
   @media (min-width: 480px) {
     border-radius: 0 0 8px 8px;
   }
@@ -796,8 +651,6 @@ const Tag = styled.span`
   }
 `;
 
-// ── Engagement strip ──────────────────────────────────────────────────────────
-
 const EngagementStrip = styled.div`
   display: flex;
   gap: 12px;
@@ -832,96 +685,48 @@ const EngageIcon = styled.span`
   display: flex;
   align-items: center;
   color: ${(p) => (p.$active ? COLORS.primarySalmon : 'inherit')};
-
-  ${(p) =>
-    p.$animating &&
-    css`
-      animation: ${heartPop} 0.4s ease;
-    `}
 `;
 
-// ── Fullscreen modal ──────────────────────────────────────────────────────────
-
-const FullscreenOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.96);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: ${fadeUp} 0.2s ease;
-`;
-
-const FullscreenInner = styled.div`
+const AdminWrapper = styled.div`
   position: relative;
-  width: 96vw;
-  height: 96vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 `;
 
-const FullscreenImg = styled.img`
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  border-radius: 4px;
-`;
-
-const FullscreenVid = styled.video`
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  border-radius: 4px;
-`;
-
-const FsClose = styled.button`
+const AdminDropdown = styled.div`
   position: absolute;
-  top: 0;
+  bottom: calc(100% + 8px);
   right: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: #fff;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: ${(p) => (p.$visible ? 1 : 0)};
-  transition: opacity 0.3s, background 0.2s;
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
+  background: ${COLORS.elevatedBackground};
+  border: 1px solid ${COLORS.border};
+  border-radius: 12px;
+  min-width: 150px;
+  overflow: hidden;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.65);
+  animation: ${dropIn} 0.18s ease;
+  z-index: 10;
+
+  a,
+  button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: none;
+    color: ${COLORS.textPrimary};
+    font-size: 0.875rem;
+    text-decoration: none;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s;
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+  .danger {
+    color: ${COLORS.error};
   }
 `;
-
-const FsNav = styled.button`
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  ${(p) => p.$side}: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: #fff;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: ${(p) => (p.$visible ? 1 : 0)};
-  transition: opacity 0.3s, background 0.2s;
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-`;
-
-// ── Skeleton loading ──────────────────────────────────────────────────────────
 
 const skeletonShimmer = css`
   background: linear-gradient(
@@ -960,8 +765,6 @@ const SkeletonLine = styled.div`
   border-radius: 4px;
   ${skeletonShimmer}
 `;
-
-// ── Error ─────────────────────────────────────────────────────────────────────
 
 const ErrorWrap = styled.div`
   max-width: 480px;
