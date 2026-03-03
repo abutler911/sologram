@@ -64,8 +64,8 @@ export const AuthProvider = ({ children }) => {
           error.response?.status !== 401 ||
           originalRequest._retry ||
           originalRequest.url?.includes('/api/auth/refresh-token') ||
-          originalRequest.url?.includes('/api/auth/login') ||
-          originalRequest.url?.includes('/api/auth/register')
+          originalRequest.url?.includes('/api/auth/login') //||
+          // originalRequest.url?.includes('/api/auth/register')
         ) {
           return Promise.reject(error);
         }
@@ -169,34 +169,6 @@ export const AuthProvider = ({ children }) => {
     };
     loadUser();
   }, [token]);
-
-  // ── Register ───────────────────────────────────────────────────────────────
-
-  const register = async (formData) => {
-    try {
-      const res = await axios.post('/api/auth/register', formData);
-
-      const accessToken = res.data.token;
-      const refreshToken = res.data.refreshToken;
-
-      localStorage.setItem('token', accessToken);
-      if (refreshToken) {
-        localStorage.setItem('refreshToken', refreshToken);
-        refreshTokenRef.current = refreshToken;
-      }
-
-      setToken(accessToken);
-      setUser(res.data.user);
-      setIsAuthenticated(true);
-
-      toast.success('Registration successful!');
-      return true;
-    } catch (err) {
-      const msg = err.response?.data?.message || 'Registration failed';
-      toast.error(msg);
-      return false;
-    }
-  };
 
   // ── Login ──────────────────────────────────────────────────────────────────
 
@@ -330,7 +302,6 @@ export const AuthProvider = ({ children }) => {
         token,
         isAuthenticated,
         loading,
-        register,
         login,
         logout,
         updateProfile,

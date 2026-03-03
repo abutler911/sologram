@@ -1,10 +1,10 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
 const UserSchema = new mongoose.Schema({
   firstName: {
     type: String,
-    required: [true, "Please provide your first name"],
+    required: [true, 'Please provide your first name'],
     trim: true,
   },
   lastName: {
@@ -13,42 +13,42 @@ const UserSchema = new mongoose.Schema({
   },
   username: {
     type: String,
-    required: [true, "Please provide a username"],
+    required: [true, 'Please provide a username'],
     unique: true,
     trim: true,
-    minlength: [3, "Username must be at least 3 characters"],
+    minlength: [3, 'Username must be at least 3 characters'],
   },
   email: {
     type: String,
-    required: [true, "Please provide an email"],
+    required: [true, 'Please provide an email'],
     unique: true,
     match: [
       /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-      "Please provide a valid email",
+      'Please provide a valid email',
     ],
   },
   password: {
     type: String,
-    required: [true, "Please provide a password"],
-    minlength: [6, "Password must be at least 6 characters"],
+    required: [true, 'Please provide a password'],
+    minlength: [6, 'Password must be at least 6 characters'],
     select: false,
   },
   bio: {
     type: String,
-    default: "",
-    maxlength: [500, "Bio cannot be more than 500 characters"],
+    default: '',
+    maxlength: [500, 'Bio cannot be more than 500 characters'],
   },
   profileImage: {
     type: String,
-    default: "",
+    default: '',
   },
   cloudinaryId: {
     type: String,
   },
   role: {
     type: String,
-    enum: ["admin", "creator", "user"],
-    default: "user",
+    enum: ['admin', 'user'],
+    default: 'user',
   },
   oneSignalPlayerId: {
     type: String,
@@ -97,8 +97,8 @@ const UserSchema = new mongoose.Schema({
 });
 
 // Hash password before saving
-UserSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+UserSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
@@ -127,16 +127,16 @@ UserSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
 
 // Add instance method to generate password reset token
 UserSchema.methods.createPasswordResetToken = function () {
-  const resetToken = crypto.randomBytes(32).toString("hex");
+  const resetToken = crypto.randomBytes(32).toString('hex');
 
   this.passwordResetToken = crypto
-    .createHash("sha256")
+    .createHash('sha256')
     .update(resetToken)
-    .digest("hex");
+    .digest('hex');
 
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
   return resetToken;
 };
 
-module.exports = mongoose.model("User", UserSchema);
+module.exports = mongoose.model('User', UserSchema);

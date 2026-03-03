@@ -8,7 +8,6 @@ import LoadingSpinner from './components/common/LoadingSpinner';
 
 const Home = React.lazy(() => import('./pages/Home'));
 const Login = React.lazy(() => import('./pages/Login'));
-const Register = React.lazy(() => import('./pages/Register'));
 const PostDetail = React.lazy(() => import('./pages/PostDetail'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 const About = React.lazy(() => import('./pages/About'));
@@ -88,7 +87,6 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
           }
         />
         <Route path='/login' element={<Login />} />
-        <Route path='/register' element={<Register />} />
         <Route path='/post/:id' element={<PostDetail />} />
         <Route path='/about' element={<About />} />
         <Route path='/privacy' element={<Privacy />} />
