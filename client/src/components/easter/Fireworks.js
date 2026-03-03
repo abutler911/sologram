@@ -1,23 +1,16 @@
 // components/easter/Fireworks.js
 // ─────────────────────────────────────────────────────────────────────────────
-// 🎆  FIREWORKS v4 — The Full Show
+// 🎆  FIREWORKS v4 — Visual Masterpiece (no audio)
 //
-// What changed from v3:
-//   1. Color transitions — particles shift hue over their lifetime
-//      (gold→red, white→blue, mint→purple, etc.) via RGB lerp
-//   2. Gravity-affected trails — trail segments droop progressively
-//      more the older they are, creating that classic "weeping" look
-//   3. Sound engine — Web Audio API synthesized effects:
-//      • Rising whistle on each rocket
-//      • Deep boom on detonation (tuned to burst shape)
-//      • Crackle pops for crackle shape
-//      • Delay-line reverb tail on everything
-//      All synthesized — zero audio files
-//   4. Enhanced depth — far bursts muffled, perspective-narrowed,
-//      render-sorted (far → smoke → close)
+// Features:
+//   1. Color transitions — particles lerp between color pairs over lifetime
+//   2. Gravity-affected trails — trail segments droop quadratically (weeping)
+//   3. Smoke system — expanding puffs linger after bursts, drift with wind
+//   4. Depth layering — far/close parallax with 3-pass render sorting
+//   5. Multiple burst shapes: peony, ring, willow, crossette, crackle
+//   6. Secondary explosions, screen flash, shimmer sparkles, grand finale
 //
 // Architecture: pre-allocated pools, RAF, clearRect, no GC.
-// Audio: single AudioContext, pre-built effect chain, pooled oscillators.
 // ─────────────────────────────────────────────────────────────────────────────
 import { useEffect, useRef, useCallback } from 'react';
 
@@ -34,7 +27,7 @@ const GRAVITY = 0.038;
 const FRICTION = 0.978;
 const BASE_SPEED = 5.0;
 const TRAIL_LEN = 6;
-const TRAIL_DROOP = 0.045; // extra gravity per trail segment (weeping)
+const TRAIL_DROOP = 0.045;
 
 // ── Wind ─────────────────────────────────────────────────────────────────────
 
@@ -65,19 +58,19 @@ const PALETTE = [
   '#ff9f43',
 ];
 
-// ── Color transition pairs [startHex, endHex] ────────────────────────────────
+// ── Color transition pairs ───────────────────────────────────────────────────
 
 const COLOR_TRANSITIONS = [
-  ['#f2c94c', '#e98973'], // gold → salmon
-  ['#ffffff', '#88b2cc'], // white → sky blue
-  ['#7be0ad', '#c9a0ff'], // mint → lavender
-  ['#ffad9e', '#ff6b8a'], // peach → hot pink
-  ['#ff9f43', '#e98973'], // orange → salmon
-  ['#a8cfd8', '#658ea9'], // light blue → steel
-  ['#ffffff', '#f2c94c'], // white → gold
-  ['#e7d4c0', '#ff9f43'], // cream → orange
-  ['#c9a0ff', '#ff6b8a'], // lavender → pink
-  ['#88b2cc', '#7be0ad'], // sky → mint
+  ['#f2c94c', '#e98973'],
+  ['#ffffff', '#88b2cc'],
+  ['#7be0ad', '#c9a0ff'],
+  ['#ffad9e', '#ff6b8a'],
+  ['#ff9f43', '#e98973'],
+  ['#a8cfd8', '#658ea9'],
+  ['#ffffff', '#f2c94c'],
+  ['#e7d4c0', '#ff9f43'],
+  ['#c9a0ff', '#ff6b8a'],
+  ['#88b2cc', '#7be0ad'],
 ];
 
 // ── Burst shapes ─────────────────────────────────────────────────────────────
@@ -170,199 +163,6 @@ const ensureSmokeTexture = () => {
   grad.addColorStop(1, 'rgba(120,115,110,0)');
   g.fillStyle = grad;
   g.fillRect(0, 0, smokeTexSize, smokeTexSize);
-};
-
-// ══════════════════════════════════════════════════════════════════════════════
-// 🔊 SOUND ENGINE
-// ══════════════════════════════════════════════════════════════════════════════
-
-let audioCtx = null;
-let masterGain = null;
-let reverbGain = null;
-let soundEnabled = false;
-
-const initAudio = () => {
-  try {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    masterGain = audioCtx.createGain();
-    masterGain.gain.value = 0.35;
-    masterGain.connect(audioCtx.destination);
-
-    // Delay-line reverb
-    reverbGain = audioCtx.createGain();
-    reverbGain.gain.value = 0.15;
-
-    const delays = [0.12, 0.24, 0.38].map((t) => {
-      const d = audioCtx.createDelay(1.0);
-      d.delayTime.value = t;
-      return d;
-    });
-
-    const feedback = audioCtx.createGain();
-    feedback.gain.value = 0.25;
-
-    const lpf = audioCtx.createBiquadFilter();
-    lpf.type = 'lowpass';
-    lpf.frequency.value = 2500;
-
-    delays.forEach((d) => {
-      reverbGain.connect(d);
-      d.connect(lpf);
-    });
-    lpf.connect(feedback);
-    feedback.connect(reverbGain);
-    lpf.connect(masterGain);
-
-    soundEnabled = true;
-  } catch {
-    soundEnabled = false;
-  }
-};
-
-const destroyAudio = () => {
-  if (audioCtx) {
-    try {
-      audioCtx.close();
-    } catch {}
-    audioCtx = null;
-    masterGain = null;
-    reverbGain = null;
-    soundEnabled = false;
-  }
-};
-
-// Helper: create noise buffer
-const makeNoise = (dur) => {
-  const len = (audioCtx.sampleRate * dur) | 0;
-  const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-  return buf;
-};
-
-// ── Rocket whistle ───────────────────────────────────────────────────────────
-
-const playRocketWhistle = (depth, durationMs = 600) => {
-  if (!soundEnabled) return;
-  const now = audioCtx.currentTime;
-  const dur = (durationMs / 1000) * (0.8 + depth * 0.2);
-  const vol = 0.06 * depth;
-
-  const osc = audioCtx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(300 + Math.random() * 200, now);
-  osc.frequency.exponentialRampToValueAtTime(
-    800 + Math.random() * 600,
-    now + dur
-  );
-
-  const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(vol, now);
-  gain.gain.setValueAtTime(vol * 0.8, now + dur * 0.7);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
-
-  // Hiss layer
-  const noise = audioCtx.createBufferSource();
-  noise.buffer = makeNoise(dur);
-
-  const noiseGain = audioCtx.createGain();
-  noiseGain.gain.setValueAtTime(vol * 0.5, now);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
-
-  const bpf = audioCtx.createBiquadFilter();
-  bpf.type = 'bandpass';
-  bpf.frequency.value = 3000;
-  bpf.Q.value = 2;
-
-  osc.connect(gain);
-  gain.connect(masterGain);
-  gain.connect(reverbGain);
-  noise.connect(bpf);
-  bpf.connect(noiseGain);
-  noiseGain.connect(masterGain);
-
-  osc.start(now);
-  osc.stop(now + dur + 0.05);
-  noise.start(now);
-  noise.stop(now + dur + 0.05);
-};
-
-// ── Burst boom ───────────────────────────────────────────────────────────────
-
-const playBoom = (depth, shape) => {
-  if (!soundEnabled) return;
-  const now = audioCtx.currentTime;
-  const vol = (0.15 + Math.random() * 0.08) * depth * depth;
-
-  // Sub thump
-  const osc = audioCtx.createOscillator();
-  osc.type = 'sine';
-  const freq = shape === 'willow' ? 50 : shape === 'ring' ? 70 : 60;
-  osc.frequency.setValueAtTime(freq + Math.random() * 30, now);
-  osc.frequency.exponentialRampToValueAtTime(20, now + 0.4);
-
-  const oscGain = audioCtx.createGain();
-  oscGain.gain.setValueAtTime(vol, now);
-  oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-
-  // Crack
-  const crackDur = 0.08 + Math.random() * 0.06;
-  const crack = audioCtx.createBufferSource();
-  crack.buffer = makeNoise(crackDur);
-
-  const crackGain = audioCtx.createGain();
-  crackGain.gain.setValueAtTime(vol * 1.2, now);
-  crackGain.gain.exponentialRampToValueAtTime(0.001, now + crackDur + 0.05);
-
-  // Muffle far
-  const lpf = audioCtx.createBiquadFilter();
-  lpf.type = 'lowpass';
-  lpf.frequency.value = 1000 + depth * 4000;
-
-  osc.connect(oscGain);
-  oscGain.connect(lpf);
-  crack.connect(crackGain);
-  crackGain.connect(lpf);
-  lpf.connect(masterGain);
-  lpf.connect(reverbGain);
-
-  osc.start(now);
-  osc.stop(now + 0.5);
-  crack.start(now);
-  crack.stop(now + crackDur + 0.1);
-};
-
-// ── Crackle pops ─────────────────────────────────────────────────────────────
-
-const playCrackle = (depth) => {
-  if (!soundEnabled) return;
-  const now = audioCtx.currentTime;
-  const vol = 0.04 * depth;
-  const popCount = 8 + ((Math.random() * 8) | 0);
-
-  for (let i = 0; i < popCount; i++) {
-    const t = now + Math.random() * 0.5;
-    const popDur = 0.01 + Math.random() * 0.015;
-
-    const pop = audioCtx.createBufferSource();
-    pop.buffer = makeNoise(popDur);
-
-    const popGain = audioCtx.createGain();
-    popGain.gain.setValueAtTime(vol * (0.5 + Math.random() * 0.5), t);
-    popGain.gain.exponentialRampToValueAtTime(0.001, t + popDur + 0.02);
-
-    const hpf = audioCtx.createBiquadFilter();
-    hpf.type = 'highpass';
-    hpf.frequency.value = 2000 + Math.random() * 3000;
-
-    pop.connect(hpf);
-    hpf.connect(popGain);
-    popGain.connect(masterGain);
-
-    pop.start(t);
-    pop.stop(t + popDur + 0.05);
-  }
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -515,8 +315,6 @@ const doBurst = (x, y, shape, hex, rgb, depth) => {
       burstPeony(x, y, hex, rgb, depth);
   }
   spawnSmokeCluster(x, y, depth, rgb);
-  playBoom(depth, shape);
-  if (shape === 'crackle') playCrackle(depth);
 };
 
 const spawnParticle = (x, y, vx, vy, hex, rgb, depth, overrides = {}) => {
@@ -542,7 +340,6 @@ const spawnParticle = (x, y, vx, vy, hex, rgb, depth, overrides = {}) => {
   p.friction = overrides.friction ?? FRICTION;
   p.depth = depth;
 
-  // Color transition (70% chance)
   if (overrides.useTransition !== false && Math.random() < 0.7) {
     const [sHex, eHex] = pickTransition();
     p.startRgb = toRgb(sHex);
@@ -723,7 +520,6 @@ const launchRocket = (screenW, screenH) => {
   r.depth = depth;
   r.trailLen = 0;
   r.age = 0;
-  playRocketWhistle(depth);
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -755,7 +551,6 @@ const Fireworks = ({ onDone }) => {
 
     ensureGlowTexture();
     ensureSmokeTexture();
-    initAudio();
     resize();
     window.addEventListener('resize', resize);
 
@@ -775,7 +570,6 @@ const Fireworks = ({ onDone }) => {
 
     // ── Particle update + draw ────────────────────────────────────────
     function drawParticle(p) {
-      // Trail with vy history for droop
       if (p.trailLen < TRAIL_LEN) {
         p.trail[p.trailLen * 2] = p.x;
         p.trail[p.trailLen * 2 + 1] = p.y;
@@ -1063,7 +857,6 @@ const Fireworks = ({ onDone }) => {
         smokeAlive === 0 &&
         flashes.length === 0
       ) {
-        destroyAudio();
         onDone?.();
         return;
       }
@@ -1072,15 +865,14 @@ const Fireworks = ({ onDone }) => {
     };
 
     rafRef.current = requestAnimationFrame(loop);
-    safetyRef.current = window.setTimeout(() => {
-      destroyAudio();
-      onDone?.();
-    }, SHOW_DURATION + 5000);
+    safetyRef.current = window.setTimeout(
+      () => onDone?.(),
+      SHOW_DURATION + 5000
+    );
 
     return () => {
       cancelAnimationFrame(rafRef.current);
       clearTimeout(safetyRef.current);
-      destroyAudio();
       window.removeEventListener('resize', resize);
     };
   }, [onDone, resize]);
