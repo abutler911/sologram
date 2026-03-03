@@ -20,7 +20,7 @@ const optionalAuth = require('../middleware/optionalAuth');
 const Comment = require('../models/Comment');
 const Post = require('../models/Post');
 const Thought = require('../models/Thought');
-// const Story = require('../models/Story'); // uncomment when ready
+const Story = require('../models/Story');
 const Like = require('../models/Like');
 const { clean, safeAuthor } = require('../utils/commentHelpers');
 
@@ -30,7 +30,7 @@ const isValidId = (id) => mongoose.isValidObjectId(id);
 const MODEL_MAP = {
   post: Post,
   thought: Thought,
-  // story: Story,
+  story: Story,
 };
 
 const commentLimiter = rateLimit({

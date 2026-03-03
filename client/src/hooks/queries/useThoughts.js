@@ -75,7 +75,7 @@ export const useDeleteThought = () => {
 export const useLikeThought = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: api.likeThought,
+    mutationFn: (id) => api.toggleLike('thought', id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['thoughts'] });
     },

@@ -174,14 +174,14 @@ const PostDetail = () => {
   // ── Handlers ─────────────────────────────────────────────────────────────
 
   const handleLike = async () => {
-    if (!isAuthenticated || !post || isLiked) {
+    if (!isAuthenticated || !post) {
       if (!isAuthenticated) toast.error('Log in to like posts');
       return;
     }
     try {
-      await api.likePost(id);
-      setIsLiked(true);
-      setPost((p) => ({ ...p, likes: (p.likes || 0) + 1 }));
+      const data = await api.toggleLike('post', id);
+      setIsLiked(data.liked);
+      setPost((p) => ({ ...p, likes: data.count }));
       setIsLikeAnimating(true);
       setTimeout(() => setIsLikeAnimating(false), 500);
     } catch {

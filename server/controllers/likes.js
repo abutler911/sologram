@@ -10,15 +10,14 @@ const mongoose = require('mongoose');
 const Like = require('../models/Like');
 const Post = require('../models/Post');
 const Thought = require('../models/Thought');
+const Story = require('../models/Story');
 
 const isValidId = (id) => mongoose.isValidObjectId(id);
 
-// Map of targetType → model (for existence checks)
 const MODEL_MAP = {
   post: Post,
   thought: Thought,
-  // story: Story,     ← uncomment when Story model gets like support
-  // comment: Comment, ← uncomment if you want comment-like toggle here
+  story: Story,
 };
 
 // ─── Toggle (like / unlike) ─────────────────────────────────────────────────

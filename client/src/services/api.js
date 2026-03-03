@@ -99,15 +99,6 @@ export const api = {
   getReplies: (commentId, page = 1) =>
     get(`/api/comments/${commentId}/replies`, { page }),
 
-  // ── BACKWARD COMPAT (remove once all components are migrated) ──────────────
-  // Old post-like endpoints routing through the unified system
-  likePost: (id) =>
-    post('/api/likes/toggle', { targetType: 'post', targetId: id }),
-  likeThought: (id) =>
-    post('/api/likes/toggle', { targetType: 'thought', targetId: id }),
-  checkLikeStatus: (id) =>
-    get('/api/likes/count', { targetType: 'post', targetId: id }),
-
   // ── AUTH ───────────────────────────────────────────────────────────────────
   getMe: () => get('/api/auth/me'),
   updateProfile: (fd) => put('/api/auth/update-profile', fd),

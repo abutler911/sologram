@@ -80,7 +80,7 @@ export const useDeletePost = () => {
 export const useLikePost = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: api.likePost,
+    mutationFn: (id) => api.toggleLike('post', id),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: postKeys.detail(id) });
     },
