@@ -72,6 +72,17 @@ const CreateStory = () => {
   });
   const { trackUpload, untrackUpload, markSaved } = useUploadCleanup();
 
+  // ── Track new cloudinaryIds as uploads complete ────────────────────────────
+  const trackedIdsRef = useRef(new Set());
+  useEffect(() => {
+    media.forEach((item) => {
+      if (item.cloudinaryId && !trackedIdsRef.current.has(item.cloudinaryId)) {
+        trackedIdsRef.current.add(item.cloudinaryId);
+        trackUpload(item.cloudinaryId);
+      }
+    });
+  }, [media, trackUpload]);
+
   // ── Auth guard ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (
@@ -177,16 +188,12 @@ const CreateStory = () => {
       });
 
       for (const item of newItems) {
-        startUpload(item.file, item.id, item.type)
-          .then((result) => {
-            if (result?.cloudinaryId) trackUpload(result.cloudinaryId);
-          })
-          .catch((err) => {
-            console.error(`Upload failed for ${item.id}:`, err);
-          });
+        startUpload(item.file, item.id, item.type).catch((err) => {
+          console.error(`Upload failed for ${item.id}:`, err);
+        });
       }
     },
-    [media.length, startUpload, trackUpload]
+    [media.length, startUpload]
   );
 
   // ── Dropzone ───────────────────────────────────────────────────────────────
@@ -233,9 +240,9 @@ const CreateStory = () => {
               URL.revokeObjectURL(item.previewUrl);
             } catch (_) {}
           }
-          // Clean up from Cloudinary if already uploaded
           if (item.cloudinaryId) {
             untrackUpload(item.cloudinaryId);
+            trackedIdsRef.current.delete(item.cloudinaryId);
             api.deleteOrphanedMedia(item.cloudinaryId).catch((err) => {
               console.warn('[Cloudinary cleanup]', err?.message || err);
             });
@@ -258,9 +265,9 @@ const CreateStory = () => {
             URL.revokeObjectURL(item.previewUrl);
           } catch (_) {}
         }
-        // Clean up from Cloudinary if already uploaded
         if (item.cloudinaryId) {
           untrackUpload(item.cloudinaryId);
+          trackedIdsRef.current.delete(item.cloudinaryId);
           api.deleteOrphanedMedia(item.cloudinaryId).catch((err) => {
             console.warn('[Cloudinary cleanup]', err?.message || err);
           });
@@ -359,18 +366,17 @@ const CreateStory = () => {
 
     setVisionLoading(true);
 
-    // Try to grab current location (non-blocking — falls back gracefully)
     let coords = null;
     try {
       const pos = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           timeout: 5000,
-          maximumAge: 300000, // cache for 5 min
+          maximumAge: 300000,
         });
       });
       coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     } catch {
-      // Location denied or unavailable — no problem, proceed without
+      // Location denied or unavailable — proceed without
     }
 
     try {
@@ -398,7 +404,6 @@ const CreateStory = () => {
 
   return (
     <PageWrapper>
-      {/* ── Top bar ───────────────────────────────────────────────────────── */}
       <TopBar>
         <NavBtn onClick={() => navigate('/')} aria-label='Go back'>
           <FaArrowLeft />
@@ -410,7 +415,6 @@ const CreateStory = () => {
       </TopBar>
 
       <MainContent>
-        {/* File stats row */}
         {media.length > 0 && (
           <StatsRow>
             <StatText>
@@ -433,7 +437,6 @@ const CreateStory = () => {
 
         {error && <InlineError>{error}</InlineError>}
 
-        {/* ── Main preview / dropzone ──────────────────────────────────── */}
         {media.length > 0 ? (
           <PreviewFrame>
             {selectedItem &&
@@ -467,7 +470,6 @@ const CreateStory = () => {
                 </PlaceholderIcon>
               ))}
 
-            {/* Upload progress overlay */}
             {selectedItem?.uploading && (
               <MediaOverlay>
                 <SpinRing />
@@ -475,7 +477,6 @@ const CreateStory = () => {
               </MediaOverlay>
             )}
 
-            {/* Error overlay */}
             {selectedItem?.error && (
               <MediaOverlay $error>
                 <OverlayText>Upload failed</OverlayText>
@@ -490,7 +491,6 @@ const CreateStory = () => {
               <FaTimes />
             </RemoveBtn>
 
-            {/* Pill dots */}
             {media.length > 1 && (
               <DotRow>
                 {media.map((_, i) => (
@@ -556,7 +556,6 @@ const CreateStory = () => {
           </Dropzone>
         )}
 
-        {/* ── Thumbnail strip ──────────────────────────────────────────── */}
         {media.length > 0 && (
           <ThumbStrip ref={thumbnailContainerRef}>
             {media.map((item, index) => (
@@ -623,7 +622,6 @@ const CreateStory = () => {
           </ThumbStrip>
         )}
 
-        {/* ── AI Vision ────────────────────────────────────────────────── */}
         {media.length > 0 &&
           media.some((m) => m.type === 'image' && m.mediaUrl) && (
             <VisionButton
@@ -639,7 +637,6 @@ const CreateStory = () => {
             </VisionButton>
           )}
 
-        {/* ── Title ────────────────────────────────────────────────────── */}
         <FieldBlock>
           <FieldInput
             value={title}
@@ -654,7 +651,6 @@ const CreateStory = () => {
           </CharCount>
         </FieldBlock>
 
-        {/* ── Caption ──────────────────────────────────────────────────── */}
         <FieldBlock $borderless>
           <FieldTextarea
             ref={textAreaRef}
@@ -668,7 +664,6 @@ const CreateStory = () => {
         </FieldBlock>
       </MainContent>
 
-      {/* Full-page submit overlay */}
       {submitting && (
         <SubmitOverlay>
           <SpinRing $large />
@@ -980,6 +975,7 @@ const VisionButton = styled.button`
     cursor: not-allowed;
   }
 `;
+
 const Dot = styled.div`
   height: 4px;
   width: ${(p) => (p.$active ? '20px' : '4px')};

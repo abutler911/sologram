@@ -1,1113 +1,287 @@
-// client/src/components/posts/PostCreator.jsx
-import React, { useState, useCallback, useEffect, useRef, memo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useDropzone } from 'react-dropzone';
+import React, { createContext, useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import MediaItem from './PostCreator/media/MediaItem';
-import useUploadCleanup from '../../hooks/useUploadCleanup';
+import { clearEngagementCache } from '../hooks/useEngagement';
 
-import {
-  Container,
-  Header,
-  HeaderContent,
-  ContentSection,
-  MediaSection,
-  DropArea,
-  UploadIcon,
-  DropText,
-  UploadButton,
-  MediaGrid,
-  ActionBar,
-  PostButton,
-  AddMoreButton,
-  PostDetailsSection,
-  SectionHeader,
-  AIButton,
-  FormGroup,
-  Label,
-  FormInput,
-  FormTextarea,
-  TwoColumnGroup,
-  IconInput,
-  TagInput,
-  TagInputField,
-  TagsContainer,
-  Tag,
-  TagRemoveButton,
-  CharCount,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  CloseButton,
-  ModalBody,
-  Select,
-  InputRow,
-  Input,
-  ErrorMessage,
-  GenerateButton,
-  LoadingSpinner,
-  GeneratedSection,
-  SectionTitle,
-  ContentPreview,
-  ContentLabel,
-  ContentBox,
-  TagsPreview,
-  TagPreview,
-  ButtonRow,
-  SecondaryButton,
-  ApplyButton,
-  FilterModalContent,
-  FilterPreviewSection,
-  MainPreview,
-  FiltersGrid,
-  FilterOption,
-  FilterThumbnail,
-  FilterName,
-  FilterActionBar,
-} from './PostCreator.styles';
+export const AuthContext = createContext();
 
-import {
-  FaImage,
-  FaVideo,
-  FaTimes,
-  FaPlus,
-  FaTag,
-  FaPencilAlt,
-  FaLocationArrow,
-  FaCalendarDay,
-  FaRobot,
-  FaMagic,
-  FaCheck,
-} from 'react-icons/fa';
-import { useUploadManager } from '../../hooks/useUploadManager';
-import MediaGridSortable from './MediaGridSortable';
-import { filterToClass, fileToMediaType, FILTERS } from '../../lib/media';
-import { api } from '../../services/api';
+// ── Axios interceptor setup (runs once) ──────────────────────────────────────
+// We hold refs to the current tokens so the interceptor always reads fresh
+// values without needing to re-attach on every state change.
 
-const PLACEHOLDER_IMG =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='sans-serif' fill='%23999999'%3EImage Not Available%3C/text%3E%3C/svg%3E";
+let isRefreshing = false;
+let failedQueue = []; // requests that arrived while a refresh was in-flight
 
-// ── Media limits (enforced client + server + model) ──────────────────────────
-const MAX_FILES = 30;
-const MAX_IMAGE_SIZE = 25 * 1024 * 1024; // 25 MB
-const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
-const MAX_VIDEO_DURATION = 60; // seconds
-
-// Local YYYY-MM-DD helper (prevents UTC day rollback)
-const toLocalDateInput = (dateLike) => {
-  const d = dateLike ? new Date(dateLike) : new Date();
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-  return d.toISOString().split('T')[0];
-};
-
-const createBlobUrl = (file) => {
-  try {
-    return URL.createObjectURL(file);
-  } catch {
-    return null;
-  }
-};
-
-// Returns a Promise<number> of the video's duration in seconds.
-// Resolves 0 if it can't be determined (non-blocking — upload proceeds).
-const getVideoDuration = (file) =>
-  new Promise((resolve) => {
-    let settled = false;
-    const done = (val) => {
-      if (settled) return;
-      settled = true;
-      resolve(val);
-    };
-
-    // Mobile fallback: if metadata doesn't load in 3s, let it through
-    const timer = setTimeout(() => done(0), 3000);
-
-    try {
-      const url = URL.createObjectURL(file);
-      const video = document.createElement('video');
-      video.preload = 'metadata';
-
-      video.onloadedmetadata = () => {
-        clearTimeout(timer);
-        URL.revokeObjectURL(url);
-        done(video.duration || 0);
-      };
-      video.onerror = () => {
-        clearTimeout(timer);
-        URL.revokeObjectURL(url);
-        done(0);
-      };
-
-      video.src = url;
-    } catch {
-      clearTimeout(timer);
-      done(0);
-    }
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) reject(error);
+    else resolve(token);
   });
-
-const getSafeImageSrc = (mediaItem) => {
-  if (mediaItem.mediaUrl) return mediaItem.mediaUrl;
-  if (mediaItem.previewUrl) return mediaItem.previewUrl;
-  return PLACEHOLDER_IMG;
+  failedQueue = [];
 };
 
-// ─── AI Content Modal ─────────────────────────────────────────────────────────
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-const AIContentModal = ({ isOpen, onClose, onApplyContent }) => {
-  const [formData, setFormData] = useState({
-    description: '',
-    contentType: 'photography',
-    tone: 'thoughtful',
-    additionalContext: '',
-  });
-  const [generatedContent, setGeneratedContent] = useState(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState('');
+  // Keep refs so the interceptor closure always sees the latest values
+  const tokenRef = useRef(token);
+  const refreshTokenRef = useRef(localStorage.getItem('refreshToken'));
 
-  const contentTypes = [
-    { value: 'photography', label: 'Photography' },
-    { value: 'aviation', label: 'Aviation & Training' },
-    { value: 'observation', label: 'Observation' },
-    { value: 'music', label: 'Piano & Music' },
-    { value: 'travel', label: 'Travel & Utah' },
-    { value: 'thought', label: 'Thought' },
-    { value: 'reading', label: 'Reading' },
-  ];
-
-  const tones = [
-    { value: 'thoughtful', label: 'Thoughtful' },
-    { value: 'dry', label: 'Dry & Understated' },
-    { value: 'reflective', label: 'Reflective' },
-    { value: 'observational', label: 'Observational' },
-  ];
-
-  if (!isOpen) return null;
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((p) => ({ ...p, [name]: value }));
-    setError('');
-  };
-
-  const handleGenerate = async () => {
-    if (!formData.description.trim()) {
-      setError('Please provide a description for your content');
-      return;
-    }
-    setIsGenerating(true);
-    setError('');
-    try {
-      const data = await api.generateAIContent(formData);
-      setGeneratedContent(data?.data ?? data);
-      toast.success('Content generated successfully!');
-    } catch (err) {
-      setError(err.message || 'Failed to generate content. Please try again.');
-      toast.error('Failed to generate content');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleApply = () => {
-    if (generatedContent) {
-      onApplyContent(generatedContent);
-      onClose();
-      setGeneratedContent(null);
-      setFormData({
-        description: '',
-        contentType: 'general',
-        tone: 'casual',
-        additionalContext: '',
-      });
-      setError('');
-    }
-  };
-
-  const handleClose = () => {
-    onClose();
-    setGeneratedContent(null);
-    setFormData({
-      description: '',
-      contentType: 'general',
-      tone: 'casual',
-      additionalContext: '',
-    });
-    setError('');
-  };
-
-  return (
-    <ModalOverlay onClick={handleClose}>
-      <ModalContent onClick={(e) => e.stopPropagation()}>
-        <ModalHeader>
-          <h3>✨ Generate AI Content</h3>
-          <CloseButton onClick={handleClose}>
-            <FaTimes />
-          </CloseButton>
-        </ModalHeader>
-
-        <ModalBody>
-          <FormGroup>
-            <Label>Content Description *</Label>
-            <Input
-              name='description'
-              value={formData.description}
-              onChange={handleInputChange}
-              placeholder='Describe what you want to post about...'
-              maxLength='500'
-            />
-            <CharCount>{formData.description.length}/500</CharCount>
-          </FormGroup>
-
-          <InputRow>
-            <FormGroup>
-              <Label>Content Type</Label>
-              <Select
-                name='contentType'
-                value={formData.contentType}
-                onChange={handleInputChange}
-              >
-                {contentTypes.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </Select>
-            </FormGroup>
-
-            <FormGroup>
-              <Label>Tone</Label>
-              <Select
-                name='tone'
-                value={formData.tone}
-                onChange={handleInputChange}
-              >
-                {tones.map((tone) => (
-                  <option key={tone.value} value={tone.value}>
-                    {tone.label}
-                  </option>
-                ))}
-              </Select>
-            </FormGroup>
-          </InputRow>
-
-          <FormGroup>
-            <Label>Additional Context (Optional)</Label>
-            <Input
-              name='additionalContext'
-              value={formData.additionalContext}
-              onChange={handleInputChange}
-              placeholder='Any additional details...'
-              maxLength='200'
-            />
-          </FormGroup>
-
-          {error && (
-            <ErrorMessage>
-              <FaTimes />
-              {error}
-            </ErrorMessage>
-          )}
-
-          <GenerateButton
-            onClick={handleGenerate}
-            disabled={isGenerating || !formData.description.trim()}
-          >
-            {isGenerating ? (
-              <>
-                <LoadingSpinner />
-                Generating...
-              </>
-            ) : (
-              <>
-                <FaMagic />
-                Generate Content
-              </>
-            )}
-          </GenerateButton>
-
-          {generatedContent && (
-            <GeneratedSection>
-              <SectionTitle>Generated Content</SectionTitle>
-
-              <ContentPreview>
-                <ContentLabel>Title</ContentLabel>
-                <ContentBox>{generatedContent.title}</ContentBox>
-              </ContentPreview>
-
-              <ContentPreview>
-                <ContentLabel>Caption</ContentLabel>
-                <ContentBox>{generatedContent.caption}</ContentBox>
-              </ContentPreview>
-
-              {generatedContent.tags && generatedContent.tags.length > 0 && (
-                <ContentPreview>
-                  <ContentLabel>Suggested Tags</ContentLabel>
-                  <TagsPreview>
-                    {generatedContent.tags.map((tag, index) => (
-                      <TagPreview key={index}>#{tag}</TagPreview>
-                    ))}
-                  </TagsPreview>
-                </ContentPreview>
-              )}
-
-              <ButtonRow>
-                <SecondaryButton onClick={() => setGeneratedContent(null)}>
-                  Generate New
-                </SecondaryButton>
-                <ApplyButton onClick={handleApply}>
-                  Use This Content
-                </ApplyButton>
-              </ButtonRow>
-            </GeneratedSection>
-          )}
-        </ModalBody>
-      </ModalContent>
-    </ModalOverlay>
-  );
-};
-
-// ─── Filter Modal ─────────────────────────────────────────────────────────────
-
-const FilterModal = ({ isOpen, onClose, mediaItem, onApplyFilter }) => {
-  const [selectedFilter, setSelectedFilter] = useState(
-    mediaItem?.filter || 'none'
-  );
-
+  // Sync axios default header whenever token changes
   useEffect(() => {
-    if (mediaItem) {
-      setSelectedFilter(mediaItem.filter || 'none');
-    }
-  }, [mediaItem]);
-
-  if (!isOpen || !mediaItem) return null;
-
-  const handleApplyFilter = () => {
-    onApplyFilter(selectedFilter);
-    onClose();
-  };
-
-  return (
-    <ModalOverlay onClick={onClose}>
-      <FilterModalContent onClick={(e) => e.stopPropagation()}>
-        <ModalHeader>
-          <h3>Choose Filter</h3>
-          <CloseButton onClick={onClose}>
-            <FaTimes />
-          </CloseButton>
-        </ModalHeader>
-
-        <FilterPreviewSection>
-          <MainPreview>
-            {mediaItem.mediaType === 'video' ? (
-              <video
-                src={getSafeImageSrc(mediaItem)}
-                className={
-                  FILTERS.find((f) => f.id === selectedFilter)?.className || ''
-                }
-                style={{ width: '100%', height: '300px', objectFit: 'cover' }}
-                controls
-                playsInline
-              />
-            ) : (
-              <img
-                src={getSafeImageSrc(mediaItem)}
-                className={
-                  FILTERS.find((f) => f.id === selectedFilter)?.className || ''
-                }
-                style={{ width: '100%', height: '300px', objectFit: 'cover' }}
-                alt='Preview'
-              />
-            )}
-          </MainPreview>
-
-          <FiltersGrid>
-            {FILTERS.map((filter) => (
-              <FilterOption
-                key={filter.id}
-                active={selectedFilter === filter.id}
-                onClick={() => setSelectedFilter(filter.id)}
-              >
-                <FilterThumbnail className={filter.className}>
-                  <img
-                    src={getSafeImageSrc(mediaItem)}
-                    alt={filter.name}
-                    onError={(e) => {
-                      e.target.src = PLACEHOLDER_IMG;
-                    }}
-                  />
-                </FilterThumbnail>
-                <FilterName active={selectedFilter === filter.id}>
-                  {filter.name}
-                </FilterName>
-              </FilterOption>
-            ))}
-          </FiltersGrid>
-
-          <FilterActionBar>
-            <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
-            <ApplyButton onClick={handleApplyFilter}>
-              <FaCheck /> Apply Filter
-            </ApplyButton>
-          </FilterActionBar>
-        </FilterPreviewSection>
-      </FilterModalContent>
-    </ModalOverlay>
-  );
-};
-
-// ─── Memoized form section ────────────────────────────────────────────────────
-
-const PostDetailsForm = memo(function PostDetailsForm({
-  title,
-  setTitle,
-  caption,
-  setCaption,
-  content,
-  setContent,
-  tags,
-  setTags,
-  currentTag,
-  setCurrentTag,
-  location,
-  setLocation,
-  eventDate,
-  setEventDate,
-  onOpenAIModal,
-}) {
-  const addTag = (tagText = null) => {
-    const tagToAdd = (tagText || currentTag.trim()).toLowerCase();
-    if (!tagToAdd || tags.includes(tagToAdd)) return;
-    if (tags.length >= 5) {
-      toast.error('Maximum 5 tags allowed');
-      return;
-    }
-    setTags((prev) => [...prev, tagToAdd]);
-    setCurrentTag('');
-  };
-
-  const handleTagInputKeyDown = (e) => {
-    if (e.key === ' ' || e.key === 'Enter') {
-      e.preventDefault();
-      if (currentTag.trim()) addTag();
-    } else if (e.key === 'Backspace' && !currentTag && tags.length > 0) {
-      setTags((prev) => prev.slice(0, -1));
-    }
-  };
-
-  const handleTagInputChange = (e) => {
-    const value = e.target.value;
-    if (value.includes(' ')) {
-      const tagText = value.split(' ')[0].trim();
-      if (tagText) addTag(tagText);
+    tokenRef.current = token;
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } else {
-      setCurrentTag(value);
+      delete axios.defaults.headers.common['Authorization'];
+    }
+  }, [token]);
+
+  // ── Helpers to persist tokens ────────────────────────────────────────────
+  const persistTokens = (accessToken, refreshTkn) => {
+    if (accessToken) {
+      localStorage.setItem('token', accessToken);
+      setToken(accessToken);
+      tokenRef.current = accessToken;
+    }
+    if (refreshTkn) {
+      localStorage.setItem('refreshToken', refreshTkn);
+      refreshTokenRef.current = refreshTkn;
     }
   };
 
-  const removeTag = (tagToRemove) => {
-    setTags((prev) => prev.filter((t) => t !== tagToRemove));
+  const clearTokens = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    setToken(null);
+    tokenRef.current = null;
+    refreshTokenRef.current = null;
+    setUser(null);
+    setIsAuthenticated(false);
+    delete axios.defaults.headers.common['Authorization'];
   };
 
-  return (
-    <PostDetailsSection>
-      <SectionHeader>
-        <h3>Post Details</h3>
-        <AIButton onClick={onOpenAIModal}>
-          <FaRobot />
-          <span>AI Assist</span>
-        </AIButton>
-      </SectionHeader>
-
-      <FormGroup>
-        <Label>Title *</Label>
-        <FormInput
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder='Add a catchy title...'
-          maxLength={100}
-        />
-        <CharCount>{title.length}/100</CharCount>
-      </FormGroup>
-
-      <FormGroup>
-        <Label>Caption *</Label>
-        <FormTextarea
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-          placeholder='Write a caption that tells your story...'
-          rows={4}
-          maxLength={2200}
-        />
-        <CharCount>{caption.length}/2200</CharCount>
-      </FormGroup>
-
-      <TwoColumnGroup>
-        <FormGroup>
-          <Label>Event Date</Label>
-          <IconInput>
-            <FaCalendarDay />
-            <FormInput
-              type='date'
-              value={eventDate}
-              onChange={(e) => setEventDate(e.target.value)}
-            />
-          </IconInput>
-        </FormGroup>
-
-        <FormGroup>
-          <Label>Location</Label>
-          <IconInput>
-            <FaLocationArrow />
-            <FormInput
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder='Add location'
-            />
-          </IconInput>
-        </FormGroup>
-      </TwoColumnGroup>
-
-      <FormGroup>
-        <Label>Tags</Label>
-        <TagInput>
-          <FaTag />
-          <TagInputField
-            value={currentTag}
-            onChange={handleTagInputChange}
-            onKeyDown={handleTagInputKeyDown}
-            placeholder='Type tags and press space to add...'
-            maxLength={30}
-          />
-        </TagInput>
-
-        {tags.length > 0 && (
-          <TagsContainer>
-            {tags.map((tag, index) => (
-              <Tag key={index}>
-                #{tag}
-                <TagRemoveButton onClick={() => removeTag(tag)}>
-                  <FaTimes />
-                </TagRemoveButton>
-              </Tag>
-            ))}
-          </TagsContainer>
-        )}
-      </FormGroup>
-
-      <FormGroup>
-        <Label>Additional Content</Label>
-        <IconInput>
-          <FaPencilAlt />
-          <FormInput
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder='Add any additional details (optional)'
-          />
-        </IconInput>
-      </FormGroup>
-    </PostDetailsSection>
-  );
-});
-
-// ─── Main Component ───────────────────────────────────────────────────────────
-
-function PostCreator({ initialData = null, isEditing = false, onSuccess }) {
-  const [media, setMedia] = useState([]);
-  const [title, setTitle] = useState(initialData?.title || '');
-  const [caption, setCaption] = useState(initialData?.caption || '');
-  const [content, setContent] = useState(initialData?.content || '');
-  const [tags, setTags] = useState(initialData?.tags || []);
-  const [currentTag, setCurrentTag] = useState('');
-  const [location, setLocation] = useState(initialData?.location || '');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [eventDate, setEventDate] = useState(() =>
-    toLocalDateInput(initialData?.eventDate)
-  );
-  const [showAIModal, setShowAIModal] = useState(false);
-  const [showFilterModal, setShowFilterModal] = useState(false);
-  const [selectedMediaForFilter, setSelectedMediaForFilter] = useState(null);
-
-  const navigate = useNavigate();
-  const { startUpload, cancelUpload, uploadProgress, mountedRef } =
-    useUploadManager(setMedia);
-  const { trackUpload, untrackUpload, markSaved } = useUploadCleanup();
-  const mediaRef = useRef(media);
+  // ── Axios response interceptor — silent refresh on 401 ───────────────────
   useEffect(() => {
-    mediaRef.current = media;
-  }, [media]);
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
 
-  // Cleanup blob URLs on unmount
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-      mediaRef.current.forEach((item) => {
+        // Only intercept 401s, skip if it's the refresh endpoint itself
+        // or if we already retried this request
         if (
-          item?.previewUrl &&
-          !item.isExisting &&
-          item.previewUrl.startsWith('blob:')
+          error.response?.status !== 401 ||
+          originalRequest._retry ||
+          originalRequest.url?.includes('/api/auth/refresh-token') ||
+          originalRequest.url?.includes('/api/auth/login') ||
+          originalRequest.url?.includes('/api/auth/register')
         ) {
-          try {
-            URL.revokeObjectURL(item.previewUrl);
-          } catch {}
-        }
-      });
-    };
-  }, []);
-
-  // Populate existing media when editing
-  useEffect(() => {
-    if (isEditing && initialData?.media?.length > 0) {
-      const existingMedia = initialData.media.map((item) => {
-        const filter = item.filter || 'none';
-        const filterClass = filterToClass(filter);
-        return {
-          id:
-            item._id ||
-            `existing_${Date.now()}_${Math.random()
-              .toString(36)
-              .substring(2, 8)}`,
-          _id: item._id,
-          mediaUrl: item.mediaUrl,
-          cloudinaryId: item.cloudinaryId,
-          mediaType: item.mediaType,
-          filter,
-          filterClass,
-          isExisting: true,
-          uploading: false,
-          error: false,
-        };
-      });
-      setMedia(existingMedia);
-    }
-  }, [isEditing, initialData]);
-
-  // ── Dropzone ───────────────────────────────────────────────────────────────
-
-  const onDrop = useCallback(
-    async (acceptedFiles) => {
-      if (acceptedFiles.length === 0) return;
-
-      const current = mediaRef.current;
-
-      // ── File count cap ─────────────────────────────────────────────────
-      const slotsLeft = MAX_FILES - current.length;
-      if (slotsLeft <= 0) {
-        toast.error(`Maximum ${MAX_FILES} files per post`);
-        return;
-      }
-      if (acceptedFiles.length > slotsLeft) {
-        toast.error(
-          `Only ${slotsLeft} more file(s) allowed — dropped the rest`
-        );
-        acceptedFiles = acceptedFiles.slice(0, slotsLeft);
-      }
-
-      // ── Dupe check ─────────────────────────────────────────────────────
-      const uniqueFiles = acceptedFiles.filter((file) => {
-        const isDupe = current.some(
-          (m) =>
-            m.file?.name === file.name &&
-            m.file?.size === file.size &&
-            m.file?.lastModified === file.lastModified
-        );
-        if (isDupe) toast.error(`File "${file.name}" is already added.`);
-        return !isDupe;
-      });
-      if (uniqueFiles.length === 0) return;
-
-      // ── Size + duration validation ─────────────────────────────────────
-      const validated = [];
-      for (const file of uniqueFiles) {
-        const isVideo = file.type.startsWith('video/');
-        const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
-        const label = isVideo ? 'Video' : 'Image';
-        const limitMB = Math.round(maxSize / 1024 / 1024);
-
-        if (file.size > maxSize) {
-          toast.error(`${label} "${file.name}" exceeds ${limitMB}MB limit`);
-          continue;
+          return Promise.reject(error);
         }
 
-        if (isVideo) {
-          const duration = await getVideoDuration(file);
-          if (duration > MAX_VIDEO_DURATION) {
-            toast.error(
-              `Video "${file.name}" is ${Math.round(
-                duration
-              )}s — max ${MAX_VIDEO_DURATION}s`
-            );
-            continue;
-          }
+        // No refresh token stored — can't recover, log out
+        if (!refreshTokenRef.current) {
+          clearTokens();
+          return Promise.reject(error);
         }
 
-        validated.push(file);
-      }
-      if (validated.length === 0) return;
-
-      // ── Build items and start uploads ──────────────────────────────────
-      const newItems = validated.map((file) => {
-        const id = `media_${Date.now()}_${Math.random()
-          .toString(36)
-          .substring(2, 8)}`;
-        return {
-          id,
-          file,
-          previewUrl: createBlobUrl(file),
-          mediaType: fileToMediaType(file) === 'video' ? 'video' : 'image',
-          filter: 'none',
-          filterClass: '',
-          uploading: true,
-          progress: 0,
-          error: false,
-        };
-      });
-
-      setMedia((prev) => [...prev, ...newItems]);
-
-      newItems.forEach((item) => {
-        startUpload(item.file, item.id, item.mediaType)
-          .then((result) => {
-            if (result?.cloudinaryId) trackUpload(result.cloudinaryId);
+        // If a refresh is already in-flight, queue this request
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
           })
-          .catch((err) => {
-            console.error(`Upload failed for ${item.id}:`, err);
-          });
-      });
-    },
-    [startUpload]
-  );
-
-  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
-    accept: {
-      'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
-      'video/*': ['.mp4', '.mov', '.avi', '.webm'],
-    },
-    onDrop,
-    maxSize: MAX_VIDEO_SIZE, // outer cap — per-type limits enforced in onDrop
-    noClick: true,
-    noKeyboard: true,
-  });
-
-  // ── Media handlers ─────────────────────────────────────────────────────────
-
-  const removeMedia = useCallback(
-    (idToRemove) => {
-      cancelUpload(idToRemove);
-
-      setMedia((current) => {
-        const item = current.find((m) => m.id === idToRemove);
-        if (!item) return current;
-
-        if (
-          item.previewUrl &&
-          !item.isExisting &&
-          item.previewUrl.startsWith('blob:')
-        ) {
-          try {
-            URL.revokeObjectURL(item.previewUrl);
-          } catch {}
+            .then((newToken) => {
+              originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+              return axios(originalRequest);
+            })
+            .catch((err) => Promise.reject(err));
         }
 
-        if (!item.isExisting && item.cloudinaryId) {
-          untrackUpload(item.cloudinaryId);
-          api.deleteOrphanedMedia(item.cloudinaryId).catch((err) => {
-            console.warn('[Cloudinary cleanup]', err?.message || err);
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        try {
+          const { data } = await axios.post('/api/auth/refresh-token', {
+            refreshToken: refreshTokenRef.current,
           });
+
+          const newAccess = data.accessToken || data.token;
+          const newRefresh = data.refreshToken || refreshTokenRef.current;
+
+          persistTokens(newAccess, newRefresh);
+
+          // Retry all queued requests with the new token
+          processQueue(null, newAccess);
+
+          // Retry the original request
+          originalRequest.headers['Authorization'] = `Bearer ${newAccess}`;
+          return axios(originalRequest);
+        } catch (refreshError) {
+          processQueue(refreshError, null);
+          clearTokens();
+          // Only toast if user was previously authenticated (not on initial load)
+          if (tokenRef.current) {
+            toast.error('Session expired. Please log in again.');
+          }
+          return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
         }
-
-        return current.filter((m) => m.id !== idToRemove);
-      });
-    },
-    [cancelUpload]
-  );
-
-  const openFilterModal = useCallback((mediaItem) => {
-    setSelectedMediaForFilter(mediaItem);
-    setShowFilterModal(true);
-  }, []);
-
-  const applyFilter = useCallback(
-    (filterId) => {
-      if (!selectedMediaForFilter) return;
-      const filterClass = filterToClass(filterId);
-      setMedia((current) =>
-        current.map((item) =>
-          item.id === selectedMediaForFilter.id
-            ? { ...item, filter: filterId, filterClass }
-            : item
-        )
-      );
-    },
-    [selectedMediaForFilter]
-  );
-
-  const reorderMedia = useCallback((fromIndex, toIndex) => {
-    setMedia((current) => {
-      const next = [...current];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      return next;
-    });
-  }, []);
-
-  // ── AI content ─────────────────────────────────────────────────────────────
-
-  const openAIModal = useCallback(() => setShowAIModal(true), []);
-
-  const handleAIContentApply = (generatedContent) => {
-    if (generatedContent.title) setTitle(generatedContent.title);
-    if (generatedContent.caption) setCaption(generatedContent.caption);
-    if (generatedContent.tags?.length > 0) {
-      const availableSlots = 5 - tags.length;
-      const newTags = generatedContent.tags
-        .slice(0, availableSlots)
-        .map((t) => t.toLowerCase());
-      setTags((prev) => [...prev, ...newTags]);
-      toast.success(`Content applied with ${newTags.length} tags!`);
-    } else {
-      toast.success('Content applied!');
-    }
-  };
-
-  // ── Submit ─────────────────────────────────────────────────────────────────
-
-  const handleSubmit = async () => {
-    if (media.length === 0) {
-      toast.error('Please add at least one photo or video');
-      return;
-    }
-    if (!title.trim()) {
-      toast.error('Please add a title');
-      return;
-    }
-    if (!caption.trim()) {
-      toast.error('Please add a caption');
-      return;
-    }
-    if (media.some((item) => item.uploading)) {
-      toast.error('Please wait for uploads to complete');
-      return;
-    }
-    const failedItems = media.filter((item) => item.error);
-    if (failedItems.length > 0) {
-      toast.error(
-        `Please remove ${failedItems.length} failed upload(s) before continuing`
-      );
-      return;
-    }
-    const incompleteItems = media.filter(
-      (item) => !item.mediaUrl || !item.cloudinaryId
+      }
     );
-    if (incompleteItems.length > 0) {
-      toast.error(
-        `${incompleteItems.length} media item(s) failed to upload properly`
-      );
-      return;
-    }
 
-    setIsSubmitting(true);
+    return () => axios.interceptors.response.eject(interceptor);
+  }, []); // runs once — uses refs, not stale closures
 
+  // ── Load user on mount ───────────────────────────────────────────────────
+  useEffect(() => {
+    const loadUser = async () => {
+      if (token) {
+        try {
+          const res = await axios.get('/api/auth/me');
+          setUser(res.data.data);
+          setIsAuthenticated(true);
+        } catch (err) {
+          // The interceptor will have already tried to refresh.
+          // If we still failed, tokens are cleared automatically.
+        }
+      }
+      setLoading(false);
+    };
+    loadUser();
+  }, [token]);
+
+  // ── Register ─────────────────────────────────────────────────────────────
+  const register = async (formData) => {
     try {
-      let response;
+      const res = await axios.post('/api/auth/register', formData);
 
-      if (isEditing) {
-        const keepMedia = media
-          .filter((item) => item.isExisting && item._id)
-          .map((item) => item._id);
+      persistTokens(res.data.token, res.data.refreshToken);
+      setUser(res.data.user);
+      setIsAuthenticated(true);
 
-        const newMedia = media
-          .filter((item) => !item.isExisting)
-          .map((item, index) => ({
-            mediaUrl: item.mediaUrl,
-            cloudinaryId: item.cloudinaryId,
-            mediaType: item.mediaType || item.type,
-            filter: item.filter || 'none',
-            order: index,
-          }));
-
-        const payload = {
-          title: title ?? '',
-          caption: caption ?? '',
-          content: content ?? '',
-          tags: tags.join(','),
-          location: location ?? '',
-          date: eventDate,
-          keepMedia,
-          media: newMedia,
-        };
-
-        response = await api.updatePost(initialData._id, payload);
-
-        if (onSuccess) await onSuccess(initialData._id);
-
-        toast.success('Post updated successfully!');
-        markSaved();
-        navigate(`/post/${initialData._id}`);
-        return;
-      } else {
-        const payload = {
-          title: title ?? '',
-          caption: caption ?? '',
-          content: content ?? '',
-          tags: tags.join(','),
-          location: location ?? '',
-          date: eventDate,
-          media: media
-            .filter((item) => !item.error)
-            .map((item, index) => ({
-              mediaUrl: item.mediaUrl,
-              cloudinaryId: item.cloudinaryId,
-              mediaType: item.mediaType || item.type,
-              filter: item.filter || 'none',
-              order: index,
-            })),
-        };
-
-        response = await api.createPost(payload);
-        toast.success('Post created successfully!');
-        markSaved();
-      }
-
-      const postId = response?.data?._id ?? response?._id;
-
-      if (!postId) {
-        navigate('/');
-        return;
-      }
-
-      navigate(`/post/${postId}`);
-    } catch (error) {
-      const errorMessage =
-        error.response?.data?.message || error.message || 'Please try again';
-      toast.error(
-        `Failed to ${isEditing ? 'update' : 'create'} post: ${errorMessage}`
-      );
-    } finally {
-      setIsSubmitting(false);
+      toast.success('Registration successful!');
+      return true;
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Registration failed');
+      return false;
     }
   };
 
-  const isFormValid =
-    media.length > 0 &&
-    title.trim() &&
-    caption.trim() &&
-    !media.some((item) => item.uploading || item.error);
+  // ── Login ────────────────────────────────────────────────────────────────
+  const login = async (email, password) => {
+    try {
+      const res = await axios.post('/api/auth/login', { email, password });
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+      persistTokens(res.data.token, res.data.refreshToken);
+      setUser(res.data.user);
+      setIsAuthenticated(true);
+
+      toast.success('Login successful!');
+      return true;
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Login failed');
+      return false;
+    }
+  };
+
+  // ── Logout ───────────────────────────────────────────────────────────────
+  const logout = async () => {
+    try {
+      await axios.post('/api/auth/logout');
+    } catch {
+      // Server logout failed — still clear locally
+    }
+    clearTokens();
+    clearEngagementCache();
+    toast.success('Logged out successfully');
+  };
+
+  // ── Update profile ───────────────────────────────────────────────────────
+  const updateProfile = async (formData) => {
+    try {
+      const res = await axios.put('/api/auth/update-profile', formData);
+      setUser(res.data.data);
+      toast.success('Profile updated successfully');
+      return true;
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Profile update failed');
+      return false;
+    }
+  };
+
+  // ── Update bio ───────────────────────────────────────────────────────────
+  const updateBio = async (bio) => {
+    try {
+      const res = await axios.put(
+        '/api/auth/update-bio',
+        { bio },
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+      setUser(res.data.data);
+      return true;
+    } catch (err) {
+      // Fallback to profile endpoint if bio endpoint doesn't exist
+      if (err.response?.status === 404) {
+        try {
+          const formData = new FormData();
+          formData.append('bio', bio);
+          const res = await axios.put('/api/auth/update-profile', formData);
+          setUser(res.data.data);
+          return true;
+        } catch (fallbackErr) {
+          toast.error(
+            fallbackErr.response?.data?.message || 'Bio update failed'
+          );
+          return false;
+        }
+      }
+      toast.error(err.response?.data?.message || 'Bio update failed');
+      return false;
+    }
+  };
+
+  // ── Notification preferences ─────────────────────────────────────────────
+  const updateNotificationPreferences = async (preferences) => {
+    try {
+      const res = await axios.post(
+        '/api/notifications/preferences',
+        preferences
+      );
+      if (res.data.data?.user) setUser(res.data.data.user);
+      toast.success('Notification preferences updated');
+      return true;
+    } catch (err) {
+      toast.error(
+        err.response?.data?.message ||
+          'Failed to update notification preferences'
+      );
+      return false;
+    }
+  };
 
   return (
-    <Container>
-      <Header>
-        <HeaderContent>
-          <h1>{isEditing ? 'Edit Post' : 'Create New Post'}</h1>
-          <p>Share your moments with the world</p>
-        </HeaderContent>
-      </Header>
-
-      <ContentSection>
-        <MediaSection>
-          {/* Hidden file input — MUST always be in the DOM. open() 
-              programmatically clicks this. Previously it was only rendered
-              inside DropArea (empty state), so "Add more" did nothing. */}
-          <input {...getInputProps()} />
-
-          {media.length === 0 ? (
-            <DropArea {...getRootProps()} isDragActive={isDragActive}>
-              <UploadIcon className='upload-icon'>
-                <FaImage />
-                <FaVideo />
-              </UploadIcon>
-              <DropText>
-                <h3>Add photos and videos</h3>
-                <p>Drag and drop or click to upload</p>
-              </DropText>
-              <UploadButton
-                type='button'
-                onClick={(e) => {
-                  e.stopPropagation();
-                  open();
-                }}
-              >
-                <FaPlus /> Select from device
-              </UploadButton>
-            </DropArea>
-          ) : (
-            <MediaGrid>
-              <MediaGridSortable
-                items={media}
-                onReorder={reorderMedia}
-                renderItem={(item, index) => (
-                  <MediaItem
-                    key={item.id}
-                    mediaItem={item}
-                    index={index}
-                    progress={uploadProgress[item.id] ?? null}
-                    onRemove={() => removeMedia(item.id)}
-                    onFilter={() => openFilterModal(item)}
-                    onReorder={reorderMedia}
-                    isDragging={false}
-                  />
-                )}
-                AddMoreButton={
-                  <AddMoreButton onClick={open}>
-                    <FaPlus />
-                    <span>Add more</span>
-                  </AddMoreButton>
-                }
-              />
-            </MediaGrid>
-          )}
-        </MediaSection>
-
-        <PostDetailsForm
-          title={title}
-          setTitle={setTitle}
-          caption={caption}
-          setCaption={setCaption}
-          content={content}
-          setContent={setContent}
-          tags={tags}
-          setTags={setTags}
-          currentTag={currentTag}
-          setCurrentTag={setCurrentTag}
-          location={location}
-          setLocation={setLocation}
-          eventDate={eventDate}
-          setEventDate={setEventDate}
-          onOpenAIModal={openAIModal}
-        />
-      </ContentSection>
-
-      <ActionBar>
-        <PostButton
-          onClick={handleSubmit}
-          disabled={!isFormValid || isSubmitting}
-        >
-          {isSubmitting
-            ? isEditing
-              ? 'Updating...'
-              : 'Publishing...'
-            : isEditing
-            ? 'Update Post'
-            : 'Publish Post'}
-        </PostButton>
-      </ActionBar>
-
-      <AIContentModal
-        isOpen={showAIModal}
-        onClose={() => setShowAIModal(false)}
-        onApplyContent={handleAIContentApply}
-      />
-
-      <FilterModal
-        isOpen={showFilterModal}
-        onClose={() => setShowFilterModal(false)}
-        mediaItem={selectedMediaForFilter}
-        onApplyFilter={applyFilter}
-      />
-    </Container>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated,
+        loading,
+        register,
+        login,
+        logout,
+        updateProfile,
+        updateBio,
+        updateNotificationPreferences,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
   );
-}
-
-export default PostCreator;
+};
