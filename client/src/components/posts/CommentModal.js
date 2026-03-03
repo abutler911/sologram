@@ -315,41 +315,47 @@ export const CommentModal = ({
           )}
         </ScrollArea>
 
-        <InputArea>
-          {replyingTo && (
-            <ReplyBanner>
-              <span>Replying to {replyingTo.author?.name || 'user'}</span>
-              <button onClick={clearReply}>
-                <FaTimes />
-              </button>
-            </ReplyBanner>
-          )}
-          <Form onSubmit={handleSubmit}>
-            <UserAvatar src={user?.avatar || AVATAR_FALLBACK} alt='You' />
-            <InputWrap $focused={false}>
-              <Input
-                ref={inputRef}
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) handleSubmit(e);
-                }}
-                placeholder={
-                  replyingTo
-                    ? `Reply to ${replyingTo.author?.name || 'user'}...`
-                    : 'Write a thought...'
-                }
-              />
-              <SendBtn
-                type='submit'
-                disabled={!newComment.trim() || isSubmitting}
-                aria-label='Post comment'
-              >
-                {isSubmitting ? <SmallSpinner /> : <FaPaperPlane />}
-              </SendBtn>
-            </InputWrap>
-          </Form>
-        </InputArea>
+        {isAuthenticated ? (
+          <InputArea>
+            {replyingTo && (
+              <ReplyBanner>
+                <span>Replying to {replyingTo.author?.name || 'user'}</span>
+                <button onClick={clearReply}>
+                  <FaTimes />
+                </button>
+              </ReplyBanner>
+            )}
+            <Form onSubmit={handleSubmit}>
+              <UserAvatar src={user?.avatar || AVATAR_FALLBACK} alt='You' />
+              <InputWrap $focused={false}>
+                <Input
+                  ref={inputRef}
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) handleSubmit(e);
+                  }}
+                  placeholder={
+                    replyingTo
+                      ? `Reply to ${replyingTo.author?.name || 'user'}...`
+                      : 'Write a thought...'
+                  }
+                />
+                <SendBtn
+                  type='submit'
+                  disabled={!newComment.trim() || isSubmitting}
+                  aria-label='Post comment'
+                >
+                  {isSubmitting ? <SmallSpinner /> : <FaPaperPlane />}
+                </SendBtn>
+              </InputWrap>
+            </Form>
+          </InputArea>
+        ) : (
+          <InputArea>
+            <LoginPrompt>Log in to join the conversation</LoginPrompt>
+          </InputArea>
+        )}
       </Sheet>
     </Overlay>,
     document.body
@@ -842,4 +848,16 @@ const EmptySub = styled.p`
   color: ${NOIR.ash};
   margin: 0;
   opacity: 0.4;
+`;
+
+const LoginPrompt = styled.p`
+  text-align: center;
+  width: 100%;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: ${NOIR.ash};
+  padding: 12px 0;
+  margin: 0;
 `;
