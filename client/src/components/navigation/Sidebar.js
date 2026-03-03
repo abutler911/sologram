@@ -17,7 +17,6 @@ import {
   FaSignOutAlt,
   FaImages,
   FaArchive,
-  FaMagic,
 } from 'react-icons/fa';
 import { COLORS } from '../../theme';
 import { LogoText } from './nav.styles';
@@ -36,7 +35,6 @@ const Sidebar = ({
   onLogout,
   onSearchOpen,
   onCreateOpen,
-  onPaletteOpen,
 }) => (
   <Wrapper>
     <Inner>
@@ -157,16 +155,6 @@ const Sidebar = ({
           </NavLink>
         )}
       </Nav>
-
-      {/* Command palette hint */}
-      <PaletteBtn onClick={onPaletteOpen}>
-        <FaMagic />
-        <PaletteBtnLabel>Command</PaletteBtnLabel>
-        <KbdGroup>
-          <Kbd>&#8984;</Kbd>
-          <Kbd>K</Kbd>
-        </KbdGroup>
-      </PaletteBtn>
     </Inner>
   </Wrapper>
 );
@@ -538,63 +526,4 @@ const SectionLabel = styled.div`
   @media (min-width: 1200px) {
     display: block;
   }
-`;
-
-// ── Command palette hint ─────────────────────────────────────────────────────
-
-const PaletteBtn = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin: 12px 10px 0;
-  padding: 9px 12px;
-  border-radius: 12px;
-  border: 1px solid ${COLORS.border}60;
-  background: ${COLORS.elevatedBackground}40;
-  color: ${COLORS.textTertiary};
-  font-size: 0.72rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  svg {
-    font-size: 0.7rem;
-  }
-
-  &:hover {
-    border-color: ${COLORS.primaryMint}60;
-    color: ${COLORS.primaryMint};
-    background: ${COLORS.primaryMint}08;
-    transform: translateY(-1px);
-  }
-`;
-
-const PaletteBtnLabel = styled.span`
-  display: none;
-  font-weight: 500;
-  @media (min-width: 1200px) {
-    display: block;
-  }
-`;
-
-const KbdGroup = styled.span`
-  display: none;
-  align-items: center;
-  gap: 3px;
-  margin-left: auto;
-  @media (min-width: 1200px) {
-    display: flex;
-  }
-`;
-
-const Kbd = styled.kbd`
-  font-family: inherit;
-  font-size: 0.62rem;
-  font-weight: 600;
-  color: ${COLORS.textTertiary};
-  background: ${COLORS.background};
-  border: 1px solid ${COLORS.border}80;
-  border-radius: 4px;
-  padding: 1px 5px;
-  line-height: 1.4;
 `;

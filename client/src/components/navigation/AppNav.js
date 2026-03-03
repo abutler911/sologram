@@ -9,16 +9,6 @@ import React, {
   useCallback,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  FaHome,
-  FaLightbulb,
-  FaFolder,
-  FaUser,
-  FaCamera,
-  FaImages,
-  FaRobot,
-  FaArchive,
-} from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
 
 import TopBar from './TopBar';
@@ -26,7 +16,6 @@ import Sidebar from './Sidebar';
 import BottomBar from './BottomBar';
 import SearchOverlay from './SearchOverlay';
 import CreateSheet from './CreateSheet';
-import CommandPalette from './CommandPalette';
 import CrazyPlane from './CrazyPlane';
 import EasterEggModal from '../easter/EasterEggModal';
 import Fireworks from '../easter/Fireworks';
@@ -43,7 +32,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
   // ── Overlay state ──────────────────────────────────────────────────────────
   const [searchOpen, setSearchOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const [paletteOpen, setPaletteOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef(null);
 
@@ -148,24 +136,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
       requestAnimationFrame(() => searchInputRef.current?.focus());
   }, [searchOpen]);
 
-  // ── Keyboard shortcuts ────────────────────────────────────────────────────
-  useEffect(() => {
-    const handler = (e) => {
-      const mod = navigator.platform.includes('Mac') ? e.metaKey : e.ctrlKey;
-      if (mod && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setPaletteOpen((s) => !s);
-      }
-      if (e.key === 'Escape') {
-        setSearchOpen(false);
-        setCreateOpen(false);
-        setPaletteOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
-
   // ── Helpers ───────────────────────────────────────────────────────────────
   const isActive = useCallback(
     (path) =>
@@ -208,38 +178,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
     ? user.username.slice(0, 2).toUpperCase()
     : '?';
 
-  // ── Command palette items ─────────────────────────────────────────────────
-  const paletteItems = useMemo(() => {
-    const base = [
-      { label: 'Home', icon: <FaHome />, to: '/' },
-      { label: 'Thoughts', icon: <FaLightbulb />, to: '/thoughts' },
-      { label: 'Collections', icon: <FaFolder />, to: '/collections' },
-      { label: 'Profile', icon: <FaUser />, to: '/profile' },
-      { label: 'Story Archive', icon: <FaArchive />, to: '/story-archive' },
-    ];
-    if (canCreate)
-      base.push(
-        { label: 'New Post', icon: <FaCamera />, to: '/create' },
-        { label: 'New Story', icon: <FaImages />, to: '/create-story' },
-        {
-          label: 'New Thought',
-          icon: <FaLightbulb />,
-          to: '/thoughts/create',
-        },
-        {
-          label: 'New Collection',
-          icon: <FaFolder />,
-          to: '/collections/create',
-        }
-      );
-    if (isAdmin)
-      base.push(
-        { label: 'Media Gallery', icon: <FaImages />, to: '/media-gallery' },
-        { label: 'AI Content', icon: <FaRobot />, to: '/admin/ai-content' }
-      );
-    return base;
-  }, [canCreate, isAdmin]);
-
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
@@ -263,7 +201,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
         onLogout={doLogout}
         onSearchOpen={() => setSearchOpen(true)}
         onCreateOpen={() => setCreateOpen(true)}
-        onPaletteOpen={() => setPaletteOpen(true)}
       />
 
       <BottomBar
@@ -293,14 +230,6 @@ const AppNav = ({ onSearch, onClearSearch }) => {
           canCreate={canCreate}
           onNavigate={goCreate}
           onClose={() => setCreateOpen(false)}
-        />
-      )}
-
-      {paletteOpen && (
-        <CommandPalette
-          items={paletteItems}
-          onClose={() => setPaletteOpen(false)}
-          navigate={navigate}
         />
       )}
 
