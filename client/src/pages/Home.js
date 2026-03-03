@@ -17,7 +17,7 @@ import { FaCamera } from 'react-icons/fa';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { COLORS } from '../theme';
-import { LikesContext } from '../context/LikesContext';
+import { batchSeedLikes } from '../hooks/useEngagement';
 import { AuthContext } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import {
@@ -116,7 +116,6 @@ const PostsGrid = memo(
 const Home = forwardRef((props, ref) => {
   const queryClient = useQueryClient();
   const { isAuthenticated } = useContext(AuthContext);
-  const { batchCheckLikeStatus } = useContext(LikesContext);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -154,12 +153,14 @@ const Home = forwardRef((props, ref) => {
 
   // ── Side effects ────────────────────────────────────────────────────────────
 
-  // Batch-check liked status whenever post list changes
   useEffect(() => {
     if (isAuthenticated && posts.length > 0) {
-      batchCheckLikeStatus(posts.map((p) => p._id));
+      batchSeedLikes(
+        'post',
+        posts.map((p) => p._id)
+      );
     }
-  }, [isAuthenticated, posts, batchCheckLikeStatus]);
+  }, [isAuthenticated, posts]);
 
   // PWA detection
   useEffect(() => {

@@ -5,8 +5,6 @@ import styled from 'styled-components';
 import ReactGA from 'react-ga4';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthContext } from './context/AuthContext';
-import { LikesProvider } from './context/LikesContext';
-import { CommentsProvider } from './context/CommentsContext';
 import { DeleteModalProvider } from './context/DeleteModalContext';
 import ScrollToTop from './components/ScrollToTop';
 import InstallPrompt from './components/pwa/InstallPrompt';
@@ -80,31 +78,26 @@ function App() {
         <ScrollToTop />
         <PageTracker />
         <div className='app'>
-          <LikesProvider>
-            <CommentsProvider>
-              {' '}
-              {/* Add CommentsProvider here */}
-              <DeleteModalProvider>
-                <Toaster position='top-right' />
-                {!networkStatus && (
-                  <OfflineIndicator>
-                    You are currently offline. Some features may be limited.
-                  </OfflineIndicator>
-                )}
-                <AppRoutes
-                  user={user}
-                  homeRef={homeRef}
-                  handleSearch={handleSearch}
-                  handleClearSearch={handleClearSearch}
-                />
-                <InstallPrompt />
-                <CopilotChat />
-                <WelcomeModal />
-                <DeleteConfirmationModal />
-              </DeleteModalProvider>
-            </CommentsProvider>{' '}
-            {/* Close CommentsProvider here */}
-          </LikesProvider>
+          {' '}
+          {/* Add CommentsProvider here */}
+          <DeleteModalProvider>
+            <Toaster position='top-right' />
+            {!networkStatus && (
+              <OfflineIndicator>
+                You are currently offline. Some features may be limited.
+              </OfflineIndicator>
+            )}
+            <AppRoutes
+              user={user}
+              homeRef={homeRef}
+              handleSearch={handleSearch}
+              handleClearSearch={handleClearSearch}
+            />
+            <InstallPrompt />
+            <CopilotChat />
+            <WelcomeModal />
+            <DeleteConfirmationModal />
+          </DeleteModalProvider>
         </div>
       </Router>
     </HelmetProvider>

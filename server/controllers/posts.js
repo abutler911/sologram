@@ -17,33 +17,6 @@ const { attachEngagement } = require('../utils/engagementHelpers');
 // Must match client-side MAX_FILES and Post model validator
 const MAX_MEDIA_PER_POST = 30;
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-// async function attachLikeCounts(posts) {
-//   if (!posts.length) return posts;
-//   const ids = posts.map((p) => p._id);
-//   const agg = await Like.aggregate([
-//     { $match: { post: { $in: ids } } },
-//     { $group: { _id: '$post', count: { $sum: 1 } } },
-//   ]);
-//   const map = Object.fromEntries(agg.map((r) => [r._id.toString(), r.count]));
-//   return posts.map((p) => ({
-//     ...p,
-//     likes: map[p._id.toString()] ?? p.likes ?? 0,
-//   }));
-// }
-
-// async function attachCommentCounts(posts) {
-//   if (!posts.length) return posts;
-//   const ids = posts.map((p) => p._id);
-//   const agg = await Comment.aggregate([
-//     { $match: { postId: { $in: ids }, isDeleted: false } },
-//     { $group: { _id: '$postId', count: { $sum: 1 } } },
-//   ]);
-//   const map = Object.fromEntries(agg.map((r) => [r._id.toString(), r.count]));
-//   return posts.map((p) => ({ ...p, commentCount: map[p._id.toString()] ?? 0 }));
-// }
-
 // ─── Controllers ────────────────────────────────────────────────────────────
 
 exports.getPosts = async (req, res) => {
@@ -84,7 +57,7 @@ exports.getPost = async (req, res) => {
         .status(404)
         .json({ success: false, message: 'Post not found' });
 
-    const [result] = await attachLikeCounts([post]);
+    const [result] = await attachEngagement('post', [post]);
     res.json({ success: true, data: result });
   } catch (err) {
     console.error('[getPost]', err);
@@ -307,6 +280,24 @@ exports.deletePost = async (req, res) => {
         .status(404)
         .json({ success: false, message: 'Post not found' });
 
+    // Cascade: likes on this post
+    await Like.deleteMany({ targetType: 'post', targetId: post._id });
+
+    // Cascade: comments + their likes
+    const commentIds = await Comment.find({
+      parentType: 'post',
+      parentId: post._id,
+    })
+      .select('_id')
+      .lean();
+
+    if (commentIds.length) {
+      const ids = commentIds.map((c) => c._id);
+      await Like.deleteMany({ targetType: 'comment', targetId: { $in: ids } });
+      await Comment.deleteMany({ _id: { $in: ids } });
+    }
+
+    // Cloudinary cleanup
     await Promise.allSettled(
       (post.media || [])
         .filter((m) => m.cloudinaryId)
@@ -345,76 +336,6 @@ exports.searchPosts = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
-
-// exports.likePost = async (req, res) => {
-//   try {
-//     const postId = req.params.id;
-//     const userId = req.user._id;
-
-//     const result = await Like.updateOne(
-//       { post: postId, user: userId },
-//       { $setOnInsert: { post: postId, user: userId } },
-//       { upsert: true }
-//     );
-
-//     const alreadyLiked = result.upsertedCount === 0;
-
-//     if (!alreadyLiked) {
-//       await Post.updateOne({ _id: postId }, { $inc: { likes: 1 } });
-//     }
-
-//     const post = await Post.findById(postId).lean();
-//     if (!post)
-//       return res
-//         .status(404)
-//         .json({ success: false, message: 'Post not found' });
-
-//     res.json({ success: true, alreadyLiked, data: post });
-//   } catch (err) {
-//     console.error('[likePost]', err);
-//     res.status(500).json({ success: false, message: 'Server Error' });
-//   }
-// };
-
-// exports.checkUserLike = async (req, res) => {
-//   try {
-//     const like = await Like.exists({ post: req.params.id, user: req.user._id });
-//     res.json({ success: true, hasLiked: !!like });
-//   } catch (err) {
-//     console.error('[checkUserLike]', err);
-//     res.status(500).json({ success: false, message: 'Server Error' });
-//   }
-// };
-
-// exports.checkUserLikesBatch = async (req, res) => {
-//   try {
-//     const { postIds } = req.body;
-//     if (!Array.isArray(postIds) || !postIds.length) {
-//       return res
-//         .status(400)
-//         .json({ success: false, message: 'postIds array required' });
-//     }
-
-//     const likes = await Like.find({
-//       post: { $in: postIds },
-//       user: req.user._id,
-//     })
-//       .select('post')
-//       .lean();
-//     const likedSet = new Set(likes.map((l) => l.post.toString()));
-
-//     res.json({
-//       success: true,
-//       results: postIds.map((id) => ({
-//         postId: id,
-//         hasLiked: likedSet.has(id.toString()),
-//       })),
-//     });
-//   } catch (err) {
-//     console.error('[checkUserLikesBatch]', err);
-//     res.status(500).json({ success: false, message: 'Server Error' });
-//   }
-// };
 
 exports.deleteMedia = async (req, res) => {
   try {
