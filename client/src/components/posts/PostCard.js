@@ -1,3 +1,5 @@
+// components/posts/PostCard.js
+// Thin orchestrator - delegates media to MediaCarousel, comments to usePostComments.
 import React, {
   memo,
   useState,
@@ -18,71 +20,44 @@ import {
   FaMapMarkerAlt,
   FaEdit,
   FaTrash,
-  FaChevronLeft,
-  FaChevronRight,
 } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
-import { useSwipeable } from 'react-swipeable';
 
 import { useDeleteModal } from '../../context/DeleteModalContext';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../services/api';
-import { getTransformedImageUrl } from '../../utils/cloudinary';
 import { COLORS } from '../../theme';
 import { useLikeBurst } from '../animations/LikeBurst';
 import useEngagement from '../../hooks/useEngagement';
-import authorImg from '../../assets/andy.jpg';
+import usePostComments from '../../hooks/usePostComments';
+import MediaCarousel from './MediaCarousel';
 
 const CommentModal = lazy(() =>
   import('./CommentModal').then((m) => ({ default: m.CommentModal }))
 );
 
-const AUTHOR_IMAGE = authorImg;
-const AUTHOR_NAME = 'Andrew Butler';
+// ── Design Tokens ─────────────────────────────────────────────────────────────
 
-// ─── Animations ───────────────────────────────────────────────────────────────
+const NOIR = {
+  ink: '#0a0a0b',
+  warmWhite: '#faf9f7',
+  dust: '#e8e4dd',
+  ash: '#a09a91',
+  charcoal: '#3a3632',
+  border: 'rgba(10,10,11,0.08)',
+  salmon: '#e87c5a',
+  sage: '#7aab8c',
+};
 
-const scaleIn = keyframes`
-  0%        { transform: scale(0);    opacity: 0; }
-  15%       { transform: scale(1.3);  opacity: 1; }
-  30%       { transform: scale(0.95);             }
-  45%, 80%  { transform: scale(1);    opacity: 1; }
-  100%      { transform: scale(0);    opacity: 0; }
-`;
-
-const heartPop = keyframes`
-  0%   { transform: scale(1);   }
-  30%  { transform: scale(1.4); }
-  60%  { transform: scale(0.9); }
-  100% { transform: scale(1);   }
-`;
-
-const rippleOut = keyframes`
-  from { transform: translate(-50%,-50%) scale(0.4); opacity: 0.9; }
-  to   { transform: translate(-50%,-50%) scale(3.2); opacity: 0;   }
-`;
-
-const dropIn = keyframes`
-  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0)    scale(1);    }
-`;
-
-// ─── Component ────────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 
 const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [post, setPost] = useState(initialPost);
-  const [currentMediaIndex, setIdx] = useState(0);
+  const [post] = useState(initialPost);
   const [showActions, setShowActions] = useState(false);
-  const [isDoubleTapLiking, setDTLike] = useState(false);
   const [showCommentModal, setShowModal] = useState(false);
-  const [comments, setComments] = useState([]);
-  const [isLoadingComments, setLoadingC] = useState(false);
   const [captionExpanded, setCaptionExp] = useState(false);
-  const [commentCount, setCommentCount] = useState(
-    initialPost.commentCount || 0
-  );
 
   const cardRef = useRef(null);
   const actionsRef = useRef(null);
@@ -91,24 +66,38 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const { triggerBurst, BurstPortal } = useLikeBurst();
   const { showDeleteModal } = useDeleteModal();
 
-  // ── Unified engagement hook ───────────────────────────────────────────────
+  // ── Engagement ────────────────────────────────────────────────────────────
   const { liked, count, toggle, loading, seed } = useEngagement(
     'post',
     post._id
   );
 
-  // Seed like count from server data on mount / post change
   useEffect(() => {
     seed(false, post.likes || 0);
   }, [post._id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Comments ──────────────────────────────────────────────────────────────
+  const {
+    comments,
+    commentCount,
+    isLoading: isLoadingComments,
+    fetchComments,
+    addComment,
+    deleteComment,
+    likeComment,
+    seedCount,
+  } = usePostComments('post', post._id, { isAuthenticated });
+
+  useEffect(() => {
+    seedCount(initialPost.commentCount || 0);
+  }, [initialPost.commentCount, seedCount]);
 
   const formattedDate = format(
     new Date(post.eventDate || post.createdAt),
     'MMM d, yyyy'
   );
-  const mediaCount = post.media?.length || 0;
 
-  // ── Intersection observer — fade-up reveal ────────────────────────────────
+  // ── Intersection observer ─────────────────────────────────────────────────
   useEffect(() => {
     const ob = new IntersectionObserver(
       ([e]) => {
@@ -134,89 +123,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     return () => document.removeEventListener('mousedown', h);
   }, [showActions]);
 
-  // ── Comments (unified polymorphic) ────────────────────────────────────────
-
-  const fetchComments = useCallback(async () => {
-    if (!post._id) return;
-    setLoadingC(true);
-    try {
-      const data = await api.getComments('post', post._id);
-      const list = Array.isArray(data.comments) ? data.comments : [];
-      setComments(list);
-      if (typeof data.total === 'number') setCommentCount(data.total);
-    } catch (err) {
-      console.error('[fetchComments]', err);
-      toast.error('Failed to load comments');
-    } finally {
-      setLoadingC(false);
-    }
-  }, [post._id]);
-
-  const handleOpenComments = useCallback(() => {
-    setShowModal(true);
-    fetchComments();
-  }, [fetchComments]);
-
-  const handleAddComment = useCallback(
-    async (commentData) => {
-      if (!isAuthenticated) {
-        toast.error('You must be logged in to comment');
-        return;
-      }
-      try {
-        // commentData can be { text, replyTo } or { text }
-        const text = commentData.text || commentData;
-        const replyTo = commentData.replyTo || commentData.parentId || null;
-        const data = await api.addComment('post', post._id, text, replyTo);
-        const newComment = data.comment;
-        if (!newComment) throw new Error('Bad response from server');
-        setComments((prev) => [newComment, ...prev]);
-        setCommentCount((prev) => prev + 1);
-        return newComment;
-      } catch (err) {
-        const msg = err?.response?.data?.message || 'Could not post comment';
-        toast.error(msg);
-        throw err;
-      }
-    },
-    [post._id, isAuthenticated]
-  );
-
-  const handleDeleteComment = useCallback(async (commentId) => {
-    try {
-      await api.deleteComment(commentId);
-      setComments((prev) => prev.filter((c) => c._id !== commentId));
-      setCommentCount((prev) => Math.max(0, prev - 1));
-      toast.success('Comment removed');
-    } catch {
-      toast.error('Failed to delete comment');
-    }
-  }, []);
-
-  const handleLikeComment = useCallback(
-    async (commentId) => {
-      if (!isAuthenticated) {
-        toast.error('Log in to like comments');
-        return;
-      }
-      try {
-        const data = await api.toggleLike('comment', commentId);
-        // Update the comment's like state in local list
-        setComments((prev) =>
-          prev.map((c) =>
-            c._id === commentId
-              ? { ...c, likes: data.count, hasLiked: data.liked }
-              : c
-          )
-        );
-      } catch {
-        toast.error('Could not update like');
-      }
-    },
-    [isAuthenticated]
-  );
-
-  // ── Post like (unified) ───────────────────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleLike = useCallback(async () => {
     if (!isAuthenticated || loading) return;
@@ -225,13 +132,13 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   }, [isAuthenticated, loading, toggle, onLike, post._id]);
 
   const handleDoubleTapLike = useCallback(() => {
-    if (!isAuthenticated) return;
     if (!liked) handleLike();
-    setDTLike(true);
-    setTimeout(() => setDTLike(false), 900);
-  }, [isAuthenticated, liked, handleLike]);
+  }, [liked, handleLike]);
 
-  // ── Location ──────────────────────────────────────────────────────────────
+  const handleOpenComments = useCallback(() => {
+    setShowModal(true);
+    fetchComments();
+  }, [fetchComments]);
 
   const handleLocationClick = useCallback((location) => {
     const enc = encodeURIComponent(location);
@@ -239,13 +146,11 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
       /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     window.open(
       isIOS
-        ? `https://maps.apple.com/?q=${enc}`
-        : `https://www.google.com/maps/search/?api=1&query=${enc}`,
+        ? 'https://maps.apple.com/?q=' + enc
+        : 'https://www.google.com/maps/search/?api=1&query=' + enc,
       '_blank'
     );
   }, []);
-
-  // ── Delete post ───────────────────────────────────────────────────────────
 
   const handleDeletePost = useCallback(() => {
     showDeleteModal({
@@ -266,114 +171,20 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
     setShowActions(false);
   }, [post._id, showDeleteModal, onDelete]);
 
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => setIdx((c) => Math.min(c + 1, mediaCount - 1)),
-    onSwipedRight: () => setIdx((c) => Math.max(c - 1, 0)),
-    trackMouse: true,
-  });
-
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <CardWrapper ref={cardRef} $visible={isVisible}>
-      {/* ── MEDIA FRAME ──────────────────────────────────────────────────── */}
-      <MediaFrame onDoubleClick={handleDoubleTapLike} {...swipeHandlers}>
-        <MediaTrack
-          style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
-        >
-          {post.media?.map((m, i) => (
-            <MediaSlide key={m._id || i}>
-              {m.mediaType === 'video' ? (
-                <PostVid src={m.mediaUrl} controls preload='metadata' />
-              ) : (
-                <PostImg
-                  src={getTransformedImageUrl(m.mediaUrl, {
-                    width: 1080,
-                    height: 1350,
-                    crop: 'fill',
-                    quality: 'auto',
-                    format: 'auto',
-                  })}
-                  loading={i === 0 ? 'eager' : 'lazy'}
-                  alt={post.title || 'Sologram post'}
-                />
-              )}
-            </MediaSlide>
-          ))}
-        </MediaTrack>
+      <MediaCarousel
+        media={post.media}
+        formattedDate={formattedDate}
+        postTitle={post.title}
+        onDoubleTapLike={handleDoubleTapLike}
+        isAuthenticated={isAuthenticated}
+      />
 
-        {/* Grain overlay */}
-        <GrainOverlay />
-
-        {/* Bottom gradient scrim */}
-        <BottomScrim />
-
-        {/* Carousel dots — top center */}
-        {mediaCount > 1 && (
-          <Dots>
-            {post.media.map((_, i) => (
-              <Dot key={i} $active={i === currentMediaIndex} />
-            ))}
-          </Dots>
-        )}
-
-        {/* Media index counter — top right */}
-        {mediaCount > 1 && (
-          <MediaIndex>
-            {String(currentMediaIndex + 1).padStart(2, '0')} /{' '}
-            {String(mediaCount).padStart(2, '0')}
-          </MediaIndex>
-        )}
-
-        {/* Author overlay — bottom-left */}
-        <AuthorOverlay>
-          <AvatarWrap>
-            <Avatar src={AUTHOR_IMAGE} alt={AUTHOR_NAME} />
-          </AvatarWrap>
-          <AuthorMeta>
-            <AuthorSig>{AUTHOR_NAME}</AuthorSig>
-            <AuthorDate>{formattedDate}</AuthorDate>
-          </AuthorMeta>
-        </AuthorOverlay>
-
-        {/* Carousel nav arrows */}
-        {mediaCount > 1 && (
-          <>
-            {currentMediaIndex > 0 && (
-              <NavBtn
-                $side='left'
-                onClick={() => setIdx((c) => c - 1)}
-                aria-label='Previous'
-              >
-                <FaChevronLeft />
-              </NavBtn>
-            )}
-            {currentMediaIndex < mediaCount - 1 && (
-              <NavBtn
-                $side='right'
-                onClick={() => setIdx((c) => c + 1)}
-                aria-label='Next'
-              >
-                <FaChevronRight />
-              </NavBtn>
-            )}
-          </>
-        )}
-
-        {/* Double-tap heart */}
-        {isDoubleTapLiking && (
-          <>
-            <Ripple />
-            <BigHeart>
-              <FaHeart />
-            </BigHeart>
-          </>
-        )}
-      </MediaFrame>
-
-      {/* ── CONTENT BODY ─────────────────────────────────────────────────── */}
       <ContentBody>
-        <Link to={`/post/${post._id}`} style={{ textDecoration: 'none' }}>
+        <Link to={'/post/' + post._id} style={{ textDecoration: 'none' }}>
           <Title>{post.title}</Title>
         </Link>
 
@@ -386,7 +197,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
               {post.location}
             </DatelineLocation>
           )}
-          {post.location && <DatelineDot>·</DatelineDot>}
+          {post.location && <DatelineDot>&middot;</DatelineDot>}
           <span>{formattedDate}</span>
         </Dateline>
 
@@ -411,7 +222,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
           </TagRow>
         )}
 
-        {/* ── ACTION BAR — horizontal ──────────────────────────────────── */}
         <ActionBar>
           <ActionBtn
             onClick={(e) => {
@@ -445,7 +255,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
               {showActions && (
                 <ActionsDropdown>
                   <Link
-                    to={`/edit/${post._id}`}
+                    to={'/edit/' + post._id}
                     onClick={() => setShowActions(false)}
                   >
                     <FaEdit /> Edit
@@ -460,7 +270,6 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
         </ActionBar>
       </ContentBody>
 
-      {/* ── COMMENT MODAL ────────────────────────────────────────────────── */}
       {showCommentModal && (
         <Suspense fallback={null}>
           <CommentModal
@@ -468,15 +277,14 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
             onClose={() => setShowModal(false)}
             post={post}
             comments={comments}
-            onAddComment={handleAddComment}
-            onDeleteComment={handleDeleteComment}
-            onLikeComment={handleLikeComment}
+            onAddComment={addComment}
+            onDeleteComment={deleteComment}
+            onLikeComment={likeComment}
             isLoading={isLoadingComments}
           />
         </Suspense>
       )}
 
-      {/* ── LIKE BURST ─────────────────────────────────────────────── */}
       <BurstPortal />
     </CardWrapper>
   );
@@ -485,20 +293,21 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
 PostCard.displayName = 'PostCard';
 export default PostCard;
 
-// ─── Design Tokens ────────────────────────────────────────────────────────────
+// ── Animations ────────────────────────────────────────────────────────────────
 
-const NOIR = {
-  ink: '#0a0a0b',
-  warmWhite: '#faf9f7',
-  dust: '#e8e4dd',
-  ash: '#a09a91',
-  charcoal: '#3a3632',
-  border: 'rgba(10,10,11,0.08)',
-  salmon: '#e87c5a',
-  sage: '#7aab8c',
-};
+const heartPop = keyframes`
+  0%   { transform: scale(1);   }
+  30%  { transform: scale(1.4); }
+  60%  { transform: scale(0.9); }
+  100% { transform: scale(1);   }
+`;
 
-// ─── Styled Components ────────────────────────────────────────────────────────
+const dropIn = keyframes`
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+`;
+
+// ── Styled Components ─────────────────────────────────────────────────────────
 
 const CardWrapper = styled.article`
   width: 100%;
@@ -506,13 +315,11 @@ const CardWrapper = styled.article`
   overflow: hidden;
   position: relative;
 
-  /* Reveal animation */
   opacity: ${(p) => (p.$visible ? 1 : 0)};
   transform: ${(p) => (p.$visible ? 'translateY(0)' : 'translateY(28px)')};
   transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Gradient accent line at top */
   &::before {
     content: '';
     position: absolute;
@@ -524,7 +331,6 @@ const CardWrapper = styled.article`
     z-index: 10;
   }
 
-  /* ── Mobile — full bleed, cards flush to screen edges ────────── */
   @media (max-width: 639px) {
     max-width: 100%;
     margin: 0 0 2px;
@@ -532,7 +338,6 @@ const CardWrapper = styled.article`
     box-shadow: none;
   }
 
-  /* ── Tablet — centred card with soft shadow ─────────────────── */
   @media (min-width: 640px) and (max-width: 1023px) {
     max-width: 560px;
     margin: 0 auto 24px;
@@ -540,7 +345,6 @@ const CardWrapper = styled.article`
     box-shadow: 0 2px 0 0 ${NOIR.salmon}, 0 20px 48px rgba(0, 0, 0, 0.13);
   }
 
-  /* ── Desktop — narrower card, more breathing room ───────────── */
   @media (min-width: 1024px) {
     max-width: 480px;
     margin: 0 auto 32px;
@@ -549,241 +353,11 @@ const CardWrapper = styled.article`
   }
 `;
 
-// ── Media ─────────────────────────────────────────────────────────────────────
-
-const MediaFrame = styled.div`
-  position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 5;
-  background: #000;
-  overflow: hidden;
-  -webkit-tap-highlight-color: transparent;
-`;
-
-const MediaTrack = styled.div`
-  display: flex;
-  height: 100%;
-  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
-`;
-
-const MediaSlide = styled.div`
-  flex: 0 0 100%;
-  height: 100%;
-`;
-
-const PostImg = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  /* Slight desaturation — editorial, not saturated social */
-  filter: saturate(0.88) contrast(1.04);
-  transition: filter 0.4s ease;
-
-  ${CardWrapper}:hover & {
-    filter: saturate(1) contrast(1.02);
-  }
-`;
-
-const PostVid = styled.video`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-`;
-
-// ── Overlays ──────────────────────────────────────────────────────────────────
-
-/* Film grain — adds analog texture without a real image */
-const GrainOverlay = styled.div`
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 180px 180px;
-  mix-blend-mode: overlay;
-`;
-
-const BottomScrim = styled.div`
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 52%;
-  background: linear-gradient(
-    to top,
-    rgba(10, 10, 11, 0.76) 0%,
-    rgba(10, 10, 11, 0.32) 48%,
-    transparent 100%
-  );
-  pointer-events: none;
-  z-index: 3;
-`;
-
-// ── Carousel dots — top center ────────────────────────────────────────────────
-
-const Dots = styled.div`
-  position: absolute;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 4px;
-  z-index: 5;
-`;
-
-const Dot = styled.div`
-  height: 3px;
-  border-radius: 2px;
-  background: ${(p) => (p.$active ? '#fff' : 'rgba(255,255,255,0.35)')};
-  width: ${(p) => (p.$active ? '22px' : '3px')};
-  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s ease;
-`;
-
-// ── Media index counter — top right ──────────────────────────────────────────
-
-const MediaIndex = styled.span`
-  position: absolute;
-  top: 15px;
-  right: 16px;
-  z-index: 5;
-  font-family: 'DM Mono', 'Courier New', monospace;
-  font-size: 0.6rem;
-  font-weight: 300;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.5);
-`;
-
-// ── Author overlay — bottom-left ──────────────────────────────────────────────
-
-const AuthorOverlay = styled.div`
-  position: absolute;
-  bottom: 20px;
-  left: 18px;
-  /* leave right gap for nav arrows if needed */
-  right: 56px;
-  display: flex;
-  align-items: flex-end;
-  gap: 11px;
-  z-index: 5;
-`;
-
-const AvatarWrap = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 1.5px solid rgba(255, 255, 255, 0.22);
-  flex-shrink: 0;
-`;
-
-const Avatar = styled.img`
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-  display: block;
-  /* Do not inherit media desaturation */
-  filter: none !important;
-`;
-
-const AuthorMeta = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-`;
-
-const AuthorSig = styled.span`
-  font-family: 'Cormorant Garamond', 'Georgia', serif;
-  font-style: italic;
-  font-weight: 300;
-  font-size: 1.55rem;
-  color: #fff;
-  line-height: 1;
-  letter-spacing: 0.01em;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-const AuthorDate = styled.span`
-  font-family: 'DM Mono', 'Courier New', monospace;
-  font-size: 0.6rem;
-  font-weight: 300;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.52);
-  text-transform: uppercase;
-`;
-
-// ── Carousel nav arrows ───────────────────────────────────────────────────────
-
-const NavBtn = styled.button`
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  ${(p) => p.$side}: 12px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(10, 10, 11, 0.44);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 4;
-  transition: background 0.15s, transform 0.15s;
-
-  &:hover {
-    background: rgba(10, 10, 11, 0.7);
-    transform: translateY(-50%) scale(1.08);
-  }
-`;
-
-// ── Double-tap like ───────────────────────────────────────────────────────────
-
-const Ripple = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 120px;
-  height: 120px;
-  border: 2px solid ${NOIR.salmon};
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 6;
-  animation: ${rippleOut} 0.75s ease-out forwards;
-`;
-
-const BigHeart = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: ${NOIR.salmon};
-  font-size: 88px;
-  filter: drop-shadow(0 0 24px ${NOIR.salmon}99);
-  pointer-events: none;
-  z-index: 6;
-  animation: ${scaleIn} 0.8s ease forwards;
-`;
-
-// ── Content Body ──────────────────────────────────────────────────────────────
-
 const ContentBody = styled.div`
   background: ${NOIR.warmWhite};
   padding: 18px 20px 20px;
   position: relative;
 
-  /* Hairline rule at top */
   &::before {
     content: '';
     position: absolute;
@@ -842,7 +416,6 @@ const ExpandBtn = styled.button`
   margin-top: 4px;
   display: block;
   transition: color 0.15s;
-
   &:hover {
     color: ${NOIR.ink};
   }
@@ -867,15 +440,12 @@ const Tag = styled.span`
   text-transform: lowercase;
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s, background 0.2s;
-
   &:hover {
     color: ${NOIR.sage};
     border-color: ${NOIR.sage};
     background: rgba(122, 171, 140, 0.06);
   }
 `;
-
-// ── Action bar — horizontal ───────────────────────────────────────────────────
 
 const ActionBar = styled.div`
   display: flex;
@@ -901,7 +471,6 @@ const ActionBtn = styled.button`
   letter-spacing: 0.06em;
   transition: color 0.2s;
 
-  /* Slight icon pop on liked */
   svg {
     width: 14px;
     height: 14px;
@@ -935,8 +504,6 @@ const ActionSep = styled.span`
   flex: 1;
 `;
 
-// ── Dateline — location + date under title ───────────────────────────────────
-
 const Dateline = styled.div`
   display: flex;
   align-items: center;
@@ -967,13 +534,11 @@ const DatelineLocation = styled.button`
   text-transform: inherit;
   color: ${NOIR.ash};
   transition: color 0.2s;
-
   svg {
     width: 9px;
     height: 9px;
     flex-shrink: 0;
   }
-
   &:hover {
     color: ${NOIR.sage};
   }
@@ -984,8 +549,6 @@ const DatelineDot = styled.span`
   font-size: 0.65rem;
   line-height: 1;
 `;
-
-// ── Admin actions dropdown ────────────────────────────────────────────────────
 
 const ActionsWrapper = styled.div`
   position: relative;
@@ -1004,12 +567,10 @@ const MoreBtn = styled.button`
   color: ${NOIR.ash};
   border-radius: 0;
   transition: color 0.15s, background 0.15s;
-
   svg {
     width: 12px;
     height: 12px;
   }
-
   &:hover {
     color: ${NOIR.ink};
     background: rgba(10, 10, 11, 0.05);
@@ -1047,13 +608,11 @@ const ActionsDropdown = styled.div`
     cursor: pointer;
     letter-spacing: 0.01em;
     transition: background 0.12s;
-
     svg {
       width: 12px;
       height: 12px;
       opacity: 0.7;
     }
-
     &:hover {
       background: rgba(10, 10, 11, 0.04);
     }
