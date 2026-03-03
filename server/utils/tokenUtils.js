@@ -1,4 +1,4 @@
-// utils/tokenUtils.js
+// server/utils/tokenUtils.js
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
@@ -9,9 +9,11 @@ const JWT_REFRESH_SECRET =
   process.env.JWT_REFRESH_SECRET ||
   'temporary_refresh_secret_do_not_use_in_production';
 
-// Access token — short-lived (15 min)
+// Access token — short-lived (15 minutes)
 exports.generateAccessToken = (userId) => {
-  if (!JWT_SECRET) throw new Error('JWT_SECRET is not set');
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is not set');
+  }
   return jwt.sign({ id: userId }, JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '15m',
   });
@@ -19,7 +21,9 @@ exports.generateAccessToken = (userId) => {
 
 // Refresh token — long-lived (1 year)
 exports.generateRefreshToken = (userId) => {
-  if (!JWT_REFRESH_SECRET) throw new Error('JWT_REFRESH_SECRET is not set');
+  if (!JWT_REFRESH_SECRET) {
+    throw new Error('JWT_REFRESH_SECRET environment variable is not set');
+  }
   return jwt.sign({ id: userId }, JWT_REFRESH_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '365d',
   });
@@ -39,11 +43,11 @@ exports.getRefreshTokenExpiryDate = () => {
   return new Date(Date.now() + milliseconds);
 };
 
-// Parse JWT without verification (to inspect payload)
+// Parse JWT without verification (to read payload)
 exports.parseJwt = (token) => {
   try {
     return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-  } catch {
+  } catch (err) {
     return null;
   }
 };

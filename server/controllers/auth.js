@@ -1,3 +1,4 @@
+// server/controllers/auth.js
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { cloudinary } = require('../config/cloudinary');
@@ -10,11 +11,7 @@ const {
   getRefreshTokenExpiryDate,
   parseJwt,
 } = require('../utils/tokenUtils');
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
-  });
-};
+
 const { sendEmail } = require('../utils/sendEmail');
 const {
   buildWelcomeEmail,
@@ -26,11 +23,12 @@ const {
   buildProfileUpdateEmail,
 } = require('../utils/emailTemplates/profileUpdateTemplate');
 
+// ── Register ─────────────────────────────────────────────────────────────────
+
 exports.register = async (req, res, next) => {
   try {
     const { firstName, lastName, username, email, password, bio } = req.body;
 
-    // Create user
     let userData = {
       firstName,
       lastName,
@@ -46,6 +44,7 @@ exports.register = async (req, res, next) => {
     }
 
     const user = await User.create(userData);
+
     logger.info('New user registered', {
       context: {
         event: 'user_register',
@@ -61,19 +60,23 @@ exports.register = async (req, res, next) => {
     const refreshToken = generateRefreshToken(user._id);
     const refreshTokenExpiresAt = getRefreshTokenExpiryDate();
 
-    // Save refresh token to user
+    // Save refresh token to DB
     user.refreshToken = refreshToken;
     user.refreshTokenExpiresAt = refreshTokenExpiresAt;
     await user.save({ validateBeforeSave: false });
-    await sendEmail({
+
+    // Send welcome email (fire-and-forget)
+    sendEmail({
       to: user.email,
       subject: `🎉 Welcome to SoloGram, ${user.firstName || user.username}!`,
       html: buildWelcomeEmail({
         name: user.firstName || user.username,
       }),
-    });
+    }).catch((err) =>
+      logger.error('Welcome email failed', { error: err.message })
+    );
 
-    // Set cookie for refresh token
+    // Set refresh token cookie (httpOnly backup — client also stores in body)
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -83,7 +86,8 @@ exports.register = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      accessToken,
+      token: accessToken,
+      refreshToken,
       user: {
         _id: user._id,
         firstName: user.firstName,
@@ -100,11 +104,12 @@ exports.register = async (req, res, next) => {
   }
 };
 
+// ── Login ────────────────────────────────────────────────────────────────────
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate input
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -112,15 +117,13 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Find user
     const user = await User.findOne({ email }).select('+password');
 
-    // Check if user exists and password is correct
     if (!user || !(await user.matchPassword(password))) {
       logger.warn('Login attempt failed', {
         context: {
           event: 'login_failed',
-          email: email,
+          email,
           ip: req.ip,
         },
       });
@@ -130,29 +133,11 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Generate tokens - with try/catch for better error handling
+    // Generate tokens via tokenUtils (365d refresh)
     let accessToken, refreshToken;
     try {
-      accessToken = jwt.sign(
-        { id: user._id },
-        process.env.JWT_SECRET || 'temp_dev_secret',
-        { expiresIn: '15m' }
-      );
-
-      refreshToken = jwt.sign(
-        { id: user._id },
-        process.env.JWT_REFRESH_SECRET || 'temp_refresh_secret',
-        { expiresIn: '7d' }
-      );
-      logger.info('User login successful', {
-        context: {
-          event: 'user_login',
-          userId: user._id.toString(),
-          email: user.email,
-          ip: req.ip,
-          userAgent: req.get('User-Agent'),
-        },
-      });
+      accessToken = generateAccessToken(user._id);
+      refreshToken = generateRefreshToken(user._id);
     } catch (err) {
       console.error('Token generation error:', err);
       return res.status(500).json({
@@ -161,7 +146,32 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Response object
+    // ── Save refresh token to DB (this was missing!) ──────────────────
+    const refreshTokenExpiresAt = getRefreshTokenExpiryDate();
+    await User.findByIdAndUpdate(user._id, {
+      refreshToken,
+      refreshTokenExpiresAt,
+      lastLogin: Date.now(),
+    });
+
+    logger.info('User login successful', {
+      context: {
+        event: 'user_login',
+        userId: user._id.toString(),
+        email: user.email,
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+      },
+    });
+
+    // Set refresh token cookie (httpOnly backup)
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      expires: refreshTokenExpiresAt,
+    });
+
     user.password = undefined;
 
     res.status(200).json({
@@ -188,16 +198,16 @@ exports.login = async (req, res) => {
   }
 };
 
+// ── Logout ───────────────────────────────────────────────────────────────────
+
 exports.logout = async (req, res, next) => {
   try {
     if (req.user) {
-      // Clear refresh token in database
       await User.findByIdAndUpdate(req.user._id, {
         $unset: { refreshToken: 1, refreshTokenExpiresAt: 1 },
       });
     }
 
-    // Clear refresh token cookie
     res.clearCookie('refreshToken');
 
     res.status(200).json({
@@ -209,16 +219,16 @@ exports.logout = async (req, res, next) => {
   }
 };
 
+// ── Refresh Token ────────────────────────────────────────────────────────────
+
 exports.refreshToken = async (req, res, next) => {
   try {
-    // Get refresh token from cookie or request body
     const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
     if (!refreshToken) {
       return next(new AppError('No refresh token provided', 401));
     }
 
-    // Verify refresh token
     let decoded;
     try {
       decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
@@ -226,7 +236,6 @@ exports.refreshToken = async (req, res, next) => {
       return next(new AppError('Invalid or expired refresh token', 401));
     }
 
-    // Find user by id and check if refresh token matches
     const user = await User.findById(decoded.id).select(
       '+refreshToken +refreshTokenExpiresAt'
     );
@@ -235,22 +244,19 @@ exports.refreshToken = async (req, res, next) => {
       return next(new AppError('Invalid refresh token', 401));
     }
 
-    // Check if refresh token is expired in DB (extra safety)
     if (user.refreshTokenExpiresAt < Date.now()) {
       return next(new AppError('Refresh token expired', 401));
     }
 
-    // Generate new tokens
+    // Rotate: new access + new refresh
     const accessToken = generateAccessToken(user._id);
     const newRefreshToken = generateRefreshToken(user._id);
     const refreshTokenExpiresAt = getRefreshTokenExpiryDate();
 
-    // Update refresh token in database
     user.refreshToken = newRefreshToken;
     user.refreshTokenExpiresAt = refreshTokenExpiresAt;
     await user.save({ validateBeforeSave: false });
 
-    // Set new refresh token cookie
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -258,14 +264,18 @@ exports.refreshToken = async (req, res, next) => {
       expires: refreshTokenExpiresAt,
     });
 
+    // Return both tokens — client stores new refresh token
     res.status(200).json({
       success: true,
-      accessToken,
+      token: accessToken,
+      refreshToken: newRefreshToken,
     });
   } catch (err) {
     next(err);
   }
 };
+
+// ── Get Me ───────────────────────────────────────────────────────────────────
 
 exports.getMe = async (req, res) => {
   try {
@@ -300,6 +310,8 @@ exports.getMe = async (req, res) => {
   }
 };
 
+// ── Update Profile ───────────────────────────────────────────────────────────
+
 exports.updateProfile = async (req, res) => {
   try {
     const { firstName, lastName, username, email, bio } = req.body;
@@ -315,7 +327,6 @@ exports.updateProfile = async (req, res) => {
 
     if (username && username !== user.username) {
       const usernameExists = await User.findOne({ username });
-
       if (usernameExists) {
         return res.status(400).json({
           success: false,
@@ -326,7 +337,6 @@ exports.updateProfile = async (req, res) => {
 
     if (email && email !== user.email) {
       const emailExists = await User.findOne({ email });
-
       if (emailExists) {
         return res.status(400).json({
           success: false,
@@ -339,17 +349,18 @@ exports.updateProfile = async (req, res) => {
       if (user.cloudinaryId) {
         await cloudinary.uploader.destroy(user.cloudinaryId);
       }
-
       user.profileImage = req.file.path;
       user.cloudinaryId = req.file.filename;
     }
-    user.firstName = firstName || user.firstName || 'Anonymous'; // fallback default if needed
+
+    user.firstName = firstName || user.firstName || 'Anonymous';
     user.lastName = lastName || user.lastName;
     user.username = username || user.username;
     user.email = email || user.email;
     user.bio = bio === undefined ? user.bio : bio;
 
     await user.save();
+
     logger.info('User profile updated', {
       context: {
         event: 'profile_update',
@@ -359,14 +370,16 @@ exports.updateProfile = async (req, res) => {
       },
     });
 
-    await sendEmail({
+    sendEmail({
       to: user.email,
       subject: `✅ Your profile has been updated`,
       html: buildProfileUpdateEmail({
         name: user.firstName || user.username,
         action: 'profile',
       }),
-    });
+    }).catch((err) =>
+      logger.error('Profile update email failed', { error: err.message })
+    );
 
     res.status(200).json({
       success: true,
@@ -397,6 +410,8 @@ exports.updateProfile = async (req, res) => {
     });
   }
 };
+
+// ── Update Bio ───────────────────────────────────────────────────────────────
 
 exports.updateBio = async (req, res) => {
   try {
@@ -445,6 +460,8 @@ exports.updateBio = async (req, res) => {
   }
 };
 
+// ── Promote to Creator ───────────────────────────────────────────────────────
+
 exports.promoteToCreator = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -459,6 +476,7 @@ exports.promoteToCreator = async (req, res) => {
 
     user.role = 'creator';
     await user.save();
+
     logger.info('User promoted to creator', {
       context: {
         event: 'role_change',
@@ -469,13 +487,15 @@ exports.promoteToCreator = async (req, res) => {
       },
     });
 
-    await sendEmail({
+    sendEmail({
       to: user.email,
       subject: `🌟 You're now a Creator on SoloGram!`,
       html: buildPromotionEmail({
         name: user.firstName || user.username,
       }),
-    });
+    }).catch((err) =>
+      logger.error('Promotion email failed', { error: err.message })
+    );
 
     res.status(200).json({
       success: true,

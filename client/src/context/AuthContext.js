@@ -1,24 +1,16 @@
-import React, { createContext, useState, useEffect, useRef } from 'react';
+// client/src/context/AuthContext.js
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+} from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { clearEngagementCache } from '../hooks/useEngagement';
 
 export const AuthContext = createContext();
-
-// ── Axios interceptor setup (runs once) ──────────────────────────────────────
-// We hold refs to the current tokens so the interceptor always reads fresh
-// values without needing to re-attach on every state change.
-
-let isRefreshing = false;
-let failedQueue = []; // requests that arrived while a refresh was in-flight
-
-const processQueue = (error, token = null) => {
-  failedQueue.forEach(({ resolve, reject }) => {
-    if (error) reject(error);
-    else resolve(token);
-  });
-  failedQueue = [];
-};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -26,13 +18,18 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Keep refs so the interceptor closure always sees the latest values
+  // Refs so the interceptor closure always reads fresh values
   const tokenRef = useRef(token);
   const refreshTokenRef = useRef(localStorage.getItem('refreshToken'));
 
-  // Sync axios default header whenever token changes
+  // Keep refs in sync with state
   useEffect(() => {
     tokenRef.current = token;
+  }, [token]);
+
+  // ── Set default auth header ────────────────────────────────────────────────
+
+  useEffect(() => {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } else {
@@ -40,39 +37,29 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
-  // ── Helpers to persist tokens ────────────────────────────────────────────
-  const persistTokens = (accessToken, refreshTkn) => {
-    if (accessToken) {
-      localStorage.setItem('token', accessToken);
-      setToken(accessToken);
-      tokenRef.current = accessToken;
-    }
-    if (refreshTkn) {
-      localStorage.setItem('refreshToken', refreshTkn);
-      refreshTokenRef.current = refreshTkn;
-    }
-  };
+  // ── Axios response interceptor — silent refresh on 401 ─────────────────────
 
-  const clearTokens = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    setToken(null);
-    tokenRef.current = null;
-    refreshTokenRef.current = null;
-    setUser(null);
-    setIsAuthenticated(false);
-    delete axios.defaults.headers.common['Authorization'];
-  };
-
-  // ── Axios response interceptor — silent refresh on 401 ───────────────────
   useEffect(() => {
-    const interceptor = axios.interceptors.response.use(
+    let isRefreshing = false;
+    let failedQueue = [];
+
+    const processQueue = (error, newToken = null) => {
+      failedQueue.forEach(({ resolve, reject }) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(newToken);
+        }
+      });
+      failedQueue = [];
+    };
+
+    const interceptorId = axios.interceptors.response.use(
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
 
-        // Only intercept 401s, skip if it's the refresh endpoint itself
-        // or if we already retried this request
+        // Only handle 401s, skip refresh endpoint itself, skip already-retried
         if (
           error.response?.status !== 401 ||
           originalRequest._retry ||
@@ -83,61 +70,85 @@ export const AuthProvider = ({ children }) => {
           return Promise.reject(error);
         }
 
-        // No refresh token stored — can't recover, log out
-        if (!refreshTokenRef.current) {
-          clearTokens();
-          return Promise.reject(error);
-        }
-
-        // If a refresh is already in-flight, queue this request
+        // If already refreshing, queue this request
         if (isRefreshing) {
           return new Promise((resolve, reject) => {
             failedQueue.push({ resolve, reject });
-          })
-            .then((newToken) => {
-              originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
-              return axios(originalRequest);
-            })
-            .catch((err) => Promise.reject(err));
+          }).then((newToken) => {
+            originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+            return axios(originalRequest);
+          });
         }
 
         originalRequest._retry = true;
         isRefreshing = true;
 
+        const storedRefresh = refreshTokenRef.current;
+
+        if (!storedRefresh) {
+          isRefreshing = false;
+          processQueue(error);
+          handleForceLogout();
+          return Promise.reject(error);
+        }
+
         try {
-          const { data } = await axios.post('/api/auth/refresh-token', {
-            refreshToken: refreshTokenRef.current,
+          const res = await axios.post('/api/auth/refresh-token', {
+            refreshToken: storedRefresh,
           });
 
-          const newAccess = data.accessToken || data.token;
-          const newRefresh = data.refreshToken || refreshTokenRef.current;
+          const newAccessToken = res.data.token;
+          const newRefreshToken = res.data.refreshToken;
 
-          persistTokens(newAccess, newRefresh);
+          // Persist new tokens
+          localStorage.setItem('token', newAccessToken);
+          if (newRefreshToken) {
+            localStorage.setItem('refreshToken', newRefreshToken);
+            refreshTokenRef.current = newRefreshToken;
+          }
 
-          // Retry all queued requests with the new token
-          processQueue(null, newAccess);
+          tokenRef.current = newAccessToken;
+          setToken(newAccessToken);
+          axios.defaults.headers.common[
+            'Authorization'
+          ] = `Bearer ${newAccessToken}`;
 
-          // Retry the original request
-          originalRequest.headers['Authorization'] = `Bearer ${newAccess}`;
+          isRefreshing = false;
+          processQueue(null, newAccessToken);
+
+          // Retry the original request with new token
+          originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
           return axios(originalRequest);
         } catch (refreshError) {
-          processQueue(refreshError, null);
-          clearTokens();
-          // Only toast if user was previously authenticated (not on initial load)
-          if (tokenRef.current) {
-            toast.error('Session expired. Please log in again.');
-          }
-          return Promise.reject(refreshError);
-        } finally {
           isRefreshing = false;
+          processQueue(refreshError);
+          handleForceLogout();
+          return Promise.reject(refreshError);
         }
       }
     );
 
-    return () => axios.interceptors.response.eject(interceptor);
-  }, []); // runs once — uses refs, not stale closures
+    return () => {
+      axios.interceptors.response.eject(interceptorId);
+    };
+  }, []); // empty — interceptor uses refs, doesn't need re-attachment
 
-  // ── Load user on mount ───────────────────────────────────────────────────
+  // ── Force logout (refresh failed) ──────────────────────────────────────────
+
+  const handleForceLogout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    tokenRef.current = null;
+    refreshTokenRef.current = null;
+    setToken(null);
+    setUser(null);
+    setIsAuthenticated(false);
+    clearEngagementCache();
+    delete axios.defaults.headers.common['Authorization'];
+  }, []);
+
+  // ── Load user on mount ─────────────────────────────────────────────────────
+
   useEffect(() => {
     const loadUser = async () => {
       if (token) {
@@ -146,8 +157,12 @@ export const AuthProvider = ({ children }) => {
           setUser(res.data.data);
           setIsAuthenticated(true);
         } catch (err) {
-          // The interceptor will have already tried to refresh.
-          // If we still failed, tokens are cleared automatically.
+          // Interceptor will have tried refresh already — if we still fail, clear
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          setToken(null);
+          setUser(null);
+          setIsAuthenticated(false);
         }
       }
       setLoading(false);
@@ -155,53 +170,108 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, [token]);
 
-  // ── Register ─────────────────────────────────────────────────────────────
+  // ── Register ───────────────────────────────────────────────────────────────
+
   const register = async (formData) => {
     try {
       const res = await axios.post('/api/auth/register', formData);
 
-      persistTokens(res.data.token, res.data.refreshToken);
+      const accessToken = res.data.token;
+      const refreshToken = res.data.refreshToken;
+
+      localStorage.setItem('token', accessToken);
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+        refreshTokenRef.current = refreshToken;
+      }
+
+      setToken(accessToken);
       setUser(res.data.user);
       setIsAuthenticated(true);
 
       toast.success('Registration successful!');
       return true;
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Registration failed');
+      const msg = err.response?.data?.message || 'Registration failed';
+      toast.error(msg);
       return false;
     }
   };
 
-  // ── Login ────────────────────────────────────────────────────────────────
+  // ── Login ──────────────────────────────────────────────────────────────────
+
   const login = async (email, password) => {
     try {
       const res = await axios.post('/api/auth/login', { email, password });
 
-      persistTokens(res.data.token, res.data.refreshToken);
+      const accessToken = res.data.token;
+      const refreshToken = res.data.refreshToken;
+
+      localStorage.setItem('token', accessToken);
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+        refreshTokenRef.current = refreshToken;
+      }
+
+      setToken(accessToken);
       setUser(res.data.user);
       setIsAuthenticated(true);
 
       toast.success('Login successful!');
       return true;
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Login failed');
+      const msg = err.response?.data?.message || 'Login failed';
+      toast.error(msg);
       return false;
     }
   };
 
-  // ── Logout ───────────────────────────────────────────────────────────────
+  // ── Logout ─────────────────────────────────────────────────────────────────
+
   const logout = async () => {
+    // Tell server to clear refresh token from DB
     try {
       await axios.post('/api/auth/logout');
     } catch {
-      // Server logout failed — still clear locally
+      // Swallow — we're logging out anyway
     }
-    clearTokens();
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    tokenRef.current = null;
+    refreshTokenRef.current = null;
+    setToken(null);
+    setUser(null);
+    setIsAuthenticated(false);
     clearEngagementCache();
+    delete axios.defaults.headers.common['Authorization'];
     toast.success('Logged out successfully');
   };
 
-  // ── Update profile ───────────────────────────────────────────────────────
+  // ── Update notification preferences ────────────────────────────────────────
+
+  const updateNotificationPreferences = async (preferences) => {
+    try {
+      const res = await axios.post(
+        '/api/notifications/preferences',
+        preferences
+      );
+      if (res.data.data?.user) {
+        setUser(res.data.data.user);
+      }
+      toast.success('Notification preferences updated');
+      return true;
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        'Failed to update notification preferences';
+      toast.error(msg);
+      return false;
+    }
+  };
+
+  // ── Update profile ─────────────────────────────────────────────────────────
+
   const updateProfile = async (formData) => {
     try {
       const res = await axios.put('/api/auth/update-profile', formData);
@@ -209,12 +279,14 @@ export const AuthProvider = ({ children }) => {
       toast.success('Profile updated successfully');
       return true;
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Profile update failed');
+      const msg = err.response?.data?.message || 'Profile update failed';
+      toast.error(msg);
       return false;
     }
   };
 
-  // ── Update bio ───────────────────────────────────────────────────────────
+  // ── Update bio ─────────────────────────────────────────────────────────────
+
   const updateBio = async (bio) => {
     try {
       const res = await axios.put(
@@ -227,6 +299,8 @@ export const AuthProvider = ({ children }) => {
       setUser(res.data.data);
       return true;
     } catch (err) {
+      console.error('Bio update error:', err);
+
       // Fallback to profile endpoint if bio endpoint doesn't exist
       if (err.response?.status === 404) {
         try {
@@ -236,32 +310,15 @@ export const AuthProvider = ({ children }) => {
           setUser(res.data.data);
           return true;
         } catch (fallbackErr) {
-          toast.error(
-            fallbackErr.response?.data?.message || 'Bio update failed'
-          );
+          const msg =
+            fallbackErr.response?.data?.message || 'Bio update failed';
+          toast.error(msg);
           return false;
         }
       }
-      toast.error(err.response?.data?.message || 'Bio update failed');
-      return false;
-    }
-  };
 
-  // ── Notification preferences ─────────────────────────────────────────────
-  const updateNotificationPreferences = async (preferences) => {
-    try {
-      const res = await axios.post(
-        '/api/notifications/preferences',
-        preferences
-      );
-      if (res.data.data?.user) setUser(res.data.data.user);
-      toast.success('Notification preferences updated');
-      return true;
-    } catch (err) {
-      toast.error(
-        err.response?.data?.message ||
-          'Failed to update notification preferences'
-      );
+      const msg = err.response?.data?.message || 'Bio update failed';
+      toast.error(msg);
       return false;
     }
   };
