@@ -18,8 +18,8 @@ const { postCreationLimiter } = require('../middleware/rateLimiter');
 // Search must come before /:id to avoid param catch-all
 router.get('/search', searchPosts);
 
-router.get('/', getPosts);
-router.get('/:id', getPost);
+router.get('/', optionalAuth, getPosts);
+router.get('/:id', optionalAuth, getPost);
 router.post('/', protect, postCreationLimiter, createPost);
 router.put('/:id', protect, updatePost);
 router.delete('/:id', protect, deletePost);

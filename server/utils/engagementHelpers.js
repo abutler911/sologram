@@ -1,37 +1,48 @@
 // utils/engagementHelpers.js
-// ─────────────────────────────────────────────────────────────────────────────
-// Reusable helpers to attach like + comment counts to lean query results.
-// Works with the unified Like model (targetType/targetId).
-// Use these in posts, thoughts, stories controllers.
-// ─────────────────────────────────────────────────────────────────────────────
 const Like = require('../models/Like');
 const Comment = require('../models/Comment');
 
 /**
- * Attach like counts to an array of lean docs.
+ * Attach like counts + hasLiked to an array of lean docs.
  * @param {'post'|'thought'|'story'} targetType
- * @param {Object[]} docs - array of lean Mongoose docs (must have _id)
- * @returns {Object[]} docs with `likes` field populated
+ * @param {Object[]} docs
+ * @param {ObjectId|string|null} userId - current user (from optionalAuth)
  */
-async function attachLikeCounts(targetType, docs) {
+async function attachLikeCounts(targetType, docs, userId = null) {
   if (!docs.length) return docs;
   const ids = docs.map((d) => d._id);
-  const agg = await Like.aggregate([
+
+  // Count likes per doc
+  const countAgg = await Like.aggregate([
     { $match: { targetType, targetId: { $in: ids } } },
     { $group: { _id: '$targetId', count: { $sum: 1 } } },
   ]);
-  const map = Object.fromEntries(agg.map((r) => [r._id.toString(), r.count]));
+  const countMap = Object.fromEntries(
+    countAgg.map((r) => [r._id.toString(), r.count])
+  );
+
+  // If we have a logged-in user, check which ones they liked
+  let likedSet = new Set();
+  if (userId) {
+    const userLikes = await Like.find({
+      user: userId,
+      targetType,
+      targetId: { $in: ids },
+    })
+      .select('targetId')
+      .lean();
+    likedSet = new Set(userLikes.map((l) => l.targetId.toString()));
+  }
+
   return docs.map((d) => ({
     ...d,
-    likes: map[d._id.toString()] ?? 0,
+    likes: countMap[d._id.toString()] ?? 0,
+    hasLiked: likedSet.has(d._id.toString()),
   }));
 }
 
 /**
  * Attach comment counts to an array of lean docs.
- * @param {'post'|'thought'|'story'} parentType
- * @param {Object[]} docs
- * @returns {Object[]} docs with `commentCount` field populated
  */
 async function attachCommentCounts(parentType, docs) {
   if (!docs.length) return docs;
@@ -48,10 +59,10 @@ async function attachCommentCounts(parentType, docs) {
 }
 
 /**
- * Convenience: attach both likes and comments.
+ * Convenience: attach likes (with hasLiked) + comments.
  */
-async function attachEngagement(type, docs) {
-  const withLikes = await attachLikeCounts(type, docs);
+async function attachEngagement(type, docs, userId = null) {
+  const withLikes = await attachLikeCounts(type, docs, userId);
   return attachCommentCounts(type, withLikes);
 }
 

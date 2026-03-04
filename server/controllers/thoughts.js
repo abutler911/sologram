@@ -2,6 +2,7 @@
 const Thought = require('../models/Thought');
 const { cloudinary } = require('../config/cloudinary');
 const { createAndNotify } = require('../services/thoughts/createAndNotify');
+const { attachEngagement } = require('../utils/engagementHelpers');
 
 // ── List (paginated, pinned first) ────────────────────────────────────────────
 exports.getThoughts = async (req, res) => {
@@ -11,21 +12,25 @@ exports.getThoughts = async (req, res) => {
     const startIndex = (page - 1) * limit;
 
     const [pinnedThoughts, regularThoughts, total] = await Promise.all([
-      Thought.find({ pinned: true }).sort({ createdAt: -1 }).limit(5),
+      Thought.find({ pinned: true }).sort({ createdAt: -1 }).limit(5).lean(),
       Thought.find({ pinned: false })
         .sort({ createdAt: -1 })
         .skip(startIndex)
-        .limit(limit),
+        .limit(limit)
+        .lean(),
       Thought.countDocuments({ pinned: false }),
     ]);
 
+    const all = [...pinnedThoughts, ...regularThoughts];
+    const data = await attachEngagement('thought', all, req.user?._id);
+
     res.status(200).json({
       success: true,
-      count: pinnedThoughts.length + regularThoughts.length,
+      count: data.length,
       total,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
-      data: [...pinnedThoughts, ...regularThoughts],
+      data,
     });
   } catch (err) {
     console.error(err);
@@ -36,13 +41,18 @@ exports.getThoughts = async (req, res) => {
 // ── Single ────────────────────────────────────────────────────────────────────
 exports.getThought = async (req, res) => {
   try {
-    const thought = await Thought.findById(req.params.id);
+    const thought = await Thought.findById(req.params.id).lean();
     if (!thought) {
       return res
         .status(404)
         .json({ success: false, message: 'Thought not found' });
     }
-    res.status(200).json({ success: true, data: thought });
+    const [enriched] = await attachEngagement(
+      'thought',
+      [thought],
+      req.user?._id
+    );
+    res.status(200).json({ success: true, data: enriched });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server Error' });

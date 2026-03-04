@@ -12,10 +12,12 @@ const {
   pinThought,
 } = require('../controllers/thoughts');
 const { protect, authorize } = require('../middleware/auth');
+const optionalAuth = require('../middleware/optionalAuth');
 
 // Public routes
-router.get('/', getThoughts);
-router.get('/:id', getThought);
+router.get('/', optionalAuth, getThoughts);
+router.get('/:id', optionalAuth, getThought);
+
 // router.put("/:id/like", likeThought);
 
 // Admin-only routes

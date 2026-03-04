@@ -33,7 +33,7 @@ exports.getPosts = async (req, res) => {
       Post.find().sort({ eventDate: -1 }).skip(skip).limit(limit).lean(),
     ]);
 
-    const data = await attachEngagement('post', posts);
+    const data = await attachEngagement('post', posts, req.user?._id);
 
     res.json({
       success: true,
@@ -57,7 +57,7 @@ exports.getPost = async (req, res) => {
         .status(404)
         .json({ success: false, message: 'Post not found' });
 
-    const [result] = await attachEngagement('post', [post]);
+    const [result] = await attachEngagement('post', [post], req.user?._id);
     res.json({ success: true, data: result });
   } catch (err) {
     console.error('[getPost]', err);
@@ -329,7 +329,7 @@ exports.searchPosts = async (req, res) => {
       .limit(50)
       .lean();
 
-    const data = await attachEngagement('post', posts);
+    const data = await attachEngagement('post', posts, req.user?._id);
     res.json({ success: true, count: data.length, data });
   } catch (err) {
     console.error('[searchPosts]', err);
