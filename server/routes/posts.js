@@ -13,6 +13,7 @@ const {
 
 const { protect } = require('../middleware/auth');
 const { postCreationLimiter } = require('../middleware/rateLimiter');
+const optionalAuth = require('../middleware/optionalAuth');
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
 // Search must come before /:id to avoid param catch-all
