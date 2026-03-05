@@ -1,6 +1,7 @@
 // client/src/AppRoutes.js
 import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import styled from 'styled-components';
 import PrivateRoute from './components/PrivateRoute';
 import AppNav from './components/navigation/AppNav';
 import Footer from './components/layout/Footer';
@@ -54,10 +55,33 @@ const VaultDocs = React.lazy(() => import('./pages/vault/VaultDocs'));
 
 const LoadingFallback = () => <LoadingSpinner />;
 
+// ── Styled main area — clears the fixed sidebar on desktop ───────────────────
+const ContentMain = styled.main`
+  width: 100%;
+  min-height: 100vh;
+  box-sizing: border-box;
+
+  /* Mobile: clear the bottom tab bar */
+  padding-bottom: calc(52px + env(safe-area-inset-bottom));
+
+  /* Narrow desktop (960–1199px): sidebar is 72px */
+  @media (min-width: 960px) {
+    margin-left: 72px;
+    width: calc(100% - 72px);
+    padding-bottom: 0;
+  }
+
+  /* Full desktop (≥1200px): sidebar is 240px */
+  @media (min-width: 1200px) {
+    margin-left: 240px;
+    width: calc(100% - 240px);
+  }
+`;
+
 const StandardLayout = ({ children, headerProps }) => (
   <>
     <AppNav {...headerProps} />
-    <main className='main-content'>{children}</main>
+    <ContentMain>{children}</ContentMain>
     <Footer />
   </>
 );
@@ -72,7 +96,7 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
-        {/* Public */}
+        {/* ── Public ──────────────────────────────────────────────────── */}
         <Route
           path='/'
           element={
@@ -87,10 +111,38 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
           }
         />
         <Route path='/login' element={<Login />} />
-        <Route path='/post/:id' element={<PostDetail />} />
-        <Route path='/about' element={<About />} />
-        <Route path='/privacy' element={<Privacy />} />
-        <Route path='/terms' element={<Terms />} />
+        <Route
+          path='/post/:id'
+          element={
+            <StandardLayout>
+              <PostDetail />
+            </StandardLayout>
+          }
+        />
+        <Route
+          path='/about'
+          element={
+            <StandardLayout>
+              <About />
+            </StandardLayout>
+          }
+        />
+        <Route
+          path='/privacy'
+          element={
+            <StandardLayout>
+              <Privacy />
+            </StandardLayout>
+          }
+        />
+        <Route
+          path='/terms'
+          element={
+            <StandardLayout>
+              <Terms />
+            </StandardLayout>
+          }
+        />
         <Route
           path='/collections'
           element={
@@ -115,7 +167,6 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
             </StandardLayout>
           }
         />
-
         <Route
           path='/memoirs'
           element={
@@ -124,7 +175,8 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
             </StandardLayout>
           }
         />
-        {/* Private */}
+
+        {/* ── Private ─────────────────────────────────────────────────── */}
         <Route
           path='/profile'
           element={
@@ -139,7 +191,9 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
           path='/create'
           element={
             <PrivateRoute>
-              <CreatePost />
+              <StandardLayout>
+                <CreatePost />
+              </StandardLayout>
             </PrivateRoute>
           }
         />
@@ -147,7 +201,9 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
           path='/edit/:id'
           element={
             <PrivateRoute>
-              <EditPost />
+              <StandardLayout>
+                <EditPost />
+              </StandardLayout>
             </PrivateRoute>
           }
         />
@@ -155,7 +211,9 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
           path='/create-story'
           element={
             <PrivateRoute>
-              <CreateStory />
+              <StandardLayout>
+                <CreateStory />
+              </StandardLayout>
             </PrivateRoute>
           }
         />
@@ -163,7 +221,9 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
           path='/story-archive'
           element={
             <PrivateRoute>
-              <StoryArchive />
+              <StandardLayout>
+                <StoryArchive />
+              </StandardLayout>
             </PrivateRoute>
           }
         />
@@ -181,7 +241,9 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
           path='/collections/create'
           element={
             <PrivateRoute>
-              <CreateCollection />
+              <StandardLayout>
+                <CreateCollection />
+              </StandardLayout>
             </PrivateRoute>
           }
         />
@@ -189,7 +251,9 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
           path='/collections/:id/edit'
           element={
             <PrivateRoute>
-              <EditCollection />
+              <StandardLayout>
+                <EditCollection />
+              </StandardLayout>
             </PrivateRoute>
           }
         />
@@ -197,7 +261,9 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
           path='/collections/:id/add-posts'
           element={
             <PrivateRoute>
-              <AddPostsToCollection />
+              <StandardLayout>
+                <AddPostsToCollection />
+              </StandardLayout>
             </PrivateRoute>
           }
         />
@@ -205,7 +271,9 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
           path='/thoughts/:id/edit'
           element={
             <PrivateRoute>
-              <EditThought />
+              <StandardLayout>
+                <EditThought />
+              </StandardLayout>
             </PrivateRoute>
           }
         />
@@ -213,12 +281,14 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
           path='/thoughts/create'
           element={
             <PrivateRoute>
-              <CreateThought />
+              <StandardLayout>
+                <CreateThought />
+              </StandardLayout>
             </PrivateRoute>
           }
         />
 
-        {/* Admin-only */}
+        {/* ── Admin-only ──────────────────────────────────────────────── */}
         <Route
           path='/media-gallery'
           element={
@@ -240,7 +310,7 @@ const AppRoutes = ({ user, homeRef, handleSearch, handleClearSearch }) => {
           }
         />
 
-        {/* ── Vault — Easter egg destinations (no auth, no nav wrapper) ── */}
+        {/* ── Vault — Easter egg destinations (no auth, no nav) ──── */}
         <Route path='/vault/wrapped' element={<SoloGramWrapped />} />
         <Route path='/vault/terminal' element={<HackerTerminal />} />
         <Route path='/vault/docs' element={<VaultDocs />} />

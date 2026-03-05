@@ -59,6 +59,7 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   const [showActions, setShowActions] = useState(false);
   const [showCommentModal, setShowModal] = useState(false);
   const [captionExpanded, setCaptionExp] = useState(false);
+  const [justLiked, setJustLiked] = useState(false);
 
   const cardRef = useRef(null);
   const actionsRef = useRef(null);
@@ -127,13 +128,21 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleLike = useCallback(async () => {
-    if (!isAuthenticated || loading) return;
+    if (!isAuthenticated || loading) return false;
     const result = await toggle();
+
+    // Only animate on a fresh like (result === true)
+    if (result === true) {
+      setJustLiked(true);
+      setTimeout(() => setJustLiked(false), 400);
+    }
+
     if (result !== false && onLike) onLike(post._id);
+    return result;
   }, [isAuthenticated, loading, toggle, onLike, post._id]);
 
-  const handleDoubleTapLike = useCallback(() => {
-    if (!liked) handleLike();
+  const handleDoubleTapLike = useCallback(async () => {
+    if (!liked) return handleLike();
   }, [liked, handleLike]);
 
   const handleOpenComments = useCallback(() => {
@@ -211,11 +220,12 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
 
         <ActionBar>
           <ActionBtn
-            onClick={(e) => {
-              handleLike();
-              if (!liked && isAuthenticated && !loading) triggerBurst(e);
+            onClick={async (e) => {
+              const result = await handleLike();
+              if (result === true && isAuthenticated) triggerBurst(e);
             }}
             $active={liked}
+            $justLiked={justLiked}
             disabled={!isAuthenticated || loading}
             aria-label='Like post'
           >
@@ -464,7 +474,7 @@ const ActionBtn = styled.button`
     flex-shrink: 0;
     transition: transform 0.2s;
     ${(p) =>
-      p.$active &&
+      p.$justLiked &&
       css`
         animation: ${heartPop} 0.35s ease;
       `}

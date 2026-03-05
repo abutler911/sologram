@@ -12,6 +12,7 @@
 //   - Per-item processing locks (no double-taps)
 //   - Caches state across renders
 //   - Works with any targetType the server supports
+//   - Ref-based reads inside toggle to avoid stale closures
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useCallback, useContext, useRef, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
@@ -34,6 +35,19 @@ export function useEngagement(targetType, targetId) {
   const [count, setCount] = useState(() => cache.get(k)?.count ?? 0);
   const [loading, setLoading] = useState(false);
   const mountedRef = useRef(true);
+
+  // ── Refs that stay in sync with state ───────────────────────────────────
+  // These let toggle() read current values without stale closure issues.
+  const likedRef = useRef(liked);
+  const countRef = useRef(count);
+
+  useEffect(() => {
+    likedRef.current = liked;
+  }, [liked]);
+
+  useEffect(() => {
+    countRef.current = count;
+  }, [count]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -75,10 +89,10 @@ export function useEngagement(targetType, targetId) {
     processing.add(k);
     setLoading(true);
 
-    // Optimistic update
-    const prevLiked = liked;
-    const prevCount = count;
-    update(!liked, liked ? Math.max(0, count - 1) : count + 1);
+    // Read from refs — always current, no stale closure
+    const prevLiked = likedRef.current;
+    const prevCount = countRef.current;
+    update(!prevLiked, prevLiked ? Math.max(0, prevCount - 1) : prevCount + 1);
 
     try {
       const data = await api.toggleLike(targetType, targetId);
@@ -94,7 +108,7 @@ export function useEngagement(targetType, targetId) {
       processing.delete(k);
       if (mountedRef.current) setLoading(false);
     }
-  }, [isAuthenticated, k, liked, count, update, targetType, targetId]);
+  }, [isAuthenticated, k, update, targetType, targetId]);
 
   // ── Seed from server ──────────────────────────────────────────────────────
   // Call this once per item to get initial state

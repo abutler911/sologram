@@ -1315,6 +1315,12 @@ const Modal = styled.div`
   padding: 20px;
   overflow-y: auto;
 
+  @media (min-width: 960px) {
+    left: 72px;
+  }
+  @media (min-width: 1200px) {
+    left: 240px;
+  }
   @media (max-width: 768px) {
     align-items: flex-start;
     padding: 12px;
@@ -1529,19 +1535,24 @@ const BulkBar = styled.div`
   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.3);
   animation: ${slideUp} 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 
+  @media (min-width: 960px) {
+    left: 72px;
+  }
+  @media (min-width: 1200px) {
+    left: 240px;
+  }
+
   /* Leave room for AppNav on mobile */
   @media (max-width: 768px) {
     bottom: 60px;
     padding: 12px 16px;
   }
-
   @media (max-width: 480px) {
     flex-direction: column;
     gap: 10px;
     bottom: 60px;
   }
 `;
-
 const BulkInfo = styled.div`
   display: flex;
   align-items: center;
