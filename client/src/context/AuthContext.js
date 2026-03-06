@@ -16,7 +16,7 @@ export const AuthContext = createContext();
 // Set the Authorization header BEFORE React renders any children.
 // Without this, child useEffects (e.g. Home fetching posts) can fire before
 // the AuthProvider's useEffect sets the header, causing optionalAuth to see
-// no token and return hasLiked: false on every post.
+// no token → hasLiked always false.
 const initialToken = localStorage.getItem('token');
 if (initialToken) {
   axios.defaults.headers.common['Authorization'] = `Bearer ${initialToken}`;
@@ -38,8 +38,9 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   // ── Keep default auth header in sync with token state ──────────────────────
-  // This handles token changes AFTER mount (login, refresh, logout).
-  // The initial header was already set synchronously above.
+  // Handles token changes AFTER mount (refresh, logout edge cases).
+  // Initial load is covered by the synchronous block above.
+  // Login/logout set the header immediately in their own functions.
 
   useEffect(() => {
     if (token) {
@@ -151,11 +152,12 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('refreshToken');
     tokenRef.current = null;
     refreshTokenRef.current = null;
+    // Set header immediately — don't wait for useEffect
+    delete axios.defaults.headers.common['Authorization'];
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);
     clearEngagementCache();
-    delete axios.defaults.headers.common['Authorization'];
   }, []);
 
   // ── Load user on mount ─────────────────────────────────────────────────────
@@ -171,6 +173,7 @@ export const AuthProvider = ({ children }) => {
           // Interceptor will have tried refresh already — if we still fail, clear
           localStorage.removeItem('token');
           localStorage.removeItem('refreshToken');
+          delete axios.defaults.headers.common['Authorization'];
           setToken(null);
           setUser(null);
           setIsAuthenticated(false);
@@ -195,6 +198,11 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('refreshToken', refreshToken);
         refreshTokenRef.current = refreshToken;
       }
+
+      // Set header IMMEDIATELY — before setToken triggers a re-render.
+      // Without this, child components re-render and fetch posts before
+      // the useEffect that sets the header has a chance to run.
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
 
       setToken(accessToken);
       setUser(res.data.user);
@@ -223,11 +231,12 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('refreshToken');
     tokenRef.current = null;
     refreshTokenRef.current = null;
+    // Set header immediately — before state updates trigger child re-renders
+    delete axios.defaults.headers.common['Authorization'];
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);
     clearEngagementCache();
-    delete axios.defaults.headers.common['Authorization'];
     toast.success('Logged out successfully');
   };
 
