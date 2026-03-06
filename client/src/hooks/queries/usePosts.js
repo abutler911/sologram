@@ -9,7 +9,19 @@ import { api } from '../../services/api';
 import { toast } from 'react-hot-toast';
 
 // ── Query Keys ────────────────────────────────────────────────────────────────
-// Centralized so cache invalidations are consistent everywhere
+// Centralized so cache invalidations are consistent everywhere.
+//
+// infiniteFeed() returns the BASE prefix ['posts', 'infinite'].
+// The actual query key used by useInfinitePosts appends isAuthenticated:
+//   ['posts', 'infinite', true]  or  ['posts', 'infinite', false]
+//
+// This ensures React Query treats the logged-in and logged-out feeds as
+// separate queries, so stale cached data from a logged-out session is never
+// served after login (which would show hasLiked: false on everything).
+//
+// Cache helpers (patchInfinitePost, handlePostDelete) use the base prefix
+// with setQueriesData so they match BOTH auth variants.
+
 export const postKeys = {
   infiniteFeed: () => ['posts', 'infinite'],
   search: (q) => ['posts', 'search', q],
@@ -18,9 +30,11 @@ export const postKeys = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 // Immutably update a single post inside an infinite query cache.
-// Used by Home for optimistic delete/like/comment-bump without a refetch.
+// Uses setQueriesData with the base prefix to match both authed and
+// unauthed cache entries.
+
 export const patchInfinitePost = (queryClient, postId, updater) => {
-  queryClient.setQueryData(postKeys.infiniteFeed(), (old) => {
+  queryClient.setQueriesData({ queryKey: postKeys.infiniteFeed() }, (old) => {
     if (!old) return old;
     return {
       ...old,
@@ -34,10 +48,12 @@ export const patchInfinitePost = (queryClient, postId, updater) => {
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
-// Infinite scroll feed — primary query for Home page
-export const useInfinitePosts = () =>
+// Infinite scroll feed — primary query for Home page.
+// isAuthenticated is part of the query key so that logging in/out
+// triggers a fresh fetch with the correct Authorization header.
+export const useInfinitePosts = (isAuthenticated = false) =>
   useInfiniteQuery({
-    queryKey: postKeys.infiniteFeed(),
+    queryKey: [...postKeys.infiniteFeed(), isAuthenticated],
     queryFn: ({ pageParam = 1 }) => api.getPosts(pageParam, 6),
     getNextPageParam: (lastPage) =>
       lastPage.currentPage < lastPage.totalPages

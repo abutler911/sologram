@@ -127,6 +127,12 @@ const Home = forwardRef((props, ref) => {
   );
 
   // ── Data ────────────────────────────────────────────────────────────────────
+  // isAuthenticated is passed into useInfinitePosts so it becomes part of
+  // the React Query cache key. This means:
+  //   - Logging in  → key changes → fresh fetch WITH auth → hasLiked correct
+  //   - Logging out → key changes → fresh fetch WITHOUT auth → hasLiked false
+  // Without this, React Query serves stale cached data from the previous
+  // auth state (e.g. logged-out cache shows hasLiked: false after login).
 
   const {
     data: feedData,
@@ -135,7 +141,7 @@ const Home = forwardRef((props, ref) => {
     hasNextPage,
     fetchNextPage,
     error: feedError,
-  } = useInfinitePosts();
+  } = useInfinitePosts(isAuthenticated);
 
   const {
     data: searchData,
@@ -238,19 +244,24 @@ const Home = forwardRef((props, ref) => {
     localStorage.setItem('aboutBannerClosed', 'true');
   };
 
-  // Optimistic local updates — write straight into the RQ cache, no refetch needed
+  // Optimistic local updates — write into the RQ cache, no refetch needed.
+  // Uses setQueriesData with the base prefix key so it matches both the
+  // authed and unauthed cache variants of the infinite feed.
   const handlePostDelete = useCallback(
     (deletedId) => {
-      queryClient.setQueryData(postKeys.infiniteFeed(), (old) => {
-        if (!old) return old;
-        return {
-          ...old,
-          pages: old.pages.map((page) => ({
-            ...page,
-            data: page.data.filter((p) => p._id !== deletedId),
-          })),
-        };
-      });
+      queryClient.setQueriesData(
+        { queryKey: postKeys.infiniteFeed() },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              data: page.data.filter((p) => p._id !== deletedId),
+            })),
+          };
+        }
+      );
       if (isSearching && searchQuery) {
         queryClient.setQueryData(postKeys.search(searchQuery), (old) => {
           if (!old) return old;

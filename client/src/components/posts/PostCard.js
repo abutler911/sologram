@@ -220,9 +220,22 @@ const PostCard = memo(({ post: initialPost, onDelete, onLike }) => {
 
         <ActionBar>
           <ActionBtn
-            onClick={async (e) => {
-              const result = await handleLike();
-              if (result === true && isAuthenticated) triggerBurst(e);
+            onClick={(e) => {
+              // Capture burst coordinates SYNCHRONOUSLY before the async
+              // handleLike call. React recycles synthetic events, so
+              // e.currentTarget will be null after the await resolves.
+              // This fixes the "can't access getBoundingClientRect" error.
+              const burstEvent = {
+                clientX: e.clientX,
+                clientY: e.clientY,
+                currentTarget: e.currentTarget,
+              };
+
+              handleLike().then((result) => {
+                if (result === true && isAuthenticated) {
+                  triggerBurst(burstEvent);
+                }
+              });
             }}
             $active={liked}
             $justLiked={justLiked}
