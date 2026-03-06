@@ -20,9 +20,15 @@ import { toast } from 'react-hot-toast';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { COLORS } from '../../theme';
-import authorImg from '../../assets/andy.jpg';
 
-const AVATAR_FALLBACK = authorImg;
+// Minimal noir person silhouette — matches NOIR palette, no external dependency
+const AVATAR_FALLBACK = `data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+    <rect width="80" height="80" rx="0" fill="#1c1b19"/>
+    <circle cx="40" cy="30" r="12" fill="#3a3632"/>
+    <ellipse cx="40" cy="62" rx="20" ry="14" fill="#3a3632"/>
+  </svg>`
+)}`;
 
 // ─── NOIR tokens ──────────────────────────────────────────────────────────────
 const NOIR = {
