@@ -13,6 +13,7 @@
 //   - Caches state across renders
 //   - Works with any targetType the server supports
 //   - Ref-based reads inside toggle to avoid stale closures
+//   - Interaction tracking prevents stale seed() from overwriting toggle results
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useCallback, useContext, useRef, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
@@ -23,6 +24,11 @@ import { toast } from 'react-hot-toast';
 // Key format: "post:abc123" → { liked: true, count: 5 }
 const cache = new Map();
 const processing = new Set();
+
+// Keys the user has toggled this session. seed() will NOT overwrite these
+// because the toggle result (server-confirmed) is more authoritative than
+// whatever the feed endpoint returns on the next page load.
+const interacted = new Set();
 
 const key = (type, id) => `${type}:${id}`;
 
@@ -98,6 +104,8 @@ export function useEngagement(targetType, targetId) {
       const data = await api.toggleLike(targetType, targetId);
       // Server is source of truth
       update(data.liked, data.count);
+      // Mark as interacted so future seed() calls don't overwrite
+      interacted.add(k);
       return data.liked;
     } catch (err) {
       // Rollback
@@ -111,13 +119,20 @@ export function useEngagement(targetType, targetId) {
   }, [isAuthenticated, k, update, targetType, targetId]);
 
   // ── Seed from server ──────────────────────────────────────────────────────
-  // Call this once per item to get initial state
+  // Call once per item to set initial state from the feed response.
+  //
+  // IMPORTANT: If the user has already toggled this item during the current
+  // session, skip the seed — the cache holds server-confirmed data from the
+  // toggle response, which is more trustworthy than whatever the feed
+  // endpoint sent (which may not even include hasLiked if optionalAuth
+  // isn't wired up).
 
   const seed = useCallback(
     (likedVal, countVal) => {
+      if (interacted.has(k)) return;
       update(likedVal, countVal);
     },
-    [update]
+    [k, update]
   );
 
   return { liked, count, toggle, loading, seed };
@@ -141,8 +156,11 @@ export function useEngagement(targetType, targetId) {
 export async function batchSeedLikes(targetType, ids) {
   if (!ids.length) return;
 
-  // Only check IDs we haven't cached yet
-  const uncached = ids.filter((id) => !cache.has(key(targetType, id)));
+  // Skip IDs the user has interacted with OR already cached
+  const uncached = ids.filter((id) => {
+    const k = key(targetType, id);
+    return !interacted.has(k) && !cache.has(k);
+  });
   if (!uncached.length) return;
 
   try {
@@ -152,10 +170,12 @@ export async function batchSeedLikes(targetType, ids) {
     if (data.results) {
       data.results.forEach((r) => {
         const k = key(r.type, r.id);
+        // Don't overwrite if user interacted while this request was in flight
+        if (interacted.has(k)) return;
         const existing = cache.get(k);
         cache.set(k, {
           liked: r.liked,
-          count: existing?.count ?? 0, // count will be set by individual items
+          count: existing?.count ?? 0, // count will be set by individual items via seed
         });
       });
     }
@@ -165,10 +185,11 @@ export async function batchSeedLikes(targetType, ids) {
   }
 }
 
-// Clear cache on logout
+// Clear all caches on logout
 export function clearEngagementCache() {
   cache.clear();
   processing.clear();
+  interacted.clear();
 }
 
 export default useEngagement;

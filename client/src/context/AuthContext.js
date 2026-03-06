@@ -12,9 +12,19 @@ import { clearEngagementCache } from '../hooks/useEngagement';
 
 export const AuthContext = createContext();
 
+// ── Synchronous header init ──────────────────────────────────────────────────
+// Set the Authorization header BEFORE React renders any children.
+// Without this, child useEffects (e.g. Home fetching posts) can fire before
+// the AuthProvider's useEffect sets the header, causing optionalAuth to see
+// no token and return hasLiked: false on every post.
+const initialToken = localStorage.getItem('token');
+if (initialToken) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${initialToken}`;
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(initialToken);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +37,9 @@ export const AuthProvider = ({ children }) => {
     tokenRef.current = token;
   }, [token]);
 
-  // ── Set default auth header ────────────────────────────────────────────────
+  // ── Keep default auth header in sync with token state ──────────────────────
+  // This handles token changes AFTER mount (login, refresh, logout).
+  // The initial header was already set synchronously above.
 
   useEffect(() => {
     if (token) {
@@ -64,8 +76,7 @@ export const AuthProvider = ({ children }) => {
           error.response?.status !== 401 ||
           originalRequest._retry ||
           originalRequest.url?.includes('/api/auth/refresh-token') ||
-          originalRequest.url?.includes('/api/auth/login') //||
-          // originalRequest.url?.includes('/api/auth/register')
+          originalRequest.url?.includes('/api/auth/login')
         ) {
           return Promise.reject(error);
         }
